@@ -10,16 +10,17 @@ export default function App() {
   const [currentBotMessage, setCurrentBotMessage] = useState("")
   const socket = useRef<WebSocket | null>(null)
 
-  useEffect(() => {
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-    if (prefersDark) {
-      import("./code_dark.css")
-    } else {
-      import("./code_light.css")
+  const sendMessage = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (socket.current && event.key === "Enter" && !event.shiftKey && input.trim()) {
+      event.preventDefault()
+      setInput("")
+      setMessages(previous => [...previous, { role: "user", content: input }])
+      setCurrentBotMessage("")
+      socket.current.send(JSON.stringify({ message: input }))
     }
-  }, [])
+  }
 
-  useEffect(() => {
+  const receiveMessage = () => {
     socket.current = new WebSocket(`ws://${window.location.host}/ws/chat/`)
 
     socket.current.addEventListener("message", event => {
@@ -35,21 +36,13 @@ export default function App() {
     })
 
     return () => socket.current?.close()
-  }, [])
-
-  const sendMessage = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (socket.current && event.key === "Enter" && !event.shiftKey && input.trim()) {
-      event.preventDefault()
-      setInput("")
-      setMessages(previous => [...previous, { role: "user", content: input }])
-      setCurrentBotMessage("")
-      socket.current.send(JSON.stringify({ message: input }))
-    }
   }
 
-  const getMessageDivClassName = (message: Message) => {
-    return message.role === "user" ? "user-message-div" : "bot-message-div"
-  }
+  useEffect(() => {
+    receiveMessage()
+    autoAdaptTheme()
+    autoResizePromptTextArea()
+  })
 
   return (
     <div id="chat-div">
@@ -62,4 +55,45 @@ export default function App() {
       <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here.." />
     </div>
   )
+}
+
+function autoAdaptTheme() {
+  if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    import("./code_dark.css")
+  } else {
+    import("./code_light.css")
+  }
+}
+
+function autoResizePromptTextArea() {
+  const rezize = () => {
+    const charactersPerLine = Math.round((promptTextArea.clientWidth - promptTextAreaFontSize) / promptTextAreaFontSize) * 2
+
+    let lines = 0
+    let j = 0
+    for (let i = 0; i < promptTextArea.value.length; i++) {
+      if (j >= charactersPerLine || promptTextArea.value[i] === "\n") {
+        lines += 1
+        j = 0
+        continue
+      }
+      j += 1
+    }
+
+    const height = Math.min(lines * promptTextAreaFontSize + promptTextAreaFontSize * 2, Math.round(document.body.scrollHeight * 0.5))
+    messagesDiv.style.height = (document.body.scrollHeight - height) + "px"
+    promptTextArea.style.height = height + "px"
+  }
+
+  const messagesDiv = document.getElementById("messages-div") as HTMLDivElement
+  const promptTextArea = document.getElementById("prompt-textarea") as HTMLTextAreaElement
+  const promptTextAreaFontSize = Math.round(parseInt(getComputedStyle(promptTextArea).fontSize) * 1.25)
+
+  promptTextArea.addEventListener("input", rezize)
+  window.addEventListener("resize", rezize)
+  rezize()
+}
+
+function getMessageDivClassName(message: Message) {
+  return message.role === "user" ? "user-message-div" : "bot-message-div"
 }
