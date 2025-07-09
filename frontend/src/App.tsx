@@ -11,6 +11,15 @@ export default function App() {
   const socket = useRef<WebSocket | null>(null)
 
   useEffect(() => {
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+    if (prefersDark) {
+      import("./code_dark.css")
+    } else {
+      import("./code_light.css")
+    }
+  }, [])
+
+  useEffect(() => {
     socket.current = new WebSocket(`ws://${window.location.host}/ws/chat/`)
 
     socket.current.addEventListener("message", event => {
