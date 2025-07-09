@@ -1,0 +1,54 @@
+#chat-div {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    overflow: hidden;
+    background-color: transparent;
+}
+
+#messages-div {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-color: transparent;
+}
+
+.user-message-div,
+.bot-message-div {
+    margin: 0 0 25px 0;
+    padding: 10px;
+    border-radius: 10px;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.user-message-div {
+    width: 50%;
+    margin-right: 15%;
+    align-self: flex-end;
+    background-color: var(--background-color2);
+}
+
+.bot-message-div {
+    width: 60%;
+    align-self: center;
+    background-color: var(--background-color4);
+}
+
+#prompt-textarea {
+    width: 60%;
+    height: auto;
+    margin: 0 0 25px 0;
+    padding: 10px;
+    align-content: center;
+    resize: none;
+    outline: none;
+    border-radius: 10px;
+    background-color: var(--background-color4);
+}
