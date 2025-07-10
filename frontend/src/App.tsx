@@ -48,7 +48,10 @@ export default function App() {
     <div id="chat-div">
       <div id="messages-div">
         {messages.map((message, index) => (
-          <div key={index} className={getMessageDivClassName(message)} dangerouslySetInnerHTML={{ __html: message.content }}></div>
+          <>
+            <div key={index} className={getMessageDivClassName(message)} dangerouslySetInnerHTML={{ __html: message.content }}></div>
+            <button className="copy-button" onClick={copyMessage()}>Copy</button>
+          </>
         ))}
         {currentBotMessage && (<div className="bot-message-div">{currentBotMessage}</div>)}
       </div>
@@ -96,4 +99,18 @@ function autoResizePromptTextArea() {
 
 function getMessageDivClassName(message: Message) {
   return message.role === "user" ? "user-message-div" : "bot-message-div"
+}
+
+function copyMessage() {
+  return (event: React.MouseEvent<HTMLButtonElement>) => {
+    const button = event.currentTarget
+    const messageDiv = button.previousElementSibling as HTMLDivElement
+    const text = messageDiv.textContent || ""
+    navigator.clipboard.writeText(text).then(() => {
+      button.textContent = "Copied!"
+      setTimeout(() => {
+        button.textContent = "Copy"
+      }, 2000)
+    })
+  }
 }

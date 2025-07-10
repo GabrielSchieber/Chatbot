@@ -27,10 +27,19 @@
 }
 
 .user-message-div {
-    width: 50%;
+    max-width: 50%;
     margin-right: 15%;
     align-self: flex-end;
     background-color: var(--background-color2);
+}
+
+.user-message-div+.copy-button {
+    margin-right: 15%;
+    background-color: var(--background-color4);
+}
+
+.user-message-div+.copy-button:active {
+    background-color: var(--background-color4);
 }
 
 .bot-message-div {
@@ -48,6 +57,28 @@
         padding: 1px 15px 1px 15px;
         border-radius: 10px;
     }
+}
+
+.bot-message-div+.copy-button {
+    margin-right: calc(20% - 15px);
+    background-color: var(--background-color2);
+}
+
+.bot-message-div+.copy-button:active {
+    background-color: var(--background-color2);
+}
+
+.copy-button {
+    position: relative;
+    top: -22px;
+    padding: 5px 10px;
+    align-self: flex-end;
+    font-size: 12px;
+    border-radius: 5px;
+}
+
+.copy-button:hover {
+    background-color: var(--background-color3);
 }
 
 #prompt-textarea {
