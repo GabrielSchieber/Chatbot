@@ -19,7 +19,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         async for token in sample_model(messages, 256):
             bot_message += token
             await self.send_json({"token": token})
-        self.bot_messages.append(user_message)
+        self.bot_messages.append(bot_message)
 
         await self.send_json({"message": markdown_message(bot_message)})
 
