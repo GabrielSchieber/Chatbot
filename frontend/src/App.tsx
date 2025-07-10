@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import "./App.css"
 
-type Message = { role: "user" | "bot"; content: string }
+type Message = string | { markdown: string; html: string }
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -14,7 +14,7 @@ export default function App() {
     if (socket.current && event.key === "Enter" && !event.shiftKey && input.trim()) {
       event.preventDefault()
       setInput("")
-      setMessages(previous => [...previous, { role: "user", content: input }])
+      setMessages(previous => [...previous, input])
       setCurrentBotMessage("")
       socket.current.send(JSON.stringify({ message: input }))
     }
@@ -29,7 +29,7 @@ export default function App() {
         currentBotMessageRef.current += data.token
         setCurrentBotMessage(currentBotMessageRef.current)
       } else if (data.message) {
-        setMessages(previous => [...previous, { role: "bot", content: data.message }])
+        setMessages(previous => [...previous, data.message])
         currentBotMessageRef.current = ""
         setCurrentBotMessage("")
       }
@@ -47,16 +47,20 @@ export default function App() {
   return (
     <div id="chat-div">
       <div id="messages-div">
-        {messages.map((message, index) => (
+        {messages.map(message => (
           <>
-            <div key={index} className={getMessageDivClassName(message)} dangerouslySetInnerHTML={{ __html: message.content }}></div>
-            <button className="copy-button" onClick={copyMessage()}>Copy</button>
+            {typeof (message) === "string" ? (
+              <div className={getMessageDivClassName(message)}>{message}</div>
+            ) : (
+              <div className={getMessageDivClassName(message)} dangerouslySetInnerHTML={{ __html: message["html"] }}></div>
+            )}
+            <button className="copy-button" onClick={copyMessage(message)}>Copy</button>
           </>
         ))}
         {currentBotMessage && (<div className="bot-message-div">{currentBotMessage}</div>)}
       </div>
       <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here.." />
-    </div>
+    </div >
   )
 }
 
@@ -98,19 +102,16 @@ function autoResizePromptTextArea() {
 }
 
 function getMessageDivClassName(message: Message) {
-  return message.role === "user" ? "user-message-div" : "bot-message-div"
+  return typeof (message) === "string" ? "user-message-div" : "bot-message-div"
 }
 
-function copyMessage() {
+function copyMessage(message: Message) {
   return (event: React.MouseEvent<HTMLButtonElement>) => {
     const button = event.currentTarget
-    const messageDiv = button.previousElementSibling as HTMLDivElement
-    const text = messageDiv.textContent || ""
+    const text = (typeof (message) === "string" ? message : message["markdown"]) || ""
     navigator.clipboard.writeText(text).then(() => {
       button.textContent = "Copied!"
-      setTimeout(() => {
-        button.textContent = "Copy"
-      }, 2000)
+      setTimeout(() => { button.textContent = "Copy" }, 2000)
     })
   }
 }

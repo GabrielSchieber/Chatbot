@@ -5,7 +5,7 @@ from django.utils.html import escape
 
 MARKDOWN_PATTERN = re.compile(f"({re.escape(r"```")}|{re.escape(r"`")})")
 
-def markdown_message(message: str) -> str:
+def markdown_to_html(message: str) -> str:
     message = escape_markdown(message)
     message = markdown.markdown(message, extensions = ["extra", "fenced_code", "codehilite"])
     return message

@@ -1,7 +1,7 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from .sample import sample_model
-from .utils import markdown_message
+from .utils import markdown_to_html
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -21,7 +21,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.send_json({"token": token})
         self.bot_messages.append(bot_message)
 
-        await self.send_json({"message": markdown_message(bot_message)})
+        await self.send_json({"message": {"markdown": bot_message, "html": markdown_to_html(bot_message)}})
 
     def get_messages(self, new_user_message: str):
         messages = []
