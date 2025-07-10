@@ -1,0 +1,50 @@
+#auth-form {
+    display: flex;
+    flex-direction: column;
+    width: 600px;
+    align-items: center;
+    border-radius: 10px;
+    background-color: var(--background-color2);
+}
+
+#title-h1 {
+    font-size: 30px;
+}
+
+#email-input,
+#password-input {
+    width: 90%;
+    margin: 0 0 15px 0;
+    padding: 10px;
+    border-radius: 10px;
+    outline: none;
+    background-color: var(--background-color4);
+}
+
+@media(prefers-color-scheme: dark) {
+    #password-input::-ms-reveal {
+        filter: invert(100%);
+    }
+}
+
+#submit-button {
+    padding: 5px 10px 5px 10px;
+    border-radius: 10px;
+    background-color: var(--background-color4);
+}
+
+#submit-button:hover {
+    background-color: var(--background-color3);
+}
+
+#submit-button:active {
+    background-color: var(--background-color4);
+}
+
+#recommendation-a {
+    text-decoration: none;
+}
+
+#recommendation-a:hover {
+    text-decoration: underline;
+}

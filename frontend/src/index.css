@@ -55,6 +55,14 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+
+  align-content: center;
+  align-items: center;
+  align-self: center;
+  justify-content: center;
+  justify-items: center;
+  justify-self: center;
+
   background-color: var(--background-color3);
 }
 
