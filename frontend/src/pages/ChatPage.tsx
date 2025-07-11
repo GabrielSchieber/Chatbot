@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import "./ChatPage.css"
+import { isLoggedIn, logout } from "../auth";
 
 type Message = string | { markdown: string; html: string }
 
@@ -45,22 +46,25 @@ export default function ChatPage() {
     })
 
     return (
-        <div id="chat-div">
-            <div id="messages-div">
-                {messages.map(message => (
-                    <>
-                        {typeof (message) === "string" ? (
-                            <div className={getMessageDivClassName(message)}>{message}</div>
-                        ) : (
-                            <div className={getMessageDivClassName(message)} dangerouslySetInnerHTML={{ __html: message["html"] }}></div>
-                        )}
-                        <button className="copy-button" onClick={copyMessage(message)}>Copy</button>
-                    </>
-                ))}
-                {currentBotMessage && (<div className="bot-message-div">{currentBotMessage}</div>)}
-            </div>
-            <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here.." />
-        </div >
+        <>
+            {isLoggedIn() && <button id="logout-button" onClick={handleLogout}>Log out</button>}
+            <div id="chat-div">
+                <div id="messages-div">
+                    {messages.map(message => (
+                        <>
+                            {typeof (message) === "string" ? (
+                                <div className={getMessageDivClassName(message)}>{message}</div>
+                            ) : (
+                                <div className={getMessageDivClassName(message)} dangerouslySetInnerHTML={{ __html: message["html"] }}></div>
+                            )}
+                            <button className="copy-button" onClick={copyMessage(message)}>Copy</button>
+                        </>
+                    ))}
+                    {currentBotMessage && (<div className="bot-message-div">{currentBotMessage}</div>)}
+                </div>
+                <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here.." />
+            </div >
+        </>
     )
 }
 
@@ -114,4 +118,9 @@ function copyMessage(message: Message) {
             setTimeout(() => { button.textContent = "Copy" }, 2000)
         })
     }
+}
+
+async function handleLogout() {
+    await logout()
+    location.reload()
 }
