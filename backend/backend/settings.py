@@ -88,3 +88,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"]}
+
+AUTH_USER_MODEL = "chat.User"
