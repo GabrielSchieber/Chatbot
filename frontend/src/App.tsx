@@ -9,6 +9,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={isLoggedIn() ? <ChatPage /> : <Navigate to="/login" replace />} />
+        <Route path="/chat/:chatUUID" element={isLoggedIn() ? <ChatPage /> : <Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
       </Routes>

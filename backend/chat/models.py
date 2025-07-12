@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils import timezone
@@ -36,3 +38,25 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+class Chat(models.Model):
+    user = models.ForeignKey(User, on_delete = models.CASCADE)
+    title = models.TextField()
+    is_complete = models.BooleanField(default = True)
+    date_time = models.DateTimeField(auto_now_add = True)
+    uuid = models.UUIDField(primary_key = True, default = uuid.uuid4, editable = False)
+
+    def __str__(self):
+        title = self.title if len(self.title) <= 20 else f"{self.title[:20]}..."
+        return f"Chat of {self.user} titled {title} at {self.date_time}"
+
+class Message(models.Model):
+    chat = models.ForeignKey(Chat, related_name = "messages", on_delete = models.CASCADE)
+    text = models.TextField()
+    is_user_message = models.BooleanField()
+    date_time = models.DateTimeField(auto_now_add = True)
+
+    def __str__(self):
+        owner = "user" if self.is_user_message else "bot"
+        text = self.text if len(self.text) <= 20 else f"{self.text[:20]}..."
+        return f"Message of {owner} about {text} at {self.date_time}"

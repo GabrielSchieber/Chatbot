@@ -1,46 +1,76 @@
 import { useState, useEffect, useRef } from "react"
 import "./ChatPage.css"
 import { isLoggedIn, logout } from "../auth"
+import { useParams } from "react-router"
 
-type Message = string | { markdown: string; html: string }
+type Message = { index: number, text: string }
 
 export default function ChatPage() {
+    const { chatUUID } = useParams()
+
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState("")
     const currentBotMessageRef = useRef("")
     const [currentBotMessage, setCurrentBotMessage] = useState("")
     const socket = useRef<WebSocket | null>(null)
-    const acessToken = localStorage.getItem("access_token")
+    const accessToken = localStorage.getItem("access_token")
+    const shouldLoadMessages = useRef(true)
+
+    const loadMessages = () => {
+        if (shouldLoadMessages.current && messages.length === 0 && chatUUID) {
+            shouldLoadMessages.current = false
+
+            fetch("/api/get-messages/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ access_token: accessToken, chat_uuid: chatUUID })
+            }).then(response => response.json()).then(data => {
+                if (data.messages) {
+                    for (let i = 0; i < data.messages.length; i++) {
+                        setMessages(previous => [...previous, { index: previous.length, text: data.messages[i] }])
+                    }
+                } else {
+                    alert("Fetching of messages was not possible")
+                }
+            })
+        }
+    }
 
     const sendMessage = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (socket.current && event.key === "Enter" && !event.shiftKey && input.trim()) {
             event.preventDefault()
             setInput("")
-            setMessages(previous => [...previous, input])
+            setMessages(previous => [...previous, { index: previous.length, text: input }])
             setCurrentBotMessage("")
             socket.current.send(JSON.stringify({ message: input }))
         }
     }
 
     const receiveMessage = () => {
-        socket.current = new WebSocket(`ws://${window.location.host}/ws/chat/?token=${acessToken}`)
+        if (!socket.current) {
+            const webSocketURL = chatUUID ? `ws://${window.location.host}/ws/chat/${chatUUID}/?token=${accessToken}` : `ws://${window.location.host}/ws/chat/?token=${accessToken}`
+            socket.current = new WebSocket(webSocketURL)
 
-        socket.current.addEventListener("message", event => {
-            const data = JSON.parse(event.data)
-            if (data.token) {
-                currentBotMessageRef.current += data.token
-                setCurrentBotMessage(currentBotMessageRef.current)
-            } else if (data.message) {
-                setMessages(previous => [...previous, data.message])
-                currentBotMessageRef.current = ""
-                setCurrentBotMessage("")
-            }
-        })
+            socket.current.addEventListener("message", event => {
+                const data = JSON.parse(event.data)
+                if (data.token) {
+                    currentBotMessageRef.current += data.token
+                    setCurrentBotMessage(currentBotMessageRef.current)
+                } else if (data.message) {
+                    setMessages(previous => [...previous, { index: previous.length, text: data.message }])
+                    currentBotMessageRef.current = ""
+                    setCurrentBotMessage("")
+                } else if (data.redirect) {
+                    location.href = data.redirect
+                }
+            })
 
-        return () => socket.current?.close()
+            return () => socket.current?.close()
+        }
     }
 
     useEffect(() => {
+        loadMessages()
         receiveMessage()
         autoAdaptTheme()
         autoResizePromptTextArea()
@@ -51,14 +81,14 @@ export default function ChatPage() {
             {isLoggedIn() && <button id="logout-button" onClick={handleLogout}>Log out</button>}
             <div id="chat-div">
                 <div id="messages-div">
-                    {messages.map(message => (
+                    {messages.map((message) => (
                         <>
-                            {typeof (message) === "string" ? (
-                                <div className={getMessageDivClassName(message)}>{message}</div>
+                            {message.index % 2 === 0 ? (
+                                <div className={getMessageDivClassName(message)}>{message.text}</div>
                             ) : (
-                                <div className={getMessageDivClassName(message)} dangerouslySetInnerHTML={{ __html: message["html"] }}></div>
+                                <div className={getMessageDivClassName(message)} dangerouslySetInnerHTML={{ __html: message.text }}></div>
                             )}
-                            <button className="copy-button" onClick={copyMessage(message)}>Copy</button>
+                            <button className="copy-button" onClick={copyMessage(accessToken!, chatUUID!, message)}>Copy</button>
                         </>
                     ))}
                     {currentBotMessage && (<div className="bot-message-div">{currentBotMessage}</div>)}
@@ -107,17 +137,35 @@ function autoResizePromptTextArea() {
 }
 
 function getMessageDivClassName(message: Message) {
-    return typeof (message) === "string" ? "user-message-div" : "bot-message-div"
+    return message.index % 2 === 0 ? "user-message-div" : "bot-message-div"
 }
 
-function copyMessage(message: Message) {
+function copyMessage(accessToken: string, chatUUID: string, message: Message) {
     return (event: React.MouseEvent<HTMLButtonElement>) => {
         const button = event.currentTarget
-        const text = (typeof (message) === "string" ? message : message["markdown"]) || ""
-        navigator.clipboard.writeText(text).then(() => {
-            button.textContent = "Copied!"
-            setTimeout(() => { button.textContent = "Copy" }, 2000)
-        })
+
+        const writeToClipboard = (text: string) => {
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = "Copied!"
+                setTimeout(() => { button.textContent = "Copy" }, 2000)
+            })
+        }
+
+        if (message.index % 2 === 0) {
+            writeToClipboard(message.text)
+        } else {
+            fetch("/api/get-message/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ access_token: accessToken, chat_uuid: chatUUID, message_index: message.index })
+            }).then(response => response.json()).then(data => {
+                if (data.text) {
+                    writeToClipboard(data.text)
+                } else {
+                    alert("Copying of message was not possible")
+                }
+            })
+        }
     }
 }
 

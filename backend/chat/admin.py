@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
 
-from .models import User
+from .models import Chat, Message, User
 
 admin.site.unregister(Group)
 
@@ -31,3 +31,12 @@ class UserAdmin(BaseUserAdmin):
     )
 
 admin.site.register(User, UserAdmin)
+
+class MessageInline(admin.StackedInline):
+    model = Message
+
+class ChatAdmin(admin.ModelAdmin):
+    inlines = [MessageInline]
+    list_display = ["user", "title", "is_complete", "date_time", "uuid"]
+
+admin.site.register(Chat, ChatAdmin)
