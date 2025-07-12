@@ -5,6 +5,11 @@ from .utils import markdown_to_html
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
+        self.user = self.scope["user"]
+        if self.user.is_anonymous:
+            await self.close()
+            return
+
         self.user_messages = []
         self.bot_messages = []
         await self.accept()

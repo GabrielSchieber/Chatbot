@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import "./ChatPage.css"
-import { isLoggedIn, logout } from "../auth";
+import { isLoggedIn, logout } from "../auth"
 
 type Message = string | { markdown: string; html: string }
 
@@ -10,6 +10,7 @@ export default function ChatPage() {
     const currentBotMessageRef = useRef("")
     const [currentBotMessage, setCurrentBotMessage] = useState("")
     const socket = useRef<WebSocket | null>(null)
+    const acessToken = localStorage.getItem("access_token")
 
     const sendMessage = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (socket.current && event.key === "Enter" && !event.shiftKey && input.trim()) {
@@ -22,7 +23,7 @@ export default function ChatPage() {
     }
 
     const receiveMessage = () => {
-        socket.current = new WebSocket(`ws://${window.location.host}/ws/chat/`)
+        socket.current = new WebSocket(`ws://${window.location.host}/ws/chat/?token=${acessToken}`)
 
         socket.current.addEventListener("message", event => {
             const data = JSON.parse(event.data)
