@@ -7,7 +7,9 @@ export async function login(email: string, password: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email, password: password })
     })
-    return await response.json()
+    if (!response.ok) {
+        throw Error("Login was not possible")
+    }
 }
 
 export async function logout() {
