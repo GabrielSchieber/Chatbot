@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import "./ChatPage.css"
-import { isLoggedIn, logout } from "../auth"
+import { logout } from "../auth"
 import { useParams } from "react-router"
 
 type Message = { index: number, text: string }
@@ -13,7 +13,6 @@ export default function ChatPage() {
     const currentBotMessageRef = useRef("")
     const [currentBotMessage, setCurrentBotMessage] = useState("")
     const socket = useRef<WebSocket | null>(null)
-    const accessToken = localStorage.getItem("access_token")
     const shouldLoadMessages = useRef(true)
 
     const loadMessages = () => {
@@ -22,8 +21,9 @@ export default function ChatPage() {
 
             fetch("/api/get-messages/", {
                 method: "POST",
+                credentials: "include",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ access_token: accessToken, chat_uuid: chatUUID })
+                body: JSON.stringify({ chat_uuid: chatUUID })
             }).then(response => response.json()).then(data => {
                 if (data.messages) {
                     for (let i = 0; i < data.messages.length; i++) {
@@ -47,26 +47,24 @@ export default function ChatPage() {
     }
 
     const receiveMessage = () => {
-        if (!socket.current) {
-            const webSocketURL = chatUUID ? `ws://${window.location.host}/ws/chat/${chatUUID}/?token=${accessToken}` : `ws://${window.location.host}/ws/chat/?token=${accessToken}`
-            socket.current = new WebSocket(webSocketURL)
+        const webSocketURL = chatUUID ? `ws://${location.host}/ws/chat/${chatUUID}/` : `ws://${location.host}/ws/chat/`
+        socket.current = new WebSocket(webSocketURL)
 
-            socket.current.addEventListener("message", event => {
-                const data = JSON.parse(event.data)
-                if (data.token) {
-                    currentBotMessageRef.current += data.token
-                    setCurrentBotMessage(currentBotMessageRef.current)
-                } else if (data.message) {
-                    setMessages(previous => [...previous, { index: previous.length, text: data.message }])
-                    currentBotMessageRef.current = ""
-                    setCurrentBotMessage("")
-                } else if (data.redirect) {
-                    location.href = data.redirect
-                }
-            })
+        socket.current!.addEventListener("message", event => {
+            const data = JSON.parse(event.data)
+            if (data.token) {
+                currentBotMessageRef.current += data.token
+                setCurrentBotMessage(currentBotMessageRef.current)
+            } else if (data.message) {
+                setMessages(previous => [...previous, { index: previous.length, text: data.message }])
+                currentBotMessageRef.current = ""
+                setCurrentBotMessage("")
+            } else if (data.redirect) {
+                location.href = data.redirect
+            }
+        })
 
-            return () => socket.current?.close()
-        }
+        return () => socket.current?.close()
     }
 
     useEffect(() => {
@@ -74,11 +72,11 @@ export default function ChatPage() {
         receiveMessage()
         autoAdaptTheme()
         autoResizePromptTextArea()
-    })
+    }, [])
 
     return (
         <>
-            {isLoggedIn() && <button id="logout-button" onClick={handleLogout}>Log out</button>}
+            {<button id="logout-button" onClick={handleLogout}>Log out</button>}
             <div id="chat-div">
                 <div id="messages-div">
                     {messages.map((message) => (
@@ -88,19 +86,19 @@ export default function ChatPage() {
                             ) : (
                                 <div className={getMessageDivClassName(message)} dangerouslySetInnerHTML={{ __html: message.text }}></div>
                             )}
-                            <button className="copy-button" onClick={copyMessage(accessToken!, chatUUID!, message)}>Copy</button>
+                            <button className="copy-button" onClick={copyMessage(chatUUID!, message)}>Copy</button>
                         </>
                     ))}
                     {currentBotMessage && (<div className="bot-message-div">{currentBotMessage}</div>)}
                 </div>
                 <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here.." />
-            </div >
+            </div>
         </>
     )
 }
 
 function autoAdaptTheme() {
-    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    if (matchMedia("(prefers-color-scheme: dark)").matches) {
         import("./code_dark.css")
     } else {
         import("./code_light.css")
@@ -140,7 +138,7 @@ function getMessageDivClassName(message: Message) {
     return message.index % 2 === 0 ? "user-message-div" : "bot-message-div"
 }
 
-function copyMessage(accessToken: string, chatUUID: string, message: Message) {
+function copyMessage(chatUUID: string, message: Message) {
     return (event: React.MouseEvent<HTMLButtonElement>) => {
         const button = event.currentTarget
 
@@ -156,8 +154,9 @@ function copyMessage(accessToken: string, chatUUID: string, message: Message) {
         } else {
             fetch("/api/get-message/", {
                 method: "POST",
+                credentials: "include",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ access_token: accessToken, chat_uuid: chatUUID, message_index: message.index })
+                body: JSON.stringify({ chat_uuid: chatUUID, message_index: message.index })
             }).then(response => response.json()).then(data => {
                 if (data.text) {
                     writeToClipboard(data.text)
