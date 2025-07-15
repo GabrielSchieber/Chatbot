@@ -1,10 +1,18 @@
+#new-chat-button,
 #logout-button {
     position: absolute;
-    right: 0;
     margin: 10px;
     padding: 10px;
     border-radius: 10px;
     background-color: var(--background-color5);
+}
+
+#new-chat-button {
+    left: 0;
+}
+
+#logout-button {
+    right: 0;
 }
 
 #logout-button:hover {

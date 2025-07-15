@@ -81,7 +81,8 @@ export default function ChatPage() {
 
     return (
         <>
-            {<button id="logout-button" onClick={handleLogout}>Log out</button>}
+            <button id="new-chat-button" onClick={handleNewChat}>New chat</button>
+            <button id="logout-button" onClick={handleLogout}>Log out</button>
             <div id="chat-div">
                 <div id="messages-div">
                     {messages.map(message => (
@@ -171,6 +172,10 @@ function copyMessage(chatUUID: string, message: Message) {
             })
         }
     }
+}
+
+function handleNewChat() {
+    location.href = "/"
 }
 
 async function handleLogout() {
