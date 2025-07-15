@@ -1,17 +1,18 @@
-#new-chat-button,
+html,
+body {
+    display: flex;
+}
+
 #logout-button {
-    position: absolute;
     margin: 10px;
     padding: 10px;
     border-radius: 10px;
+    align-self: start;
     background-color: var(--background-color5);
 }
 
-#new-chat-button {
-    left: 0;
-}
-
 #logout-button {
+    position: absolute;
     right: 0;
 }
 
@@ -21,6 +22,92 @@
 
 #logout-button:active {
     background-color: var(--background-color5);
+}
+
+#buttons-div {
+    position: absolute;
+    display: flex;
+    width: 250px;
+    left: 0;
+    align-self: flex-start;
+    align-items: center;
+    justify-content: space-between;
+    transition: background-color 0.3s ease;
+    background-color: var(--background-color2);
+}
+
+#buttons-div.invisible {
+    background-color: transparent;
+}
+
+#buttons-div.visible {
+    background-color: var(--background-color2);
+}
+
+#toggle-sidebar-button,
+#new-chat-button {
+    width: 100%;
+    height: 50px;
+    font-size: 30px;
+    align-content: center;
+    text-align: center;
+    border-radius: 10px;
+    outline: none;
+    background-color: transparent;
+}
+
+#toggle-sidebar-button:hover,
+#new-chat-button:hover {
+    background-color: var(--background-color4);
+}
+
+#toggle-sidebar-button:active,
+#new-chat-button:active {
+    background-color: transparent;
+}
+
+#sidebar-div {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+    gap: 10px;
+    width: 250px;
+    padding: 20px 0 20px 0;
+    height: calc(100% - 90px);
+
+    align-items: center;
+    align-self: flex-end;
+    justify-self: left;
+
+    overflow-x: hidden;
+    overflow-y: scroll;
+    white-space: nowrap;
+
+    transition: width 0.3s ease, opacity 0.3s ease;
+    background-color: var(--background-color2);
+}
+
+#sidebar-div.invisible {
+    width: 0;
+    opacity: 0;
+}
+
+#sidebar-div.visible {
+    width: 250px;
+    opacity: 1;
+}
+
+.past-chat-a {
+    width: 80%;
+    padding: 10px 15px 10px 15px;
+    border-radius: 15px;
+    text-decoration: none;
+    font-size: 17px;
+    background-color: var(--background-color4);
+}
+
+.past-chat-a:hover {
+    text-decoration: underline;
 }
 
 #chat-div {

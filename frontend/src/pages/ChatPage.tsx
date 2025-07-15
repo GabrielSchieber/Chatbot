@@ -4,17 +4,41 @@ import "./ChatPage.css"
 import { logout } from "../auth"
 import { useParams } from "react-router"
 
+type Chat = { title: string, uuid: string }
 type Message = { index: number, text: string }
 
 export default function ChatPage() {
     const { chatUUID } = useParams()
 
+    const [chats, setChats] = useState<Chat[]>([])
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState("")
     const currentBotMessageRef = useRef("")
     const [currentBotMessage, setCurrentBotMessage] = useState("")
     const socket = useRef<WebSocket | null>(null)
+    const shouldLoadChats = useRef(true)
     const shouldLoadMessages = useRef(true)
+    const [isSidebarVisible, setIsSidebarVisible] = useState(true)
+
+    const loadChats = () => {
+        if (shouldLoadChats.current && chats.length === 0) {
+            shouldLoadChats.current = false
+
+            fetch("/api/get-chats/", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" }
+            }).then(response => response.json()).then(data => {
+                if (data.chats) {
+                    for (let i = 0; i < data.chats.length; i++) {
+                        setChats(previous => [...previous, data.chats[i]])
+                    }
+                } else {
+                    alert("Fetching of chats was not possible")
+                }
+            })
+        }
+    }
 
     const loadMessages = () => {
         if (shouldLoadMessages.current && messages.length === 0 && chatUUID) {
@@ -69,20 +93,30 @@ export default function ChatPage() {
     }
 
     useEffect(() => {
+        loadChats()
         loadMessages()
         receiveMessage()
         autoAdaptTheme()
         autoResizePromptTextArea()
     }, [])
 
-    useEffect(() => {
-        handleCopyingOfCodeBlocks(messages)
-    }, [messages, input])
+    useEffect(() => { handleCopyingOfCodeBlocks(messages) }, [messages, input])
 
     return (
         <>
-            <button id="new-chat-button" onClick={handleNewChat}>New chat</button>
             <button id="logout-button" onClick={handleLogout}>Log out</button>
+
+            <div id="buttons-div" className={isSidebarVisible ? "visible" : "invisible"}>
+                <button id="toggle-sidebar-button" onClick={() => setIsSidebarVisible(prev => !prev)}>≡</button>
+                <button id="new-chat-button" onClick={handleNewChat}>✏</button>
+            </div>
+
+            <div id="sidebar-div" className={isSidebarVisible ? "visible" : "invisible"}>
+                {chats.map(chat => (
+                    <a key={chat.uuid} className="past-chat-a" href={`/chat/${chat.uuid}`}>{chat.title}</a>
+                ))}
+            </div>
+
             <div id="chat-div">
                 <div id="messages-div">
                     {messages.map(message => (

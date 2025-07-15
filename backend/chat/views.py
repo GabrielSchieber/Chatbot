@@ -78,7 +78,17 @@ class GetMessages(APIView):
         try:
             chat_uuid = request.data["chat_uuid"]
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            messages = [m.text if m.is_user_message else markdown_to_html(m.text) for m in Message.objects.filter(chat = chat)]                
+            messages = [m.text if m.is_user_message else markdown_to_html(m.text) for m in Message.objects.filter(chat = chat)]
             return Response({"messages": messages})
+        except Exception:
+            return Response(status = 400)
+
+class GetChats(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            chats = Chat.objects.filter(user = request.user)
+            return Response({"chats": [{"title": chat.title, "uuid": chat.uuid} for chat in chats]})
         except Exception:
             return Response(status = 400)
