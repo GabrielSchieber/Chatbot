@@ -18,7 +18,10 @@ export default function ChatPage() {
     const socket = useRef<WebSocket | null>(null)
     const shouldLoadChats = useRef(true)
     const shouldLoadMessages = useRef(true)
-    const [isSidebarVisible, setIsSidebarVisible] = useState(true)
+    const [isSidebarVisible, setIsSidebarVisible] = useState(() => {
+        const stored = localStorage.getItem("isSidebarVisible")
+        return stored === null ? true : stored === "true"
+    })
 
     const loadChats = () => {
         if (shouldLoadChats.current && chats.length === 0) {
@@ -101,6 +104,7 @@ export default function ChatPage() {
     }, [])
 
     useEffect(() => { handleCopyingOfCodeBlocks(messages) }, [messages, input])
+    useEffect(() => { localStorage.setItem("isSidebarVisible", String(isSidebarVisible)) }, [isSidebarVisible])
 
     return (
         <>
