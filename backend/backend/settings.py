@@ -11,8 +11,6 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     "chat",
     "daphne",
-    "rest_framework",
-    "rest_framework_simplejwt.token_blacklist",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -29,7 +27,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "chat.middleware.jwt_cookie_auth.JWTAuthCookieMiddleware"
+    "chat.middleware.JWTAuthCookieMiddleware"
 ]
 
 ROOT_URLCONF = "backend.urls"
@@ -88,9 +86,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
-REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"]}
-
 AUTH_USER_MODEL = "chat.User"
+
+REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"]}
 
 SIMPLE_JWT = {
     "AUTH_COOKIE": "access_token",
