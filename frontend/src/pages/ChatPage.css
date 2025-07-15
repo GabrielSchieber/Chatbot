@@ -69,9 +69,40 @@
         padding: 0;
     }
 
+    pre {
+        padding: 5px 15px 10px 15px;
+    }
+
+    .code-block-header-div {
+        display: flex;
+        height: 40px;
+        padding: 0 20px 0 20px;
+        align-items: center;
+        justify-content: space-between;
+        background-color: var(--background-color2);
+    }
+
+    .code-block-header-p {
+        font-size: 17px;
+    }
+
+    .code-block-header-button {
+        padding: 5px 10px 5px 10px;
+        font-size: 14px;
+        border-radius: 10px;
+        background-color: var(--background-color3);
+    }
+
+    .code-block-header-button:hover {
+        background-color: var(--background-color4);
+    }
+
+    .code-block-header-button:active {
+        background-color: var(--background-color3);
+    }
+
     .codehilite {
-        margin: 0;
-        padding: 1px 15px 1px 15px;
+        overflow: hidden;
         border-radius: 10px;
     }
 }

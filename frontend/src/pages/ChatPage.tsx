@@ -75,6 +75,10 @@ export default function ChatPage() {
         autoResizePromptTextArea()
     }, [])
 
+    useEffect(() => {
+        handleCopyingOfCodeBlocks(messages)
+    }, [messages, input])
+
     return (
         <>
             {<button id="logout-button" onClick={handleLogout}>Log out</button>}
@@ -85,7 +89,7 @@ export default function ChatPage() {
                             {message.index % 2 === 0 ? (
                                 <div className={getMessageDivClassName(message)}>{message.text}</div>
                             ) : (
-                                <div className={getMessageDivClassName(message)} dangerouslySetInnerHTML={{ __html: message.text }}></div>
+                                <div id={`bot-message-${message.index}`} className={getMessageDivClassName(message)} dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message) }}></div>
                             )}
                             <button className="copy-button" onClick={copyMessage(chatUUID!, message)}>Copy</button>
                         </React.Fragment>
@@ -172,4 +176,52 @@ function copyMessage(chatUUID: string, message: Message) {
 async function handleLogout() {
     await logout()
     location.reload()
+}
+
+function createBotMessageHTML(message: Message) {
+    const botMessageDiv = document.createElement("div")
+    botMessageDiv.innerHTML = message.text
+
+    const codehilites = botMessageDiv.querySelectorAll(".codehilite")
+    codehilites.forEach(codehilite => {
+        const codeBlockHeaderDiv = document.createElement("div")
+        codeBlockHeaderDiv.className = "code-block-header-div"
+
+        const codeBlockHeaderP = document.createElement("p")
+        codeBlockHeaderP.className = "code-block-header-p"
+        codeBlockHeaderP.textContent = codehilite.getAttribute("data-language") || "code"
+        codeBlockHeaderDiv.appendChild(codeBlockHeaderP)
+
+        const codeBlockHeaderButton = document.createElement("button")
+        codeBlockHeaderButton.className = "code-block-header-button"
+        codeBlockHeaderButton.textContent = "Copy"
+        codeBlockHeaderDiv.appendChild(codeBlockHeaderButton)
+
+        codehilite.insertBefore(codeBlockHeaderDiv, codehilite.childNodes[0])
+    })
+
+    return botMessageDiv.innerHTML
+}
+
+function handleCopyingOfCodeBlocks(messages: Message[]) {
+    messages.forEach(message => {
+        if (message.index % 2 !== 0) {
+            const root = document.getElementById(`bot-message-${message.index}`)
+            if (root) {
+                const buttons = root.querySelectorAll(".code-block-header-button")
+                buttons.forEach(button => {
+                    button.addEventListener("click", () => {
+                        const code = button.parentElement?.nextElementSibling?.textContent
+                        if (code) {
+                            navigator.clipboard.writeText(code).then(() => {
+                                const originalText = button.textContent
+                                button.textContent = "Copied!"
+                                setTimeout(() => { button.textContent = originalText }, 2000)
+                            })
+                        }
+                    })
+                })
+            }
+        }
+    })
 }
