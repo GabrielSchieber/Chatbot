@@ -1,3 +1,4 @@
+import React from "react"
 import { useState, useEffect, useRef } from "react"
 import "./ChatPage.css"
 import { logout } from "../auth"
@@ -79,15 +80,15 @@ export default function ChatPage() {
             {<button id="logout-button" onClick={handleLogout}>Log out</button>}
             <div id="chat-div">
                 <div id="messages-div">
-                    {messages.map((message) => (
-                        <>
+                    {messages.map(message => (
+                        <React.Fragment key={message.index}>
                             {message.index % 2 === 0 ? (
                                 <div className={getMessageDivClassName(message)}>{message.text}</div>
                             ) : (
                                 <div className={getMessageDivClassName(message)} dangerouslySetInnerHTML={{ __html: message.text }}></div>
                             )}
                             <button className="copy-button" onClick={copyMessage(chatUUID!, message)}>Copy</button>
-                        </>
+                        </React.Fragment>
                     ))}
                     {currentBotMessage && (<div className="bot-message-div">{currentBotMessage}</div>)}
                 </div>
