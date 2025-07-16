@@ -57,9 +57,19 @@ body {
     background-color: transparent;
 }
 
+#delete-account-button,
 #logout-button {
+    padding: 5px 0 5px 0;
     border-radius: 10px;
     background-color: var(--background-color2);
+}
+
+#delete-account-button:hover {
+    background-color: rgb(150, 40, 20);
+}
+
+#delete-account-button:active {
+    background-color: rgb(120, 40, 20);
 }
 
 #logout-button:hover {

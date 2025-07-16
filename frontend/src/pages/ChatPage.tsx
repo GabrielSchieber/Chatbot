@@ -129,6 +129,7 @@ export default function ChatPage() {
                 <div id="settings-div">
                     <p id="settings-p">Settings</p>
                     <button id="close-settings-button" onClick={_ => setIsSettingsVisible(false)}>X</button>
+                    <button id="delete-account-button" onClick={handleAccountDeletion}>Delete account</button>
                     <button id="logout-button" onClick={handleLogout}>Log out</button>
                 </div>
             }
@@ -376,4 +377,16 @@ function deleteChat(chat: Chat) {
             alert("Deletion of chat was not possible")
         }
     })
+}
+
+function handleAccountDeletion() {
+    if (confirm("Are you sure you want to delete your account?")) {
+        fetch("/api/delete-ccount/", { method: "POST", credentials: "include" }).then(response => {
+            if (response.status !== 200) {
+                alert("Deletion of account was not possible")
+            } else {
+                location.href = "/"
+            }
+        })
+    }
 }
