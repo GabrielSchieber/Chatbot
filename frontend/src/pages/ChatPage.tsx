@@ -31,6 +31,7 @@ export default function ChatPage() {
     const [renamingTitle, setRenamingTitle] = useState<string>("")
     const [isSettingsVisible, setIsSettingsVisible] = useState(false)
     const [theme, setTheme] = useState<Theme>(() => { return (localStorage.getItem("theme") as Theme) || "system" })
+    const settingsRef = useRef<HTMLDivElement | null>(null)
 
     const loadChats = () => {
         if (shouldLoadChats.current && chats.length === 0) {
@@ -140,12 +141,43 @@ export default function ChatPage() {
         autoAdaptTheme()
     }, [theme])
 
+    useEffect(() => {
+        if (!isSettingsVisible) return
+
+        const closeSettingsOnOutsideClick = (event: MouseEvent) => {
+            if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+                setIsSettingsVisible(false)
+            }
+        }
+
+        document.addEventListener("mousedown", closeSettingsOnOutsideClick)
+        return () => {
+            document.removeEventListener("mousedown", closeSettingsOnOutsideClick)
+        }
+    }, [isSettingsVisible])
+
+    useEffect(() => {
+        if (!isSettingsVisible) return
+
+        const closeSettingsOnEscape = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                setIsSettingsVisible(false)
+            }
+        }
+
+        document.addEventListener("keydown", closeSettingsOnEscape)
+        return () => {
+            document.removeEventListener("keydown", closeSettingsOnEscape)
+        }
+    }, [isSettingsVisible])
+
     return (
         <>
             {!isSettingsVisible && <button id="open-settings-button" onClick={_ => setIsSettingsVisible(true)}>⚙</button>}
 
+            {isSettingsVisible && <div id="settings-backdrop-div"></div>}
             {isSettingsVisible &&
-                <div id="settings-div">
+                <div id="settings-div" ref={settingsRef}>
                     <p id="settings-p">Settings</p>
 
                     <button id="close-settings-button" onClick={_ => setIsSettingsVisible(false)}>X</button>
