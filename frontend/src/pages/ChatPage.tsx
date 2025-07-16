@@ -30,6 +30,7 @@ export default function ChatPage() {
     const [renamingUUID, setRenamingUUID] = useState<string | null>(null)
     const [renamingTitle, setRenamingTitle] = useState<string>("")
     const [isSettingsVisible, setIsSettingsVisible] = useState(false)
+    const [isHidingSettings, setIsHidingSettings] = useState(false)
     const [theme, setTheme] = useState<Theme>(() => { return (localStorage.getItem("theme") as Theme) || "system" })
     const settingsRef = useRef<HTMLDivElement | null>(null)
 
@@ -146,7 +147,7 @@ export default function ChatPage() {
 
         const closeSettingsOnOutsideClick = (event: MouseEvent) => {
             if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
-                setIsSettingsVisible(false)
+                closeSettings()
             }
         }
 
@@ -161,7 +162,7 @@ export default function ChatPage() {
 
         const closeSettingsOnEscape = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
-                setIsSettingsVisible(false)
+                closeSettings()
             }
         }
 
@@ -171,16 +172,24 @@ export default function ChatPage() {
         }
     }, [isSettingsVisible])
 
+    const closeSettings = () => {
+        setIsHidingSettings(true)
+        setTimeout(() => {
+            setIsHidingSettings(false)
+            setIsSettingsVisible(false)
+        }, 300)
+    }
+
     return (
         <>
             {!isSettingsVisible && <button id="open-settings-button" onClick={_ => setIsSettingsVisible(true)}>⚙</button>}
 
             {isSettingsVisible && <div id="settings-backdrop-div"></div>}
-            {isSettingsVisible &&
-                <div id="settings-div" ref={settingsRef}>
+            {(isSettingsVisible || isHidingSettings) && (
+                <div id="settings-div" className={isHidingSettings ? "fade-out" : "fade-in"} ref={settingsRef}>
                     <p id="settings-p">Settings</p>
 
-                    <button id="close-settings-button" onClick={_ => setIsSettingsVisible(false)}>X</button>
+                    <button id="close-settings-button" onClick={closeSettings}>X</button>
 
                     <div id="theme-select-div">
                         <label id="theme-select-label">Theme</label>
@@ -206,7 +215,7 @@ export default function ChatPage() {
                         <button id="logout-button" onClick={async _ => { await logout(); location.reload() }}>Log out</button>
                     </div>
                 </div>
-            }
+            )}
 
             <div id="sidebar-div" className={isSidebarVisible ? "visible" : "invisible"}>
                 <div id="buttons-div">
