@@ -173,6 +173,16 @@ body {
     background-color: rgb(120, 40, 20);
 }
 
+.past-chat-rename-input {
+    font-size: 1em;
+    padding: 0.2em;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 17px;
+    outline: none;
+    background-color: var(--background-color2);
+}
+
 #chat-div {
     display: flex;
     flex-direction: column;

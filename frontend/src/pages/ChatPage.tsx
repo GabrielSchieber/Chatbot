@@ -23,6 +23,8 @@ export default function ChatPage() {
         return stored === null ? true : stored === "true"
     })
     const [openDropdownUUID, setOpenDropdownUUID] = useState<string | null>(null)
+    const [renamingUUID, setRenamingUUID] = useState<string | null>(null)
+    const [renamingTitle, setRenamingTitle] = useState<string>("")
 
     const loadChats = () => {
         if (shouldLoadChats.current && chats.length === 0) {
@@ -130,7 +132,30 @@ export default function ChatPage() {
                 <div id="history-div">
                     {chats.map(chat => (
                         <div key={chat.uuid} className="past-chat-div">
-                            <a className="past-chat-a" href={`/chat/${chat.uuid}`}>{chat.title}</a>
+                            {renamingUUID === chat.uuid ? (
+                                <input
+                                    className="past-chat-rename-input"
+                                    type="text"
+                                    value={renamingTitle}
+                                    onChange={e => setRenamingTitle(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === "Enter" && renamingTitle.trim()) {
+                                            renameChat(chat, renamingTitle.trim())
+                                            setChats(prev =>
+                                                prev.map(c =>
+                                                    c.uuid === chat.uuid ? { ...c, title: renamingTitle.trim() } : c
+                                                )
+                                            )
+                                            setRenamingUUID(null)
+                                        } else if (e.key === "Escape") {
+                                            setRenamingUUID(null)
+                                        }
+                                    }}
+                                    autoFocus
+                                />
+                            ) : (
+                                <a className="past-chat-a" href={`/chat/${chat.uuid}`}>{chat.title}</a>
+                            )}
                             <button
                                 className="past-chat-dropdown-button"
                                 onClick={() =>
@@ -144,15 +169,8 @@ export default function ChatPage() {
                                     <button
                                         className="past-chat-rename-button"
                                         onClick={() => {
-                                            const newTitle = prompt("Enter new title:", chat.title)
-                                            if (newTitle && newTitle !== chat.title) {
-                                                renameChat(chat, newTitle)
-                                                setChats(prev =>
-                                                    prev.map(c =>
-                                                        c.uuid === chat.uuid ? { ...c, title: newTitle } : c
-                                                    )
-                                                )
-                                            }
+                                            setRenamingUUID(chat.uuid)
+                                            setRenamingTitle(chat.title)
                                             setOpenDropdownUUID(null)
                                         }}
                                     >
