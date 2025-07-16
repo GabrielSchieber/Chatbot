@@ -57,6 +57,7 @@ body {
     background-color: transparent;
 }
 
+#delete-chats-button,
 #delete-account-button,
 #logout-button {
     padding: 5px 0 5px 0;
@@ -64,10 +65,12 @@ body {
     background-color: var(--background-color2);
 }
 
+#delete-chats-button:hover,
 #delete-account-button:hover {
     background-color: rgb(150, 40, 20);
 }
 
+#delete-chats-button:hover,
 #delete-account-button:active {
     background-color: rgb(120, 40, 20);
 }

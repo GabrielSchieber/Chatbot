@@ -112,19 +112,19 @@ export default function ChatPage() {
         autoAdaptTheme()
         autoResizePromptTextArea()
 
-        const handleClickOutside = (event: MouseEvent) => {
+        const closeDropdownOnOutsideClick = (event: MouseEvent) => {
             const target = event.target as HTMLElement
             if (!target.closest(".past-chat-div")) {
                 setOpenDropdownUUID(null)
             }
         }
-        document.addEventListener("click", handleClickOutside)
+        document.addEventListener("click", closeDropdownOnOutsideClick)
         return () => {
-            document.removeEventListener("click", handleClickOutside)
+            document.removeEventListener("click", closeDropdownOnOutsideClick)
         }
     }, [])
 
-    useEffect(() => { handleCopyingOfCodeBlocks(messages) }, [messages, input])
+    useEffect(() => { addEventListenerToCodeBlockCopyButtons(messages) }, [messages, input])
     useEffect(() => { localStorage.setItem("isSidebarVisible", String(isSidebarVisible)) }, [isSidebarVisible])
 
     return (
@@ -135,15 +135,16 @@ export default function ChatPage() {
                 <div id="settings-div">
                     <p id="settings-p">Settings</p>
                     <button id="close-settings-button" onClick={_ => setIsSettingsVisible(false)}>X</button>
-                    <button id="delete-account-button" onClick={handleAccountDeletion}>Delete account</button>
-                    <button id="logout-button" onClick={handleLogout}>Log out</button>
+                    <button id="delete-chats-button" onClick={deleteChats}>Delete chats</button>
+                    <button id="delete-account-button" onClick={deleteAccount}>Delete account</button>
+                    <button id="logout-button" onClick={async _ => { await logout(); location.reload() }}>Log out</button>
                 </div>
             }
 
             <div id="sidebar-div" className={isSidebarVisible ? "visible" : "invisible"}>
                 <div id="buttons-div">
                     <button id="toggle-sidebar-button" onClick={() => setIsSidebarVisible(prev => !prev)}>≡</button>
-                    <button id="new-chat-button" onClick={handleNewChat}>✏</button>
+                    <button id="new-chat-button" onClick={_ => location.href = "/"}>✏</button>
                 </div>
                 <div id="history-div">
                     {chats.map(chat => (
@@ -212,7 +213,7 @@ export default function ChatPage() {
                         </div>
                     ))}
                 </div>
-            </div>
+            </div >
 
             <div id="chat-div">
                 <div id="messages-div">
@@ -305,15 +306,6 @@ function copyMessage(chatUUID: string, message: Message) {
     }
 }
 
-function handleNewChat() {
-    location.href = "/"
-}
-
-async function handleLogout() {
-    await logout()
-    location.reload()
-}
-
 function createBotMessageHTML(message: Message) {
     const botMessageDiv = document.createElement("div")
     botMessageDiv.innerHTML = message.text
@@ -339,7 +331,7 @@ function createBotMessageHTML(message: Message) {
     return botMessageDiv.innerHTML
 }
 
-function handleCopyingOfCodeBlocks(messages: Message[]) {
+function addEventListenerToCodeBlockCopyButtons(messages: Message[]) {
     messages.forEach(message => {
         if (message.index % 2 !== 0) {
             const root = document.getElementById(`bot-message-${message.index}`)
@@ -388,9 +380,19 @@ function deleteChat(chat: Chat) {
     })
 }
 
-function handleAccountDeletion() {
+function deleteChats() {
+    fetch("/api/delete-chats/", { method: "POST", credentials: "include" }).then(response => {
+        if (response.status !== 200) {
+            alert("Deletion of chats was not possible")
+        } else {
+            location.href = "/"
+        }
+    })
+}
+
+function deleteAccount() {
     if (confirm("Are you sure you want to delete your account?")) {
-        fetch("/api/delete-ccount/", { method: "POST", credentials: "include" }).then(response => {
+        fetch("/api/delete-account/", { method: "POST", credentials: "include" }).then(response => {
             if (response.status !== 200) {
                 alert("Deletion of account was not possible")
             } else {

@@ -119,6 +119,16 @@ class DeleteChat(APIView):
         except Exception:
             return Response(status = 400)
 
+class DeleteChats(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            Chat.objects.filter(user = request.user).delete()
+            return Response(status = 200)
+        except Exception:
+            return Response(status = 400)
+
 class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]
 
