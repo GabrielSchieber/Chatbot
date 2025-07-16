@@ -76,14 +76,28 @@ body {
     background-color: var(--background-color2);
 }
 
+#theme-select-div,
+#delete-chats-button-div,
+#delete-account-button-div,
+#logout-button-div {
+    display: flex;
+    width: 90%;
+    padding: 10px;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 10px;
+    border: solid var(--background-color5) 3px;
+}
+
 #theme-select,
 #delete-chats-button,
 #delete-account-button,
 #logout-button {
-    width: 80%;
-    border-radius: 10px;
+    width: 40%;
     padding: 5px 0 5px 0;
     text-align: center;
+    border: solid var(--background-color1) 2px;
+    border-radius: 10px;
     outline: none;
     background-color: var(--background-color2);
 }
