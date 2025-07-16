@@ -1,11 +1,15 @@
 import React from "react"
 import { useState, useEffect, useRef } from "react"
+import { useParams } from "react-router"
+
 import "./ChatPage.css"
 import { logout } from "../auth"
-import { useParams } from "react-router"
 
 type Chat = { title: string, uuid: string }
 type Message = { index: number, text: string }
+type Theme = "system" | "light" | "dark"
+
+autoAdaptTheme()
 
 export default function ChatPage() {
     const { chatUUID } = useParams()
@@ -26,6 +30,7 @@ export default function ChatPage() {
     const [renamingUUID, setRenamingUUID] = useState<string | null>(null)
     const [renamingTitle, setRenamingTitle] = useState<string>("")
     const [isSettingsVisible, setIsSettingsVisible] = useState(false)
+    const [theme, setTheme] = useState<Theme>(() => { return (localStorage.getItem("theme") as Theme) || "system" })
 
     const loadChats = () => {
         if (shouldLoadChats.current && chats.length === 0) {
@@ -109,9 +114,13 @@ export default function ChatPage() {
         loadChats()
         loadMessages()
         receiveMessage()
-        autoAdaptTheme()
         autoResizePromptTextArea()
+    }, [])
 
+    useEffect(() => { addEventListenerToCodeBlockCopyButtons(messages) }, [messages, input])
+    useEffect(() => { localStorage.setItem("isSidebarVisible", String(isSidebarVisible)) }, [isSidebarVisible])
+
+    useEffect(() => {
         const closeDropdownOnOutsideClick = (event: MouseEvent) => {
             const target = event.target as HTMLElement
             if (!target.closest(".past-chat-div")) {
@@ -124,8 +133,10 @@ export default function ChatPage() {
         }
     }, [])
 
-    useEffect(() => { addEventListenerToCodeBlockCopyButtons(messages) }, [messages, input])
-    useEffect(() => { localStorage.setItem("isSidebarVisible", String(isSidebarVisible)) }, [isSidebarVisible])
+    useEffect(() => {
+        localStorage.setItem("theme", theme)
+        autoAdaptTheme()
+    }, [theme])
 
     return (
         <>
@@ -135,6 +146,11 @@ export default function ChatPage() {
                 <div id="settings-div">
                     <p id="settings-p">Settings</p>
                     <button id="close-settings-button" onClick={_ => setIsSettingsVisible(false)}>X</button>
+                    <select id="theme-select" value={theme} onChange={event => setTheme(event.target.value as Theme)}>
+                        <option value="system">System</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
                     <button id="delete-chats-button" onClick={deleteChats}>Delete chats</button>
                     <button id="delete-account-button" onClick={deleteAccount}>Delete account</button>
                     <button id="logout-button" onClick={async _ => { await logout(); location.reload() }}>Log out</button>
@@ -236,11 +252,43 @@ export default function ChatPage() {
 }
 
 function autoAdaptTheme() {
-    if (matchMedia("(prefers-color-scheme: dark)").matches) {
-        import("./code_dark.css")
-    } else {
-        import("./code_light.css")
+    const theme = localStorage.getItem("theme")
+    switch (theme) {
+        case "light":
+            document.documentElement.classList.remove("dark")
+            document.documentElement.classList.add("light")
+            updateCodeTheme("light")
+            break
+        case "dark":
+            document.documentElement.classList.remove("light")
+            document.documentElement.classList.add("dark")
+            updateCodeTheme("dark")
+            break
+        default:
+            document.documentElement.classList.remove("light", "dark")
+            updateCodeTheme("system")
     }
+}
+
+function updateCodeTheme(theme: Theme) {
+    let link = document.getElementById("code-block-theme-link") as HTMLLinkElement
+    if (!link) {
+        link = document.createElement("link")
+        link.id = "code-block-theme-link"
+        link.rel = "stylesheet"
+    }
+    switch (theme) {
+        case "light":
+            link.href = "/src/pages/code_light.css"
+            break
+        case "dark":
+            link.href = "/src/pages/code_dark.css"
+            break
+        default:
+            link.href = matchMedia("(prefers-color-scheme: dark)").matches ? "/src/pages/code_dark.css" : "/src/pages/code_light.css"
+            break
+    }
+    document.head.appendChild(link)
 }
 
 function autoResizePromptTextArea() {

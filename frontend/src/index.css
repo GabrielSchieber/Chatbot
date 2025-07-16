@@ -1,10 +1,22 @@
 :root {
+  --light-background-color1: rgb(180, 182, 185);
+  --light-background-color2: rgb(190, 192, 195);
+  --light-background-color3: rgb(200, 202, 205);
+  --light-background-color4: rgb(210, 212, 215);
+  --light-background-color5: rgb(220, 222, 225);
+
+  --dark-background-color1: rgb(15, 17, 20);
+  --dark-background-color2: rgb(25, 27, 30);
+  --dark-background-color3: rgb(35, 37, 40);
+  --dark-background-color4: rgb(45, 47, 50);
+  --dark-background-color5: rgb(55, 57, 60);
+
   @media(prefers-color-scheme: light) {
-    --background-color1: rgb(180, 182, 185);
-    --background-color2: rgb(190, 192, 195);
-    --background-color3: rgb(200, 202, 205);
-    --background-color4: rgb(210, 212, 215);
-    --background-color5: rgb(220, 222, 225);
+    --background-color1: var(--light-background-color1);
+    --background-color2: var(--light-background-color2);
+    --background-color3: var(--light-background-color3);
+    --background-color4: var(--light-background-color4);
+    --background-color5: var(--light-background-color5);
 
     * {
       color: black;
@@ -12,39 +24,15 @@
   }
 
   @media(prefers-color-scheme: dark) {
-    --background-color1: rgb(15, 17, 20);
-    --background-color2: rgb(25, 27, 30);
-    --background-color3: rgb(35, 37, 40);
-    --background-color4: rgb(45, 47, 50);
-    --background-color5: rgb(55, 57, 60);
+    --background-color1: var(--dark-background-color1);
+    --background-color2: var(--dark-background-color2);
+    --background-color3: var(--dark-background-color3);
+    --background-color4: var(--dark-background-color4);
+    --background-color5: var(--dark-background-color5);
 
     * {
       color: white;
     }
-  }
-}
-
-:root[data-theme="light"] {
-  --background-color1: rgb(180, 182, 185);
-  --background-color2: rgb(190, 192, 195);
-  --background-color3: rgb(200, 202, 205);
-  --background-color4: rgb(210, 212, 215);
-  --background-color5: rgb(220, 222, 225);
-
-  * {
-    color: black;
-  }
-}
-
-:root[data-theme="dark"] {
-  --background-color1: rgb(15, 17, 20);
-  --background-color2: rgb(25, 27, 30);
-  --background-color3: rgb(35, 37, 40);
-  --background-color4: rgb(45, 47, 50);
-  --background-color5: rgb(55, 57, 60);
-
-  * {
-    color: white;
   }
 }
 
@@ -64,6 +52,30 @@ body {
   justify-self: center;
 
   background-color: var(--background-color3);
+}
+
+html.light {
+  --background-color1: var(--light-background-color1);
+  --background-color2: var(--light-background-color2);
+  --background-color3: var(--light-background-color3);
+  --background-color4: var(--light-background-color4);
+  --background-color5: var(--light-background-color5);
+
+  * {
+    color: black;
+  }
+}
+
+html.dark {
+  --background-color1: var(--dark-background-color1);
+  --background-color2: var(--dark-background-color2);
+  --background-color3: var(--dark-background-color3);
+  --background-color4: var(--dark-background-color4);
+  --background-color5: var(--dark-background-color5);
+
+  * {
+    color: white;
+  }
 }
 
 * {
