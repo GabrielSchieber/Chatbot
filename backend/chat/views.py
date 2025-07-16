@@ -92,3 +92,29 @@ class GetChats(APIView):
             return Response({"chats": [{"title": chat.title, "uuid": chat.uuid} for chat in chats]})
         except Exception:
             return Response(status = 400)
+
+class RenameChat(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            chat_uuid = request.data["chat_uuid"]
+            new_title = request.data["new_title"]
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            chat.title = new_title
+            chat.save()
+            return Response(status = 200)
+        except Exception:
+            return Response(status = 400)
+
+class DeleteChat(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            chat_uuid = request.data["chat_uuid"]
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            chat.delete()
+            return Response(status = 200)
+        except Exception:
+            return Response(status = 400)

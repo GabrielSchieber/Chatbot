@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import GetChats, GetMessage, GetMessages, LoginView, LogoutView, MeView, RegisterView
+from .views import DeleteChat, GetChats, GetMessage, GetMessages, LoginView, LogoutView, MeView, RegisterView, RenameChat
 
 urlpatterns = [
     path("signup/", RegisterView.as_view()),
@@ -9,5 +9,7 @@ urlpatterns = [
     path("me/", MeView.as_view()),
     path("get-message/", GetMessage.as_view()),
     path("get-messages/", GetMessages.as_view()),
-    path("get-chats/", GetChats.as_view())
+    path("get-chats/", GetChats.as_view()),
+    path("rename-chat/", RenameChat.as_view()),
+    path("delete-chat/", DeleteChat.as_view())
 ]

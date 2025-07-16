@@ -22,6 +22,7 @@ export default function ChatPage() {
         const stored = localStorage.getItem("isSidebarVisible")
         return stored === null ? true : stored === "true"
     })
+    const [openDropdownUUID, setOpenDropdownUUID] = useState<string | null>(null)
 
     const loadChats = () => {
         if (shouldLoadChats.current && chats.length === 0) {
@@ -101,6 +102,17 @@ export default function ChatPage() {
         receiveMessage()
         autoAdaptTheme()
         autoResizePromptTextArea()
+
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement
+            if (!target.closest(".past-chat-div")) {
+                setOpenDropdownUUID(null)
+            }
+        }
+        document.addEventListener("click", handleClickOutside)
+        return () => {
+            document.removeEventListener("click", handleClickOutside)
+        }
     }, [])
 
     useEffect(() => { handleCopyingOfCodeBlocks(messages) }, [messages, input])
@@ -117,7 +129,50 @@ export default function ChatPage() {
                 </div>
                 <div id="history-div">
                     {chats.map(chat => (
-                        <a key={chat.uuid} className="past-chat-a" href={`/chat/${chat.uuid}`}>{chat.title}</a>
+                        <div key={chat.uuid} className="past-chat-div">
+                            <a className="past-chat-a" href={`/chat/${chat.uuid}`}>{chat.title}</a>
+                            <button
+                                className="past-chat-dropdown-button"
+                                onClick={() =>
+                                    setOpenDropdownUUID(prev => (prev === chat.uuid ? null : chat.uuid))
+                                }
+                            >
+                                ≡
+                            </button>
+                            {openDropdownUUID === chat.uuid && (
+                                <div className="past-chat-dropdown-div">
+                                    <button
+                                        className="past-chat-rename-button"
+                                        onClick={() => {
+                                            const newTitle = prompt("Enter new title:", chat.title)
+                                            if (newTitle && newTitle !== chat.title) {
+                                                renameChat(chat, newTitle)
+                                                setChats(prev =>
+                                                    prev.map(c =>
+                                                        c.uuid === chat.uuid ? { ...c, title: newTitle } : c
+                                                    )
+                                                )
+                                            }
+                                            setOpenDropdownUUID(null)
+                                        }}
+                                    >
+                                        Rename
+                                    </button>
+                                    <button
+                                        className="past-chat-delete-button"
+                                        onClick={() => {
+                                            if (confirm("Are you sure you want to delete this chat?")) {
+                                                deleteChat(chat)
+                                                setChats(prev => prev.filter(c => c.uuid !== chat.uuid))
+                                            }
+                                            setOpenDropdownUUID(null)
+                                        }}
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     ))}
                 </div>
             </div>
@@ -266,6 +321,32 @@ function handleCopyingOfCodeBlocks(messages: Message[]) {
                     })
                 })
             }
+        }
+    })
+}
+
+function renameChat(chat: Chat, newTitle: string) {
+    fetch("/api/rename-chat/", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_uuid: chat.uuid, new_title: newTitle })
+    }).then(response => {
+        if (response.status !== 200) {
+            alert("Renaming of chat was not possible")
+        }
+    })
+}
+
+function deleteChat(chat: Chat) {
+    fetch("/api/delete-chat/", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_uuid: chat.uuid })
+    }).then(response => {
+        if (response.status !== 200) {
+            alert("Deletion of chat was not possible")
         }
     })
 }

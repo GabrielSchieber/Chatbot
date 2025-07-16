@@ -101,8 +101,15 @@ body {
     white-space: nowrap;
 }
 
-.past-chat-a {
+.past-chat-div {
+    position: relative;
+    display: flex;
     width: 80%;
+    align-items: center;
+}
+
+.past-chat-a {
+    width: 100%;
     padding: 10px 15px 10px 15px;
     border-radius: 15px;
     text-decoration: none;
@@ -112,6 +119,58 @@ body {
 
 .past-chat-a:hover {
     text-decoration: underline;
+}
+
+.past-chat-dropdown-button {
+    position: absolute;
+    right: 10px;
+    border-radius: 10px;
+    background-color: transparent;
+}
+
+.past-chat-dropdown-button:hover {
+    background-color: var(--background-color3);
+}
+
+.past-chat-dropdown-button:active {
+    background-color: transparent;
+}
+
+.past-chat-dropdown-div {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    right: -25px;
+    top: 35px;
+    gap: 0.25em;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: var(--background-color4);
+    z-index: 1;
+}
+
+.past-chat-rename-button,
+.past-chat-delete-button {
+    padding: 10px;
+    font-size: 17px;
+    border-radius: 10px;
+    background-color: var(--background-color2);
+}
+
+.past-chat-rename-button:hover {
+    background-color: var(--background-color5);
+}
+
+.past-chat-rename-button:active {
+    background-color: var(--background-color2);
+}
+
+.past-chat-delete-button:hover {
+    background-color: rgb(150, 40, 20);
+}
+
+.past-chat-delete-button:active {
+    background-color: rgb(120, 40, 20);
 }
 
 #chat-div {
