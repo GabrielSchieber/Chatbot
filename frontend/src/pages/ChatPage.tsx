@@ -82,7 +82,7 @@ export default function ChatPage() {
         const webSocketURL = chatUUID ? `ws://${location.host}/ws/chat/${chatUUID}/` : `ws://${location.host}/ws/chat/`
         socket.current = new WebSocket(webSocketURL)
 
-        socket.current!.addEventListener("message", event => {
+        socket.current.addEventListener("message", event => {
             const data = JSON.parse(event.data)
             if (data.token) {
                 currentBotMessageRef.current += data.token
@@ -93,6 +93,12 @@ export default function ChatPage() {
                 setCurrentBotMessage("")
             } else if (data.redirect) {
                 location.href = data.redirect
+            }
+        })
+
+        socket.current.addEventListener("error", _ => {
+            if (chatUUID) {
+                location.href = "/"
             }
         })
 
@@ -192,6 +198,9 @@ export default function ChatPage() {
                                             if (confirm("Are you sure you want to delete this chat?")) {
                                                 deleteChat(chat)
                                                 setChats(prev => prev.filter(c => c.uuid !== chat.uuid))
+                                                if (location.pathname.includes(chat.uuid)) {
+                                                    location.href = "/"
+                                                }
                                             }
                                             setOpenDropdownUUID(null)
                                         }}
