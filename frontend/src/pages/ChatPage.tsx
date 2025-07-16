@@ -74,12 +74,14 @@ export default function ChatPage() {
     }
 
     const sendMessage = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (socket.current && event.key === "Enter" && !event.shiftKey && input.trim()) {
+        if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault()
-            setInput("")
-            setMessages(previous => [...previous, { index: previous.length, text: input }])
-            setCurrentBotMessage("")
-            socket.current.send(JSON.stringify({ message: input }))
+            if (socket.current && input.trim()) {
+                setInput("")
+                setMessages(previous => [...previous, { index: previous.length, text: input }])
+                setCurrentBotMessage("")
+                socket.current.send(JSON.stringify({ message: input }))
+            }
         }
     }
 

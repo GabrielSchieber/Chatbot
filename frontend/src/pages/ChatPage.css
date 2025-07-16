@@ -303,6 +303,8 @@ body {
 
     pre {
         padding: 5px 15px 10px 15px;
+        overflow-x: auto;
+        overflow-y: hidden;
     }
 
     .code-block-header-div {
