@@ -3,25 +3,71 @@ body {
     display: flex;
 }
 
-#logout-button {
+#open-settings-button {
     margin: 10px;
-    padding: 10px;
+    padding: 5px 10px 5px 10px;
     border-radius: 10px;
     align-self: start;
     background-color: var(--background-color5);
 }
 
-#logout-button {
+#open-settings-button {
     position: absolute;
     right: 0;
 }
 
-#logout-button:hover {
+#open-settings-button:hover {
     background-color: var(--background-color4);
 }
 
-#logout-button:active {
+#open-settings-button:active {
     background-color: var(--background-color5);
+}
+
+#settings-div {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 500px;
+    padding: 25px;
+    border-radius: 10px;
+    background-color: var(--background-color4);
+}
+
+#settings-p {
+    align-self: center;
+    font-size: 30px;
+}
+
+#close-settings-button {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    padding: 5px 10px 5px 10px;
+    border-radius: 10px;
+    background-color: transparent;
+}
+
+#close-settings-button:hover {
+    background-color: var(--background-color2);
+}
+
+#close-settings-button:active {
+    background-color: transparent;
+}
+
+#logout-button {
+    border-radius: 10px;
+    background-color: var(--background-color2);
+}
+
+#logout-button:hover {
+    background-color: var(--background-color3);
+}
+
+#logout-button:active {
+    background-color: var(--background-color2);
 }
 
 #buttons-div {

@@ -25,6 +25,7 @@ export default function ChatPage() {
     const [openDropdownUUID, setOpenDropdownUUID] = useState<string | null>(null)
     const [renamingUUID, setRenamingUUID] = useState<string | null>(null)
     const [renamingTitle, setRenamingTitle] = useState<string>("")
+    const [isSettingsVisible, setIsSettingsVisible] = useState(false)
 
     const loadChats = () => {
         if (shouldLoadChats.current && chats.length === 0) {
@@ -122,7 +123,15 @@ export default function ChatPage() {
 
     return (
         <>
-            <button id="logout-button" onClick={handleLogout}>Log out</button>
+            {!isSettingsVisible && <button id="open-settings-button" onClick={_ => setIsSettingsVisible(true)}>⚙</button>}
+
+            {isSettingsVisible &&
+                <div id="settings-div">
+                    <p id="settings-p">Settings</p>
+                    <button id="close-settings-button" onClick={_ => setIsSettingsVisible(false)}>X</button>
+                    <button id="logout-button" onClick={handleLogout}>Log out</button>
+                </div>
+            }
 
             <div id="sidebar-div" className={isSidebarVisible ? "visible" : "invisible"}>
                 <div id="buttons-div">
