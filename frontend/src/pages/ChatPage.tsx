@@ -110,15 +110,16 @@ export default function ChatPage() {
         <>
             <button id="logout-button" onClick={handleLogout}>Log out</button>
 
-            <div id="buttons-div" className={isSidebarVisible ? "visible" : "invisible"}>
-                <button id="toggle-sidebar-button" onClick={() => setIsSidebarVisible(prev => !prev)}>≡</button>
-                <button id="new-chat-button" onClick={handleNewChat}>✏</button>
-            </div>
-
             <div id="sidebar-div" className={isSidebarVisible ? "visible" : "invisible"}>
-                {chats.map(chat => (
-                    <a key={chat.uuid} className="past-chat-a" href={`/chat/${chat.uuid}`}>{chat.title}</a>
-                ))}
+                <div id="buttons-div">
+                    <button id="toggle-sidebar-button" onClick={() => setIsSidebarVisible(prev => !prev)}>≡</button>
+                    <button id="new-chat-button" onClick={handleNewChat}>✏</button>
+                </div>
+                <div id="history-div">
+                    {chats.map(chat => (
+                        <a key={chat.uuid} className="past-chat-a" href={`/chat/${chat.uuid}`}>{chat.title}</a>
+                    ))}
+                </div>
             </div>
 
             <div id="chat-div">
