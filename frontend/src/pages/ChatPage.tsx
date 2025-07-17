@@ -280,7 +280,7 @@ export default function ChatPage() {
                     <input id="search-input" placeholder="Search here..." onInput={event => searchChats(event.currentTarget.value)} />
                     <div id="search-entries-div">
                         {searchResults.map(entry => (
-                            <a key={entry.uuid} href={`/chat/${entry.uuid}`}>{entry.title}</a>
+                            <a key={entry.uuid} className="search-entry-a" href={`/chat/${entry.uuid}`}>{entry.title}</a>
                         ))}
                     </div>
                 </div>
@@ -559,13 +559,15 @@ function deleteChat(chat: Chat) {
 }
 
 function deleteChats() {
-    fetch("/api/delete-chats/", { method: "POST", credentials: "include" }).then(response => {
-        if (response.status !== 200) {
-            alert("Deletion of chats was not possible")
-        } else {
-            location.href = "/"
-        }
-    })
+    if (confirm("Are you sure you want to delete all of your chats?")) {
+        fetch("/api/delete-chats/", { method: "POST", credentials: "include" }).then(response => {
+            if (response.status !== 200) {
+                alert("Deletion of chats was not possible")
+            } else {
+                location.href = "/"
+            }
+        })
+    }
 }
 
 function deleteAccount() {

@@ -339,6 +339,7 @@ body {
     flex-direction: column;
     gap: 10px;
     width: 100%;
+    padding: 10px 0 10px 0;
     align-items: center;
     overflow-x: hidden;
     overflow-y: auto;
@@ -348,6 +349,15 @@ body {
     width: 90%;
     padding: 10px;
     border-radius: 10px;
+    text-decoration: none;
+    background-color: var(--background-color2);
+}
+
+.search-entry-a:hover {
+    background-color: var(--background-color3);
+}
+
+.search-entry-a:active {
     background-color: var(--background-color2);
 }
 
