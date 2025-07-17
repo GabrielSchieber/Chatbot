@@ -18,8 +18,6 @@ export default function ChatPage() {
     const [chats, setChats] = useState<Chat[]>([])
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState("")
-    const currentBotMessageRef = useRef("")
-    const [currentBotMessage, setCurrentBotMessage] = useState("")
     const socket = useRef<WebSocket | null>(null)
     const shouldLoadChats = useRef(true)
     const shouldLoadMessages = useRef(true)
@@ -86,7 +84,7 @@ export default function ChatPage() {
             if (socket.current && input.trim()) {
                 setInput("")
                 setMessages(previous => [...previous, { index: previous.length, text: input }])
-                setCurrentBotMessage("")
+                setMessages(previous => [...previous, { index: previous.length, text: "" }])
                 socket.current.send(JSON.stringify({ message: input }))
             }
         }
@@ -98,13 +96,14 @@ export default function ChatPage() {
 
         socket.current.addEventListener("message", event => {
             const data = JSON.parse(event.data)
-            if (data.token) {
-                currentBotMessageRef.current += data.token
-                setCurrentBotMessage(currentBotMessageRef.current)
+            const botMessageDivs = document.querySelectorAll(".bot-message-div")
+            const lastBotMessageDiv = botMessageDivs[botMessageDivs.length - 1]
+            if (data.recover) {
+                lastBotMessageDiv.textContent = data.recover
+            } else if (data.token) {
+                lastBotMessageDiv.textContent += data.token
             } else if (data.message) {
-                setMessages(previous => [...previous, { index: previous.length, text: data.message }])
-                currentBotMessageRef.current = ""
-                setCurrentBotMessage("")
+                lastBotMessageDiv.innerHTML = data.message
             } else if (data.redirect) {
                 location.href = data.redirect
             }
@@ -369,7 +368,7 @@ export default function ChatPage() {
                         </div>
                     ))}
                 </div>
-            </div >
+            </div>
 
             <div id="chat-div">
                 <div id="messages-div">
@@ -383,7 +382,6 @@ export default function ChatPage() {
                             <button className="copy-button" onClick={copyMessage(chatUUID!, message)}>Copy</button>
                         </React.Fragment>
                     ))}
-                    {currentBotMessage && (<div className="bot-message-div">{currentBotMessage}</div>)}
                 </div>
                 <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here.." />
             </div>

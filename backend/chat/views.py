@@ -100,7 +100,6 @@ class SearchChats(APIView):
     def post(self, request):
         try:
             search = request.data["search"]
-            print(f"search: {search}")
             matched_messages = Message.objects.filter(text__icontains = search)
             chats = Chat.objects.filter(user = request.user).filter(
                 Q(title__icontains = search) | Q(messages__text__icontains = search)
