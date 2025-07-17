@@ -218,39 +218,48 @@ body {
     height: calc(100% - 60px);
     align-items: center;
     overflow-x: hidden;
-    overflow-y: scroll;
+    overflow-y: auto;
     white-space: nowrap;
 }
 
 .past-chat-div {
-    position: relative;
     display: flex;
-    width: 80%;
+    width: 90%;
     align-items: center;
+    justify-content: space-between;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: var(--background-color4);
+}
+
+.past-chat-div:hover {
+    .past-chat-dropdown-button {
+        display: inline-block;
+    }
 }
 
 .past-chat-a {
     width: 100%;
     padding: 10px 15px 10px 15px;
-    border-radius: 15px;
     text-decoration: none;
-    font-size: 17px;
-    background-color: var(--background-color4);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 14px;
 }
 
 .past-chat-a:hover {
-    text-decoration: underline;
+    background-color: var(--background-color5);
 }
 
 .past-chat-dropdown-button {
-    position: absolute;
-    right: 10px;
-    border-radius: 10px;
+    display: none;
+    padding-right: 10px;
+    height: 100%;
     background-color: transparent;
 }
 
 .past-chat-dropdown-button:hover {
-    background-color: var(--background-color3);
+    background-color: var(--background-color5);
 }
 
 .past-chat-dropdown-button:active {
@@ -258,16 +267,14 @@ body {
 }
 
 .past-chat-dropdown-div {
-    position: absolute;
+    position: fixed;
     display: flex;
     flex-direction: column;
-    right: -25px;
-    top: 35px;
     gap: 0.25em;
     padding: 10px;
     border-radius: 10px;
-    background-color: var(--background-color4);
-    z-index: 1;
+    background-color: var(--background-color5);
+    transform: translate(155px, 70px);
 }
 
 .past-chat-rename-button,
@@ -275,15 +282,15 @@ body {
     padding: 10px;
     font-size: 17px;
     border-radius: 10px;
-    background-color: var(--background-color2);
+    background-color: transparent;
 }
 
 .past-chat-rename-button:hover {
-    background-color: var(--background-color5);
+    background-color: var(--background-color4);
 }
 
 .past-chat-rename-button:active {
-    background-color: var(--background-color2);
+    background-color: var(--background-color3);
 }
 
 .past-chat-delete-button:hover {
@@ -299,9 +306,11 @@ body {
     padding: 0.2em;
     width: 100%;
     box-sizing: border-box;
-    font-size: 17px;
+    font-size: 14px;
     outline: none;
-    background-color: var(--background-color2);
+    border-radius: 10px;
+    padding: 10px 15px 10px 15px;
+    background-color: var(--background-color5);
 }
 
 #search-div {
