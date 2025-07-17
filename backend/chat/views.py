@@ -1,5 +1,5 @@
 from django.contrib.auth import authenticate
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from rest_framework import generics, serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -100,11 +100,19 @@ class SearchChats(APIView):
     def post(self, request):
         try:
             search = request.data["search"]
-            chats = Chat.objects.filter(
-                Q(user = request.user),
+            print(f"search: {search}")
+            matched_messages = Message.objects.filter(text__icontains = search)
+            chats = Chat.objects.filter(user = request.user).filter(
                 Q(title__icontains = search) | Q(messages__text__icontains = search)
-            ).distinct().order_by("-date_time")
-            return Response({"chats": [{"title": chat.title, "uuid": chat.uuid} for chat in chats]})
+            ).distinct().prefetch_related(
+                Prefetch("messages", queryset = matched_messages, to_attr = "matched_messages")
+            )
+            chats = [{
+                "title": chat.title,
+                "uuid": chat.uuid,
+                "matches": [message.text for message in chat.matched_messages] if hasattr(chat, "matched_messages") else []
+            } for chat in chats]
+            return Response({"chats": chats})
         except Exception:
             return Response(status = 400)
 

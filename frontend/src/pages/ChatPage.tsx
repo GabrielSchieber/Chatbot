@@ -8,6 +8,7 @@ import { logout } from "../auth"
 type Chat = { title: string, uuid: string }
 type Message = { index: number, text: string }
 type Theme = "system" | "light" | "dark"
+type SearchResults = { title: string, matches: string[], uuid: string }
 
 autoAdaptTheme()
 
@@ -36,7 +37,7 @@ export default function ChatPage() {
     const [isSearchVisible, setIsSearchVisible] = useState(false)
     const [isHidingSearch, setIsHidingSearch] = useState(false)
     const searchRef = useRef<HTMLDivElement | null>(null)
-    const [searchResults, setSearchResults] = useState<Chat[]>([])
+    const [searchResults, setSearchResults] = useState<SearchResults[]>([])
 
     const loadChats = () => {
         if (shouldLoadChats.current && chats.length === 0) {
@@ -280,7 +281,16 @@ export default function ChatPage() {
                     <input id="search-input" placeholder="Search here..." onInput={event => searchChats(event.currentTarget.value)} />
                     <div id="search-entries-div">
                         {searchResults.map(entry => (
-                            <a key={entry.uuid} className="search-entry-a" href={`/chat/${entry.uuid}`}>{entry.title}</a>
+                            <a key={entry.uuid} className="search-entry-a" href={`/chat/${entry.uuid}`}>
+                                {entry.title}
+                                {entry.matches?.length > 0 && (
+                                    <ul>
+                                        {entry.matches.map((message: string, index: number) => (
+                                            <li key={index}>{message.slice(0, 100)}...</li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </a>
                         ))}
                     </div>
                 </div>
@@ -289,7 +299,7 @@ export default function ChatPage() {
             <div id="sidebar-div" className={isSidebarVisible ? "visible" : "invisible"}>
                 <div id="buttons-div">
                     <button id="toggle-sidebar-button" onClick={() => setIsSidebarVisible(prev => !prev)}>≡</button>
-                    <button id="open-search-button" onClick={() => setIsSearchVisible(true)}>🔍</button>
+                    <button id="open-search-button" onClick={() => { setIsSearchVisible(true); searchChats("") }}>🔍</button>
                     <button id="new-chat-button" onClick={_ => location.href = "/"}>✏</button>
                 </div>
                 <div id="history-div">
