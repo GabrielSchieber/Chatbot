@@ -214,12 +214,11 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    width: 100%;
-    height: calc(100% - 60px);
     align-items: center;
     overflow-x: hidden;
     overflow-y: auto;
     white-space: nowrap;
+    padding: 20px 0 20px 0;
 }
 
 .past-chat-div {
@@ -228,7 +227,6 @@ body {
     align-items: center;
     justify-content: space-between;
     border-radius: 10px;
-    overflow: hidden;
     background-color: var(--background-color4);
 }
 
