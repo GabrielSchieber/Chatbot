@@ -33,6 +33,10 @@ export default function ChatPage() {
     const [isHidingSettings, setIsHidingSettings] = useState(false)
     const [theme, setTheme] = useState<Theme>(() => { return (localStorage.getItem("theme") as Theme) || "system" })
     const settingsRef = useRef<HTMLDivElement | null>(null)
+    const [isSearchVisible, setIsSearchVisible] = useState(false)
+    const [isHidingSearch, setIsHidingSearch] = useState(false)
+    const searchRef = useRef<HTMLDivElement | null>(null)
+    const [searchResults, setSearchResults] = useState<Chat[]>([])
 
     const loadChats = () => {
         if (shouldLoadChats.current && chats.length === 0) {
@@ -180,6 +184,59 @@ export default function ChatPage() {
         }, 300)
     }
 
+    const closeSearch = () => {
+        setIsHidingSearch(true)
+        setTimeout(() => {
+            setIsHidingSearch(false)
+            setIsSearchVisible(false)
+        }, 300)
+    }
+
+    useEffect(() => {
+        if (!isSearchVisible) return
+
+        const closeSearchOnOutsideClick = (event: MouseEvent) => {
+            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+                closeSearch()
+            }
+        }
+
+        document.addEventListener("mousedown", closeSearchOnOutsideClick)
+        return () => {
+            document.removeEventListener("mousedown", closeSearchOnOutsideClick)
+        }
+    }, [isSearchVisible])
+
+    useEffect(() => {
+        if (!isSearchVisible) return
+
+        const closeSearchOnEscape = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                closeSearch()
+            }
+        }
+
+        document.addEventListener("keydown", closeSearchOnEscape)
+        return () => {
+            document.removeEventListener("keydown", closeSearchOnEscape)
+        }
+    }, [isSearchVisible])
+
+    const searchChats = (search: string) => {
+        fetch("/api/search-chats/", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ search: search })
+        }).then(response => response.json()).then(data => {
+            if (data.chats) {
+                setSearchResults(data.chats)
+            } else {
+                alert("Search of chats was not possible")
+            }
+        })
+    }
+
     return (
         <>
             {!isSettingsVisible && <button id="open-settings-button" onClick={_ => setIsSettingsVisible(true)}>⚙</button>}
@@ -217,9 +274,22 @@ export default function ChatPage() {
                 </div>
             )}
 
+            {isSearchVisible && <div id="search-backdrop-div"></div>}
+            {(isSearchVisible || isHidingSearch) && (
+                <div id="search-div" className={isHidingSearch ? "fade-out" : "fade-in"} ref={searchRef}>
+                    <input id="search-input" placeholder="Search here..." onInput={event => searchChats(event.currentTarget.value)} />
+                    <div id="search-entries-div">
+                        {searchResults.map(entry => (
+                            <a key={entry.uuid} href={`/chat/${entry.uuid}`}>{entry.title}</a>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div id="sidebar-div" className={isSidebarVisible ? "visible" : "invisible"}>
                 <div id="buttons-div">
                     <button id="toggle-sidebar-button" onClick={() => setIsSidebarVisible(prev => !prev)}>≡</button>
+                    <button id="open-search-button" onClick={() => setIsSearchVisible(true)}>🔍</button>
                     <button id="new-chat-button" onClick={_ => location.href = "/"}>✏</button>
                 </div>
                 <div id="history-div">

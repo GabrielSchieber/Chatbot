@@ -93,6 +93,17 @@ class GetChats(APIView):
         except Exception:
             return Response(status = 400)
 
+class SearchChats(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            search = request.data["search"]
+            chats = Chat.objects.filter(user = request.user, title__contains=search)
+            return Response({"chats": [{"title": chat.title, "uuid": chat.uuid} for chat in chats]})
+        except Exception:
+            return Response(status = 400)
+
 class RenameChat(APIView):
     permission_classes = [IsAuthenticated]
 

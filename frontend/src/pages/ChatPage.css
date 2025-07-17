@@ -149,6 +149,7 @@ body {
 }
 
 #toggle-sidebar-button,
+#open-search-button,
 #new-chat-button {
     width: 100%;
     height: 50px;
@@ -161,11 +162,13 @@ body {
 }
 
 #toggle-sidebar-button:hover,
+#open-search-button:hover,
 #new-chat-button:hover {
     background-color: var(--background-color4);
 }
 
 #toggle-sidebar-button:active,
+#open-search-button:active,
 #new-chat-button:active {
     background-color: transparent;
 }
@@ -298,6 +301,53 @@ body {
     box-sizing: border-box;
     font-size: 17px;
     outline: none;
+    background-color: var(--background-color2);
+}
+
+#search-div {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 700px;
+    max-height: 70%;
+    top: 15%;
+    padding: 10px;
+    align-items: center;
+    border-radius: 15px;
+    background-color: var(--background-color4);
+    z-index: 3;
+}
+
+#search-backdrop-div {
+    position: absolute;
+    inset: 0;
+    background-color: rgb(0, 0, 0, 0.4);
+    z-index: 2;
+}
+
+#search-input {
+    width: 90%;
+    padding: 10px;
+    outline: none;
+    border-radius: 15px;
+    background-color: var(--background-color3);
+}
+
+#search-entries-div {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    align-items: center;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.search-entry-a {
+    width: 90%;
+    padding: 10px;
+    border-radius: 10px;
     background-color: var(--background-color2);
 }
 
