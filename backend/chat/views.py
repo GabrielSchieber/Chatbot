@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from django.db.models import Q
 from rest_framework import generics, serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -99,7 +100,10 @@ class SearchChats(APIView):
     def post(self, request):
         try:
             search = request.data["search"]
-            chats = Chat.objects.filter(user = request.user, title__contains=search)
+            chats = Chat.objects.filter(
+                Q(user = request.user),
+                Q(title__icontains = search) | Q(messages__text__icontains = search)
+            ).distinct().order_by("-date_time")
             return Response({"chats": [{"title": chat.title, "uuid": chat.uuid} for chat in chats]})
         except Exception:
             return Response(status = 400)
