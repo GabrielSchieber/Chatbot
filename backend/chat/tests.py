@@ -96,6 +96,66 @@ class ViewTests(TestCase):
         self.assertEqual(response.json()["id"], user.id)
         self.assertEqual(response.json()["email"], user.email)
 
+    def test_get_message(self):
+        response = self.client.post("/api/get-message/")
+        self.assertEqual(response.status_code, 401)
+
+        response = self.client.post("/api/get-message/", {"chat_uuid": "849087f8-4b3f-47f1-980d-5a5a3d325912", "message_index": 0})
+        self.assertEqual(response.status_code, 401)
+
+        user, _ = self.create_and_login_user()
+        response = self.client.post("/api/get-message/", {"chat_uuid": "849087f8-4b3f-47f1-980d-5a5a3d325912", "message_index": 0})
+        self.assertEqual(response.status_code, 400)
+
+        chat = Chat.objects.create(user = user, title = "Test chat")
+        response = self.client.post("/api/get-message/", {"chat_uuid": chat.uuid, "message_index": 0})
+        self.assertEqual(response.status_code, 400)
+
+        Message.objects.create(chat = chat, text = "Hello!", is_user_message = True)
+        Message.objects.create(chat = chat, text = "Hi!", is_user_message = False)
+
+        response = self.client.post("/api/get-message/", {"chat_uuid": chat.uuid, "message_index": 0})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["text"], "Hello!")
+
+        response = self.client.post("/api/get-message/", {"chat_uuid": chat.uuid, "message_index": 1})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["text"], "Hi!")
+
+    def test_get_messages(self):
+        response = self.client.post("/api/get-messages/")
+        self.assertEqual(response.status_code, 401)
+
+        response = self.client.post("/api/get-messages/", {"chat_uuid": "849087f8-4b3f-47f1-980d-5a5a3d325912"})
+        self.assertEqual(response.status_code, 401)
+
+        user, _ = self.create_and_login_user()
+        response = self.client.post("/api/get-messages/", {"chat_uuid": "849087f8-4b3f-47f1-980d-5a5a3d325912"})
+        self.assertEqual(response.status_code, 400)
+
+        chat = Chat.objects.create(user = user, title = "Test chat")
+        response = self.client.post("/api/get-messages/", {"chat_uuid": "invalid-uuid"})
+        self.assertEqual(response.status_code, 400)
+
+        chat = Chat.objects.create(user = user, title = "Test chat")
+        response = self.client.post("/api/get-messages/", {"chat_uuid": chat.uuid})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["messages"], [])
+
+        Message.objects.create(chat = chat, text = "Hello!", is_user_message = True)
+        Message.objects.create(chat = chat, text = "Hi!", is_user_message = False)
+
+        response = self.client.post("/api/get-messages/", {"chat_uuid": chat.uuid})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["messages"], ["Hello!", "<p>Hi!</p>"])
+
+        Message.objects.create(chat = chat, text = "Hello again!", is_user_message = True)
+        Message.objects.create(chat = chat, text = "Hi again!", is_user_message = False)
+
+        response = self.client.post("/api/get-messages/", {"chat_uuid": chat.uuid})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["messages"], ["Hello!", "<p>Hi!</p>", "Hello again!", "<p>Hi again!</p>"])
+
     def login_user(self, email: str = "test@example.com", password: str = "testpassword"):
         return self.client.post("/api/login/", {"email": email, "password": password})
 

@@ -65,7 +65,7 @@ class GetMessage(APIView):
     def post(self, request):
         try:
             chat_uuid = request.data["chat_uuid"]
-            message_index = request.data["message_index"]
+            message_index = int(request.data["message_index"])
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
             message = Message.objects.filter(chat = chat)[message_index]
             return Response({"text": message.text})
