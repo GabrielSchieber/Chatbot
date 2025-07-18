@@ -237,6 +237,37 @@ export default function ChatPage() {
         })
     }
 
+    const handleRenameChatButton = (chat: Chat) => {
+        setRenamingUUID(chat.uuid)
+        setRenamingTitle(chat.title)
+        setOpenDropdownUUID(null)
+    }
+
+    const handleDeleteChatButton = (chat: Chat) => {
+        if (confirm("Are you sure you want to delete this chat?")) {
+            deleteChat(chat)
+            setChats(prev => prev.filter(c => c.uuid !== chat.uuid))
+            if (location.pathname.includes(chat.uuid)) {
+                location.href = "/"
+            }
+        }
+        setOpenDropdownUUID(null)
+    }
+
+    const handleRenameInput = (event: React.KeyboardEvent, chat: Chat) => {
+        if (event.key === "Enter" && renamingTitle.trim()) {
+            renameChat(chat, renamingTitle.trim())
+            setChats(prev =>
+                prev.map(c =>
+                    c.uuid === chat.uuid ? { ...c, title: renamingTitle.trim() } : c
+                )
+            )
+            setRenamingUUID(null)
+        } else if (event.key === "Escape") {
+            setRenamingUUID(null)
+        }
+    }
+
     return (
         <>
             {!isSettingsVisible && <button id="open-settings-button" onClick={_ => setIsSettingsVisible(true)}>⚙</button>}
@@ -305,64 +336,15 @@ export default function ChatPage() {
                     {chats.map(chat => (
                         <div key={chat.uuid} className="past-chat-div">
                             {renamingUUID === chat.uuid ? (
-                                <input
-                                    className="past-chat-rename-input"
-                                    type="text"
-                                    value={renamingTitle}
-                                    onChange={e => setRenamingTitle(e.target.value)}
-                                    onKeyDown={e => {
-                                        if (e.key === "Enter" && renamingTitle.trim()) {
-                                            renameChat(chat, renamingTitle.trim())
-                                            setChats(prev =>
-                                                prev.map(c =>
-                                                    c.uuid === chat.uuid ? { ...c, title: renamingTitle.trim() } : c
-                                                )
-                                            )
-                                            setRenamingUUID(null)
-                                        } else if (e.key === "Escape") {
-                                            setRenamingUUID(null)
-                                        }
-                                    }}
-                                    autoFocus
-                                />
+                                <input className="past-chat-rename-input" type="text" value={renamingTitle} onChange={e => setRenamingTitle(e.target.value)} onKeyDown={e => { handleRenameInput(e, chat) }} autoFocus />
                             ) : (
                                 <a className="past-chat-a" href={`/chat/${chat.uuid}`}>{chat.title}</a>
                             )}
-                            <button
-                                className="past-chat-dropdown-button"
-                                onClick={() =>
-                                    setOpenDropdownUUID(prev => (prev === chat.uuid ? null : chat.uuid))
-                                }
-                            >
-                                ≡
-                            </button>
+                            <button className="past-chat-dropdown-button" onClick={() => setOpenDropdownUUID(prev => (prev === chat.uuid ? null : chat.uuid))}>≡</button>
                             {openDropdownUUID === chat.uuid && (
                                 <div className="past-chat-dropdown-div">
-                                    <button
-                                        className="past-chat-rename-button"
-                                        onClick={() => {
-                                            setRenamingUUID(chat.uuid)
-                                            setRenamingTitle(chat.title)
-                                            setOpenDropdownUUID(null)
-                                        }}
-                                    >
-                                        Rename
-                                    </button>
-                                    <button
-                                        className="past-chat-delete-button"
-                                        onClick={() => {
-                                            if (confirm("Are you sure you want to delete this chat?")) {
-                                                deleteChat(chat)
-                                                setChats(prev => prev.filter(c => c.uuid !== chat.uuid))
-                                                if (location.pathname.includes(chat.uuid)) {
-                                                    location.href = "/"
-                                                }
-                                            }
-                                            setOpenDropdownUUID(null)
-                                        }}
-                                    >
-                                        Delete
-                                    </button>
+                                    <button className="past-chat-rename-button" onClick={() => { handleRenameChatButton(chat) }}>Rename</button>
+                                    <button className="past-chat-delete-button" onClick={() => { handleDeleteChatButton(chat) }}>Delete</button>
                                 </div>
                             )}
                         </div>

@@ -222,6 +222,7 @@ body {
 }
 
 .past-chat-div {
+    position: relative;
     display: flex;
     width: 90%;
     align-items: center;
@@ -243,6 +244,7 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 14px;
+    border-radius: 10px;
 }
 
 .past-chat-a:hover {
@@ -253,6 +255,7 @@ body {
     display: none;
     padding-right: 10px;
     height: 100%;
+    border-radius: 10px;
     background-color: transparent;
 }
 
@@ -265,14 +268,16 @@ body {
 }
 
 .past-chat-dropdown-div {
-    position: fixed;
+    position: absolute;
     display: flex;
     flex-direction: column;
     gap: 0.25em;
+    top: 35px;
+    right: 0px;
     padding: 10px;
     border-radius: 10px;
     background-color: var(--background-color5);
-    transform: translate(155px, 70px);
+    z-index: 1;
 }
 
 .past-chat-rename-button,
