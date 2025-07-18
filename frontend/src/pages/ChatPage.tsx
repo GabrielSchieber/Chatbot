@@ -299,7 +299,7 @@ export default function ChatPage() {
                     </div>
 
                     <div id="logout-button-div">
-                        <label id="logout-button-label">Delete all chats</label>
+                        <label id="logout-button-label">Log out</label>
                         <button id="logout-button" onClick={async _ => { await logout(); location.reload() }}>Log out</button>
                     </div>
                 </div>
