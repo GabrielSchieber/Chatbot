@@ -328,9 +328,18 @@ export default function ChatPage() {
 
             <div id="sidebar-div" className={isSidebarVisible ? "visible" : "invisible"}>
                 <div id="buttons-div">
-                    <button id="toggle-sidebar-button" onClick={() => setIsSidebarVisible(prev => !prev)}>≡</button>
-                    <button id="open-search-button" onClick={() => { setIsSearchVisible(true); searchChats("") }}>🔍</button>
-                    <button id="new-chat-button" onClick={_ => location.href = "/"}>✏</button>
+                    <button id="toggle-sidebar-button" onClick={() => setIsSidebarVisible(prev => !prev)}>
+                        <span className="buttons-div-icon">≡</span>
+                        <span className="buttons-div-text-span">Close sidebar</span>
+                    </button>
+                    <button id="open-search-button" onClick={() => { setIsSearchVisible(true); searchChats("") }}>
+                        <span className="buttons-div-icon">🔍</span>
+                        <span className="buttons-div-text-span">Search chats</span>
+                    </button>
+                    <a id="new-chat-a" href="/">
+                        <span className="buttons-div-icon-span">✏</span>
+                        <span className="buttons-div-text-span">New Chat</span>
+                    </a>
                 </div>
                 <div id="history-div">
                     {chats.map(chat => (
@@ -350,7 +359,7 @@ export default function ChatPage() {
                         </div>
                     ))}
                 </div>
-            </div>
+            </div >
 
             <div id="chat-div">
                 <div id="messages-div">
