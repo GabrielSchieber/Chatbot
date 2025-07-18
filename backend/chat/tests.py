@@ -60,28 +60,26 @@ class ViewTests(TestCase):
         self.assertEqual(User.objects.all().count(), 1)
 
     def test_login(self):
-        create_user()
-        response = self.client.post("/api/login/", {"email": "test@example.com", "password": "testpassword"})
+        _, response = self.create_and_login_user()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["success"], True)
 
     def test_login_with_invalid_credentials(self):
         create_user()
-        response = self.client.post("/api/login/", {"email": "someemail@example.com", "password": "somepassword"})
+        response = self.login_user("someemail@example.com", "somepassword")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"], "Invalid credentials")
 
-        response = self.client.post("/api/login/", {"email": "test@example.com", "password": "somepassword"})
+        response = self.login_user("test@example.com", "somepassword")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"], "Invalid credentials")
 
-        response = self.client.post("/api/login/", {"email": "someemail@example.com", "password": "testpassword"})
+        response = self.login_user("someemail@example.com", "testpassword")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"], "Invalid credentials")
 
     def test_logout(self):
-        create_user()
-        response = self.client.post("/api/login/", {"email": "test@example.com", "password": "testpassword"})
+        self.create_and_login_user()
         response = self.client.post("/api/logout/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["success"], True)
@@ -90,6 +88,21 @@ class ViewTests(TestCase):
         response = self.client.post("/api/logout/")
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["detail"], "Authentication credentials were not provided.")
+
+    def test_me(self):
+        user, _ = self.create_and_login_user()
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["id"], user.id)
+        self.assertEqual(response.json()["email"], user.email)
+
+    def login_user(self, email: str = "test@example.com", password: str = "testpassword"):
+        return self.client.post("/api/login/", {"email": email, "password": password})
+
+    def create_and_login_user(self, email: str = "test@example.com", password: str = "testpassword"):
+        user = create_user(email, password)
+        response = self.client.post("/api/login/", {"email": email, "password": password})
+        return user, response
 
 def create_user(email: str = "test@example.com", password: str = "testpassword") -> User:
     return User.objects.create_user(email = email, password = password)
