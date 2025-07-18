@@ -329,16 +329,16 @@ export default function ChatPage() {
             <div id="sidebar-div" className={isSidebarVisible ? "visible" : "invisible"}>
                 <div id="buttons-div">
                     <button id="toggle-sidebar-button" onClick={() => setIsSidebarVisible(prev => !prev)}>
-                        <span className="buttons-div-icon">≡</span>
-                        <span className="buttons-div-text-span">Close sidebar</span>
+                        <span className="buttons-icon-span">≡</span>
+                        <span className="buttons-text-span">Close sidebar</span>
                     </button>
                     <button id="open-search-button" onClick={() => { setIsSearchVisible(true); searchChats("") }}>
-                        <span className="buttons-div-icon">🔍</span>
-                        <span className="buttons-div-text-span">Search chats</span>
+                        <span className="buttons-icon-span">🔍</span>
+                        <span className="buttons-text-span">Search chats</span>
                     </button>
                     <a id="new-chat-a" href="/">
-                        <span className="buttons-div-icon-span">✏</span>
-                        <span className="buttons-div-text-span">New Chat</span>
+                        <span className="buttons-icon-span">✏</span>
+                        <span className="buttons-text-span">New Chat</span>
                     </a>
                 </div>
                 <div id="history-div">
