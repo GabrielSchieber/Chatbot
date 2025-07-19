@@ -217,8 +217,135 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["chats"], [{"title": "Geometry question", "uuid": str(chat.uuid), "matches": ["What is geometry?", "Geometry is..."]}])
 
+    def test_rename_chat(self):
+        response = self.client.post("/api/rename-chat/")
+        self.assertEqual(response.status_code, 401)
+
+        response = self.client.post("/api/rename-chat/", {"chat_uuid": "test-uuid", "new_title": "Some title"})
+        self.assertEqual(response.status_code, 401)
+
+        user1 = create_user()
+        response = self.client.post("/api/rename-chat/", {"chat_uuid": "test-uuid", "new_title": "Some title"})
+        self.assertEqual(response.status_code, 401)
+
+        self.login_user()
+        response = self.client.post("/api/rename-chat/", {"chat_uuid": "test-uuid", "new_title": "Some title"})
+        self.assertEqual(response.status_code, 400)
+
+        chat1 = Chat.objects.create(user = user1, title = "Test title")
+        response = self.client.post("/api/rename-chat/", {"chat_uuid": "test-uuid", "new_title": "Some title"})
+        self.assertEqual(response.status_code, 400)
+
+        response = self.client.post("/api/rename-chat/", {"chat_uuid": chat1.uuid, "new_title": "Some title"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Chat.objects.first().title, "Some title")
+
+        self.logout_user()
+        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        chat2 = Chat.objects.create(user = user2, title = "Some chat")
+        response = self.client.post("/api/rename-chat/", {"chat_uuid": chat2.uuid, "new_title": "Some other chat"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Chat.objects.first().title, "Some title")
+        self.assertEqual(Chat.objects.last().title, "Some other chat")
+
+    def test_delete_chat(self):
+        response = self.client.post("/api/delete-chat/")
+        self.assertEqual(response.status_code, 401)
+
+        response = self.client.post("/api/delete-chat/", {"chat_uuid": "test-uuid"})
+        self.assertEqual(response.status_code, 401)
+
+        user1 = create_user()
+        response = self.client.post("/api/delete-chat/", {"chat_uuid": "test-uuid"})
+        self.assertEqual(response.status_code, 401)
+
+        self.login_user()
+        response = self.client.post("/api/delete-chat/", {"chat_uuid": "test-uuid"})
+        self.assertEqual(response.status_code, 400)
+
+        chat1 = Chat.objects.create(user = user1, title = "Test chat 1")
+
+        response = self.client.post("/api/delete-chat/", {"chat_uuid": "test-uuid"})
+        self.assertEqual(response.status_code, 400)
+
+        response = self.client.post("/api/delete-chat/", {"chat_uuid": chat1.uuid})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Chat.objects.count(), 0)
+
+        Chat.objects.create(user = user1, title = "Test chat 2")
+
+        self.logout_user()
+        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        chat3 = Chat.objects.create(user = user2, title = "Test chat 3")
+        response = self.client.post("/api/delete-chat/", {"chat_uuid": chat3.uuid})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Chat.objects.count(), 1)
+        self.assertEqual(Chat.objects.first().user, user1)
+
+    def test_delete_chats(self):
+        response = self.client.post("/api/delete-chats/")
+        self.assertEqual(response.status_code, 401)
+
+        user1 = create_user()
+        response = self.client.post("/api/delete-chats/")
+        self.assertEqual(response.status_code, 401)
+
+        self.login_user()
+        response = self.client.post("/api/delete-chats/")
+        self.assertEqual(response.status_code, 200)
+
+        Chat.objects.create(user = user1, title = "Test chat 1")
+        response = self.client.post("/api/delete-chats/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Chat.objects.count(), 0)
+
+        Chat.objects.create(user = user1, title = "Test chat 2")
+        Chat.objects.create(user = user1, title = "Test chat 3")
+
+        response = self.client.post("/api/delete-chats/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Chat.objects.count(), 0)
+
+        Chat.objects.create(user = user1, title = "Test chat 4")
+        Chat.objects.create(user = user1, title = "Test chat 5")
+
+        self.logout_user()
+        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        Chat.objects.create(user = user2, title = "Test chat 6")
+        Chat.objects.create(user = user2, title = "Test chat 7")
+        response = self.client.post("/api/delete-chats/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Chat.objects.count(), 2)
+        self.assertEqual(Chat.objects.first().user, user1)
+        self.assertEqual(Chat.objects.last().user, user1)
+
+    def test_delete_account(self):
+        response = self.client.post("/api/delete-account/")
+        self.assertEqual(response.status_code, 401)
+
+        create_user()
+        response = self.client.post("/api/delete-account/")
+        self.assertEqual(response.status_code, 401)
+
+        self.login_user()
+        response = self.client.post("/api/delete-account/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(User.objects.count(), 0)
+
+        create_user()
+        user = create_user("someone@example.com", "somepassword")
+
+        self.login_user("test@example.com", "testpassword")
+        response = self.client.post("/api/delete-account/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(User.objects.count(), 1)
+        self.assertEqual(User.objects.first(), user)
+
     def login_user(self, email: str = "test@example.com", password: str = "testpassword"):
         return self.client.post("/api/login/", {"email": email, "password": password})
+
+    def logout_user(self):
+        return self.client.post("/api/logout/")
 
     def create_and_login_user(self, email: str = "test@example.com", password: str = "testpassword"):
         user = create_user(email, password)
