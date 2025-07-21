@@ -4,6 +4,7 @@ Pygments == 2.19.2
 channels[daphne] == 4.2.2
 djangorestframework == 3.16.0
 djangorestframework-simplejwt == 5.5.0
+selenium == 4.34.2
 --extra-index-url https://download.pytorch.org/whl/cu118
 torch == 2.7.1
 transformers == 4.53.2

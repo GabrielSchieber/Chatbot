@@ -1,6 +1,11 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import TestCase
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
 
 from chat.models import Chat, Message, User
 
@@ -390,6 +395,29 @@ class ViewTests(TestCase):
         user = create_user(email, password)
         response = self.client.post("/api/login/", {"email": email, "password": password})
         return user, response
+
+class SeleniumTests(StaticLiveServerTestCase):
+    def setUp(self):
+        self.driver = webdriver.Edge()
+
+    def tearDown(self):
+        self.driver.quit()
+
+    def test_signup(self):
+        self.driver.get(f"{self.live_server_url}/signup")
+        self.assertEqual(self.driver.find_element(By.ID, "title-h1").text, "Sign up")
+
+        self.driver.find_element(By.ID, "email-input").send_keys("test@example.com" + Keys.ENTER)
+        self.driver.find_element(By.ID, "password-input").send_keys("testpassword" + Keys.ENTER)
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+
+        self.assertEqual(User.objects.count(), 1)
+        self.assertEqual(User.objects.first().email, "test@example.com")
+        self.assertNotEqual(User.objects.first().password, "testpassword")
+        self.assertTrue(check_password("testpassword", User.objects.first().password))
+
+    def wait_until(self, method, timeout: float = 1.0):
+        WebDriverWait(self.driver, timeout).until(method)
 
 def create_user(email: str = "test@example.com", password: str = "testpassword") -> User:
     return User.objects.create_user(email = email, password = password)
