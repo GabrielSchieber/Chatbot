@@ -35,7 +35,7 @@ ROOT_URLCONF = "backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": ["../frontend/dist"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -80,7 +80,9 @@ USE_I18N = True
 
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/assets/"
+
+STATICFILES_DIRS = ["../frontend/dist/assets", "../frontend/src/pages"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
