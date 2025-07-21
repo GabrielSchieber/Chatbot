@@ -416,6 +416,16 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.assertNotEqual(User.objects.first().password, "testpassword")
         self.assertTrue(check_password("testpassword", User.objects.first().password))
 
+    def test_login(self):
+        create_user()
+
+        self.driver.get(f"{self.live_server_url}/login")
+        self.assertEqual(self.driver.find_element(By.ID, "title-h1").text, "Log in")
+
+        self.driver.find_element(By.ID, "email-input").send_keys("test@example.com" + Keys.ENTER)
+        self.driver.find_element(By.ID, "password-input").send_keys("testpassword" + Keys.ENTER)
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+
     def wait_until(self, method, timeout: float = 1.0):
         WebDriverWait(self.driver, timeout).until(method)
 
