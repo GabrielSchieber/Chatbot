@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -99,3 +100,10 @@ SIMPLE_JWT = {
     "AUTH_COOKIE_SECURE": False,
     "AUTH_COOKIE_SAMESITE": "Lax"
 }
+
+if len(sys.argv) == 3 and sys.argv[0] == "manage.py" and sys.argv[1] == "test" and "SeleniumChannelsTests" in sys.argv[2]:
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "test_db.sqlite3",
+        "TEST": {"NAME": BASE_DIR / "test_db.sqlite3"}
+    }

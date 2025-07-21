@@ -1,3 +1,6 @@
+import time
+
+from channels.testing import ChannelsLiveServerTestCase
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
@@ -425,6 +428,63 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.driver.find_element(By.ID, "email-input").send_keys("test@example.com" + Keys.ENTER)
         self.driver.find_element(By.ID, "password-input").send_keys("testpassword" + Keys.ENTER)
         self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+
+    def wait_until(self, method, timeout: float = 1.0):
+        WebDriverWait(self.driver, timeout).until(method)
+
+class SeleniumChannelsTests(ChannelsLiveServerTestCase):
+    def setUp(self):
+        self.driver = webdriver.Edge()
+
+    def tearDown(self):
+        self.driver.quit()
+
+    def test_index(self):
+        create_user()
+
+        self.driver.get(f"{self.live_server_url}")
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/login")
+
+        self.email_input().send_keys("test@example.com" + Keys.ENTER)
+        self.password_input().send_keys("testpassword" + Keys.ENTER)
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+        time.sleep(0.5)
+
+        self.prompt_text_area().send_keys("Hi!" + Keys.ENTER)
+        self.wait_until(lambda _: self.user_message_divs()[0].text == "Hi!")
+
+        self.assertEqual(Chat.objects.count(), 1)
+        self.assertEqual(Chat.objects.first().title, "Chat 1")
+        self.wait_until(lambda _: Message.objects.count() == 2, 3)
+        self.assertEqual(Message.objects.first().text, "Hi!")
+        self.assertTrue(Message.objects.first().is_user_message)
+        self.assertEqual(Message.objects.last().text, "")
+        self.assertFalse(Message.objects.last().is_user_message)
+
+        self.wait_until(lambda _: self.bot_message_divs()[0].text == "Hello! How can I help you today?", 25)
+        self.assertEqual(self.bot_message_divs()[0].get_attribute("innerHTML"), "<p>Hello! How can I help you today?</p>")
+        self.assertIn("/chat/", self.driver.current_url)
+        time.sleep(0.5)
+
+        self.assertEqual(Message.objects.last().text, "Hello! How can I help you today?")
+
+        self.prompt_text_area().send_keys("Write a \"Hello World!\" (without a comma) Python program. Just write the code." + Keys.ENTER)
+        self.wait_until(lambda _: "print(\"Hello World!\")" in self.bot_message_divs()[-1].text, 10)
+
+    def email_input(self):
+        return self.driver.find_element(By.ID, "email-input")
+
+    def password_input(self):
+        return self.driver.find_element(By.ID, "password-input")
+
+    def prompt_text_area(self):
+        return self.driver.find_element(By.ID, "prompt-textarea")
+
+    def user_message_divs(self):
+        return self.driver.find_elements(By.CLASS_NAME, "user-message-div")
+
+    def bot_message_divs(self):
+        return self.driver.find_elements(By.CLASS_NAME, "bot-message-div")
 
     def wait_until(self, method, timeout: float = 1.0):
         WebDriverWait(self.driver, timeout).until(method)
