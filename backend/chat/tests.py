@@ -429,6 +429,95 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.driver.find_element(By.ID, "password-input").send_keys("testpassword" + Keys.ENTER)
         self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
 
+    def test_index_search(self):
+        user1 = create_user()
+
+        chat1 = Chat.objects.create(user = user1, title = "What is Mathematics")
+        user_message1 = Message.objects.create(chat = chat1, text = "What is Mathematics?", is_user_message = True)
+        bot_message1 = Message.objects.create(chat = chat1, text = "Mathematics is a vast and fascinating field that has captivated human imagination for centuries. At its core, mathematics is the systematic study of patterns, relationships, and structures that underlie the natural and social worlds. It encompasses a wide range of disciplines, including algebra, geometry, calculus, number theory, topology, and beyond.", is_user_message = False)
+
+        self.driver.get(f"{self.live_server_url}/login")
+        self.email_input().send_keys("test@example.com" + Keys.ENTER)
+        self.password_input().send_keys("testpassword" + Keys.ENTER)
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+
+        self.open_search_button().click()
+        self.assertEqual(self.search_input().text, "")
+        self.assertIn("Search here...", self.search_input().get_attribute("outerHTML"))
+        self.assertEqual(len(self.search_entry_as()), 1)
+        self.assertIn(chat1.title, self.search_entry_as()[0].text)
+        self.assertIn(user_message1.text[:10], self.search_entry_as()[0].text)
+        self.assertIn(bot_message1.text[:10], self.search_entry_as()[0].text)
+
+        self.driver.get(self.live_server_url)
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+        time.sleep(2)
+
+        chat2 = Chat.objects.create(user = user1, title = "A question about Geometry")
+        user_message2 = Message.objects.create(chat = chat2, text = "What is Geometry?", is_user_message = True)
+        bot_message2 = Message.objects.create(chat = chat2, text = "Geometry is...", is_user_message = False)
+
+        self.open_search_button().click()
+        self.assertEqual(self.search_input().text, "")
+        self.assertIn("Search here...", self.search_input().get_attribute("outerHTML"))
+        self.assertEqual(len(self.search_entry_as()), 2)
+        self.assertIn(chat1.title, self.search_entry_as()[0].text)
+        self.assertIn(chat2.title, self.search_entry_as()[1].text)
+        self.assertIn(user_message1.text[:10], self.search_entry_as()[0].text)
+        self.assertIn(user_message2.text[:10], self.search_entry_as()[1].text)
+        self.assertIn(bot_message1.text[:10], self.search_entry_as()[0].text)
+        self.assertIn(bot_message2.text[:10], self.search_entry_as()[1].text)
+
+        self.body().send_keys(Keys.ESCAPE)
+        self.open_settings_button().click()
+        self.logout_button().click()
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/login", 3)
+
+        user2 = create_user("someone@example.com", "somepassword")
+
+        self.email_input().send_keys("someone@example.com" + Keys.ENTER)
+        self.password_input().send_keys("somepassword" + Keys.ENTER)
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+
+        chat3 = Chat.objects.create(user = user2, title = "Python language")
+        user_message3 = Message.objects.create(chat = chat3, text = "Tell me what Python is.", is_user_message = True)
+        bot_message3 = Message.objects.create(chat = chat3, text = "Python is a programming language...?", is_user_message = False)
+
+        self.open_search_button().click()
+        self.assertEqual(self.search_input().text, "")
+        self.assertIn("Search here...", self.search_input().get_attribute("outerHTML"))
+        self.assertEqual(len(self.search_entry_as()), 1)
+        self.assertIn(chat3.title, self.search_entry_as()[0].text)
+        self.assertIn(user_message3.text[:10], self.search_entry_as()[0].text)
+        self.assertIn(bot_message3.text[:10], self.search_entry_as()[0].text)
+
+    def email_input(self):
+        return self.driver.find_element(By.ID, "email-input")
+
+    def password_input(self):
+        return self.driver.find_element(By.ID, "password-input")
+
+    def open_search_button(self):
+        return self.driver.find_element(By.ID, "open-search-button")
+
+    def search_input(self):
+        return self.driver.find_element(By.ID, "search-input")
+
+    def search_entries_div(self):
+        return self.driver.find_element(By.ID, "search-entries-div")
+
+    def search_entry_as(self):
+        return self.driver.find_elements(By.CLASS_NAME, "search-entry-a")
+
+    def open_settings_button(self):
+        return self.driver.find_element(By.ID, "open-settings-button")
+
+    def logout_button(self):
+        return self.driver.find_element(By.ID, "logout-button")
+
+    def body(self):
+        return self.driver.find_element(By.TAG_NAME, "body")
+
     def wait_until(self, method, timeout: float = 1.0):
         WebDriverWait(self.driver, timeout).until(method)
 
