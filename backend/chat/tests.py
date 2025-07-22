@@ -430,16 +430,11 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
 
     def test_index_search(self):
-        user1 = create_user()
+        user1 = self.create_and_login_user()
 
         chat1 = Chat.objects.create(user = user1, title = "What is Mathematics")
         user_message1 = Message.objects.create(chat = chat1, text = "What is Mathematics?", is_user_message = True)
         bot_message1 = Message.objects.create(chat = chat1, text = "Mathematics is a vast and fascinating field that has captivated human imagination for centuries. At its core, mathematics is the systematic study of patterns, relationships, and structures that underlie the natural and social worlds. It encompasses a wide range of disciplines, including algebra, geometry, calculus, number theory, topology, and beyond.", is_user_message = False)
-
-        self.driver.get(f"{self.live_server_url}/login")
-        self.email_input().send_keys("test@example.com" + Keys.ENTER)
-        self.password_input().send_keys("testpassword" + Keys.ENTER)
-        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
 
         self.open_search_button().click()
         self.assertEqual(self.search_input().text, "")
@@ -473,11 +468,7 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.logout_button().click()
         self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/login", 3)
 
-        user2 = create_user("someone@example.com", "somepassword")
-
-        self.email_input().send_keys("someone@example.com" + Keys.ENTER)
-        self.password_input().send_keys("somepassword" + Keys.ENTER)
-        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+        user2 = self.create_and_login_user("someone@example.com", "somepassword")
 
         chat3 = Chat.objects.create(user = user2, title = "Python language")
         user_message3 = Message.objects.create(chat = chat3, text = "Tell me what Python is.", is_user_message = True)
@@ -492,12 +483,7 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.assertIn(bot_message3.text[:10], self.search_entry_as()[0].text)
 
     def test_settings_panel(self):
-        create_user()
-        self.driver.get(f"{self.live_server_url}/login")
-        self.wait_until(lambda _: len(self.driver.find_elements(By.TAG_NAME, "input") ) == 2)
-        self.email_input().send_keys("test@example.com" + Keys.ENTER)
-        self.password_input().send_keys("testpassword" + Keys.ENTER)
-        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+        self.create_and_login_user()
 
         self.open_settings()
 
@@ -519,12 +505,7 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.assertEqual(self.logout_button().text, "Log out")
 
     def test_settings_theme_select(self):
-        create_user()
-        self.driver.get(f"{self.live_server_url}/login")
-        self.wait_until(lambda _: len(self.driver.find_elements(By.TAG_NAME, "input") ) == 2)
-        self.email_input().send_keys("test@example.com" + Keys.ENTER)
-        self.password_input().send_keys("testpassword" + Keys.ENTER)
-        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+        self.create_and_login_user()
 
         background_color = self.driver.execute_script("return getComputedStyle(arguments[0]).backgroundColor", self.body())
         self.assertIn(background_color, ["rgb(200, 202, 205)", "rgb(35, 37, 40)"])
@@ -554,13 +535,7 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.assertIn(background_color, ["rgb(200, 202, 205)", "rgb(35, 37, 40)"])
 
     def test_settings_delete_chats(self):
-        user1 = create_user()
-        self.driver.get(f"{self.live_server_url}/login")
-        self.wait_until(lambda _: len(self.driver.find_elements(By.TAG_NAME, "input") ) == 2)
-        self.email_input().send_keys("test@example.com" + Keys.ENTER)
-        self.password_input().send_keys("testpassword" + Keys.ENTER)
-        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
-
+        user1 = self.create_and_login_user()
         create_chat_and_messages(user1, "Greetings", "Hi!", "Hello!")
         create_chat_and_messages(user1, "Question about math", "What is Mathematics?", "Mathematics is...")
 
@@ -579,13 +554,7 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.logout_button().click()
         self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/login")
 
-        user2 = create_user("someone@example.com", "somepassword")
-        self.driver.get(f"{self.live_server_url}/login")
-        self.wait_until(lambda _: len(self.driver.find_elements(By.TAG_NAME, "input") ) == 2)
-        self.email_input().send_keys("someone@example.com" + Keys.ENTER)
-        self.password_input().send_keys("somepassword" + Keys.ENTER)
-        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
-
+        user2 = self.create_and_login_user("someone@example.com", "somepassword")
         create_chat_and_messages(user2, "A question about Algebra", "Tell me what is Geometry.", "Sure. Geometry is...")
         create_chat_and_messages(user2, "Python question", "What is the 'def' keyword in Python?", "The 'def' keyword is used for...")
 
