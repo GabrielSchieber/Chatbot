@@ -302,6 +302,11 @@ body {
     z-index: 1;
 }
 
+.past-chat-dropdown-div.open-upwards {
+    top: auto;
+    bottom: 35px;
+}
+
 .past-chat-rename-button,
 .past-chat-delete-button {
     padding: 10px;

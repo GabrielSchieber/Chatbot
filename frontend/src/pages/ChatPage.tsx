@@ -351,15 +351,15 @@ export default function ChatPage() {
                             )}
                             <button className="past-chat-dropdown-button" onClick={() => setOpenDropdownUUID(prev => (prev === chat.uuid ? null : chat.uuid))}>≡</button>
                             {openDropdownUUID === chat.uuid && (
-                                <div className="past-chat-dropdown-div">
+                                <DropdownDiv>
                                     <button className="past-chat-rename-button" onClick={() => { handleRenameChatButton(chat) }}>Rename</button>
                                     <button className="past-chat-delete-button" onClick={() => { handleDeleteChatButton(chat) }}>Delete</button>
-                                </div>
+                                </DropdownDiv>
                             )}
                         </div>
                     ))}
                 </div>
-            </div >
+            </div>
 
             <div id="chat-div">
                 <div id="messages-div">
@@ -579,4 +579,20 @@ function deleteAccount() {
             }
         })
     }
+}
+
+function DropdownDiv({ children }: { children: React.ReactNode }) {
+    const ref = useRef<HTMLDivElement>(null)
+    const [openUpwards, setOpenUpwards] = useState(false)
+
+    useEffect(() => {
+        const dropdown = ref.current
+        if (dropdown) {
+            const rect = dropdown.getBoundingClientRect()
+            const overflowBottom = rect.bottom > window.innerHeight
+            setOpenUpwards(overflowBottom)
+        }
+    }, [])
+
+    return <div ref={ref} className={`past-chat-dropdown-div${openUpwards ? " open-upwards" : ""}`}>{children}</div>
 }
