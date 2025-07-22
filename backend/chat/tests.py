@@ -440,6 +440,11 @@ class SeleniumChannelsTests(ChannelsLiveServerTestCase):
         self.driver.quit()
 
     def test_index(self):
+        user_message1 = "Hi!"
+        bot_message1 = "Hello! How can I help you today?"
+        user_message2 = "Write a \"Hello World!\" (without a comma) Python program. Just write the code."
+        bot_message2 = "print(\"Hello World!\")"
+
         create_user()
 
         self.driver.get(f"{self.live_server_url}")
@@ -450,26 +455,32 @@ class SeleniumChannelsTests(ChannelsLiveServerTestCase):
         self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
         time.sleep(0.5)
 
-        self.prompt_text_area().send_keys("Hi!" + Keys.ENTER)
-        self.wait_until(lambda _: self.user_message_divs()[0].text == "Hi!")
+        self.prompt_text_area().send_keys(user_message1 + Keys.ENTER)
+        self.wait_until(lambda _: self.user_message_divs()[0].text == user_message1)
 
         self.assertEqual(Chat.objects.count(), 1)
         self.assertEqual(Chat.objects.first().title, "Chat 1")
-        self.wait_until(lambda _: Message.objects.count() == 2, 3)
-        self.assertEqual(Message.objects.first().text, "Hi!")
+        self.wait_until(lambda _: Message.objects.count() == 2, 5)
+        self.assertEqual(Message.objects.first().text, user_message1)
         self.assertTrue(Message.objects.first().is_user_message)
-        self.assertEqual(Message.objects.last().text, "")
         self.assertFalse(Message.objects.last().is_user_message)
 
-        self.wait_until(lambda _: self.bot_message_divs()[0].text == "Hello! How can I help you today?", 25)
-        self.assertEqual(self.bot_message_divs()[0].get_attribute("innerHTML"), "<p>Hello! How can I help you today?</p>")
+        self.wait_until(lambda _: self.bot_message_divs()[0].text == bot_message1, 25)
+        self.assertEqual(self.bot_message_divs()[0].get_attribute("innerHTML"), f"<p>{bot_message1}</p>")
         self.assertIn("/chat/", self.driver.current_url)
-        time.sleep(0.5)
+        self.wait_until(lambda _: Message.objects.last().text == bot_message1)
 
-        self.assertEqual(Message.objects.last().text, "Hello! How can I help you today?")
+        self.prompt_text_area().send_keys(user_message2 + Keys.ENTER)
+        self.wait_until(lambda _: self.user_message_divs()[1].text == user_message2)
 
-        self.prompt_text_area().send_keys("Write a \"Hello World!\" (without a comma) Python program. Just write the code." + Keys.ENTER)
-        self.wait_until(lambda _: "print(\"Hello World!\")" in self.bot_message_divs()[-1].text, 10)
+        self.wait_until(lambda _: Message.objects.count() == 4, 5)
+        self.assertEqual(Message.objects.all()[2].text, user_message2)
+        self.assertTrue(Message.objects.all()[2].is_user_message)
+        self.assertFalse(Message.objects.all()[3].is_user_message)
+
+        self.wait_until(lambda _: self.bot_message_divs()[1].text == bot_message2, 10)
+        self.assertEqual(self.bot_message_divs()[1].get_attribute("innerHTML"), '<div class="codehilite" data-language="python"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="s2">"Hello World!"</span><span class="p">)</span>\n</code></pre></div>')
+        self.assertEqual(Message.objects.last().text, f"```python\n{bot_message2}\n```")
 
     def email_input(self):
         return self.driver.find_element(By.ID, "email-input")
