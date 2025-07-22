@@ -234,6 +234,7 @@ body {
 #history-div {
     display: flex;
     flex-direction: column;
+    height: 100%;
     gap: 10px;
     align-items: center;
     overflow-x: hidden;
