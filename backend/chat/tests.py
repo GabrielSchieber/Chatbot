@@ -492,23 +492,14 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.assertIn(bot_message3.text[:10], self.search_entry_as()[0].text)
 
     def test_settings_panel(self):
-        def open_settings():
-            self.open_settings_button().click()
-            self.wait_until(lambda _: len(self.driver.find_elements(By.ID, "settings-p")) == 1)
-
-        def close_settings():
-            self.close_settings_button().click()
-            self.wait_until(lambda _: len(self.driver.find_elements(By.ID, "settings-p")) == 0)
-
         create_user()
-
         self.driver.get(f"{self.live_server_url}/login")
         self.wait_until(lambda _: len(self.driver.find_elements(By.TAG_NAME, "input") ) == 2)
         self.email_input().send_keys("test@example.com" + Keys.ENTER)
         self.password_input().send_keys("testpassword" + Keys.ENTER)
         self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
 
-        open_settings()
+        self.open_settings()
 
         self.assertEqual(self.theme_select().text, "System\nLight\nDark")
         self.assertEqual(self.theme_select().get_attribute("value"), "system")
@@ -527,34 +518,94 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.assertEqual(self.delete_account_button().text, "Delete")
         self.assertEqual(self.logout_button().text, "Log out")
 
-        close_settings()
+    def test_settings_theme_select(self):
+        create_user()
+        self.driver.get(f"{self.live_server_url}/login")
+        self.wait_until(lambda _: len(self.driver.find_elements(By.TAG_NAME, "input") ) == 2)
+        self.email_input().send_keys("test@example.com" + Keys.ENTER)
+        self.password_input().send_keys("testpassword" + Keys.ENTER)
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
 
         background_color = self.driver.execute_script("return getComputedStyle(arguments[0]).backgroundColor", self.body())
         self.assertIn(background_color, ["rgb(200, 202, 205)", "rgb(35, 37, 40)"])
 
-        open_settings()
+        self.open_settings()
         theme_select = Select(self.theme_select())
         theme_select.select_by_visible_text("Light")
-        close_settings()
+        self.close_settings()
 
         background_color = self.driver.execute_script("return getComputedStyle(arguments[0]).backgroundColor", self.body())
         self.assertEqual(background_color, "rgb(200, 202, 205)")
 
-        open_settings()
+        self.open_settings()
         theme_select = Select(self.theme_select())
         theme_select.select_by_visible_text("Dark")
-        close_settings()
+        self.close_settings()
 
         background_color = self.driver.execute_script("return getComputedStyle(arguments[0]).backgroundColor", self.body())
         self.assertEqual(background_color, "rgb(35, 37, 40)")
 
-        open_settings()
+        self.open_settings()
         theme_select = Select(self.theme_select())
         theme_select.select_by_visible_text("System")
-        close_settings()
+        self.close_settings()
 
         background_color = self.driver.execute_script("return getComputedStyle(arguments[0]).backgroundColor", self.body())
         self.assertIn(background_color, ["rgb(200, 202, 205)", "rgb(35, 37, 40)"])
+
+    def test_settings_delete_chats(self):
+        def create_chat_and_messages(user: User, title: str, message1: str, message2: str):
+            chat = Chat.objects.create(user = user, title = title)
+            Message.objects.create(chat = chat, text = message1, is_user_message = True)
+            Message.objects.create(chat = chat, text = message2, is_user_message = False)
+
+        user1 = create_user()
+        self.driver.get(f"{self.live_server_url}/login")
+        self.wait_until(lambda _: len(self.driver.find_elements(By.TAG_NAME, "input") ) == 2)
+        self.email_input().send_keys("test@example.com" + Keys.ENTER)
+        self.password_input().send_keys("testpassword" + Keys.ENTER)
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+
+        create_chat_and_messages(user1, "Greetings", "Hi!", "Hello!")
+        create_chat_and_messages(user1, "Question about math", "What is Mathematics?", "Mathematics is...")
+
+        self.open_settings()
+        self.delete_chats_button().click()
+        self.wait_until(lambda _: self.driver.switch_to.alert)
+        self.driver.switch_to.alert.accept()
+
+        self.wait_until(lambda _: Chat.objects.count() == 0)
+        self.wait_until(lambda _: Message.objects.count() == 0)
+
+        create_chat_and_messages(user1, "Greetings", "Hi!", "Hello!")
+        create_chat_and_messages(user1, "Question about math", "What is Mathematics?", "Mathematics is...")
+
+        self.open_settings()
+        self.logout_button().click()
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/login")
+
+        user2 = create_user("someone@example.com", "somepassword")
+        self.driver.get(f"{self.live_server_url}/login")
+        self.wait_until(lambda _: len(self.driver.find_elements(By.TAG_NAME, "input") ) == 2)
+        self.email_input().send_keys("someone@example.com" + Keys.ENTER)
+        self.password_input().send_keys("somepassword" + Keys.ENTER)
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+
+        create_chat_and_messages(user2, "A question about Algebra", "Tell me what is Geometry.", "Sure. Geometry is...")
+        create_chat_and_messages(user2, "Python question", "What is the 'def' keyword in Python?", "The 'def' keyword is used for...")
+
+        self.open_settings()
+        self.delete_chats_button().click()        
+        self.wait_until(lambda _: self.driver.switch_to.alert)
+        self.driver.switch_to.alert.accept()
+
+        self.wait_until(lambda _: Chat.objects.count(), 2)
+        self.wait_until(lambda _: Message.objects.count(), 4)
+
+        self.assertEqual(Chat.objects.all()[0].user, user1)
+        self.assertEqual(Chat.objects.all()[0].title, "Greetings")
+        self.assertEqual(Chat.objects.all()[1].user, user1)
+        self.assertEqual(Chat.objects.all()[1].title, "Question about math")
 
     def email_input(self):
         return self.driver.find_element(By.ID, "email-input")
@@ -594,6 +645,14 @@ class SeleniumTests(StaticLiveServerTestCase):
 
     def logout_button(self):
         return self.driver.find_element(By.ID, "logout-button")
+
+    def open_settings(self):
+        self.open_settings_button().click()
+        self.wait_until(lambda _: len(self.driver.find_elements(By.ID, "settings-p")) == 1)
+
+    def close_settings(self):
+        self.close_settings_button().click()
+        self.wait_until(lambda _: len(self.driver.find_elements(By.ID, "settings-p")) == 0)
 
     def body(self):
         return self.driver.find_element(By.TAG_NAME, "body")
