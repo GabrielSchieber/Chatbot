@@ -6,6 +6,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import TestCase
 from selenium import webdriver
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait, Select
@@ -604,6 +605,41 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.assertEqual(Chat.objects.count(), 1)
         self.assertEqual(Message.objects.count(), 2)
 
+    def test_rename_chat(self):
+        user = self.create_and_login_user()
+        create_chat_and_messages(user, "Chat 1", "Hello!", "Hi!")
+        create_chat_and_messages(user, "Some other chat", "What is Calculus?", "Calculus is...")
+        self.driver.get(self.live_server_url)
+
+        self.wait_until(lambda _: len(self.past_chat_as()) == 2)
+
+        ActionChains(self.driver).move_to_element(self.past_chat_as()[0]).perform()
+        self.past_chat_dropdown_buttons()[0].click()
+        self.assertEqual(self.past_chat_rename_button().text, "Rename")
+        self.past_chat_rename_button().click()
+        self.assertEqual(len(self.past_chat_as()), 1)
+        self.assertEqual(self.past_chat_rename_input().get_attribute("value"), "Chat 1")
+
+        ActionChains(self.driver).send_keys_to_element(self.past_chat_rename_input(), Keys.BACKSPACE * 6).perform()
+        self.wait_until(lambda _: self.past_chat_rename_input().get_attribute("value") == "")
+
+        ActionChains(self.driver).send_keys("A chat about greetings" + Keys.ENTER).perform()
+        self.wait_until(lambda _: Chat.objects.all()[0].title == "A chat about greetings")
+        self.assertEqual(Chat.objects.all()[1].title, "Some other chat")
+
+        ActionChains(self.driver).move_to_element(self.past_chat_as()[1]).perform()
+        self.past_chat_dropdown_buttons()[1].click()
+        self.past_chat_rename_button().click()
+        self.assertEqual(len(self.past_chat_as()), 1)
+        self.assertEqual(self.past_chat_rename_input().get_attribute("value"), "Some other chat")
+
+        ActionChains(self.driver).send_keys_to_element(self.past_chat_rename_input(), Keys.END).send_keys(Keys.BACKSPACE * 15).perform()
+        self.wait_until(lambda _: self.past_chat_rename_input().get_attribute("value") == "")
+
+        ActionChains(self.driver).send_keys("Calculus question" + Keys.ENTER).perform()
+        self.wait_until(lambda _: Chat.objects.all()[1].title == "Calculus question")
+        self.assertEqual(Chat.objects.all()[0].title, "A chat about greetings")
+
     def body(self):
         return self.driver.find_element(By.TAG_NAME, "body")
 
@@ -645,6 +681,18 @@ class SeleniumTests(StaticLiveServerTestCase):
 
     def logout_button(self):
         return self.driver.find_element(By.ID, "logout-button")
+
+    def past_chat_as(self):
+        return self.driver.find_elements(By.CLASS_NAME, "past-chat-a")
+
+    def past_chat_dropdown_buttons(self):
+        return self.driver.find_elements(By.CLASS_NAME, "past-chat-dropdown-button")
+
+    def past_chat_rename_button(self):
+        return self.driver.find_element(By.CLASS_NAME, "past-chat-rename-button")
+
+    def past_chat_rename_input(self):
+        return self.driver.find_element(By.CLASS_NAME, "past-chat-rename-input")
 
     def open_settings(self):
         self.open_settings_button().click()
