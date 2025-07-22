@@ -8,7 +8,7 @@ from django.test import TestCase
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait, Select
 
 from chat.models import Chat, Message, User
 
@@ -410,8 +410,8 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.driver.get(f"{self.live_server_url}/signup")
         self.assertEqual(self.driver.find_element(By.ID, "title-h1").text, "Sign up")
 
-        self.driver.find_element(By.ID, "email-input").send_keys("test@example.com" + Keys.ENTER)
-        self.driver.find_element(By.ID, "password-input").send_keys("testpassword" + Keys.ENTER)
+        self.email_input().send_keys("test@example.com" + Keys.ENTER)
+        self.password_input().send_keys("testpassword" + Keys.ENTER)
         self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
 
         self.assertEqual(User.objects.count(), 1)
@@ -425,8 +425,8 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.driver.get(f"{self.live_server_url}/login")
         self.assertEqual(self.driver.find_element(By.ID, "title-h1").text, "Log in")
 
-        self.driver.find_element(By.ID, "email-input").send_keys("test@example.com" + Keys.ENTER)
-        self.driver.find_element(By.ID, "password-input").send_keys("testpassword" + Keys.ENTER)
+        self.email_input().send_keys("test@example.com" + Keys.ENTER)
+        self.password_input().send_keys("testpassword" + Keys.ENTER)
         self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
 
     def test_index_search(self):
@@ -491,6 +491,71 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.assertIn(user_message3.text[:10], self.search_entry_as()[0].text)
         self.assertIn(bot_message3.text[:10], self.search_entry_as()[0].text)
 
+    def test_settings_panel(self):
+        def open_settings():
+            self.open_settings_button().click()
+            self.wait_until(lambda _: len(self.driver.find_elements(By.ID, "settings-p")) == 1)
+
+        def close_settings():
+            self.close_settings_button().click()
+            self.wait_until(lambda _: len(self.driver.find_elements(By.ID, "settings-p")) == 0)
+
+        create_user()
+
+        self.driver.get(f"{self.live_server_url}/login")
+        self.wait_until(lambda _: len(self.driver.find_elements(By.TAG_NAME, "input") ) == 2)
+        self.email_input().send_keys("test@example.com" + Keys.ENTER)
+        self.password_input().send_keys("testpassword" + Keys.ENTER)
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+
+        open_settings()
+
+        self.assertEqual(self.theme_select().text, "System\nLight\nDark")
+        self.assertEqual(self.theme_select().get_attribute("value"), "system")
+
+        theme_select = Select(self.theme_select())
+        self.assertFalse(theme_select.is_multiple)
+        self.assertEqual(len(theme_select.options), 3)
+        self.assertEqual(theme_select.options[0].text, "System")
+        self.assertEqual(theme_select.options[0].get_attribute("value"), "system")
+        self.assertEqual(theme_select.options[1].text, "Light")
+        self.assertEqual(theme_select.options[1].get_attribute("value"), "light")
+        self.assertEqual(theme_select.options[2].text, "Dark")
+        self.assertEqual(theme_select.options[2].get_attribute("value"), "dark")
+
+        self.assertEqual(self.delete_chats_button().text, "Delete all")
+        self.assertEqual(self.delete_account_button().text, "Delete")
+        self.assertEqual(self.logout_button().text, "Log out")
+
+        close_settings()
+
+        background_color = self.driver.execute_script("return getComputedStyle(arguments[0]).backgroundColor", self.body())
+        self.assertIn(background_color, ["rgb(200, 202, 205)", "rgb(35, 37, 40)"])
+
+        open_settings()
+        theme_select = Select(self.theme_select())
+        theme_select.select_by_visible_text("Light")
+        close_settings()
+
+        background_color = self.driver.execute_script("return getComputedStyle(arguments[0]).backgroundColor", self.body())
+        self.assertEqual(background_color, "rgb(200, 202, 205)")
+
+        open_settings()
+        theme_select = Select(self.theme_select())
+        theme_select.select_by_visible_text("Dark")
+        close_settings()
+
+        background_color = self.driver.execute_script("return getComputedStyle(arguments[0]).backgroundColor", self.body())
+        self.assertEqual(background_color, "rgb(35, 37, 40)")
+
+        open_settings()
+        theme_select = Select(self.theme_select())
+        theme_select.select_by_visible_text("System")
+        close_settings()
+
+        background_color = self.driver.execute_script("return getComputedStyle(arguments[0]).backgroundColor", self.body())
+        self.assertIn(background_color, ["rgb(200, 202, 205)", "rgb(35, 37, 40)"])
+
     def email_input(self):
         return self.driver.find_element(By.ID, "email-input")
 
@@ -511,6 +576,21 @@ class SeleniumTests(StaticLiveServerTestCase):
 
     def open_settings_button(self):
         return self.driver.find_element(By.ID, "open-settings-button")
+
+    def logout_button(self):
+        return self.driver.find_element(By.ID, "logout-button")
+
+    def close_settings_button(self):
+        return self.driver.find_element(By.ID, "close-settings-button")
+
+    def theme_select(self):
+        return self.driver.find_element(By.ID, "theme-select")
+
+    def delete_chats_button(self):
+        return self.driver.find_element(By.ID, "delete-chats-button")
+
+    def delete_account_button(self):
+        return self.driver.find_element(By.ID, "delete-account-button")
 
     def logout_button(self):
         return self.driver.find_element(By.ID, "logout-button")
