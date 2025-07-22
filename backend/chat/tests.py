@@ -554,11 +554,6 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.assertIn(background_color, ["rgb(200, 202, 205)", "rgb(35, 37, 40)"])
 
     def test_settings_delete_chats(self):
-        def create_chat_and_messages(user: User, title: str, message1: str, message2: str):
-            chat = Chat.objects.create(user = user, title = title)
-            Message.objects.create(chat = chat, text = message1, is_user_message = True)
-            Message.objects.create(chat = chat, text = message2, is_user_message = False)
-
         user1 = create_user()
         self.driver.get(f"{self.live_server_url}/login")
         self.wait_until(lambda _: len(self.driver.find_elements(By.TAG_NAME, "input") ) == 2)
@@ -607,6 +602,42 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.assertEqual(Chat.objects.all()[1].user, user1)
         self.assertEqual(Chat.objects.all()[1].title, "Question about math")
 
+    def test_settings_delete_account(self):
+        user1 = self.create_and_login_user()
+        create_chat_and_messages(user1, "Chat 1", "Some message", "Another message")
+        create_chat_and_messages(user1, "Chat 2", "Hello!", "Hi!")
+
+        self.open_settings()
+        self.delete_account_button().click()
+        self.wait_until(lambda _: self.driver.switch_to.alert)
+        self.driver.switch_to.alert.accept()
+
+        self.wait_until(lambda _: User.objects.count() == 0)
+        self.assertEqual(Chat.objects.count(), 0)
+        self.assertEqual(Message.objects.count(), 0)
+
+        user2 = self.create_and_login_user("someone@example.com", "somepassword")
+        create_chat_and_messages(user2, "Some chat", "Hi!", "Hello!")
+        self.open_settings()
+        self.logout_button().click()
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/login")
+
+        user3 = self.create_and_login_user("test2@example.com", "1234")
+        create_chat_and_messages(user3, "Some title", "What is math?", "Math is...")
+
+        self.open_settings()
+        self.delete_account_button().click()
+        self.wait_until(lambda _: self.driver.switch_to.alert)
+        self.driver.switch_to.alert.accept()
+
+        self.wait_until(lambda _: User.objects.count() == 1)
+        self.assertEqual(User.objects.first().email, "someone@example.com")
+        self.assertEqual(Chat.objects.count(), 1)
+        self.assertEqual(Message.objects.count(), 2)
+
+    def body(self):
+        return self.driver.find_element(By.TAG_NAME, "body")
+
     def email_input(self):
         return self.driver.find_element(By.ID, "email-input")
 
@@ -654,11 +685,22 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.close_settings_button().click()
         self.wait_until(lambda _: len(self.driver.find_elements(By.ID, "settings-p")) == 0)
 
-    def body(self):
-        return self.driver.find_element(By.TAG_NAME, "body")
+    def create_and_login_user(self, email: str = "test@example.com", password: str = "testpassword"):
+        user = create_user(email, password)
+        self.driver.get(f"{self.live_server_url}/login")
+        self.wait_until(lambda _: len(self.driver.find_elements(By.TAG_NAME, "input") ) == 2)
+        self.email_input().send_keys(email + Keys.ENTER)
+        self.password_input().send_keys(password + Keys.ENTER)
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+        return user
 
     def wait_until(self, method, timeout: float = 1.0):
         WebDriverWait(self.driver, timeout).until(method)
+
+def create_chat_and_messages(user: User, title: str, message1: str, message2: str):
+    chat = Chat.objects.create(user = user, title = title)
+    Message.objects.create(chat = chat, text = message1, is_user_message = True)
+    Message.objects.create(chat = chat, text = message2, is_user_message = False)
 
 class SeleniumChannelsTests(ChannelsLiveServerTestCase):
     def setUp(self):
