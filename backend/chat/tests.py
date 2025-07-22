@@ -482,6 +482,40 @@ class SeleniumChannelsTests(ChannelsLiveServerTestCase):
         self.assertEqual(self.bot_message_divs()[1].get_attribute("innerHTML"), '<div class="codehilite" data-language="python"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="s2">"Hello World!"</span><span class="p">)</span>\n</code></pre></div>')
         self.assertEqual(Message.objects.last().text, f"```python\n{bot_message2}\n```")
 
+    def test_history_panel(self):
+        user_message1 = "Type only one word"
+        bot_message1 = "\"Awesome\""
+        user_message2 = "Say a very small phrase"
+        bot_message2 = "\"I'm here to help you with your writing needs.\""
+
+        create_user()
+
+        self.driver.get(f"{self.live_server_url}/login")
+        self.wait_until(lambda _: len(self.driver.find_elements(By.TAG_NAME, "input")) > 0)
+        self.email_input().send_keys("test@example.com" + Keys.ENTER)
+        self.password_input().send_keys("testpassword" + Keys.ENTER)
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+        time.sleep(0.5)
+
+        self.prompt_text_area().send_keys(user_message1 + Keys.ENTER)
+        self.assertEqual(self.user_message_divs()[0].text, user_message1)
+        self.wait_until(lambda _: self.bot_message_divs()[0].text == bot_message1, 60)
+
+        self.assertEqual(len(self.past_chat_as()), 1)
+        self.assertEqual(self.past_chat_as()[0].text, "Chat 1")
+        self.assertIn(f"/chat/{Chat.objects.all()[0].uuid}", self.past_chat_as()[0].get_attribute("href"))
+
+        self.driver.get(self.live_server_url)
+        time.sleep(0.5)
+
+        self.prompt_text_area().send_keys(user_message2 + Keys.ENTER)
+        self.assertEqual(self.user_message_divs()[0].text, user_message2)
+        self.wait_until(lambda _: self.bot_message_divs()[0].text == bot_message2, 10)
+
+        self.assertEqual(len(self.past_chat_as()), 2)
+        self.assertEqual(self.past_chat_as()[1].text, "Chat 2")
+        self.assertIn(f"/chat/{Chat.objects.all()[1].uuid}", self.past_chat_as()[1].get_attribute("href"))
+
     def email_input(self):
         return self.driver.find_element(By.ID, "email-input")
 
@@ -496,6 +530,9 @@ class SeleniumChannelsTests(ChannelsLiveServerTestCase):
 
     def bot_message_divs(self):
         return self.driver.find_elements(By.CLASS_NAME, "bot-message-div")
+
+    def past_chat_as(self):
+        return self.driver.find_elements(By.CLASS_NAME, "past-chat-a")
 
     def wait_until(self, method, timeout: float = 1.0):
         WebDriverWait(self.driver, timeout).until(method)
