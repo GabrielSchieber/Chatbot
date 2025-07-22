@@ -482,7 +482,7 @@ class SeleniumChannelsTests(ChannelsLiveServerTestCase):
         self.assertEqual(self.bot_message_divs()[1].get_attribute("innerHTML"), '<div class="codehilite" data-language="python"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="s2">"Hello World!"</span><span class="p">)</span>\n</code></pre></div>')
         self.assertEqual(Message.objects.last().text, f"```python\n{bot_message2}\n```")
 
-    def test_history_panel(self):
+    def test_index_history_panel(self):
         user_message1 = "Type only one word"
         bot_message1 = "\"Awesome\""
         user_message2 = "Say a very small phrase"
@@ -516,6 +516,36 @@ class SeleniumChannelsTests(ChannelsLiveServerTestCase):
         self.assertEqual(self.past_chat_as()[1].text, "Chat 2")
         self.assertIn(f"/chat/{Chat.objects.all()[1].uuid}", self.past_chat_as()[1].get_attribute("href"))
 
+    def test_index_buttons(self):
+        create_user()
+
+        self.driver.get(f"{self.live_server_url}/login")
+        self.wait_until(lambda _: len(self.driver.find_elements(By.TAG_NAME, "input")) > 0)
+        self.email_input().send_keys("test@example.com" + Keys.ENTER)
+        self.password_input().send_keys("testpassword" + Keys.ENTER)
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/", 3)
+
+        local_storage = self.driver.execute_script("return {...localStorage}")
+        self.assertEqual(local_storage["isSidebarVisible"], "true")
+        self.assertEqual(local_storage["theme"], "system")
+
+        self.toggle_sidebar_button().click()
+
+        local_storage = self.driver.execute_script("return {...localStorage}")
+        self.assertEqual(local_storage["isSidebarVisible"], "false")
+
+        self.open_search_button().click()
+        self.assertIn("Search here...", self.driver.find_element(By.ID, "search-div").get_attribute("innerHTML"))
+        self.body().send_keys(Keys.ESCAPE)
+
+        self.prompt_text_area().send_keys("Type only one word" + Keys.ENTER)
+        self.wait_until(lambda _: self.user_message_divs()[0].text == "Type only one word")
+
+        self.wait_until(lambda _: "/chat/" in self.driver.current_url, 15)
+
+        self.new_chat_a().click()
+        self.wait_until(lambda _: self.driver.current_url == f"{self.live_server_url}/")
+
     def email_input(self):
         return self.driver.find_element(By.ID, "email-input")
 
@@ -533,6 +563,18 @@ class SeleniumChannelsTests(ChannelsLiveServerTestCase):
 
     def past_chat_as(self):
         return self.driver.find_elements(By.CLASS_NAME, "past-chat-a")
+
+    def toggle_sidebar_button(self):
+        return self.driver.find_element(By.ID, "toggle-sidebar-button")
+
+    def open_search_button(self):
+        return self.driver.find_element(By.ID, "open-search-button")
+
+    def new_chat_a(self):
+        return self.driver.find_element(By.ID, "new-chat-a")
+
+    def body(self):
+        return self.driver.find_element(By.TAG_NAME, "body")
 
     def wait_until(self, method, timeout: float = 1.0):
         WebDriverWait(self.driver, timeout).until(method)
