@@ -640,6 +640,38 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.wait_until(lambda _: Chat.objects.all()[1].title == "Calculus question")
         self.assertEqual(Chat.objects.all()[0].title, "A chat about greetings")
 
+    def test_delete_chat(self):
+        user = self.create_and_login_user()
+        create_chat_and_messages(user, "Chat 1", "Hello!", "Hi!")
+        create_chat_and_messages(user, "Some other chat", "What is Calculus?", "Calculus is...")
+        self.driver.get(self.live_server_url)
+
+        self.wait_until(lambda _: len(self.past_chat_as()) == 2)
+
+        ActionChains(self.driver).move_to_element(self.past_chat_as()[1]).perform()
+        time.sleep(0.5)
+        self.past_chat_dropdown_buttons()[1].click()
+        self.assertEqual(self.past_chat_delete_button().text, "Delete")
+
+        self.past_chat_delete_button().click()
+        self.wait_until(lambda _: self.driver.switch_to.alert)
+        self.driver.switch_to.alert.accept()
+
+        self.wait_until(lambda _: Chat.objects.count() == 1)
+        self.assertEqual(Chat.objects.first().title, "Chat 1")
+        self.assertEqual(len(self.past_chat_as()), 1)
+        self.assertEqual(self.past_chat_as()[0].text, "Chat 1")
+
+        ActionChains(self.driver).move_to_element(self.past_chat_as()[0]).perform()
+        self.past_chat_dropdown_buttons()[0].click()
+
+        self.past_chat_delete_button().click()
+        self.wait_until(lambda _: self.driver.switch_to.alert)
+        self.driver.switch_to.alert.accept()
+
+        self.wait_until(lambda _: Chat.objects.count() == 0)
+        self.assertEqual(len(self.past_chat_as()), 0)
+
     def body(self):
         return self.driver.find_element(By.TAG_NAME, "body")
 
@@ -693,6 +725,9 @@ class SeleniumTests(StaticLiveServerTestCase):
 
     def past_chat_rename_input(self):
         return self.driver.find_element(By.CLASS_NAME, "past-chat-rename-input")
+
+    def past_chat_delete_button(self):
+        return self.driver.find_element(By.CLASS_NAME, "past-chat-delete-button")
 
     def open_settings(self):
         self.open_settings_button().click()
