@@ -408,13 +408,13 @@ function updateCodeTheme(theme: Theme) {
     }
     switch (theme) {
         case "light":
-            link.href = "/src/pages/code_light.css"
+            link.href = "/assets/code_light.css"
             break
         case "dark":
-            link.href = "/src/pages/code_dark.css"
+            link.href = "/assets/code_dark.css"
             break
         default:
-            link.href = matchMedia("(prefers-color-scheme: dark)").matches ? "/src/pages/code_dark.css" : "/src/pages/code_light.css"
+            link.href = matchMedia("(prefers-color-scheme: dark)").matches ? "/assets/code_dark.css" : "/assets/code_light.css"
             break
     }
     document.head.appendChild(link)

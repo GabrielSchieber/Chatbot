@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
 from django.db.models import Prefetch, Q
+from django.shortcuts import render
 from rest_framework import generics, serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -160,3 +161,6 @@ class DeleteAccount(APIView):
             return Response(status = 200)
         except Exception:
             return Response(status = 400)
+
+def index(request):
+    return render(request, "index.html")

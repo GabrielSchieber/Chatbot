@@ -1,4 +1,6 @@
-from django.urls import path
+from django.urls import path, re_path
+
+from backend.settings import DEBUG
 
 from .views import (
     DeleteAccount,
@@ -12,20 +14,24 @@ from .views import (
     LogoutView,
     MeView,
     RegisterView,
-    RenameChat
+    RenameChat,
+    index
 )
 
 urlpatterns = [
-    path("signup/", RegisterView.as_view()),
-    path("login/", LoginView.as_view()),
-    path("logout/", LogoutView.as_view()),
-    path("me/", MeView.as_view()),
-    path("get-message/", GetMessage.as_view()),
-    path("get-messages/", GetMessages.as_view()),
-    path("get-chats/", GetChats.as_view()),
-    path("search-chats/", SearchChats.as_view()),
-    path("rename-chat/", RenameChat.as_view()),
-    path("delete-chat/", DeleteChat.as_view()),
-    path("delete-chats/", DeleteChats.as_view()),
-    path("delete-account/", DeleteAccount.as_view())
+    path("api/signup/", RegisterView.as_view()),
+    path("api/login/", LoginView.as_view()),
+    path("api/logout/", LogoutView.as_view()),
+    path("api/me/", MeView.as_view()),
+    path("api/get-message/", GetMessage.as_view()),
+    path("api/get-messages/", GetMessages.as_view()),
+    path("api/get-chats/", GetChats.as_view()),
+    path("api/search-chats/", SearchChats.as_view()),
+    path("api/rename-chat/", RenameChat.as_view()),
+    path("api/delete-chat/", DeleteChat.as_view()),
+    path("api/delete-chats/", DeleteChats.as_view()),
+    path("api/delete-account/", DeleteAccount.as_view())
 ]
+
+if not DEBUG:
+    urlpatterns.append(re_path(".*", index))
