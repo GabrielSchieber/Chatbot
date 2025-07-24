@@ -1,4 +1,4 @@
-Django == 5.2.4
+Django == 5.1.11
 Markdown == 3.8.2
 Pygments == 2.19.2
 channels[daphne] == 4.2.2

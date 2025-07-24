@@ -1,7 +1,5 @@
 from django.urls import path, re_path
 
-from backend.settings import DEBUG
-
 from .views import (
     DeleteAccount,
     DeleteChat,
@@ -30,8 +28,6 @@ urlpatterns = [
     path("api/rename-chat/", RenameChat.as_view()),
     path("api/delete-chat/", DeleteChat.as_view()),
     path("api/delete-chats/", DeleteChats.as_view()),
-    path("api/delete-account/", DeleteAccount.as_view())
+    path("api/delete-account/", DeleteAccount.as_view()),
+    re_path(".*", index)
 ]
-
-if not DEBUG:
-    urlpatterns.append(re_path(".*", index))

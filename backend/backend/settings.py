@@ -81,7 +81,9 @@ USE_I18N = True
 
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "assets/"
+
+STATICFILES_DIRS = ["../frontend/dist/assets"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -99,9 +101,11 @@ SIMPLE_JWT = {
     "AUTH_COOKIE_SAMESITE": "Lax"
 }
 
-if len(sys.argv) == 3 and sys.argv[0] == "manage.py" and sys.argv[1] == "test" and "SeleniumChannelsTests" in sys.argv[2]:
-    DATABASES["default"] = {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "test_db.sqlite3",
-        "TEST": {"NAME": BASE_DIR / "test_db.sqlite3"}
+if sys.argv[:2] == ["manage.py", "test"]:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "test_db.sqlite3",
+            "TEST": {"NAME": BASE_DIR / "test_db.sqlite3"}
+        }
     }
