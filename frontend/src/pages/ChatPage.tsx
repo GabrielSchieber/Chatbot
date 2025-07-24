@@ -399,7 +399,7 @@ export default function ChatPage() {
                 </div>
                 <div id="history-div">
                     {chats.map(chat => (
-                        <div key={chat.uuid} className="past-chat-div">
+                        <div key={chat.uuid} className={`past-chat-div${chat.uuid === chatUUID ? " selected" : ""}`}>
                             {renamingUUID === chat.uuid ? (
                                 <input className="past-chat-rename-input" type="text" value={renamingTitle} onChange={e => setRenamingTitle(e.target.value)} onKeyDown={e => { handleRenameInput(e, chat) }} autoFocus />
                             ) : (

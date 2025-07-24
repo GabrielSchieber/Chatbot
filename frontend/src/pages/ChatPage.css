@@ -250,6 +250,9 @@ body {
     align-items: center;
     justify-content: space-between;
     border-radius: 10px;
+}
+
+.past-chat-div.selected {
     background-color: var(--background-color4);
 }
 
@@ -275,7 +278,7 @@ body {
 
 .past-chat-dropdown-button {
     display: none;
-    padding-right: 10px;
+    width: 35px;
     height: 100%;
     border-radius: 10px;
     background-color: transparent;
