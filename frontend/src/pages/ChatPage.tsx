@@ -131,11 +131,27 @@ export default function ChatPage() {
                                 setInput("")
                             }
                         } else {
-                            const alreadyGeneratingMessageP = document.createElement("p")
-                            alreadyGeneratingMessageP.className = "already-generating-message-p"
-                            alreadyGeneratingMessageP.innerHTML = `A message is already being generated in <a href="/chat/${data[0].uuid}">${data[0].title}<a>`
-                            document.getElementById("chat-div")?.appendChild(alreadyGeneratingMessageP)
-                            setTimeout(() => { alreadyGeneratingMessageP.remove() }, 3000);
+                            let generatingWarnP = document.querySelector(".generating-warn-p") as HTMLElement
+
+                            if (!generatingWarnP) {
+                                generatingWarnP = document.createElement("p")
+                                generatingWarnP.className = "generating-warn-p"
+                                generatingWarnP.innerHTML = `A message is already being generated in <a href="/chat/${data[0].uuid}">${data[0].title}<a>`
+                                document.getElementById("chat-div")?.appendChild(generatingWarnP)
+
+                                generatingWarnP.style.filter = "brightness(0.9)"
+                                generatingWarnP.style.scale = "0.9"
+                            } else {
+                                generatingWarnP.style.filter = "brightness(1.1)"
+                                generatingWarnP.style.scale = "1.1"
+                            }
+
+                            setTimeout(() => {
+                                generatingWarnP.style.filter = ""
+                                generatingWarnP.style.scale = ""
+                            }, 500)
+
+                            setTimeout(() => { generatingWarnP.remove() }, 3000)
                         }
                     })
                 } else {

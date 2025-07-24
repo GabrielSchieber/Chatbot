@@ -516,13 +516,14 @@ body {
     background-color: var(--background-color3);
 }
 
-.already-generating-message-p {
+.generating-warn-p {
     position: absolute;
     width: 50%;
     bottom: 12.5%;
     padding: 10px;
     border-radius: 10px;
     background-color: var(--background-color1);
+    transition: scale 0.5s, filter 0.5s;
 }
 
 #prompt-textarea {
