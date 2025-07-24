@@ -4,6 +4,7 @@ from .views import (
     DeleteAccount,
     DeleteChat,
     DeleteChats,
+    Generating,
     GetChats,
     GetMessage,
     GetMessages,
@@ -29,5 +30,6 @@ urlpatterns = [
     path("api/delete-chat/", DeleteChat.as_view()),
     path("api/delete-chats/", DeleteChats.as_view()),
     path("api/delete-account/", DeleteAccount.as_view()),
+    path("api/generating/", Generating.as_view()),
     re_path(".*", index)
 ]

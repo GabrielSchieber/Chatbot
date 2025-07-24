@@ -113,14 +113,35 @@ export default function ChatPage() {
     function sendMessage(event: React.KeyboardEvent) {
         if (webSocket.current && event.key === "Enter" && !event.shiftKey && input.trim()) {
             event.preventDefault()
-            setMessages(previous => {
-                let messages = [...previous]
-                messages.push({ text: input, index: messages.length })
-                messages.push({ text: "", index: messages.length })
-                return messages
+            fetch("/api/generating/", {
+                credentials: "include",
+                headers: { "Content-Type": "application/json" }
+            }).then(response => {
+                if (response.status === 200) {
+                    response.json().then(data => {
+                        if (data.length === 0) {
+                            if (webSocket.current) {
+                                setMessages(previous => {
+                                    let messages = [...previous]
+                                    messages.push({ text: input, index: messages.length })
+                                    messages.push({ text: "", index: messages.length })
+                                    return messages
+                                })
+                                webSocket.current.send(JSON.stringify({ message: input }))
+                                setInput("")
+                            }
+                        } else {
+                            const alreadyGeneratingMessageP = document.createElement("p")
+                            alreadyGeneratingMessageP.className = "already-generating-message-p"
+                            alreadyGeneratingMessageP.innerHTML = `A message is already being generated in <a href="/chat/${data[0].uuid}">${data[0].title}<a>`
+                            document.getElementById("chat-div")?.appendChild(alreadyGeneratingMessageP)
+                            setTimeout(() => { alreadyGeneratingMessageP.remove() }, 3000);
+                        }
+                    })
+                } else {
+                    alert("Checking if any messages were already being generated was no possible")
+                }
             })
-            webSocket.current.send(JSON.stringify({ message: input }))
-            setInput("")
         }
     }
 

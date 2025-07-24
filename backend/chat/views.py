@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .consumers import generate_message_tasks
 from .models import Chat, Message, User
 from .utils import markdown_to_html
 
@@ -159,6 +160,21 @@ class DeleteAccount(APIView):
         try:
             request.user.delete()
             return Response(status = 200)
+        except Exception:
+            return Response(status = 400)
+
+class Generating(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            chats = Chat.objects.filter(user = request.user, is_complete = False)
+            for chat in chats:
+                if chat.uuid not in generate_message_tasks:
+                    chat.is_complete = True
+                    chat.save()
+            chats = Chat.objects.filter(user = request.user, is_complete = False)
+            return Response([{"title": chat.title, "uuid": str(chat.uuid)} for chat in chats], 200)
         except Exception:
             return Response(status = 400)
 

@@ -516,6 +516,15 @@ body {
     background-color: var(--background-color3);
 }
 
+.already-generating-message-p {
+    position: absolute;
+    width: 50%;
+    bottom: 12.5%;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: var(--background-color1);
+}
+
 #prompt-textarea {
     width: 60%;
     height: auto;
