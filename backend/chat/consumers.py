@@ -4,6 +4,7 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
+from django.utils.html import escape
 from jwt import decode as jwt_decode
 
 from .models import Chat, Message, User
@@ -97,7 +98,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         async for token in sample_model(messages, 256):
             bot_message.text += token
             await database_sync_to_async(bot_message.save)()
-            await self.channel_layer.group_send(f"chat_{self.chat.uuid}", {"type": "send_token", "token": token})
+            await self.channel_layer.group_send(f"chat_{self.chat.uuid}", {"type": "send_token", "token": escape(token)})
 
         self.chat.is_complete = True
         await database_sync_to_async(self.chat.save)()
