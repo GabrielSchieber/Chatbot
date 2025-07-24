@@ -163,7 +163,7 @@ class DeleteAccount(APIView):
         except Exception:
             return Response(status = 400)
 
-class Generating(APIView):
+class GetGeneratingChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -174,7 +174,7 @@ class Generating(APIView):
                     chat.is_complete = True
                     chat.save()
             chats = Chat.objects.filter(user = request.user, is_complete = False)
-            return Response([{"title": chat.title, "uuid": str(chat.uuid)} for chat in chats], 200)
+            return Response({"chats": [{"title": chat.title, "uuid": chat.uuid} for chat in chats]})
         except Exception:
             return Response(status = 400)
 

@@ -113,13 +113,13 @@ export default function ChatPage() {
     function sendMessage(event: React.KeyboardEvent) {
         if (webSocket.current && event.key === "Enter" && !event.shiftKey && input.trim()) {
             event.preventDefault()
-            fetch("/api/generating/", {
+            fetch("/api/get-generating-chats/", {
                 credentials: "include",
                 headers: { "Content-Type": "application/json" }
             }).then(response => {
                 if (response.status === 200) {
                     response.json().then(data => {
-                        if (data.length === 0) {
+                        if (data.chats.length === 0) {
                             if (webSocket.current) {
                                 setMessages(previous => {
                                     let messages = [...previous]
@@ -136,7 +136,7 @@ export default function ChatPage() {
                             if (!generatingWarnP) {
                                 generatingWarnP = document.createElement("p")
                                 generatingWarnP.className = "generating-warn-p"
-                                generatingWarnP.innerHTML = `A message is already being generated in <a href="/chat/${data[0].uuid}">${data[0].title}<a>`
+                                generatingWarnP.innerHTML = `A message is already being generated in <a href="/chat/${data.chats[0].uuid}">${data.chats[0].title}<a>`
                                 document.getElementById("chat-div")?.appendChild(generatingWarnP)
 
                                 generatingWarnP.style.filter = "brightness(0.9)"

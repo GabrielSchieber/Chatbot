@@ -4,8 +4,8 @@ from .views import (
     DeleteAccount,
     DeleteChat,
     DeleteChats,
-    Generating,
     GetChats,
+    GetGeneratingChats,
     GetMessage,
     GetMessages,
     SearchChats,
@@ -25,11 +25,11 @@ urlpatterns = [
     path("api/get-message/", GetMessage.as_view()),
     path("api/get-messages/", GetMessages.as_view()),
     path("api/get-chats/", GetChats.as_view()),
+    path("api/get-generating-chats/", GetGeneratingChats.as_view()),
     path("api/search-chats/", SearchChats.as_view()),
     path("api/rename-chat/", RenameChat.as_view()),
     path("api/delete-chat/", DeleteChat.as_view()),
     path("api/delete-chats/", DeleteChats.as_view()),
     path("api/delete-account/", DeleteAccount.as_view()),
-    path("api/generating/", Generating.as_view()),
     re_path(".*", index)
 ]
