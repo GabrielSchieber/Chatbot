@@ -1,12 +1,12 @@
 import React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
 import "./ChatPage.css"
 import { logout } from "../auth"
 
 type Chat = { title: string, uuid: string }
-type Message = { index: number, text: string }
+type Message = { text: string, index: number }
 type Theme = "system" | "light" | "dark"
 type SearchResults = { title: string, matches: string[], uuid: string }
 
@@ -17,60 +17,43 @@ export default function ChatPage() {
 
     const [chats, setChats] = useState<Chat[]>([])
     const [messages, setMessages] = useState<Message[]>([])
-    const [input, setInput] = useState("")
-    const socket = useRef<WebSocket | null>(null)
+    const [input, setInput] = useState<string>("")
+
+    const webSocket = useRef<WebSocket>(null)
+
     const shouldLoadChats = useRef(true)
     const shouldLoadMessages = useRef(true)
+
+    const [theme, setTheme] = useState<Theme>(() => { return (localStorage.getItem("theme") as Theme) || "system" })
+
     const [isSidebarVisible, setIsSidebarVisible] = useState(() => {
         const stored = localStorage.getItem("isSidebarVisible")
         return stored === null ? true : stored === "true"
     })
+    const [isSettingsVisible, setIsSettingsVisible] = useState(false)
+    const [isHidingSettings, setIsHidingSettings] = useState(false)
+    const [isSearchVisible, setIsSearchVisible] = useState(false)
+    const [isHidingSearch, setIsHidingSearch] = useState(false)
+
     const [openDropdownUUID, setOpenDropdownUUID] = useState<string | null>(null)
     const [renamingUUID, setRenamingUUID] = useState<string | null>(null)
     const [renamingTitle, setRenamingTitle] = useState<string>("")
-    const [isSettingsVisible, setIsSettingsVisible] = useState(false)
-    const [isHidingSettings, setIsHidingSettings] = useState(false)
-    const [theme, setTheme] = useState<Theme>(() => { return (localStorage.getItem("theme") as Theme) || "system" })
+
     const settingsRef = useRef<HTMLDivElement | null>(null)
-    const [isSearchVisible, setIsSearchVisible] = useState(false)
-    const [isHidingSearch, setIsHidingSearch] = useState(false)
     const searchRef = useRef<HTMLDivElement | null>(null)
+
     const [searchResults, setSearchResults] = useState<SearchResults[]>([])
 
-    const loadChats = () => {
-        if (shouldLoadChats.current && chats.length === 0) {
+    function loadChats() {
+        if (shouldLoadChats.current) {
             shouldLoadChats.current = false
-
             fetch("/api/get-chats/", {
                 method: "POST",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" }
             }).then(response => response.json()).then(data => {
                 if (data.chats) {
-                    for (let i = 0; i < data.chats.length; i++) {
-                        setChats(previous => [...previous, data.chats[i]])
-                    }
-                } else {
-                    alert("Fetching of chats was not possible")
-                }
-            })
-        }
-    }
-
-    const loadMessages = () => {
-        if (shouldLoadMessages.current && messages.length === 0 && chatUUID) {
-            shouldLoadMessages.current = false
-
-            fetch("/api/get-messages/", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ chat_uuid: chatUUID })
-            }).then(response => response.json()).then(data => {
-                if (data.messages) {
-                    for (let i = 0; i < data.messages.length; i++) {
-                        setMessages(previous => [...previous, { index: previous.length, text: data.messages[i] }])
-                    }
+                    data.chats.forEach((chat: Chat) => setChats(previous => [...previous, chat]))
                 } else {
                     alert("Fetching of messages was not possible")
                 }
@@ -78,44 +61,80 @@ export default function ChatPage() {
         }
     }
 
-    const sendMessage = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault()
-            if (socket.current && input.trim()) {
-                setInput("")
-                setMessages(previous => [...previous, { index: previous.length, text: input }])
-                setMessages(previous => [...previous, { index: previous.length, text: "" }])
-                socket.current.send(JSON.stringify({ message: input }))
-            }
+    function loadMessages() {
+        if (shouldLoadMessages.current && chatUUID) {
+            shouldLoadMessages.current = false
+            fetch("/api/get-messages/", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chat_uuid: chatUUID })
+            }).then(response => response.json()).then(data => {
+                if (data.messages) {
+                    data.messages.forEach((message: string, index: number) => setMessages(previous => [...previous, { text: message, index: index }]))
+                } else {
+                    alert("Fetching of messages was not possible")
+                }
+            })
         }
     }
 
-    const receiveMessage = () => {
-        const webSocketURL = chatUUID ? `ws://${location.host}/ws/chat/${chatUUID}/` : `ws://${location.host}/ws/chat/`
-        socket.current = new WebSocket(webSocketURL)
+    function receiveMessage() {
+        if (!webSocket.current) {
+            webSocket.current = new WebSocket(chatUUID ? `ws://${location.host}/ws/chat/${chatUUID}/` : `ws://${location.host}/ws/chat/`)
 
-        socket.current.addEventListener("message", event => {
-            const data = JSON.parse(event.data)
-            const botMessageDivs = document.querySelectorAll(".bot-message-div")
-            const lastBotMessageDiv = botMessageDivs[botMessageDivs.length - 1]
-            if (data.recover) {
-                lastBotMessageDiv.textContent = data.recover
-            } else if (data.token) {
-                lastBotMessageDiv.textContent += data.token
-            } else if (data.message) {
-                lastBotMessageDiv.innerHTML = data.message
-            } else if (data.redirect) {
-                location.href = data.redirect
-            }
-        })
+            webSocket.current.addEventListener("message", event => {
+                const data = JSON.parse(event.data)
+                if (data.recover || data.message) {
+                    setMessages(previous => {
+                        let messages = [...previous]
+                        messages[messages.length - 1] = { text: data.recover ? data.recover : data.message, index: messages.length - 1 }
+                        return messages
+                    })
+                } else if (data.token) {
+                    setMessages(previous => {
+                        let messages = [...previous]
+                        messages[messages.length - 1] = { text: messages[messages.length - 1].text + data.token, index: messages.length - 1 }
+                        return messages
+                    })
+                } else if (data.redirect) {
+                    location.href = data.redirect
+                }
+            })
 
-        socket.current.addEventListener("error", _ => {
-            if (chatUUID) {
-                location.href = "/"
-            }
-        })
+            webSocket.current.addEventListener("error", _ => {
+                if (chatUUID) {
+                    location.href = "/"
+                }
+            })
+        }
+    }
 
-        return () => socket.current?.close()
+    function sendMessage(event: React.KeyboardEvent) {
+        if (webSocket.current && event.key === "Enter" && !event.shiftKey && input.trim()) {
+            event.preventDefault()
+            setMessages(previous => {
+                let messages = [...previous]
+                messages.push({ text: input, index: messages.length })
+                messages.push({ text: "", index: messages.length })
+                return messages
+            })
+            webSocket.current.send(JSON.stringify({ message: input }))
+            setInput("")
+        }
+    }
+
+    function getHTMLMessage(message: Message) {
+        return (
+            <React.Fragment key={message.index}>
+                {message.index % 2 === 0 ? (
+                    <div className="user-message-div">{message.text}</div>
+                ) : (
+                    <div className="bot-message-div" dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message.text) }}></div>
+                )}
+                <button className="copy-button" onClick={copyMessage(chatUUID!, message)}>Copy</button>
+            </React.Fragment>
+        )
     }
 
     useEffect(() => {
@@ -125,7 +144,7 @@ export default function ChatPage() {
         autoResizePromptTextArea()
     }, [])
 
-    useEffect(() => { addEventListenerToCodeBlockCopyButtons(messages) }, [messages, input])
+    useEffect(() => { addEventListenerToCodeBlockCopyButtons() }, [messages, input])
     useEffect(() => { localStorage.setItem("isSidebarVisible", String(isSidebarVisible)) }, [isSidebarVisible])
 
     useEffect(() => {
@@ -362,19 +381,8 @@ export default function ChatPage() {
             </div>
 
             <div id="chat-div">
-                <div id="messages-div">
-                    {messages.map(message => (
-                        <React.Fragment key={message.index}>
-                            {message.index % 2 === 0 ? (
-                                <div className={getMessageDivClassName(message)}>{message.text}</div>
-                            ) : (
-                                <div id={`bot-message-${message.index}`} className={getMessageDivClassName(message)} dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message) }}></div>
-                            )}
-                            <button className="copy-button" onClick={copyMessage(chatUUID!, message)}>Copy</button>
-                        </React.Fragment>
-                    ))}
-                </div>
-                <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here.." />
+                <div id="messages-div">{messages.map(getHTMLMessage)}</div>
+                <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here..."></textarea>
             </div>
         </>
     )
@@ -449,10 +457,6 @@ function autoResizePromptTextArea() {
     rezize()
 }
 
-function getMessageDivClassName(message: Message) {
-    return message.index % 2 === 0 ? "user-message-div" : "bot-message-div"
-}
-
 function copyMessage(chatUUID: string, message: Message) {
     return (event: React.MouseEvent<HTMLButtonElement>) => {
         const button = event.currentTarget
@@ -483,9 +487,9 @@ function copyMessage(chatUUID: string, message: Message) {
     }
 }
 
-function createBotMessageHTML(message: Message) {
+function createBotMessageHTML(message: string) {
     const botMessageDiv = document.createElement("div")
-    botMessageDiv.innerHTML = message.text
+    botMessageDiv.innerHTML = message
 
     const codehilites = botMessageDiv.querySelectorAll(".codehilite")
     codehilites.forEach(codehilite => {
@@ -508,26 +512,22 @@ function createBotMessageHTML(message: Message) {
     return botMessageDiv.innerHTML
 }
 
-function addEventListenerToCodeBlockCopyButtons(messages: Message[]) {
-    messages.forEach(message => {
-        if (message.index % 2 !== 0) {
-            const root = document.getElementById(`bot-message-${message.index}`)
-            if (root) {
-                const buttons = root.querySelectorAll(".code-block-header-button")
-                buttons.forEach(button => {
-                    button.addEventListener("click", () => {
-                        const code = button.parentElement?.nextElementSibling?.textContent
-                        if (code) {
-                            navigator.clipboard.writeText(code).then(() => {
-                                const originalText = button.textContent
-                                button.textContent = "Copied!"
-                                setTimeout(() => { button.textContent = originalText }, 2000)
-                            })
-                        }
+function addEventListenerToCodeBlockCopyButtons() {
+    const botMessageDivs = document.querySelectorAll(".bot-message-div")
+    botMessageDivs.forEach(botMessageDiv => {
+        const buttons = botMessageDiv.querySelectorAll(".code-block-header-button")
+        buttons.forEach(button => {
+            button.addEventListener("click", () => {
+                const code = button.parentElement?.nextElementSibling?.textContent
+                if (code) {
+                    navigator.clipboard.writeText(code).then(() => {
+                        const originalText = button.textContent
+                        button.textContent = "Copied!"
+                        setTimeout(() => { button.textContent = originalText }, 2000)
                     })
-                })
-            }
-        }
+                }
+            })
+        })
     })
 }
 
