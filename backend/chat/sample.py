@@ -23,7 +23,7 @@ async def sample_model(messages: list[dict[str, str]], max_tokens: int) -> Async
 
     i = 0
     async for token in streamer:
-        if i < 6:
+        if i < 6 or token == "":
             i += 1
             continue
         yield token
