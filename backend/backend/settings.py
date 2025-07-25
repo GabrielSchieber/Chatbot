@@ -102,10 +102,11 @@ SIMPLE_JWT = {
 }
 
 if sys.argv[:2] == ["manage.py", "test"]:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "test_db.sqlite3",
-            "TEST": {"NAME": BASE_DIR / "test_db.sqlite3"}
-        }
-    }
+    for arg in sys.argv:
+        if "Channels" in arg:
+            DATABASES["default"] = {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": BASE_DIR / "test_db.sqlite3",
+                "TEST": {"NAME": BASE_DIR / "test_db.sqlite3"}
+            }
+            break
