@@ -13,7 +13,7 @@ export async function login(email: string, password: string) {
 }
 
 export async function logout() {
-    await fetch("/api/logout/", { method: "POST", credentials: "include" })
+    await fetch("/api/logout/", { credentials: "include" })
 }
 
 export async function signup(email: string, password: string) {

@@ -48,7 +48,7 @@ class LoginView(APIView):
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def get(self, request):
         response = Response({"success": True})
         response.delete_cookie("access_token")
         response.delete_cookie("refresh_token")
@@ -159,7 +159,7 @@ class DeleteChat(APIView):
 class DeleteChats(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def get(self, request):
         try:
             Chat.objects.filter(user = request.user).delete()
             return Response(status = 200)
@@ -169,7 +169,7 @@ class DeleteChats(APIView):
 class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def get(self, request):
         try:
             request.user.delete()
             return Response(status = 200)

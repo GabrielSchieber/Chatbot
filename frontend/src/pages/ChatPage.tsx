@@ -591,7 +591,7 @@ function deleteChat(chat: Chat) {
 
 function deleteChats() {
     if (confirm("Are you sure you want to delete all of your chats?")) {
-        fetch("/api/delete-chats/", { method: "POST", credentials: "include" }).then(response => {
+        fetch("/api/delete-chats/", { credentials: "include" }).then(response => {
             if (response.status !== 200) {
                 alert("Deletion of chats was not possible")
             } else {
@@ -603,7 +603,7 @@ function deleteChats() {
 
 function deleteAccount() {
     if (confirm("Are you sure you want to delete your account?")) {
-        fetch("/api/delete-account/", { method: "POST", credentials: "include" }).then(response => {
+        fetch("/api/delete-account/", { credentials: "include" }).then(response => {
             if (response.status !== 200) {
                 alert("Deletion of account was not possible")
             } else {
