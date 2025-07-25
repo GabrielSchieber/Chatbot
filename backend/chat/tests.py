@@ -867,6 +867,7 @@ class SeleniumChannelsTests(ChannelsLiveServerTestCase):
         self.body().send_keys(Keys.ESCAPE)
 
         self.prompt_text_area().send_keys("Type only one word" + Keys.ENTER)
+        self.wait_until(lambda _: len(self.user_message_divs()) > 0)
         self.wait_until(lambda _: self.user_message_divs()[0].text == "Type only one word")
 
         self.wait_until(lambda _: "/chat/" in self.driver.current_url, 15)
