@@ -48,7 +48,6 @@ export default function ChatPage() {
         if (shouldLoadChats.current) {
             shouldLoadChats.current = false
             fetch("/api/get-chats/", {
-                method: "POST",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" }
             }).then(response => response.json()).then(data => {
@@ -113,49 +112,45 @@ export default function ChatPage() {
     function sendMessage(event: React.KeyboardEvent) {
         if (webSocket.current && event.key === "Enter" && !event.shiftKey && input.trim()) {
             event.preventDefault()
-            fetch("/api/get-generating-chats/", {
+            fetch("/api/get-chats/", {
+                method: "POST",
                 credentials: "include",
-                headers: { "Content-Type": "application/json" }
-            }).then(response => {
-                if (response.status === 200) {
-                    response.json().then(data => {
-                        if (data.chats.length === 0) {
-                            if (webSocket.current) {
-                                setMessages(previous => {
-                                    let messages = [...previous]
-                                    messages.push({ text: input, index: messages.length })
-                                    messages.push({ text: "", index: messages.length })
-                                    return messages
-                                })
-                                webSocket.current.send(JSON.stringify({ message: input }))
-                                setInput("")
-                            }
-                        } else {
-                            let generatingWarnP = document.querySelector(".generating-warn-p") as HTMLElement
-
-                            if (!generatingWarnP) {
-                                generatingWarnP = document.createElement("p")
-                                generatingWarnP.className = "generating-warn-p"
-                                generatingWarnP.innerHTML = `A message is already being generated in <a href="/chat/${data.chats[0].uuid}">${data.chats[0].title}<a>`
-                                document.getElementById("chat-div")?.appendChild(generatingWarnP)
-
-                                generatingWarnP.style.filter = "brightness(0.9)"
-                                generatingWarnP.style.scale = "0.9"
-                            } else {
-                                generatingWarnP.style.filter = "brightness(1.1)"
-                                generatingWarnP.style.scale = "1.1"
-                            }
-
-                            setTimeout(() => {
-                                generatingWarnP.style.filter = ""
-                                generatingWarnP.style.scale = ""
-                            }, 500)
-
-                            setTimeout(() => { generatingWarnP.remove() }, 3000)
-                        }
-                    })
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ incomplete: true })
+            }).then(response => response.json()).then(data => {
+                if (data.chats.length === 0) {
+                    if (webSocket.current) {
+                        setMessages(previous => {
+                            let messages = [...previous]
+                            messages.push({ text: input, index: messages.length })
+                            messages.push({ text: "", index: messages.length })
+                            return messages
+                        })
+                        webSocket.current.send(JSON.stringify({ message: input }))
+                        setInput("")
+                    }
                 } else {
-                    alert("Checking if any messages were already being generated was no possible")
+                    let generatingWarnP = document.querySelector(".generating-warn-p") as HTMLElement
+
+                    if (!generatingWarnP) {
+                        generatingWarnP = document.createElement("p")
+                        generatingWarnP.className = "generating-warn-p"
+                        generatingWarnP.innerHTML = `A message is already being generated in <a href="/chat/${data.chats[0].uuid}">${data.chats[0].title}<a>`
+                        document.getElementById("chat-div")?.appendChild(generatingWarnP)
+
+                        generatingWarnP.style.filter = "brightness(0.9)"
+                        generatingWarnP.style.scale = "0.9"
+                    } else {
+                        generatingWarnP.style.filter = "brightness(1.1)"
+                        generatingWarnP.style.scale = "1.1"
+                    }
+
+                    setTimeout(() => {
+                        generatingWarnP.style.filter = ""
+                        generatingWarnP.style.scale = ""
+                    }, 500)
+
+                    setTimeout(() => { generatingWarnP.remove() }, 3000)
                 }
             })
         }

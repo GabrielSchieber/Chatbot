@@ -89,9 +89,22 @@ class GetMessages(APIView):
 class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def get(self, request):
         try:
             chats = Chat.objects.filter(user = request.user)
+            return Response({"chats": [{"title": chat.title, "uuid": chat.uuid} for chat in chats]})
+        except Exception:
+            return Response(status = 400)
+
+    def post(self, request):
+        try:
+            request.data["incomplete"]
+            chats = Chat.objects.filter(user = request.user, is_complete = False)
+            for chat in chats:
+                if chat.uuid not in generate_message_tasks:
+                    chat.is_complete = True
+                    chat.save()
+            chats = Chat.objects.filter(user = request.user, is_complete = False)
             return Response({"chats": [{"title": chat.title, "uuid": chat.uuid} for chat in chats]})
         except Exception:
             return Response(status = 400)
@@ -160,21 +173,6 @@ class DeleteAccount(APIView):
         try:
             request.user.delete()
             return Response(status = 200)
-        except Exception:
-            return Response(status = 400)
-
-class GetGeneratingChats(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        try:
-            chats = Chat.objects.filter(user = request.user, is_complete = False)
-            for chat in chats:
-                if chat.uuid not in generate_message_tasks:
-                    chat.is_complete = True
-                    chat.save()
-            chats = Chat.objects.filter(user = request.user, is_complete = False)
-            return Response({"chats": [{"title": chat.title, "uuid": chat.uuid} for chat in chats]})
         except Exception:
             return Response(status = 400)
 
