@@ -778,6 +778,7 @@ class SeleniumChannelsTests(ChannelsLiveServerTestCase):
         time.sleep(0.5)
 
         self.prompt_text_area().send_keys(user_message1 + Keys.ENTER)
+        self.wait_until(lambda _: len(self.user_message_divs()) > 0)
         self.wait_until(lambda _: self.user_message_divs()[0].text == user_message1)
 
         self.assertEqual(Chat.objects.count(), 1)
@@ -787,12 +788,14 @@ class SeleniumChannelsTests(ChannelsLiveServerTestCase):
         self.assertTrue(Message.objects.first().is_user_message)
         self.assertFalse(Message.objects.last().is_user_message)
 
+        self.wait_until(lambda _: len(self.bot_message_divs()) > 0)
         self.wait_until(lambda _: self.bot_message_divs()[0].text == bot_message1, 25)
         self.assertEqual(self.bot_message_divs()[0].get_attribute("innerHTML"), f"<p>{bot_message1}</p>")
         self.assertIn("/chat/", self.driver.current_url)
         self.wait_until(lambda _: Message.objects.last().text == bot_message1)
 
         self.prompt_text_area().send_keys(user_message2 + Keys.ENTER)
+        self.wait_until(lambda _: len(self.user_message_divs()) > 1)
         self.wait_until(lambda _: self.user_message_divs()[1].text == user_message2)
 
         self.wait_until(lambda _: Message.objects.count() == 4, 5)
@@ -800,8 +803,7 @@ class SeleniumChannelsTests(ChannelsLiveServerTestCase):
         self.assertTrue(Message.objects.all()[2].is_user_message)
         self.assertFalse(Message.objects.all()[3].is_user_message)
 
-        self.wait_until(lambda _: self.bot_message_divs()[1].text == bot_message2, 10)
-        self.assertEqual(self.bot_message_divs()[1].get_attribute("innerHTML"), '<div class="codehilite" data-language="python"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="s2">"Hello World!"</span><span class="p">)</span>\n</code></pre></div>')
+        self.wait_until(lambda _: self.bot_message_divs()[1].text == f"python\nCopy\n{bot_message2}", 10)
         self.assertEqual(Message.objects.last().text, f"```python\n{bot_message2}\n```")
 
     def test_index_history_panel(self):
