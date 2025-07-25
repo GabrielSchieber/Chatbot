@@ -822,7 +822,9 @@ class SeleniumChannelsTests(ChannelsLiveServerTestCase):
         time.sleep(0.5)
 
         self.prompt_text_area().send_keys(user_message1 + Keys.ENTER)
+        self.wait_until(lambda _: len(self.user_message_divs()) > 0)
         self.assertEqual(self.user_message_divs()[0].text, user_message1)
+        self.wait_until(lambda _: len(self.bot_message_divs()) > 0)
         self.wait_until(lambda _: self.bot_message_divs()[0].text == bot_message1, 60)
 
         self.assertEqual(len(self.past_chat_as()), 1)
@@ -833,7 +835,9 @@ class SeleniumChannelsTests(ChannelsLiveServerTestCase):
         time.sleep(0.5)
 
         self.prompt_text_area().send_keys(user_message2 + Keys.ENTER)
+        self.wait_until(lambda _: len(self.user_message_divs()) > 0)
         self.assertEqual(self.user_message_divs()[0].text, user_message2)
+        self.wait_until(lambda _: len(self.bot_message_divs()) > 0)
         self.wait_until(lambda _: self.bot_message_divs()[0].text == bot_message2, 10)
 
         self.assertEqual(len(self.past_chat_as()), 2)
