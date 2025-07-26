@@ -41,6 +41,7 @@ export default function ChatPage() {
 
     const settingsRef = useRef<HTMLDivElement | null>(null)
     const searchRef = useRef<HTMLDivElement | null>(null)
+    const sidebarRef = useRef<HTMLDivElement | null>(null)
 
     const [searchResults, setSearchResults] = useState<SearchResults[]>([])
 
@@ -197,6 +198,14 @@ export default function ChatPage() {
         autoAdaptTheme()
     }, [theme])
 
+    const closeSettings = () => {
+        setIsHidingSettings(true)
+        setTimeout(() => {
+            setIsHidingSettings(false)
+            setIsSettingsVisible(false)
+        }, 300)
+    }
+
     useEffect(() => {
         if (!isSettingsVisible) return
 
@@ -226,14 +235,6 @@ export default function ChatPage() {
             document.removeEventListener("keydown", closeSettingsOnEscape)
         }
     }, [isSettingsVisible])
-
-    const closeSettings = () => {
-        setIsHidingSettings(true)
-        setTimeout(() => {
-            setIsHidingSettings(false)
-            setIsSettingsVisible(false)
-        }, 300)
-    }
 
     const closeSearch = () => {
         setIsHidingSearch(true)
@@ -272,6 +273,23 @@ export default function ChatPage() {
             document.removeEventListener("keydown", closeSearchOnEscape)
         }
     }, [isSearchVisible])
+
+    // Add effect to close sidebar on outside click for small screens
+    useEffect(() => {
+        if (!isSidebarVisible) return
+
+        const handleClickOutsideSidebar = (event: MouseEvent) => {
+            if (document.body.clientWidth >= 700) return
+            if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
+                setIsSidebarVisible(false)
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutsideSidebar)
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutsideSidebar)
+        }
+    }, [isSidebarVisible])
 
     const searchChats = (search: string) => {
         fetch("/api/search-chats/", {
@@ -377,7 +395,8 @@ export default function ChatPage() {
                 </div>
             )}
 
-            <div id="sidebar-div" className={isSidebarVisible ? "visible" : "invisible"}>
+            {document.body.clientWidth < 700 && isSidebarVisible && <div id="sidebar-backdrop-div" onClick={() => setIsSidebarVisible(false)}></div>}
+            <div id="sidebar-div" className={isSidebarVisible ? "visible" : "invisible"} ref={sidebarRef}>
                 <div id="buttons-div">
                     <button id="toggle-sidebar-button" onClick={() => setIsSidebarVisible(prev => !prev)}>
                         <span className="buttons-icon-span">≡</span>
