@@ -1,10 +1,10 @@
-Django == 5.1.11
+Django == 5.2.4
 Markdown == 3.8.2
 Pygments == 2.19.2
-channels[daphne] == 4.2.2
+channels[daphne] == 4.3.1
 djangorestframework == 3.16.0
-djangorestframework-simplejwt == 5.5.0
+djangorestframework-simplejwt == 5.5.1
 selenium == 4.34.2
 --extra-index-url https://download.pytorch.org/whl/cu118
 torch == 2.7.1
-transformers == 4.53.2
+transformers == 4.54.1
