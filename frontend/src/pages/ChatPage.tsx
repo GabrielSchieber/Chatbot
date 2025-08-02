@@ -281,20 +281,12 @@ export default function ChatPage() {
         return () => document.removeEventListener("keydown", closeSearchOnEscape)
     }, [isSearchVisible])
 
-    function closePopup() {
-        setIsHidingPopup(true)
-        setTimeout(() => {
-            setIsHidingPopup(false)
-            setConfirmPopup(null)
-        }, 300)
-    }
-
     useEffect(() => {
         if (!confirmPopup) return
 
         function closePopupOnOutsideClick(event: MouseEvent) {
             if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
-                closePopup()
+                closePopup(setIsHidingPopup, setConfirmPopup)
             }
         }
 
@@ -307,7 +299,7 @@ export default function ChatPage() {
 
         function closePopupOnEscape(event: KeyboardEvent) {
             if (event.key === "Escape") {
-                closePopup()
+                closePopup(setIsHidingPopup, setConfirmPopup)
             }
         }
 
@@ -402,12 +394,12 @@ export default function ChatPage() {
 
                     <div id="delete-chats-button-div">
                         <label id="delete-chats-button-label">Delete all chats</label>
-                        <button id="delete-chats-button" onClick={_ => deleteChats(setConfirmPopup)}>Delete all</button>
+                        <button id="delete-chats-button" onClick={_ => deleteChats(setIsHidingPopup, setConfirmPopup)}>Delete all</button>
                     </div>
 
                     <div id="delete-account-button-div">
                         <label id="delete-account-button-label">Delete account</label>
-                        <button id="delete-account-button" onClick={_ => deleteAccount(setConfirmPopup)}>Delete</button>
+                        <button id="delete-account-button" onClick={_ => deleteAccount(setIsHidingPopup, setConfirmPopup)}>Delete</button>
                     </div>
 
                     <div id="logout-button-div">
@@ -653,11 +645,13 @@ function deleteChat(chat: Chat) {
     })
 }
 
-function deleteChats(setConfirmPopup: React.Dispatch<React.SetStateAction<{
-    message: string;
-    onConfirm: () => void;
-    onCancel?: () => void;
-} | null>>) {
+function deleteChats(
+    setIsHidingPopup: React.Dispatch<React.SetStateAction<boolean>>,
+    setConfirmPopup: React.Dispatch<React.SetStateAction<{
+        message: string,
+        onConfirm: () => void,
+        onCancel?: () => void
+    } | null>>) {
     setConfirmPopup({
         message: "Are you sure you want to delete all of your chats?",
         onConfirm: () => {
@@ -672,15 +666,17 @@ function deleteChats(setConfirmPopup: React.Dispatch<React.SetStateAction<{
                 }
             })
         },
-        onCancel: () => setConfirmPopup(null)
+        onCancel: () => { closePopup(setIsHidingPopup, setConfirmPopup) }
     })
 }
 
-function deleteAccount(setConfirmPopup: React.Dispatch<React.SetStateAction<{
-    message: string;
-    onConfirm: () => void;
-    onCancel?: () => void;
-} | null>>) {
+function deleteAccount(
+    setIsHidingPopup: React.Dispatch<React.SetStateAction<boolean>>,
+    setConfirmPopup: React.Dispatch<React.SetStateAction<{
+        message: string,
+        onConfirm: () => void,
+        onCancel?: () => void,
+    } | null>>) {
     setConfirmPopup({
         message: "Are you sure you want to delete your account?",
         onConfirm: () => {
@@ -695,7 +691,7 @@ function deleteAccount(setConfirmPopup: React.Dispatch<React.SetStateAction<{
                 }
             })
         },
-        onCancel: () => setConfirmPopup(null)
+        onCancel: () => { closePopup(setIsHidingPopup, setConfirmPopup) }
     })
 }
 
@@ -703,6 +699,21 @@ function PastChatDropdownDiv({ index, children }: { index: number, children: Rea
     const button = document.querySelectorAll(".past-chat-dropdown-button")[index]
     const className = button && button.getBoundingClientRect().bottom < window.innerHeight - 100 ? "past-chat-dropdown-div" : "past-chat-dropdown-div open-upwards"
     return <div className={className}>{children}</div>
+}
+
+function closePopup(
+    setIsHidingPopup: React.Dispatch<React.SetStateAction<boolean>>,
+    setConfirmPopup: React.Dispatch<React.SetStateAction<{
+        message: string,
+        onConfirm: () => void,
+        onCancel?: () => void,
+    } | null>>
+) {
+    setIsHidingPopup(true)
+    setTimeout(() => {
+        setIsHidingPopup(false)
+        setConfirmPopup(null)
+    }, 300)
 }
 
 function ConfirmPopup({
