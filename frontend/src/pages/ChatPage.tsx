@@ -216,19 +216,28 @@ export default function ChatPage() {
         if (!isSettingsVisible) return
 
         function closeSettingsOnOutsideClick(event: MouseEvent) {
-            if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
-                closeSettings()
+            if (confirmPopup) return
+
+            const target = event.target as Node
+            if (
+                (settingsRef.current && settingsRef.current.contains(target)) ||
+                (popupRef.current && popupRef.current.contains(target))
+            ) {
+                return
             }
+
+            closeSettings()
         }
 
         document.addEventListener("mousedown", closeSettingsOnOutsideClick)
         return () => document.removeEventListener("mousedown", closeSettingsOnOutsideClick)
-    }, [isSettingsVisible])
+    }, [isSettingsVisible, confirmPopup])
 
     useEffect(() => {
         if (!isSettingsVisible) return
 
         function closeSettingsOnEscape(event: KeyboardEvent) {
+            if (confirmPopup) return
             if (event.key === "Escape") {
                 closeSettings()
             }
@@ -236,7 +245,7 @@ export default function ChatPage() {
 
         document.addEventListener("keydown", closeSettingsOnEscape)
         return () => document.removeEventListener("keydown", closeSettingsOnEscape)
-    }, [isSettingsVisible])
+    }, [isSettingsVisible, confirmPopup])
 
     const closeSearch = () => {
         setIsHidingSearch(true)
@@ -718,6 +727,6 @@ function ConfirmPopup({
                     <button className="confirm-popup-confirm-button" onClick={onConfirm}>Confirm</button>
                 </div>
             </div>
-        </div >
+        </div>
     )
 }
