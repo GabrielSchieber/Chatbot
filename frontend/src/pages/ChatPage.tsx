@@ -45,6 +45,12 @@ export default function ChatPage() {
 
     const [searchResults, setSearchResults] = useState<SearchResults[]>([])
 
+    const [confirmPopup, setConfirmPopup] = useState<{
+        message: string,
+        onConfirm: () => void,
+        onCancel?: () => void
+    } | null>(null)
+
     function loadChats() {
         if (shouldLoadChats.current) {
             shouldLoadChats.current = false
@@ -300,13 +306,18 @@ export default function ChatPage() {
     }
 
     function handleDeleteChatButton(chat: Chat) {
-        if (confirm("Are you sure you want to delete this chat?")) {
-            deleteChat(chat)
-            setChats(previous => previous.filter(chat => chat.uuid !== chat.uuid))
-            if (location.pathname.includes(chat.uuid)) {
-                location.href = "/"
-            }
-        }
+        setConfirmPopup({
+            message: `Are you sure you want to delete ${chat.title}?`,
+            onConfirm: () => {
+                deleteChat(chat)
+                setChats(previous => previous.filter(c => c.uuid !== chat.uuid))
+                if (location.pathname.includes(chat.uuid)) {
+                    location.href = "/"
+                }
+                setConfirmPopup(null)
+            },
+            onCancel: () => setConfirmPopup(null)
+        })
         setOpenDropdownUUID(null)
     }
 
@@ -346,12 +357,12 @@ export default function ChatPage() {
 
                     <div id="delete-chats-button-div">
                         <label id="delete-chats-button-label">Delete all chats</label>
-                        <button id="delete-chats-button" onClick={deleteChats}>Delete all</button>
+                        <button id="delete-chats-button" onClick={_ => deleteChats(setConfirmPopup)}>Delete all</button>
                     </div>
 
                     <div id="delete-account-button-div">
                         <label id="delete-account-button-label">Delete account</label>
-                        <button id="delete-account-button" onClick={deleteAccount}>Delete</button>
+                        <button id="delete-account-button" onClick={_ => deleteAccount(setConfirmPopup)}>Delete</button>
                     </div>
 
                     <div id="logout-button-div">
@@ -422,6 +433,8 @@ export default function ChatPage() {
                 <div id="messages-div">{messages.map(getHTMLMessage)}</div>
                 <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here..."></textarea>
             </div>
+
+            {confirmPopup && <ConfirmPopup message={confirmPopup.message} onConfirm={confirmPopup.onConfirm} onCancel={confirmPopup.onCancel} />}
         </>
     )
 }
@@ -595,32 +608,76 @@ function deleteChat(chat: Chat) {
     })
 }
 
-function deleteChats() {
-    if (confirm("Are you sure you want to delete all of your chats?")) {
-        fetch("/api/delete-chats/", { credentials: "include" }).then(response => {
-            if (response.status !== 200) {
-                alert("Deletion of chats was not possible")
-            } else {
-                location.href = "/"
-            }
-        })
-    }
+function deleteChats(setConfirmPopup: React.Dispatch<React.SetStateAction<{
+    message: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+} | null>>) {
+    setConfirmPopup({
+        message: "Are you sure you want to delete all of your chats?",
+        onConfirm: () => {
+            fetch("/api/delete-chats/", { credentials: "include" }).then(response => {
+                if (response.status !== 200) {
+                    setConfirmPopup({
+                        message: "Deletion of chats was not possible",
+                        onConfirm: () => setConfirmPopup(null)
+                    })
+                } else {
+                    location.href = "/"
+                }
+            })
+        },
+        onCancel: () => setConfirmPopup(null)
+    })
 }
 
-function deleteAccount() {
-    if (confirm("Are you sure you want to delete your account?")) {
-        fetch("/api/delete-account/", { credentials: "include" }).then(response => {
-            if (response.status !== 200) {
-                alert("Deletion of account was not possible")
-            } else {
-                location.href = "/"
-            }
-        })
-    }
+function deleteAccount(setConfirmPopup: React.Dispatch<React.SetStateAction<{
+    message: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+} | null>>) {
+    setConfirmPopup({
+        message: "Are you sure you want to delete your account?",
+        onConfirm: () => {
+            fetch("/api/delete-account/", { credentials: "include" }).then(response => {
+                if (response.status !== 200) {
+                    setConfirmPopup({
+                        message: "Deletion of account was not possible",
+                        onConfirm: () => setConfirmPopup(null)
+                    })
+                } else {
+                    location.href = "/"
+                }
+            })
+        },
+        onCancel: () => setConfirmPopup(null)
+    })
 }
 
 function PastChatDropdownDiv({ index, children }: { index: number, children: React.ReactNode }) {
     const button = document.querySelectorAll(".past-chat-dropdown-button")[index]
     const className = button && button.getBoundingClientRect().bottom < window.innerHeight - 100 ? "past-chat-dropdown-div" : "past-chat-dropdown-div open-upwards"
     return <div className={className}>{children}</div>
+}
+
+function ConfirmPopup({
+    message,
+    onConfirm,
+    onCancel
+}: {
+    message: string,
+    onConfirm: () => void,
+    onCancel?: () => void
+}) {
+    return (
+        <div className="confirm-popup-backdrop-div">
+            <div className="confirm-popup-div">
+                <p>{message}</p>
+                <div className="confirm-popup-buttons-div">
+                    {onCancel && <button className="confirm-popup-cancel-button" onClick={onCancel}>Cancel</button>}
+                    <button className="confirm-popup-confirm-button" onClick={onConfirm}>Confirm</button>
+                </div>
+            </div>
+        </div>
+    )
 }

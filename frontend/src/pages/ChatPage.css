@@ -1,3 +1,9 @@
+:root {
+    --red-color1: rgb(120, 40, 20);
+    --red-color2: rgb(150, 40, 20);
+    --backdrop-color: rgb(0, 0, 0, 0.4);
+}
+
 html,
 body {
     display: flex;
@@ -70,7 +76,7 @@ body {
 #settings-backdrop-div {
     position: absolute;
     inset: 0;
-    background-color: rgb(0, 0, 0, 0.4);
+    background-color: var(--backdrop-color);
     z-index: 2;
 }
 
@@ -98,12 +104,12 @@ body {
 
 #delete-chats-button:hover,
 #delete-account-button:hover {
-    background-color: rgb(150, 40, 20);
+    background-color: var(--red-color2);
 }
 
 #delete-chats-button:hover,
 #delete-account-button:active {
-    background-color: rgb(120, 40, 20);
+    background-color: var(--red-color1);
 }
 
 #logout-button:hover {
@@ -184,7 +190,7 @@ body {
 #sidebar-backdrop-div {
     position: absolute;
     inset: 0;
-    background-color: rgb(0, 0, 0, 0.4);
+    background-color: var(--backdrop-color);
     z-index: 2;
 }
 
@@ -349,12 +355,16 @@ body {
     background-color: var(--background-color3);
 }
 
+.past-chat-delete-button {
+    color: rgb(240, 100, 100)
+}
+
 .past-chat-delete-button:hover {
-    background-color: rgb(150, 40, 20);
+    background-color: var(--red-color2);
 }
 
 .past-chat-delete-button:active {
-    background-color: rgb(120, 40, 20);
+    background-color: var(--red-color1);
 }
 
 .past-chat-rename-input {
@@ -387,7 +397,7 @@ body {
 #search-backdrop-div {
     position: absolute;
     inset: 0;
-    background-color: rgb(0, 0, 0, 0.4);
+    background-color: var(--backdrop-color);
     z-index: 2;
 }
 
@@ -551,6 +561,61 @@ body {
     border-radius: 10px;
     background-color: var(--background-color1);
     transition: scale 0.5s, filter 0.5s;
+}
+
+.confirm-popup-backdrop-div {
+    position: absolute;
+    inset: 0;
+    justify-items: center;
+    align-content: center;
+    background-color: var(--backdrop-color);
+    z-index: 3;
+}
+
+.confirm-popup-div {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+    align-items: center;
+    border-radius: 10px;
+    background-color: var(--background-color4);
+}
+
+.confirm-popup-buttons-div {
+    display: flex;
+    width: 100%;
+    justify-content: space-around;
+}
+
+.confirm-popup-confirm-button,
+.confirm-popup-cancel-button {
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.confirm-popup-cancel-button {
+    background-color: var(--background-color2);
+}
+
+.confirm-popup-cancel-button:hover {
+    background-color: var(--background-color1);
+}
+
+.confirm-popup-cancel-button:active {
+    background-color: var(--background-color1);
+}
+
+.confirm-popup-confirm-button {
+    background-color: var(--red-color2);
+}
+
+.confirm-popup-confirm-button:hover {
+    background-color: var(--red-color1);
+}
+
+.confirm-popup-confirm-button:active {
+    background-color: var(--red-color2);
 }
 
 #prompt-textarea {
