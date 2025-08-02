@@ -269,12 +269,6 @@ body {
     background-color: var(--background-color4);
 }
 
-.past-chat-div:hover {
-    .past-chat-dropdown-button {
-        display: inline-block;
-    }
-}
-
 .past-chat-a {
     width: 100%;
     padding: 10px 15px 10px 15px;
@@ -290,19 +284,35 @@ body {
 }
 
 .past-chat-dropdown-button {
-    display: none;
     width: 35px;
     height: 100%;
     border-radius: 10px;
     background-color: transparent;
+    opacity: 0;
+    pointer-events: none;
+    outline: none;
+    transition: opacity 0.2s;
 }
 
-.past-chat-dropdown-button:hover {
-    background-color: var(--background-color5);
+.past-chat-div:hover .past-chat-dropdown-button {
+    opacity: 1;
+    pointer-events: auto;
 }
 
-.past-chat-dropdown-button:active {
-    background-color: transparent;
+.past-chat-div.dropdown-open .past-chat-dropdown-button {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.past-chat-div:hover .past-chat-dropdown-button {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.past-chat-div .past-chat-dropdown-div~.past-chat-dropdown-button,
+.past-chat-div .past-chat-dropdown-div.open-upwards~.past-chat-dropdown-button {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .past-chat-dropdown-div {

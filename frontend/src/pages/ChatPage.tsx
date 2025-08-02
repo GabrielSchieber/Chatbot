@@ -399,8 +399,8 @@ export default function ChatPage() {
                     </a>
                 </div>
                 <div id="history-div">
-                    {chats.map(chat => (
-                        <div key={chat.uuid} className={`past-chat-div${chat.uuid === chatUUID ? " selected" : ""}`}>
+                    {chats.map((chat, index) => (
+                        <div key={chat.uuid} className={`past-chat-div${chat.uuid === chatUUID ? " selected" : ""}${openDropdownUUID === chat.uuid ? " dropdown-open" : ""}`}>
                             {renamingUUID === chat.uuid ? (
                                 <input className="past-chat-rename-input" type="text" value={renamingTitle} onChange={event => setRenamingTitle(event.target.value)} onKeyDown={event => { handleRenameInput(event, chat) }} autoFocus />
                             ) : (
@@ -408,10 +408,10 @@ export default function ChatPage() {
                             )}
                             <button className="past-chat-dropdown-button" onClick={_ => setOpenDropdownUUID(previous => (previous === chat.uuid ? null : chat.uuid))}>≡</button>
                             {openDropdownUUID === chat.uuid && (
-                                <DropdownDiv>
+                                <PastChatDropdownDiv index={index}>
                                     <button className="past-chat-rename-button" onClick={_ => handleRenameChatButton(chat)}>Rename</button>
                                     <button className="past-chat-delete-button" onClick={_ => handleDeleteChatButton(chat)}>Delete</button>
-                                </DropdownDiv>
+                                </PastChatDropdownDiv>
                             )}
                         </div>
                     ))}
@@ -619,18 +619,8 @@ function deleteAccount() {
     }
 }
 
-function DropdownDiv({ children }: { children: React.ReactNode }) {
-    const ref = useRef<HTMLDivElement>(null)
-    const [openUpwards, setOpenUpwards] = useState(false)
-
-    useEffect(() => {
-        const dropdown = ref.current
-        if (dropdown) {
-            const rect = dropdown.getBoundingClientRect()
-            const overflowBottom = rect.bottom > window.innerHeight
-            setOpenUpwards(overflowBottom)
-        }
-    }, [])
-
-    return <div ref={ref} className={`past-chat-dropdown-div${openUpwards ? " open-upwards" : ""}`}>{children}</div>
+function PastChatDropdownDiv({ index, children }: { index: number, children: React.ReactNode }) {
+    const button = document.querySelectorAll(".past-chat-dropdown-button")[index]
+    const className = button && button.getBoundingClientRect().bottom < window.innerHeight - 100 ? "past-chat-dropdown-div" : "past-chat-dropdown-div open-upwards"
+    return <div className={className}>{children}</div>
 }
