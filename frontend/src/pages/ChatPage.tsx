@@ -151,7 +151,7 @@ export default function ChatPage() {
                         generatingWarnP.style.scale = ""
                     }, 500)
 
-                    setTimeout(() => { generatingWarnP.remove() }, 3000)
+                    setTimeout(() => generatingWarnP.remove(), 3000)
                 }
             })
         }
@@ -177,8 +177,8 @@ export default function ChatPage() {
         autoResizePromptTextArea()
     }, [])
 
-    useEffect(() => { addEventListenerToCodeBlockCopyButtons() }, [messages, input])
-    useEffect(() => { localStorage.setItem("isSidebarVisible", String(isSidebarVisible)) }, [isSidebarVisible])
+    useEffect(() => addEventListenerToCodeBlockCopyButtons(), [messages, input])
+    useEffect(() => localStorage.setItem("isSidebarVisible", String(isSidebarVisible)), [isSidebarVisible])
 
     useEffect(() => {
         const closeDropdownOnOutsideClick = (event: MouseEvent) => {
@@ -188,9 +188,7 @@ export default function ChatPage() {
             }
         }
         document.addEventListener("click", closeDropdownOnOutsideClick)
-        return () => {
-            document.removeEventListener("click", closeDropdownOnOutsideClick)
-        }
+        return () => document.removeEventListener("click", closeDropdownOnOutsideClick)
     }, [])
 
     useEffect(() => {
@@ -198,7 +196,7 @@ export default function ChatPage() {
         autoAdaptTheme()
     }, [theme])
 
-    const closeSettings = () => {
+    function closeSettings() {
         setIsHidingSettings(true)
         setTimeout(() => {
             setIsHidingSettings(false)
@@ -209,31 +207,27 @@ export default function ChatPage() {
     useEffect(() => {
         if (!isSettingsVisible) return
 
-        const closeSettingsOnOutsideClick = (event: MouseEvent) => {
+        function closeSettingsOnOutsideClick(event: MouseEvent) {
             if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
                 closeSettings()
             }
         }
 
         document.addEventListener("mousedown", closeSettingsOnOutsideClick)
-        return () => {
-            document.removeEventListener("mousedown", closeSettingsOnOutsideClick)
-        }
+        return () => document.removeEventListener("mousedown", closeSettingsOnOutsideClick)
     }, [isSettingsVisible])
 
     useEffect(() => {
         if (!isSettingsVisible) return
 
-        const closeSettingsOnEscape = (event: KeyboardEvent) => {
+        function closeSettingsOnEscape(event: KeyboardEvent) {
             if (event.key === "Escape") {
                 closeSettings()
             }
         }
 
         document.addEventListener("keydown", closeSettingsOnEscape)
-        return () => {
-            document.removeEventListener("keydown", closeSettingsOnEscape)
-        }
+        return () => document.removeEventListener("keydown", closeSettingsOnEscape)
     }, [isSettingsVisible])
 
     const closeSearch = () => {
@@ -247,38 +241,33 @@ export default function ChatPage() {
     useEffect(() => {
         if (!isSearchVisible) return
 
-        const closeSearchOnOutsideClick = (event: MouseEvent) => {
+        function closeSearchOnOutsideClick(event: MouseEvent) {
             if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
                 closeSearch()
             }
         }
 
         document.addEventListener("mousedown", closeSearchOnOutsideClick)
-        return () => {
-            document.removeEventListener("mousedown", closeSearchOnOutsideClick)
-        }
+        return () => document.removeEventListener("mousedown", closeSearchOnOutsideClick)
     }, [isSearchVisible])
 
     useEffect(() => {
         if (!isSearchVisible) return
 
-        const closeSearchOnEscape = (event: KeyboardEvent) => {
+        function closeSearchOnEscape(event: KeyboardEvent) {
             if (event.key === "Escape") {
                 closeSearch()
             }
         }
 
         document.addEventListener("keydown", closeSearchOnEscape)
-        return () => {
-            document.removeEventListener("keydown", closeSearchOnEscape)
-        }
+        return () => document.removeEventListener("keydown", closeSearchOnEscape)
     }, [isSearchVisible])
 
-    // Add effect to close sidebar on outside click for small screens
     useEffect(() => {
         if (!isSidebarVisible) return
 
-        const handleClickOutsideSidebar = (event: MouseEvent) => {
+        function handleClickOutsideSidebar(event: MouseEvent) {
             if (document.body.clientWidth >= 700) return
             if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
                 setIsSidebarVisible(false)
@@ -286,12 +275,10 @@ export default function ChatPage() {
         }
 
         document.addEventListener("mousedown", handleClickOutsideSidebar)
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutsideSidebar)
-        }
+        return () => document.removeEventListener("mousedown", handleClickOutsideSidebar)
     }, [isSidebarVisible])
 
-    const searchChats = (search: string) => {
+    function searchChats(search: string) {
         fetch("/api/search-chats/", {
             method: "POST",
             credentials: "include",
@@ -306,16 +293,16 @@ export default function ChatPage() {
         })
     }
 
-    const handleRenameChatButton = (chat: Chat) => {
+    function handleRenameChatButton(chat: Chat) {
         setRenamingUUID(chat.uuid)
         setRenamingTitle(chat.title)
         setOpenDropdownUUID(null)
     }
 
-    const handleDeleteChatButton = (chat: Chat) => {
+    function handleDeleteChatButton(chat: Chat) {
         if (confirm("Are you sure you want to delete this chat?")) {
             deleteChat(chat)
-            setChats(prev => prev.filter(c => c.uuid !== chat.uuid))
+            setChats(previous => previous.filter(chat => chat.uuid !== chat.uuid))
             if (location.pathname.includes(chat.uuid)) {
                 location.href = "/"
             }
@@ -323,12 +310,12 @@ export default function ChatPage() {
         setOpenDropdownUUID(null)
     }
 
-    const handleRenameInput = (event: React.KeyboardEvent, chat: Chat) => {
+    function handleRenameInput(event: React.KeyboardEvent, chat: Chat) {
         if (event.key === "Enter" && renamingTitle.trim()) {
             renameChat(chat, renamingTitle.trim())
-            setChats(prev =>
-                prev.map(c =>
-                    c.uuid === chat.uuid ? { ...c, title: renamingTitle.trim() } : c
+            setChats(previous =>
+                previous.map(chat =>
+                    chat.uuid === chat.uuid ? { ...chat, title: renamingTitle.trim() } : chat
                 )
             )
             setRenamingUUID(null)
@@ -395,14 +382,14 @@ export default function ChatPage() {
                 </div>
             )}
 
-            {document.body.clientWidth < 700 && isSidebarVisible && <div id="sidebar-backdrop-div" onClick={() => setIsSidebarVisible(false)}></div>}
+            {document.body.clientWidth < 700 && isSidebarVisible && <div id="sidebar-backdrop-div" onClick={_ => setIsSidebarVisible(false)}></div>}
             <div id="sidebar-div" className={isSidebarVisible ? "visible" : "invisible"} ref={sidebarRef}>
                 <div id="buttons-div">
-                    <button id="toggle-sidebar-button" onClick={() => setIsSidebarVisible(prev => !prev)}>
+                    <button id="toggle-sidebar-button" onClick={_ => setIsSidebarVisible(previous => !previous)}>
                         <span className="buttons-icon-span">≡</span>
                         <span className="buttons-text-span">Close sidebar</span>
                     </button>
-                    <button id="open-search-button" onClick={() => { setIsSearchVisible(true); searchChats("") }}>
+                    <button id="open-search-button" onClick={_ => { setIsSearchVisible(true); searchChats("") }}>
                         <span className="buttons-icon-span">🔍</span>
                         <span className="buttons-text-span">Search chats</span>
                     </button>
@@ -415,15 +402,15 @@ export default function ChatPage() {
                     {chats.map(chat => (
                         <div key={chat.uuid} className={`past-chat-div${chat.uuid === chatUUID ? " selected" : ""}`}>
                             {renamingUUID === chat.uuid ? (
-                                <input className="past-chat-rename-input" type="text" value={renamingTitle} onChange={e => setRenamingTitle(e.target.value)} onKeyDown={e => { handleRenameInput(e, chat) }} autoFocus />
+                                <input className="past-chat-rename-input" type="text" value={renamingTitle} onChange={event => setRenamingTitle(event.target.value)} onKeyDown={event => { handleRenameInput(event, chat) }} autoFocus />
                             ) : (
                                 <a className="past-chat-a" href={`/chat/${chat.uuid}`}>{chat.title}</a>
                             )}
-                            <button className="past-chat-dropdown-button" onClick={() => setOpenDropdownUUID(prev => (prev === chat.uuid ? null : chat.uuid))}>≡</button>
+                            <button className="past-chat-dropdown-button" onClick={_ => setOpenDropdownUUID(previous => (previous === chat.uuid ? null : chat.uuid))}>≡</button>
                             {openDropdownUUID === chat.uuid && (
                                 <DropdownDiv>
-                                    <button className="past-chat-rename-button" onClick={() => { handleRenameChatButton(chat) }}>Rename</button>
-                                    <button className="past-chat-delete-button" onClick={() => { handleDeleteChatButton(chat) }}>Delete</button>
+                                    <button className="past-chat-rename-button" onClick={_ => handleRenameChatButton(chat)}>Rename</button>
+                                    <button className="past-chat-delete-button" onClick={_ => handleDeleteChatButton(chat)}>Delete</button>
                                 </DropdownDiv>
                             )}
                         </div>
@@ -480,7 +467,7 @@ function updateCodeTheme(theme: Theme) {
 }
 
 function autoResizePromptTextArea() {
-    const rezize = () => {
+    function rezize() {
         const charactersPerLine = Math.round((promptTextArea.clientWidth - promptTextAreaFontSize) / promptTextAreaFontSize) * 2
 
         let lines = 0
@@ -513,7 +500,7 @@ function copyMessage(chatUUID: string, message: Message) {
         const button = event.currentTarget
 
         const writeToClipboard = (text: string) => {
-            navigator.clipboard.writeText(text).then(() => {
+            navigator.clipboard.writeText(text).then(_ => {
                 button.textContent = "Copied!"
                 setTimeout(() => { button.textContent = "Copy" }, 2000)
             })
@@ -568,10 +555,10 @@ function addEventListenerToCodeBlockCopyButtons() {
     botMessageDivs.forEach(botMessageDiv => {
         const buttons = botMessageDiv.querySelectorAll(".code-block-header-button")
         buttons.forEach(button => {
-            button.addEventListener("click", () => {
+            button.addEventListener("click", _ => {
                 const code = button.parentElement?.nextElementSibling?.textContent
                 if (code) {
-                    navigator.clipboard.writeText(code).then(() => {
+                    navigator.clipboard.writeText(code).then(_ => {
                         const originalText = button.textContent
                         button.textContent = "Copied!"
                         setTimeout(() => { button.textContent = originalText }, 2000)
