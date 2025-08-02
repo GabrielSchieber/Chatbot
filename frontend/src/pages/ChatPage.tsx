@@ -34,6 +34,7 @@ export default function ChatPage() {
     const [isHidingSettings, setIsHidingSettings] = useState(false)
     const [isSearchVisible, setIsSearchVisible] = useState(false)
     const [isHidingSearch, setIsHidingSearch] = useState(false)
+    const [isHidingPopup, setIsHidingPopup] = useState(false)
 
     const [openDropdownUUID, setOpenDropdownUUID] = useState<string | null>(null)
     const [renamingUUID, setRenamingUUID] = useState<string | null>(null)
@@ -42,6 +43,7 @@ export default function ChatPage() {
     const settingsRef = useRef<HTMLDivElement | null>(null)
     const searchRef = useRef<HTMLDivElement | null>(null)
     const sidebarRef = useRef<HTMLDivElement | null>(null)
+    const popupRef = useRef<HTMLDivElement | null>(null)
 
     const [searchResults, setSearchResults] = useState<SearchResults[]>([])
 
@@ -270,6 +272,40 @@ export default function ChatPage() {
         return () => document.removeEventListener("keydown", closeSearchOnEscape)
     }, [isSearchVisible])
 
+    function closePopup() {
+        setIsHidingPopup(true)
+        setTimeout(() => {
+            setIsHidingPopup(false)
+            setConfirmPopup(null)
+        }, 300)
+    }
+
+    useEffect(() => {
+        if (!confirmPopup) return
+
+        function closePopupOnOutsideClick(event: MouseEvent) {
+            if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+                closePopup()
+            }
+        }
+
+        document.addEventListener("mousedown", closePopupOnOutsideClick)
+        return () => document.removeEventListener("mousedown", closePopupOnOutsideClick)
+    }, [confirmPopup])
+
+    useEffect(() => {
+        if (!confirmPopup) return
+
+        function closePopupOnEscape(event: KeyboardEvent) {
+            if (event.key === "Escape") {
+                closePopup()
+            }
+        }
+
+        document.addEventListener("keydown", closePopupOnEscape)
+        return () => document.removeEventListener("keydown", closePopupOnEscape)
+    }, [confirmPopup])
+
     useEffect(() => {
         if (!isSidebarVisible) return
 
@@ -434,7 +470,7 @@ export default function ChatPage() {
                 <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here..."></textarea>
             </div>
 
-            {confirmPopup && <ConfirmPopup message={confirmPopup.message} onConfirm={confirmPopup.onConfirm} onCancel={confirmPopup.onCancel} />}
+            {confirmPopup && <ConfirmPopup message={confirmPopup.message} isHiding={isHidingPopup} ref={popupRef} onConfirm={confirmPopup.onConfirm} onCancel={confirmPopup.onCancel} />}
         </>
     )
 }
@@ -662,22 +698,26 @@ function PastChatDropdownDiv({ index, children }: { index: number, children: Rea
 
 function ConfirmPopup({
     message,
+    isHiding,
+    ref,
     onConfirm,
     onCancel
 }: {
     message: string,
+    isHiding: boolean,
+    ref: React.RefObject<HTMLDivElement | null>,
     onConfirm: () => void,
     onCancel?: () => void
 }) {
     return (
         <div className="confirm-popup-backdrop-div">
-            <div className="confirm-popup-div">
+            <div className={`confirm-popup-div ${isHiding ? "fade-out" : "fade-in"}`} ref={ref}>
                 <p>{message}</p>
                 <div className="confirm-popup-buttons-div">
                     {onCancel && <button className="confirm-popup-cancel-button" onClick={onCancel}>Cancel</button>}
                     <button className="confirm-popup-confirm-button" onClick={onConfirm}>Confirm</button>
                 </div>
             </div>
-        </div>
+        </div >
     )
 }
