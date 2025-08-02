@@ -36,7 +36,7 @@ ROOT_URLCONF = "backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": ["../frontend/dist"],
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -83,8 +83,6 @@ USE_TZ = True
 
 STATIC_URL = "assets/"
 
-STATICFILES_DIRS = ["../frontend/dist/assets"]
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
@@ -110,3 +108,7 @@ if sys.argv[:2] == ["manage.py", "test"]:
                 "TEST": {"NAME": BASE_DIR / "test_db.sqlite3"}
             }
             break
+
+if not DEBUG:
+    TEMPLATES[0]["DIRS"] = ["../frontend/dist"]
+    STATICFILES_DIRS = ["../frontend/dist/assets"]

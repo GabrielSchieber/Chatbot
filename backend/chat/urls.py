@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.urls import path, re_path
 
 from .views import (
@@ -28,6 +29,8 @@ urlpatterns = [
     path("api/rename-chat/", RenameChat.as_view()),
     path("api/delete-chat/", DeleteChat.as_view()),
     path("api/delete-chats/", DeleteChats.as_view()),
-    path("api/delete-account/", DeleteAccount.as_view()),
-    re_path(".*", index)
+    path("api/delete-account/", DeleteAccount.as_view())
 ]
+
+if not settings.DEBUG:
+    urlpatterns.append(re_path(".*", index))
