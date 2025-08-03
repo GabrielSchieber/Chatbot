@@ -46,6 +46,7 @@ export default function ChatPage() {
     const popupRef = useRef<HTMLDivElement | null>(null)
 
     const [searchResults, setSearchResults] = useState<SearchResults[]>([])
+    const [selectedIndex, setSelectedIndex] = useState<number>(-1)
 
     const [confirmPopup, setConfirmPopup] = useState<{
         message: string,
@@ -373,6 +374,39 @@ export default function ChatPage() {
         }
     }
 
+    useEffect(() => {
+        if (!isSearchVisible) return
+
+        function handleKeyboardNavigation(event: KeyboardEvent) {
+            if (event.key === "Escape") {
+                closeSearch()
+            } else if (event.key === "ArrowDown") {
+                event.preventDefault()
+                setSelectedIndex(prev => Math.min(prev + 1, searchResults.length - 1))
+            } else if (event.key === "ArrowUp") {
+                event.preventDefault()
+                setSelectedIndex(prev => Math.max(prev - 1, 0))
+            } else if (event.key === "Enter" && selectedIndex >= 0 && selectedIndex < searchResults.length) {
+                const selected = searchResults[selectedIndex]
+                location.href = `/chat/${selected.uuid}`
+            }
+        }
+
+        document.addEventListener("keydown", handleKeyboardNavigation)
+        return () => document.removeEventListener("keydown", handleKeyboardNavigation)
+    }, [isSearchVisible, searchResults, selectedIndex])
+
+    useEffect(() => {
+        if (selectedIndex < 0) return
+        const entries = document.querySelectorAll(".search-entry-a")
+        const selected = entries[selectedIndex] as HTMLElement | undefined
+        selected?.scrollIntoView({ block: "nearest" })
+    }, [selectedIndex])
+
+    useEffect(() => {
+        setSelectedIndex(searchResults.length > 0 ? 0 : -1)
+    }, [searchResults])
+
     return (
         <>
             {!isSettingsVisible && <button id="open-settings-button" onClick={_ => setIsSettingsVisible(true)}>⚙</button>}
@@ -421,13 +455,13 @@ export default function ChatPage() {
                             <>{searchResults.length === 0 ? (
                                 <p>No chats found.</p>
                             ) : (
-                                <>{searchResults.map(entry => (
-                                    <a key={entry.uuid} className="search-entry-a" href={`/chat/${entry.uuid}`}>
+                                <>{searchResults.map((entry, index) => (
+                                    <a key={entry.uuid} className={`search-entry-a ${index === selectedIndex ? "selected" : ""}`} href={`/chat/${entry.uuid}`}>
                                         {entry.title}
                                         {entry.matches?.length > 0 && (
                                             <ul>
-                                                {entry.matches.map((message: string, index: number) => (
-                                                    <li key={index}>{message.slice(0, 100)}...</li>
+                                                {entry.matches.map((message: string, i: number) => (
+                                                    <li key={i}>{message.slice(0, 100)}...</li>
                                                 ))}
                                             </ul>
                                         )}
