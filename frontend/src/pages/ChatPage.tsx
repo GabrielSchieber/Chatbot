@@ -452,9 +452,11 @@ export default function ChatPage() {
                             {renamingUUID === chat.uuid ? (
                                 <input className="past-chat-rename-input" type="text" value={renamingTitle} onChange={event => setRenamingTitle(event.target.value)} onKeyDown={event => { handleRenameInput(event, chat) }} autoFocus />
                             ) : (
-                                <a className="past-chat-a" href={`/chat/${chat.uuid}`}>{chat.title}</a>
+                                <>
+                                    <a className="past-chat-a" href={`/chat/${chat.uuid}`}>{chat.title}</a>
+                                    <button className="past-chat-dropdown-button" onClick={_ => setOpenDropdownUUID(previous => (previous === chat.uuid ? null : chat.uuid))}>≡</button>
+                                </>
                             )}
-                            <button className="past-chat-dropdown-button" onClick={_ => setOpenDropdownUUID(previous => (previous === chat.uuid ? null : chat.uuid))}>≡</button>
                             {openDropdownUUID === chat.uuid && (
                                 <PastChatDropdownDiv index={index}>
                                     <button className="past-chat-rename-button" onClick={_ => handleRenameChatButton(chat)}>Rename</button>
