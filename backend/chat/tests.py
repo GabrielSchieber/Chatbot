@@ -542,8 +542,9 @@ class SeleniumTests(StaticLiveServerTestCase):
 
         self.open_settings()
         self.delete_chats_button().click()
-        self.wait_until(lambda _: self.driver.switch_to.alert)
-        self.driver.switch_to.alert.accept()
+
+        self.wait_until(lambda _: len(self.confirm_popup_divs()) == 1)
+        self.confirm_popup_confirm_button().click()
 
         self.wait_until(lambda _: Chat.objects.count() == 0)
         self.wait_until(lambda _: Message.objects.count() == 0)
@@ -561,8 +562,9 @@ class SeleniumTests(StaticLiveServerTestCase):
 
         self.open_settings()
         self.delete_chats_button().click()        
-        self.wait_until(lambda _: self.driver.switch_to.alert)
-        self.driver.switch_to.alert.accept()
+
+        self.wait_until(lambda _: len(self.confirm_popup_divs()) == 1)
+        self.confirm_popup_confirm_button().click()
 
         self.wait_until(lambda _: Chat.objects.count(), 2)
         self.wait_until(lambda _: Message.objects.count(), 4)
@@ -579,8 +581,9 @@ class SeleniumTests(StaticLiveServerTestCase):
 
         self.open_settings()
         self.delete_account_button().click()
-        self.wait_until(lambda _: self.driver.switch_to.alert)
-        self.driver.switch_to.alert.accept()
+
+        self.wait_until(lambda _: len(self.confirm_popup_divs()) == 1)
+        self.confirm_popup_confirm_button().click()
 
         self.wait_until(lambda _: User.objects.count() == 0)
         self.assertEqual(Chat.objects.count(), 0)
@@ -597,8 +600,9 @@ class SeleniumTests(StaticLiveServerTestCase):
 
         self.open_settings()
         self.delete_account_button().click()
-        self.wait_until(lambda _: self.driver.switch_to.alert)
-        self.driver.switch_to.alert.accept()
+
+        self.wait_until(lambda _: len(self.confirm_popup_divs()) == 1)
+        self.confirm_popup_confirm_button().click()
 
         self.wait_until(lambda _: User.objects.count() == 1)
         self.assertEqual(User.objects.first().email, "someone@example.com")
@@ -613,7 +617,8 @@ class SeleniumTests(StaticLiveServerTestCase):
 
         self.wait_until(lambda _: len(self.past_chat_as()) == 2)
 
-        ActionChains(self.driver).move_to_element(self.past_chat_as()[0]).perform()
+        ActionChains(self.driver).move_to_element(self.past_chat_dropdown_buttons()[0]).perform()
+        time.sleep(1)
         self.past_chat_dropdown_buttons()[0].click()
         self.assertEqual(self.past_chat_rename_button().text, "Rename")
         self.past_chat_rename_button().click()
@@ -627,7 +632,8 @@ class SeleniumTests(StaticLiveServerTestCase):
         self.wait_until(lambda _: Chat.objects.all()[0].title == "A chat about greetings")
         self.assertEqual(Chat.objects.all()[1].title, "Some other chat")
 
-        ActionChains(self.driver).move_to_element(self.past_chat_as()[1]).perform()
+        ActionChains(self.driver).move_to_element(self.past_chat_dropdown_buttons()[1]).perform()
+        time.sleep(1)
         self.past_chat_dropdown_buttons()[1].click()
         self.past_chat_rename_button().click()
         self.assertEqual(len(self.past_chat_as()), 1)
@@ -648,26 +654,29 @@ class SeleniumTests(StaticLiveServerTestCase):
 
         self.wait_until(lambda _: len(self.past_chat_as()) == 2)
 
-        ActionChains(self.driver).move_to_element(self.past_chat_as()[1]).perform()
-        time.sleep(0.5)
+        ActionChains(self.driver).move_to_element(self.past_chat_dropdown_buttons()[1]).perform()
+        time.sleep(1)
         self.past_chat_dropdown_buttons()[1].click()
         self.assertEqual(self.past_chat_delete_button().text, "Delete")
 
         self.past_chat_delete_button().click()
-        self.wait_until(lambda _: self.driver.switch_to.alert)
-        self.driver.switch_to.alert.accept()
+
+        self.wait_until(lambda _: len(self.confirm_popup_divs()) == 1)
+        self.confirm_popup_confirm_button().click()
 
         self.wait_until(lambda _: Chat.objects.count() == 1)
         self.assertEqual(Chat.objects.first().title, "Chat 1")
         self.assertEqual(len(self.past_chat_as()), 1)
         self.assertEqual(self.past_chat_as()[0].text, "Chat 1")
 
-        ActionChains(self.driver).move_to_element(self.past_chat_as()[0]).perform()
+        ActionChains(self.driver).move_to_element(self.past_chat_dropdown_buttons()[0]).perform()
+        time.sleep(1)
         self.past_chat_dropdown_buttons()[0].click()
 
         self.past_chat_delete_button().click()
-        self.wait_until(lambda _: self.driver.switch_to.alert)
-        self.driver.switch_to.alert.accept()
+
+        self.wait_until(lambda _: len(self.confirm_popup_divs()) == 1)
+        self.confirm_popup_confirm_button().click()
 
         self.wait_until(lambda _: Chat.objects.count() == 0)
         self.assertEqual(len(self.past_chat_as()), 0)
@@ -728,6 +737,15 @@ class SeleniumTests(StaticLiveServerTestCase):
 
     def past_chat_delete_button(self):
         return self.driver.find_element(By.CLASS_NAME, "past-chat-delete-button")
+
+    def confirm_popup_divs(self):
+        return self.driver.find_elements(By.CLASS_NAME, "confirm-popup-div")
+
+    def confirm_popup_cancel_button(self):
+        return self.driver.find_element(By.CLASS_NAME, "confirm-popup-cancel-button")
+
+    def confirm_popup_confirm_button(self):
+        return self.driver.find_element(By.CLASS_NAME, "confirm-popup-confirm-button")
 
     def open_settings(self):
         self.open_settings_button().click()
