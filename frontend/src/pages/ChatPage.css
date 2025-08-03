@@ -402,12 +402,36 @@ body {
     z-index: 4;
 }
 
-#search-input {
+#search-header-div {
     width: 90%;
-    padding: 10px;
-    outline: none;
+    display: flex;
+    padding: 5px;
+    align-items: center;
+    justify-content: space-between;
     border-radius: 15px;
     background-color: var(--background-color3);
+}
+
+#search-input {
+    width: 100%;
+    padding: 10px;
+    outline: none;
+    background-color: transparent;
+}
+
+#search-close-button {
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 20px;
+    background-color: transparent;
+}
+
+#search-close-button:hover {
+    background-color: var(--background-color4);
+}
+
+#search-close-button:active {
+    background-color: transparent;
 }
 
 #search-entries-div {
