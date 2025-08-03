@@ -38,7 +38,7 @@ body {
     border-radius: 10px;
     align-items: center;
     background-color: var(--background-color4);
-    z-index: 3;
+    z-index: 5;
 }
 
 @keyframes fadeIn {
@@ -77,7 +77,7 @@ body {
     position: absolute;
     inset: 0;
     background-color: var(--backdrop-color);
-    z-index: 2;
+    z-index: 4;
 }
 
 #settings-p {
@@ -391,14 +391,14 @@ body {
     align-items: center;
     border-radius: 15px;
     background-color: var(--background-color4);
-    z-index: 3;
+    z-index: 5;
 }
 
 #search-backdrop-div {
     position: absolute;
     inset: 0;
     background-color: var(--backdrop-color);
-    z-index: 2;
+    z-index: 4;
 }
 
 #search-input {
@@ -569,7 +569,7 @@ body {
     justify-items: center;
     align-content: center;
     background-color: var(--backdrop-color);
-    z-index: 3;
+    z-index: 20;
 }
 
 .confirm-popup-div {
@@ -580,6 +580,7 @@ body {
     align-items: center;
     border-radius: 10px;
     background-color: var(--background-color4);
+    z-index: 21;
 }
 
 .confirm-popup-buttons-div {
