@@ -271,6 +271,11 @@ body {
     border-radius: 10px;
 }
 
+.past-chat-div:hover,
+.past-chat-div.selected:hover {
+    background-color: var(--background-color5);
+}
+
 .past-chat-div.selected {
     background-color: var(--background-color4);
 }
@@ -283,10 +288,6 @@ body {
     text-overflow: ellipsis;
     font-size: 14px;
     border-radius: 10px;
-}
-
-.past-chat-a:hover {
-    background-color: var(--background-color5);
 }
 
 .past-chat-dropdown-button {
