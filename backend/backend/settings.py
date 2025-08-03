@@ -111,4 +111,4 @@ if sys.argv[:2] == ["manage.py", "test"]:
 
 if not DEBUG:
     TEMPLATES[0]["DIRS"] = ["../frontend/dist"]
-    STATICFILES_DIRS = ["../frontend/dist/assets"]
+    STATICFILES_DIRS = ["../frontend/dist", "../frontend/dist/assets"]

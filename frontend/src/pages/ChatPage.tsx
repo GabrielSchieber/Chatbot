@@ -504,13 +504,13 @@ function updateCodeTheme(theme: Theme) {
     }
     switch (theme) {
         case "light":
-            link.href = "/assets/code_light.css"
+            link.href = "/code_light.css"
             break
         case "dark":
-            link.href = "/assets/code_dark.css"
+            link.href = "/code_dark.css"
             break
         default:
-            link.href = matchMedia("(prefers-color-scheme: dark)").matches ? "/assets/code_dark.css" : "/assets/code_light.css"
+            link.href = matchMedia("(prefers-color-scheme: dark)").matches ? "/code_dark.css" : "/code_light.css"
             break
     }
     document.head.appendChild(link)
