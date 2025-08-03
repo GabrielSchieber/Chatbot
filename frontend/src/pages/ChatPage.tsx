@@ -362,8 +362,8 @@ export default function ChatPage() {
         if (event.key === "Enter" && renamingTitle.trim()) {
             renameChat(chat, renamingTitle.trim())
             setChats(previous =>
-                previous.map(chat =>
-                    chat.uuid === chat.uuid ? { ...chat, title: renamingTitle.trim() } : chat
+                previous.map(previous_chat =>
+                    previous_chat.uuid === chat.uuid ? { ...previous_chat, title: renamingTitle.trim() } : previous_chat
                 )
             )
             setRenamingUUID(null)
