@@ -322,6 +322,7 @@ export default function ChatPage() {
     }, [isSidebarVisible])
 
     function searchChats(search: string) {
+        console.log("Here")
         fetch("/api/search-chats/", {
             method: "POST",
             credentials: "include",
@@ -412,7 +413,7 @@ export default function ChatPage() {
             {isSearchVisible && <div id="search-backdrop-div"></div>}
             {(isSearchVisible || isHidingSearch) && (
                 <div id="search-div" className={isHidingSearch ? "fade-out" : "fade-in"} ref={searchRef}>
-                    <input id="search-input" placeholder="Search here..." onInput={event => searchChats(event.currentTarget.value)} />
+                    <input id="search-input" placeholder="Search here..." onInput={event => chats.length > 0 && searchChats(event.currentTarget.value)} />
                     <div id="search-entries-div">
                         {chats.length === 0 ? (
                             <p>You have no chats to search.</p>
