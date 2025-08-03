@@ -351,9 +351,9 @@ export default function ChatPage() {
                 if (location.pathname.includes(chat.uuid)) {
                     location.href = "/"
                 }
-                setConfirmPopup(null)
+                closePopup(setIsHidingPopup, setConfirmPopup)
             },
-            onCancel: () => setConfirmPopup(null)
+            onCancel: () => { closePopup(setIsHidingPopup, setConfirmPopup) }
         })
         setOpenDropdownUUID(null)
     }
