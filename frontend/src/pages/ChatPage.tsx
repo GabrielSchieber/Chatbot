@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useCallback } from "react"
 import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
@@ -47,6 +47,20 @@ export default function ChatPage() {
 
     const [searchResults, setSearchResults] = useState<SearchResults[]>([])
     const [selectedIndex, setSelectedIndex] = useState<number>(-1)
+
+    const moveSelectionDown = useCallback(
+        throttle(() => {
+            setSelectedIndex(previous => searchResults.length > 0 ? Math.min(previous + 1, searchResults.length - 1) : -1)
+        }, 100),
+        [searchResults.length]
+    )
+
+    const moveSelectionUp = useCallback(
+        throttle(() => {
+            setSelectedIndex(previous => Math.max(previous - 1, 0))
+        }, 100),
+        []
+    )
 
     const [confirmPopup, setConfirmPopup] = useState<{
         message: string,
@@ -382,10 +396,10 @@ export default function ChatPage() {
                 closeSearch()
             } else if (event.key === "ArrowDown") {
                 event.preventDefault()
-                setSelectedIndex(prev => Math.min(prev + 1, searchResults.length - 1))
+                moveSelectionDown()
             } else if (event.key === "ArrowUp") {
                 event.preventDefault()
-                setSelectedIndex(prev => Math.max(prev - 1, 0))
+                moveSelectionUp()
             } else if (event.key === "Enter" && selectedIndex >= 0 && selectedIndex < searchResults.length) {
                 const selected = searchResults[selectedIndex]
                 location.href = `/chat/${selected.uuid}`
@@ -394,7 +408,7 @@ export default function ChatPage() {
 
         document.addEventListener("keydown", handleKeyboardNavigation)
         return () => document.removeEventListener("keydown", handleKeyboardNavigation)
-    }, [isSearchVisible, searchResults, selectedIndex])
+    }, [isSearchVisible, searchResults, selectedIndex, moveSelectionDown, moveSelectionUp])
 
     useEffect(() => {
         if (selectedIndex < 0) return
@@ -790,4 +804,15 @@ function ConfirmPopup({
             </div>
         </div>
     )
+}
+
+function throttle<T extends (...args: any[]) => void>(func: T, limit: number): T {
+    let lastCall = 0
+    return function (this: any, ...args: any[]) {
+        const now = Date.now()
+        if (now - lastCall >= limit) {
+            lastCall = now
+            func.apply(this, args)
+        }
+    } as T
 }
