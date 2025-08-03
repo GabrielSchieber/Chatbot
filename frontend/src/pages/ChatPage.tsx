@@ -664,7 +664,12 @@ function deleteChats(
                         onConfirm: () => setConfirmPopup(null)
                     })
                 } else {
-                    location.href = "/"
+                    if (location.href.includes("/chat/")) {
+                        location.href = "/"
+                    } else {
+                        closePopup(setIsHidingPopup, setConfirmPopup)
+                        document.getElementById("history-div")!.innerHTML = ""
+                    }
                 }
             })
         },
