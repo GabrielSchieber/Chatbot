@@ -414,18 +414,26 @@ export default function ChatPage() {
                 <div id="search-div" className={isHidingSearch ? "fade-out" : "fade-in"} ref={searchRef}>
                     <input id="search-input" placeholder="Search here..." onInput={event => searchChats(event.currentTarget.value)} />
                     <div id="search-entries-div">
-                        {searchResults.map(entry => (
-                            <a key={entry.uuid} className="search-entry-a" href={`/chat/${entry.uuid}`}>
-                                {entry.title}
-                                {entry.matches?.length > 0 && (
-                                    <ul>
-                                        {entry.matches.map((message: string, index: number) => (
-                                            <li key={index}>{message.slice(0, 100)}...</li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </a>
-                        ))}
+                        {chats.length === 0 ? (
+                            <p>You have no chats to search.</p>
+                        ) : (
+                            <>{searchResults.length === 0 ? (
+                                <p>No chats found.</p>
+                            ) : (
+                                <>{searchResults.map(entry => (
+                                    <a key={entry.uuid} className="search-entry-a" href={`/chat/${entry.uuid}`}>
+                                        {entry.title}
+                                        {entry.matches?.length > 0 && (
+                                            <ul>
+                                                {entry.matches.map((message: string, index: number) => (
+                                                    <li key={index}>{message.slice(0, 100)}...</li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </a>
+                                ))}</>
+                            )}</>
+                        )}
                     </div>
                 </div>
             )}
