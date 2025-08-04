@@ -48,6 +48,8 @@ export default function ChatPage() {
     const [searchResults, setSearchResults] = useState<SearchResults[]>([])
     const [selectedIndex, setSelectedIndex] = useState<number>(-1)
 
+    const [hasChatBegun, setHasChatBegun] = useState(chatUUID !== undefined)
+
     const moveSelectionDown = useCallback(
         throttle(() => {
             setSelectedIndex(previous => searchResults.length > 0 ? Math.min(previous + 1, searchResults.length - 1) : -1)
@@ -152,6 +154,7 @@ export default function ChatPage() {
                         })
                         webSocket.current.send(JSON.stringify({ message: input }))
                         setInput("")
+                        setHasChatBegun(true)
                     }
                 } else {
                     let generatingWarnP = document.querySelector(".generating-warn-p") as HTMLElement
@@ -337,7 +340,6 @@ export default function ChatPage() {
     }, [isSidebarVisible])
 
     function searchChats(search: string) {
-        console.log("Here")
         fetch("/api/search-chats/", {
             method: "POST",
             credentials: "include",
@@ -529,7 +531,7 @@ export default function ChatPage() {
             </div>
 
             <div id="chat-div">
-                <div id="messages-div">{messages.map(getHTMLMessage)}</div>
+                <div id="messages-div" className={hasChatBegun ? "expanded" : ""}>{messages.map(getHTMLMessage)}</div>
                 <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here..."></textarea>
             </div>
 
@@ -594,11 +596,9 @@ function autoResizePromptTextArea() {
         }
 
         const height = Math.min(lines * promptTextAreaFontSize + promptTextAreaFontSize * 2, Math.round(document.body.scrollHeight * 0.5))
-        messagesDiv.style.height = (document.body.scrollHeight - height) + "px"
         promptTextArea.style.height = height + "px"
     }
 
-    const messagesDiv = document.getElementById("messages-div") as HTMLDivElement
     const promptTextArea = document.getElementById("prompt-textarea") as HTMLTextAreaElement
     const promptTextAreaFontSize = Math.round(parseInt(getComputedStyle(promptTextArea).fontSize) * 1.25)
 
