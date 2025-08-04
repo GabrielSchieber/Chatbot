@@ -657,6 +657,11 @@ body {
     background-color: var(--red-color2);
 }
 
+#new-chat-h1 {
+    margin-bottom: 50px;
+    font-size: 30px;
+}
+
 #prompt-textarea {
     width: 60%;
     height: auto;

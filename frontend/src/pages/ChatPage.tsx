@@ -532,6 +532,7 @@ export default function ChatPage() {
 
             <div id="chat-div">
                 <div id="messages-div" className={hasChatBegun ? "expanded" : ""}>{messages.map(getHTMLMessage)}</div>
+                {hasChatBegun === false && <h1 id="new-chat-h1">Ask me anything</h1>}
                 <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here..."></textarea>
             </div>
 
