@@ -200,8 +200,11 @@ export default function ChatPage() {
         loadChats()
         loadMessages()
         receiveMessage()
-        autoResizePromptTextArea()
     }, [])
+
+    useEffect(() => {
+        autoResizePromptTextArea()
+    }, [input])
 
     useEffect(() => addEventListenerToCodeBlockCopyButtons(), [messages, input])
     useEffect(() => localStorage.setItem("isSidebarVisible", String(isSidebarVisible)), [isSidebarVisible])
@@ -603,8 +606,6 @@ function autoResizePromptTextArea() {
     const promptTextArea = document.getElementById("prompt-textarea") as HTMLTextAreaElement
     const promptTextAreaFontSize = Math.round(parseInt(getComputedStyle(promptTextArea).fontSize) * 1.25)
 
-    promptTextArea.addEventListener("input", rezize)
-    window.addEventListener("resize", rezize)
     rezize()
 }
 
