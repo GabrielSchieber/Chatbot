@@ -9,6 +9,7 @@ type Chat = { title: string, uuid: string }
 type Message = { text: string, index: number }
 type Theme = "system" | "light" | "dark"
 type SearchResults = { title: string, matches: string[], uuid: string }
+type Model = "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B"
 
 autoAdaptTheme()
 
@@ -25,6 +26,7 @@ export default function ChatPage() {
     const shouldLoadMessages = useRef(true)
 
     const [theme, setTheme] = useState<Theme>(() => { return (localStorage.getItem("theme") as Theme) || "system" })
+    const [model, setModel] = useState<Model>(() => { return (localStorage.getItem("model") as Model) || "SmolLM2-135M" })
 
     const [isSidebarVisible, setIsSidebarVisible] = useState(() => {
         const stored = localStorage.getItem("isSidebarVisible")
@@ -152,7 +154,7 @@ export default function ChatPage() {
                             messages.push({ text: "", index: messages.length })
                             return messages
                         })
-                        webSocket.current.send(JSON.stringify({ message: input }))
+                        webSocket.current.send(JSON.stringify({ model: model, message: input }))
                         setInput("")
                         setHasChatBegun(true)
                     }
@@ -224,6 +226,10 @@ export default function ChatPage() {
         localStorage.setItem("theme", theme)
         autoAdaptTheme()
     }, [theme])
+
+    useEffect(() => {
+        localStorage.setItem("model", model)
+    }, [model])
 
     function closeSettings() {
         setIsHidingSettings(true)
@@ -536,7 +542,16 @@ export default function ChatPage() {
             <div id="chat-div">
                 <div id="messages-div" className={hasChatBegun ? "expanded" : ""}>{messages.map(getHTMLMessage)}</div>
                 {hasChatBegun === false && <h1 id="new-chat-h1">Ask me anything</h1>}
-                <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here..."></textarea>
+                <div id="prompt-div">
+                    <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here..."></textarea>
+                    <div id="prompt-footer-div">
+                        <select id="model-select" value={model} onChange={event => setModel(event.target.value as Model)}>
+                            <option value="SmolLM2-135M" className="model-select-option">SmolLM2-135M</option>
+                            <option value="SmolLM2-360M" className="model-select-option">SmolLM2-360M</option>
+                            <option value="SmolLM2-1.7B" className="model-select-option">SmolLM2-1.7B</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             {confirmPopup && <ConfirmPopup message={confirmPopup.message} isHiding={isHidingPopup} ref={popupRef} onConfirm={confirmPopup.onConfirm} onCancel={confirmPopup.onCancel} />}
