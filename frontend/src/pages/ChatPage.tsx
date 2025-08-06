@@ -432,6 +432,10 @@ export default function ChatPage() {
         setSelectedIndex(searchResults.length > 0 ? 0 : -1)
     }, [searchResults])
 
+    useEffect(() => {
+        document.getElementById("prompt-textarea")?.focus()
+    }, [])
+
     return (
         <>
             {!isSettingsVisible && <button id="open-settings-button" onClick={_ => setIsSettingsVisible(true)}>⚙</button>}
