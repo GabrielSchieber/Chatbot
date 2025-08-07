@@ -8,7 +8,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.utils.html import escape
 from jwt import decode as jwt_decode
 
-from .models import Chat, Message, User
+from .models import Chat, Message, MessageFile, User
 from .sample import Model, sample_model
 from .utils import markdown_to_html
 
@@ -99,7 +99,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await database_sync_to_async(self.chat.save)()
 
         messages = await self.get_messages(message, files)
-        await database_sync_to_async(Message.objects.create)(chat = self.chat, text = message, is_user_message = True)
+        user_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = message, is_user_message = True)
+        if len(files) > 0:
+            await database_sync_to_async(MessageFile.objects.bulk_create)(
+                [MessageFile(message = user_message, file = file["file"], name = file["name"]) for file in files]
+            )
         bot_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = "", is_user_message = False)
 
         async for token in sample_model(model, messages, 256):
@@ -116,11 +120,21 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def get_messages(self, new_user_message: str, new_files: list[dict[str, str]]) -> list[dict[str, str]]:
         user_messages = [m.text for m in Message.objects.filter(chat = self.chat, is_user_message = True)]
+
+        user_files: list[list[dict[str, str]]] = []
+        for m in Message.objects.filter(chat = self.chat, is_user_message = True):
+            if MessageFile.objects.filter(message = m).count() == 0:
+                user_files.append([])
+            else:
+                files = [f for f in MessageFile.objects.filter(message = m).all()]
+                user_files.append([{"file": f.file.path, "name": f.name} for f in files])
+
         bot_messages = [m.text for m in Message.objects.filter(chat = self.chat, is_user_message = False)]
+
         messages = []
-        for user_message, bot_message in zip(user_messages, bot_messages):
+        for user_message, user_message_files, bot_message in zip(user_messages, user_files, bot_messages):
             messages.extend([
-                {"role": "user", "content": user_message},
+                {"role": "user", "content": get_message_with_files(user_message, user_message_files)},
                 {"role": "assistant", "content": bot_message}
             ])
         user_message_with_files = get_message_with_files(new_user_message, new_files)
