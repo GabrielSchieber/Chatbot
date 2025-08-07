@@ -157,10 +157,20 @@ export default function ChatPage() {
                             messages.push({ text: "", index: messages.length })
                             return messages
                         })
-                        webSocket.current.send(JSON.stringify({ model: model, message: input }))
-                        setInput("")
-                        setHasChatBegun(true)
-                        setCurrentFiles([])
+                        if (currentFiles.length > 0) {
+                            uploadFiles(currentFiles).then(files => {
+                                if (webSocket.current) {
+                                    webSocket.current.send(JSON.stringify({ model: model, message: input, files: files }))
+                                    setInput("")
+                                    setHasChatBegun(true)
+                                    setCurrentFiles([])
+                                }
+                            })
+                        } else {
+                            webSocket.current.send(JSON.stringify({ model: model, message: input }))
+                            setInput("")
+                            setHasChatBegun(true)
+                        }
                     }
                 } else {
                     let generatingWarnP = document.querySelector(".generating-warn-p") as HTMLElement
@@ -453,6 +463,15 @@ export default function ChatPage() {
 
             event.target.value = ""
         }
+    }
+
+    async function uploadFiles(files: File[]) {
+        const formData = new FormData()
+        files.forEach(file => formData.append("files", file))
+
+        const response = await fetch("/api/upload-files/", { method: "POST", body: formData })
+
+        return await response.json()
     }
 
     return (

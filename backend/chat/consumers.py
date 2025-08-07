@@ -47,6 +47,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         if model not in get_args(Model):
             model = "SmolLM2-135M"
         message = content["message"]
+        files = content.get("files", [])
 
         non_complete_chats = await self.get_non_complete_chats()
 
@@ -56,7 +57,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 self.redirect = f"/chat/{self.chat.uuid}"
                 await self.channel_layer.group_add(self.get_group_name(), self.channel_name)
 
-            generate_message_tasks[self.chat.uuid] = asyncio.create_task(self.generate_message(model, message))
+            generate_message_tasks[self.chat.uuid] = asyncio.create_task(self.generate_message(model, message, files))
         else:
             for chat in non_complete_chats:
                 if chat.uuid not in generate_message_tasks:
@@ -93,11 +94,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         except Exception:
             return AnonymousUser()
 
-    async def generate_message(self, model: Model, message: str):
+    async def generate_message(self, model: Model, message: str, files: list[dict[str, str]]):
         self.chat.is_complete = False
         await database_sync_to_async(self.chat.save)()
 
-        messages = await self.get_messages(message)
+        messages = await self.get_messages(message, files)
         await database_sync_to_async(Message.objects.create)(chat = self.chat, text = message, is_user_message = True)
         bot_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = "", is_user_message = False)
 
@@ -113,7 +114,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.channel_layer.group_send(f"chat_{self.chat.uuid}", {"type": "send_message", "message": markdown_to_html(bot_message.text)})
 
     @database_sync_to_async
-    def get_messages(self, new_user_message: str) -> list[dict[str, str]]:
+    def get_messages(self, new_user_message: str, new_files: list[dict[str, str]]) -> list[dict[str, str]]:
         user_messages = [m.text for m in Message.objects.filter(chat = self.chat, is_user_message = True)]
         bot_messages = [m.text for m in Message.objects.filter(chat = self.chat, is_user_message = False)]
         messages = []
@@ -122,7 +123,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 {"role": "user", "content": user_message},
                 {"role": "assistant", "content": bot_message}
             ])
-        messages.append({"role": "user", "content": new_user_message})
+        user_message_with_files = get_message_with_files(new_user_message, new_files)
+        messages.append({"role": "user", "content": user_message_with_files})
         return messages
 
     @database_sync_to_async
@@ -143,3 +145,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({"message": event["message"]})
         if self.redirect:
             await self.send_json({"redirect": self.redirect})
+
+def get_message_with_files(message: str, files: list[dict[str, str]]) -> str:
+    if len(files) == 0:
+        return message
+
+    file_contents = []
+    for file in files:
+        with open(file["file"], encoding = "utf-8") as file_reader:
+            file_contents.append(f"=== File: {file["name"]} ===\n{file_reader.read()}")
+
+    return f"{message}\n\nFiles:\n{"\n\n".join(file_contents)}"

@@ -8,12 +8,13 @@ from .views import (
     GetChats,
     GetMessage,
     GetMessages,
-    SearchChats,
     LoginView,
     LogoutView,
     MeView,
     RegisterView,
     RenameChat,
+    SearchChats,
+    UploadFiles,
     index
 )
 
@@ -24,6 +25,7 @@ urlpatterns = [
     path("api/me/", MeView.as_view()),
     path("api/get-message/", GetMessage.as_view()),
     path("api/get-messages/", GetMessages.as_view()),
+    path("api/upload-files/", UploadFiles.as_view()),
     path("api/get-chats/", GetChats.as_view()),
     path("api/search-chats/", SearchChats.as_view()),
     path("api/rename-chat/", RenameChat.as_view()),

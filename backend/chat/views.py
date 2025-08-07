@@ -1,7 +1,10 @@
 from django.contrib.auth import authenticate
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.db.models import Prefetch, Q
 from django.shortcuts import render
 from rest_framework import generics, serializers
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -83,6 +86,27 @@ class GetMessages(APIView):
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
             messages = [m.text if m.is_user_message else markdown_to_html(m.text) for m in Message.objects.filter(chat = chat)]
             return Response({"messages": messages})
+        except Exception:
+            return Response(status = 400)
+
+class UploadFiles(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        try:
+            uploaded_metadata = []
+
+            for file in request.FILES.getlist("files"):
+                path = default_storage.save(f"chat_temp/{file.name}", ContentFile(file.read()))
+                uploaded_metadata.append({
+                    "name": file.name,
+                    "content_type": file.content_type,
+                    "file": path,
+                    "url": default_storage.url(path)
+                })
+
+            return Response(uploaded_metadata)
         except Exception:
             return Response(status = 400)
 
