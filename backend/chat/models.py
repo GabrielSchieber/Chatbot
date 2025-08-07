@@ -60,3 +60,11 @@ class Message(models.Model):
         owner = "user" if self.is_user_message else "bot"
         text = self.text if len(self.text) <= 20 else f"{self.text[:20]}..."
         return f"Message of {owner} about {text} at {self.date_time}"
+
+class MessageFile(models.Model):
+    message = models.ForeignKey(Message, related_name = "files", on_delete = models.CASCADE)
+    file = models.FileField(upload_to = "chat_files/")
+    name = models.TextField()
+
+    def __str__(self):
+        return f"File {self.name} for message {self.message.id} at {self.date_time}"
