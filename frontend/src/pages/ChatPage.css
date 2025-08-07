@@ -480,6 +480,7 @@ body {
 #messages-div {
     display: flex;
     flex-direction: column;
+    gap: 10px;
     width: 100%;
     height: 40%;
     align-items: center;
@@ -496,22 +497,49 @@ body {
 
 .user-message-items-div,
 .bot-message-items-div {
+    width: 100%;
     display: flex;
     flex-direction: column;
-    width: 100%;
     align-items: center;
+    gap: 2px;
 
     .attachment-items-div {
         flex-direction: column;
         width: auto;
-        margin-right: 15%;
         align-self: flex-end;
+        transform: translateY(4px);
+    }
+}
+
+.user-message-items-div {
+    max-width: 60%;
+    width: max-content;
+    align-self: flex-end;
+    margin-right: 10%;
+
+    .copy-button {
+        background-color: var(--background-color4);
+    }
+
+    .copy-button:active {
+        background-color: var(--background-color4);
+    }
+}
+
+.bot-message-items-div {
+    .copy-button {
+        margin-right: 19%;
+        background-color: var(--background-color2);
+    }
+
+    .copy-button:active {
+        background-color: var(--background-color2);
     }
 }
 
 .user-message-div,
 .bot-message-div {
-    margin: 0 0 25px 0;
+    align-self: flex-end;
     padding: 10px;
     border-radius: 10px;
     word-break: break-word;
@@ -519,19 +547,8 @@ body {
 }
 
 .user-message-div {
-    max-width: 50%;
-    margin-right: 15%;
-    align-self: flex-end;
+    width: 100%;
     background-color: var(--background-color2);
-}
-
-.user-message-div+.copy-button {
-    margin-right: 15%;
-    background-color: var(--background-color4);
-}
-
-.user-message-div+.copy-button:active {
-    background-color: var(--background-color4);
 }
 
 .bot-message-div {
@@ -584,18 +601,7 @@ body {
     }
 }
 
-.bot-message-div+.copy-button {
-    margin-right: calc(20% - 15px);
-    background-color: var(--background-color2);
-}
-
-.bot-message-div+.copy-button:active {
-    background-color: var(--background-color2);
-}
-
 .copy-button {
-    position: relative;
-    top: -22px;
     padding: 5px 10px;
     align-self: flex-end;
     font-size: 12px;
