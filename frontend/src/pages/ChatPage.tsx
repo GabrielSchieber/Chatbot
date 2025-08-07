@@ -452,6 +452,25 @@ export default function ChatPage() {
 
     function handleFilesChange(event: React.ChangeEvent<HTMLInputElement>) {
         if (event.target.files) {
+            if (event.target.files.length + currentFiles.length > 10) {
+                alert("You can only attach up to 10 files at a time.")
+                event.target.value = ""
+                return
+            }
+
+            let totalSize = 0
+            for (const file of currentFiles) {
+                totalSize += file.size
+            }
+            for (const file of event.target.files) {
+                totalSize += file.size
+            }
+            if (totalSize > 1_000_000) {
+                alert("Total file size exceeds 1 MB limit. Please select smaller files.")
+                event.target.value = ""
+                return
+            }
+
             const newFiles = Array.from(event.target.files)
 
             const mergedFiles = [...currentFiles, ...newFiles].filter(
