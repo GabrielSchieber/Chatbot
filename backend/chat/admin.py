@@ -39,4 +39,13 @@ class ChatAdmin(admin.ModelAdmin):
     inlines = [MessageInline]
     list_display = ["user", "title", "is_complete", "date_time", "uuid"]
 
+    def get_readonly_fields(self, request, obj = None):
+        return [f.name for f in self.model._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj = None):
+        return True
+
 admin.site.register(Chat, ChatAdmin)
