@@ -494,6 +494,21 @@ body {
     opacity: 1;
 }
 
+.user-message-items-div,
+.bot-message-items-div {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+
+    .attachment-items-div {
+        flex-direction: column;
+        width: auto;
+        margin-right: 15%;
+        align-self: flex-end;
+    }
+}
+
 .user-message-div,
 .bot-message-div {
     margin: 0 0 25px 0;

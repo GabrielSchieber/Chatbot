@@ -6,7 +6,7 @@ import "./ChatPage.css"
 import { logout } from "../auth"
 
 type Chat = { title: string, uuid: string }
-type Message = { text: string, index: number }
+type Message = { text: string, files: string[], index: number }
 type Theme = "system" | "light" | "dark"
 type SearchResults = { title: string, matches: string[], uuid: string }
 type Model = "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B"
@@ -101,7 +101,10 @@ export default function ChatPage() {
             }).then(response => response.json()).then(data => {
                 if (data.messages) {
                     data.messages.forEach(
-                        (message: string, index: number) => setMessages(previous => [...previous, { text: message, index: index }]))
+                        (message_and_files: { text: string, files: string[] }, index: number) =>
+                            setMessages(previous =>
+                                [...previous, { text: message_and_files.text, files: message_and_files.files, index: index }]
+                            ))
                 } else {
                     alert("Fetching of messages was not possible")
                 }
@@ -118,13 +121,13 @@ export default function ChatPage() {
                 if (data.recover || data.message) {
                     setMessages(previous => {
                         let messages = [...previous]
-                        messages[messages.length - 1] = { text: data.recover ? data.recover : data.message, index: messages.length - 1 }
+                        messages[messages.length - 1] = { text: data.recover ? data.recover : data.message, files: [], index: messages.length - 1 }
                         return messages
                     })
                 } else if (data.token) {
                     setMessages(previous => {
                         let messages = [...previous]
-                        messages[messages.length - 1] = { text: messages[messages.length - 1].text + data.token, index: messages.length - 1 }
+                        messages[messages.length - 1] = { text: messages[messages.length - 1].text + data.token, files: [], index: messages.length - 1 }
                         return messages
                     })
                 } else if (data.redirect) {
@@ -153,8 +156,8 @@ export default function ChatPage() {
                     if (webSocket.current) {
                         setMessages(previous => {
                             let messages = [...previous]
-                            messages.push({ text: input, index: messages.length })
-                            messages.push({ text: "", index: messages.length })
+                            messages.push({ text: input, files: currentFiles.map(file => file.name), index: messages.length })
+                            messages.push({ text: "", files: [], index: messages.length })
                             return messages
                         })
                         if (currentFiles.length > 0) {
@@ -203,11 +206,31 @@ export default function ChatPage() {
         return (
             <React.Fragment key={message.index}>
                 {message.index % 2 === 0 ? (
-                    <div className="user-message-div">{message.text}</div>
+                    <div className="user-message-items-div">
+                        {message.files.length > 0 && (
+                            <div className="attachment-items-div">
+                                {message.files.map((file, index) => (
+                                    <div key={index} className="attachment-item-div">
+                                        <h1 className="attachment-icon-h1">Text</h1>
+                                        <div className="attachment-info-div">
+                                            <>
+                                                <h1 className="attachment-file-h1">{file}</h1>
+                                                <p className="attachment-type-p">{file.endsWith(".txt") ? "Text" : file.endsWith(".md") ? "Markdown" : "File"}</p>
+                                            </>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <div className="user-message-div">{message.text}</div>
+                        <button className="copy-button" onClick={copyMessage(chatUUID!, message)}>Copy</button>
+                    </div>
                 ) : (
-                    <div className="bot-message-div" dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message.text) }}></div>
+                    <div className="bot-message-items-div">
+                        <div className="bot-message-div" dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message.text) }}></div>
+                        <button className="copy-button" onClick={copyMessage(chatUUID!, message)}>Copy</button>
+                    </div>
                 )}
-                <button className="copy-button" onClick={copyMessage(chatUUID!, message)}>Copy</button>
             </React.Fragment>
         )
     }
