@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .consumers import generate_message_tasks
-from .models import Chat, Message, User
+from .models import Chat, Message, MessageFile, User
 from .utils import markdown_to_html
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -84,7 +84,12 @@ class GetMessages(APIView):
         try:
             chat_uuid = request.data["chat_uuid"]
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            messages = [m.text if m.is_user_message else markdown_to_html(m.text) for m in Message.objects.filter(chat = chat)]
+            messages = [
+                {"text": m.text, "files": [file.name for file in MessageFile.objects.filter(message = m)]}
+                if m.is_user_message
+                else {"text": markdown_to_html(m.text), "files": []}
+                for m in Message.objects.filter(chat = chat)
+            ]
             return Response({"messages": messages})
         except Exception:
             return Response(status = 400)
