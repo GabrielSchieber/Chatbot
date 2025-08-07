@@ -95,6 +95,15 @@ class UploadFiles(APIView):
 
     def post(self, request):
         try:
+            if len(request.FILES.getlist("files")) > 10:
+                return Response({"error": "You can only upload up to 10 files at a time"}, 400)
+
+            total_size = 0
+            for file in request.FILES.getlist("files"):
+                total_size += file.size
+            if total_size > 1_000_000:
+                return Response({"error": "Total file size exceeds limit of 1 MB"}, 400)
+
             uploaded_metadata = []
 
             for file in request.FILES.getlist("files"):
