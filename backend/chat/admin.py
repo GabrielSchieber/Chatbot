@@ -34,6 +34,33 @@ admin.site.register(User, UserAdmin)
 
 class MessageInline(admin.StackedInline):
     model = Message
+    extra = 0
+    can_delete = False
+    readonly_fields = ["message_files_summary"]
+    fields = ["text", "is_user_message", "message_files_summary"]
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    def has_delete_permission(self, request, obj = None):
+        return False
+
+    def has_change_permission(self, request, obj = None):
+        return True
+
+    def get_readonly_fields(self, request, obj = None):
+        base_fields = [f.name for f in self.model._meta.fields]
+        return base_fields + ["message_files_summary"]
+
+    def message_files_summary(self, obj):
+        if not obj.pk:
+            return "-"
+        files = obj.files.all()
+        if not files:
+            return "No files"
+        return "\n".join(f.name for f in files)
+
+    message_files_summary.short_description = "Files"
 
 class ChatAdmin(admin.ModelAdmin):
     inlines = [MessageInline]
