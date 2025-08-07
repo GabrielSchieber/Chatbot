@@ -52,6 +52,8 @@ export default function ChatPage() {
 
     const [hasChatBegun, setHasChatBegun] = useState(chatUUID !== undefined)
 
+    const [currentFiles, setCurrentFiles] = useState<File[]>([])
+
     const moveSelectionDown = useCallback(
         throttle(() => {
             setSelectedIndex(previous => searchResults.length > 0 ? Math.min(previous + 1, searchResults.length - 1) : -1)
@@ -98,7 +100,8 @@ export default function ChatPage() {
                 body: JSON.stringify({ chat_uuid: chatUUID })
             }).then(response => response.json()).then(data => {
                 if (data.messages) {
-                    data.messages.forEach((message: string, index: number) => setMessages(previous => [...previous, { text: message, index: index }]))
+                    data.messages.forEach(
+                        (message: string, index: number) => setMessages(previous => [...previous, { text: message, index: index }]))
                 } else {
                     alert("Fetching of messages was not possible")
                 }
@@ -157,6 +160,7 @@ export default function ChatPage() {
                         webSocket.current.send(JSON.stringify({ model: model, message: input }))
                         setInput("")
                         setHasChatBegun(true)
+                        setCurrentFiles([])
                     }
                 } else {
                     let generatingWarnP = document.querySelector(".generating-warn-p") as HTMLElement
@@ -436,6 +440,21 @@ export default function ChatPage() {
         document.getElementById("prompt-textarea")?.focus()
     }, [])
 
+    function handleFilesChange(event: React.ChangeEvent<HTMLInputElement>) {
+        if (event.target.files) {
+            const newFiles = Array.from(event.target.files)
+
+            const mergedFiles = [...currentFiles, ...newFiles].filter(
+                (file, index, self) =>
+                    index === self.findIndex(f => f.name === file.name && f.size === file.size)
+            )
+
+            setCurrentFiles(mergedFiles)
+
+            event.target.value = ""
+        }
+    }
+
     return (
         <>
             {!isSettingsVisible && <button id="open-settings-button" onClick={_ => setIsSettingsVisible(true)}>⚙</button>}
@@ -546,6 +565,22 @@ export default function ChatPage() {
             <div id="chat-div">
                 <div id="messages-div" className={hasChatBegun ? "expanded" : ""}>{messages.map(getHTMLMessage)}</div>
                 {hasChatBegun === false && <h1 id="new-chat-h1">Ask me anything</h1>}
+                {currentFiles.length > 0 && (
+                    <div className="attachment-items-div">
+                        {currentFiles.map((file, index) => (
+                            <div key={index} className="attachment-item-div">
+                                <button className="attachment-remove-button" onClick={() => setCurrentFiles(currentFiles.filter((_, i) => i !== index))}>X</button>
+                                <h1 className="attachment-icon-h1">Text</h1>
+                                <div className="attachment-info-div">
+                                    <>
+                                        <h1 className="attachment-file-h1">{file.name}</h1>
+                                        <p className="attachment-type-p">{file.name.endsWith(".txt") ? "Text" : file.name.endsWith(".md") ? "Markdown" : "File"}</p>
+                                    </>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
                 <div id="prompt-div">
                     <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here..."></textarea>
                     <div id="prompt-footer-div">
@@ -554,6 +589,10 @@ export default function ChatPage() {
                             <option value="SmolLM2-360M" className="model-select-option">SmolLM2-360M</option>
                             <option value="SmolLM2-1.7B" className="model-select-option">SmolLM2-1.7B</option>
                         </select>
+                        <div id="attachment-div">
+                            <label id="attachment-label" htmlFor="attachment-input">📎</label>
+                            <input id="attachment-input" type="file" onChange={handleFilesChange} multiple />
+                        </div>
                     </div>
                 </div>
             </div>

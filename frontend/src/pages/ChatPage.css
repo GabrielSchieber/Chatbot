@@ -683,6 +683,7 @@ body {
 
 #prompt-footer-div {
     display: flex;
+    justify-content: space-between;
 }
 
 #model-select {
@@ -696,5 +697,83 @@ body {
 }
 
 .model-select-option {
+    font-size: 15px;
+}
+
+#attachment-label {
+    padding: 7px;
+    font-size: 30px;
+    border-radius: 10px;
+}
+
+#attachment-label:hover {
+    background-color: var(--background-color2);
+}
+
+#attachment-label:active {
+    background-color: transparent;
+}
+
+#attachment-input {
+    display: none;
+}
+
+.attachment-items-div {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    width: 61%;
+    padding: 5px;
+}
+
+.attachment-item-div {
+    position: relative;
+    display: flex;
+    width: 250px;
+    gap: 5px;
+    padding: 5px;
+    align-items: center;
+    align-self: flex-start;
+    overflow: hidden;
+    border-radius: 10px;
+    background-color: var(--background-color4);
+}
+
+.attachment-remove-button {
+    position: absolute;
+    padding: 3px 5px 3px 5px;
+    font-size: 12px;
+    top: 0;
+    right: 0;
+    border-radius: 10px;
+    background-color: transparent;
+    transform: translate(-4px, 4px);
+    z-index: 1;
+}
+
+.attachment-remove-button:hover {
+    background-color: var(--background-color2);
+}
+
+.attachment-icon-h1 {
+    padding: 10px;
+    border-radius: 10px;
+    align-content: center;
+    font-size: 15px;
+    background-color: var(--background-color2);
+}
+
+.attachment-info-div {
+    display: flex;
+    flex-direction: column;
+}
+
+.attachment-file-h1,
+.attachment-type-p {
+    width: 190px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     font-size: 15px;
 }
