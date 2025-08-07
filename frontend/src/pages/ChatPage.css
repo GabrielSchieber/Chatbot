@@ -497,7 +497,6 @@ body {
 
 .user-message-items-div,
 .bot-message-items-div {
-    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -516,29 +515,19 @@ body {
     width: max-content;
     align-self: flex-end;
     margin-right: 10%;
-
-    .copy-button {
-        background-color: var(--background-color4);
-    }
-
-    .copy-button:active {
-        background-color: var(--background-color4);
-    }
 }
 
 .bot-message-items-div {
-    .copy-button {
-        margin-right: 19%;
-        background-color: var(--background-color2);
-    }
+    width: 60%;
 
-    .copy-button:active {
-        background-color: var(--background-color2);
+    .copy-button {
+        transform: translateX(10px);
     }
 }
 
 .user-message-div,
 .bot-message-div {
+    width: 100%;
     align-self: flex-end;
     padding: 10px;
     border-radius: 10px;
@@ -547,12 +536,10 @@ body {
 }
 
 .user-message-div {
-    width: 100%;
     background-color: var(--background-color2);
 }
 
 .bot-message-div {
-    width: 60%;
     align-self: center;
     background-color: var(--background-color4);
 
@@ -606,9 +593,14 @@ body {
     align-self: flex-end;
     font-size: 12px;
     border-radius: 5px;
+    background-color: transparent;
 }
 
 .copy-button:hover {
+    background-color: var(--background-color4);
+}
+
+.copy-button:active {
     background-color: var(--background-color3);
 }
 
