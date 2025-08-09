@@ -54,6 +54,9 @@ export default function ChatPage() {
 
     const [currentFiles, setCurrentFiles] = useState<File[]>([])
 
+    const [editingMessageInput, setEditingMessageInput] = useState("")
+    const [editingMessageIndex, setEditingMessageIndex] = useState(-1)
+
     const moveSelectionDown = useCallback(
         throttle(() => {
             setSelectedIndex(previous => searchResults.length > 0 ? Math.min(previous + 1, searchResults.length - 1) : -1)
@@ -222,8 +225,33 @@ export default function ChatPage() {
                                 ))}
                             </div>
                         )}
-                        <div className="user-message-div">{message.text}</div>
-                        <button className="copy-button" onClick={copyMessage(chatUUID!, message)}>Copy</button>
+                        {message.index !== editingMessageIndex ? (
+                            <>
+                                <div className="user-message-div">{message.text}</div>
+                                <div className="user-message-footer-div">
+                                    <button className="edit-button" onClick={_ => {
+                                        setEditingMessageIndex(message.index)
+                                        setEditingMessageInput(message.text)
+                                    }}>Edit</button>
+                                    <button className="copy-button" onClick={copyMessage(chatUUID!, message)}>Copy</button>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="message-editor-div">
+                                <textarea id="edit-textarea" value={editingMessageInput} onChange={event => setEditingMessageInput(event.target.value)}></textarea>
+                                <div>
+                                    <button className="copy-button" onClick={_ => {
+                                        setEditingMessageIndex(-1)
+                                        setEditingMessageInput("")
+                                    }}>Cancel</button>
+                                    <button className="edit-button" onClick={_ => {
+                                        message.text = editingMessageInput
+                                        setEditingMessageIndex(-1)
+                                        setEditingMessageInput("")
+                                    }}>Confirm</button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className="bot-message-items-div">
@@ -242,8 +270,14 @@ export default function ChatPage() {
     }, [])
 
     useEffect(() => {
-        autoResizePromptTextArea()
+        autoResizeTextArea(document.getElementById("prompt-textarea") as HTMLTextAreaElement)
     }, [input])
+
+    useEffect(() => {
+        if (editingMessageIndex >= 0) {
+            autoResizeTextArea(document.getElementById("edit-textarea") as HTMLTextAreaElement)
+        }
+    }, [editingMessageInput])
 
     useEffect(() => addEventListenerToCodeBlockCopyButtons(), [messages, input])
     useEffect(() => localStorage.setItem("isSidebarVisible", String(isSidebarVisible)), [isSidebarVisible])
@@ -703,29 +737,23 @@ function updateCodeTheme(theme: Theme) {
     document.head.appendChild(link)
 }
 
-function autoResizePromptTextArea() {
-    function rezize() {
-        const charactersPerLine = Math.round((promptTextArea.clientWidth - promptTextAreaFontSize) / promptTextAreaFontSize) * 2
+function autoResizeTextArea(textArea: HTMLTextAreaElement) {
+    const fontSize = Math.round(parseInt(getComputedStyle(textArea).fontSize) * 1.25)
+    const charactersPerLine = Math.round((textArea.clientWidth - fontSize) / fontSize) * 2
 
-        let lines = 0
-        let j = 0
-        for (let i = 0; i < promptTextArea.value.length; i++) {
-            if (j >= charactersPerLine || promptTextArea.value[i] === "\n") {
-                lines += 1
-                j = 0
-                continue
-            }
-            j += 1
+    let lines = 0
+    let j = 0
+    for (let i = 0; i < textArea.value.length; i++) {
+        if (j >= charactersPerLine || textArea.value[i] === "\n") {
+            lines += 1
+            j = 0
+            continue
         }
-
-        const height = Math.min(lines * promptTextAreaFontSize + promptTextAreaFontSize * 2, Math.round(document.body.scrollHeight * 0.5))
-        promptTextArea.style.height = height + "px"
+        j += 1
     }
 
-    const promptTextArea = document.getElementById("prompt-textarea") as HTMLTextAreaElement
-    const promptTextAreaFontSize = Math.round(parseInt(getComputedStyle(promptTextArea).fontSize) * 1.25)
-
-    rezize()
+    const height = Math.min(lines * fontSize + fontSize * 2, Math.round(document.body.scrollHeight * 0.5))
+    textArea.style.height = height + "px"
 }
 
 function copyMessage(chatUUID: string, message: Message) {

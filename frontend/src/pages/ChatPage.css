@@ -539,6 +539,35 @@ body {
     background-color: var(--background-color2);
 }
 
+.message-editor-div {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin: 10px;
+    padding: 5px;
+    align-self: flex-end;
+    border-radius: 10px;
+    background-color: var(--background-color5);
+
+    textarea {
+        padding: 10px;
+        align-content: center;
+        resize: none;
+        outline: none;
+        background-color: transparent;
+    }
+
+    div {
+        display: flex;
+        gap: 10px;
+        align-self: flex-end;
+
+        button {
+            font-size: 17px;
+        }
+    }
+}
+
 .bot-message-div {
     align-self: center;
     background-color: var(--background-color4);
@@ -588,6 +617,7 @@ body {
     }
 }
 
+.edit-button,
 .copy-button {
     padding: 5px 10px;
     align-self: flex-end;
@@ -596,10 +626,12 @@ body {
     background-color: transparent;
 }
 
+.edit-button:hover,
 .copy-button:hover {
     background-color: var(--background-color4);
 }
 
+.edit-button:active,
 .copy-button:active {
     background-color: var(--background-color3);
 }
