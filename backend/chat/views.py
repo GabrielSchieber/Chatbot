@@ -24,6 +24,11 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return User.objects.create_user(email = validated_data["email"], password = validated_data["password"])
 
+class ChatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Chat
+        fields = ["title", "uuid"]
+
 class MessageFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = MessageFile
@@ -146,24 +151,24 @@ class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            chats = Chat.objects.filter(user = request.user)
-            return Response({"chats": [{"title": chat.title, "uuid": chat.uuid} for chat in chats]})
-        except Exception:
-            return Response(status = 400)
+        chats = Chat.objects.filter(user = request.user)
+        serializer = ChatSerializer(chats, many = True)
+        return Response({"chats": serializer.data})
 
     def post(self, request):
-        try:
-            request.data["incomplete"]
-            chats = Chat.objects.filter(user = request.user, is_complete = False)
-            for chat in chats:
-                if chat.uuid not in generate_message_tasks:
-                    chat.is_complete = True
-                    chat.save()
-            chats = Chat.objects.filter(user = request.user, is_complete = False)
-            return Response({"chats": [{"title": chat.title, "uuid": chat.uuid} for chat in chats]})
-        except Exception:
-            return Response(status = 400)
+        incomplete_flag = request.data.get("incomplete", None)
+        if incomplete_flag is None:
+            return Response({"error": "'incomplete' field required"}, status = 400)
+
+        chats = Chat.objects.filter(user = request.user, is_complete = False)
+        for chat in chats:
+            if chat.uuid not in generate_message_tasks:
+                chat.is_complete = True
+                chat.save()
+
+        chats = Chat.objects.filter(user = request.user, is_complete = False)
+        serializer = ChatSerializer(chats, many = True)
+        return Response({"chats": serializer.data})
 
 class SearchChats(APIView):
     permission_classes = [IsAuthenticated]
