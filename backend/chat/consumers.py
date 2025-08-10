@@ -33,6 +33,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 await self.close()
                 return
 
+        await self.reset_non_complete_chats()
+
         await self.accept()
         if self.chat and not self.chat.is_complete:
             message = await database_sync_to_async(self.chat.messages.last)()
@@ -59,10 +61,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
             generate_message_tasks[self.chat.uuid] = asyncio.create_task(self.generate_message(model, message, files))
         else:
-            for chat in non_complete_chats:
-                if chat.uuid not in generate_message_tasks:
-                    chat.is_complete = True
-                    await database_sync_to_async(chat.save)()
+            await self.reset_non_complete_chats()
 
             non_complete_chats = await self.get_non_complete_chats()
             if len(non_complete_chats) == 0:
@@ -147,7 +146,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     @database_sync_to_async
     def get_non_complete_chats(self) -> list[Chat]:
-        return list(Chat.objects.filter(user = self.user, is_complete = False))
+        return get_non_complete_chats(self.user)
+
+    @database_sync_to_async
+    def reset_non_complete_chats(self):
+        reset_non_complete_chats(self.user)
 
     def get_group_name(self) -> str:
         return f"chat_{self.chat.uuid}"
@@ -170,3 +173,13 @@ def get_message_with_files(message: str, files: list[dict[str, str]]) -> str:
             file_contents.append(f"=== File: {file["name"]} ===\n{file_reader.read()}")
 
     return f"{message}\n\nFiles:\n{"\n\n".join(file_contents)}"
+
+def get_non_complete_chats(user: User) -> list[Chat]:
+    return list(Chat.objects.filter(user = user, is_complete = False))
+
+def reset_non_complete_chats(user: User):
+    non_complete_chats = get_non_complete_chats(user)
+    for chat in non_complete_chats:
+        if chat.uuid not in generate_message_tasks:
+            chat.is_complete = True
+            chat.save()
