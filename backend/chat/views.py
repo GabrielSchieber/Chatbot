@@ -24,6 +24,24 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return User.objects.create_user(email = validated_data["email"], password = validated_data["password"])
 
+class MessageFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MessageFile
+        fields = ["name"]
+
+class MessageSerializer(serializers.ModelSerializer):
+    files = MessageFileSerializer(many = True, read_only = True)
+    text = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Message
+        fields = ["text", "files", "is_user_message"]
+
+    def get_text(self, obj):
+        if obj.is_user_message:
+            return obj.text
+        return markdown_to_html(obj.text)
+
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     authentication_classes = []
@@ -81,18 +99,18 @@ class GetMessages(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        chat_uuid = request.data.get("chat_uuid")
+        if not chat_uuid:
+            return Response({"error": "chat_uuid required"}, status = 400)
+
         try:
-            chat_uuid = request.data["chat_uuid"]
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            messages = [
-                {"text": m.text, "files": [file.name for file in MessageFile.objects.filter(message = m)]}
-                if m.is_user_message
-                else {"text": markdown_to_html(m.text), "files": []}
-                for m in Message.objects.filter(chat = chat)
-            ]
-            return Response({"messages": messages})
-        except Exception:
-            return Response(status = 400)
+        except Chat.DoesNotExist:
+            return Response({"error": "Chat not found"}, status = 404)
+
+        messages = Message.objects.filter(chat = chat).prefetch_related("files")
+        serializer = MessageSerializer(messages, many = True)
+        return Response({"messages": serializer.data})
 
 class UploadFiles(APIView):
     permission_classes = [IsAuthenticated]
