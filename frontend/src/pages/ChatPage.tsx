@@ -6,7 +6,7 @@ import "./ChatPage.css"
 import { logout } from "../auth"
 
 type Chat = { title: string, uuid: string }
-type Message = { text: string, files: string[], is_user_message: boolean }
+type Message = { text: string, files: { name: string }[], is_user_message: boolean }
 type Theme = "system" | "light" | "dark"
 type SearchResults = { title: string, matches: string[], uuid: string }
 type Model = "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B"
@@ -117,17 +117,16 @@ export default function ChatPage() {
 
             webSocket.current.addEventListener("message", event => {
                 const data = JSON.parse(event.data)
+                const message_index = data.message_index + 1
                 if (data.recover || data.message) {
                     setMessages(previous => {
                         let messages = [...previous]
-                        const message_index = data.message_index >= 0 ? data.message_index + 1 : messages.length - 1
                         messages[message_index] = { text: data.recover ? data.recover : data.message, files: [], is_user_message: false }
                         return messages
                     })
                 } else if (data.token) {
                     setMessages(previous => {
                         let messages = [...previous]
-                        const message_index = data.message_index >= 0 ? data.message_index + 1 : messages.length - 1
                         messages[message_index] = { text: messages[message_index].text + data.token, files: [], is_user_message: false }
                         return messages
                     })
@@ -157,7 +156,7 @@ export default function ChatPage() {
                     if (webSocket.current) {
                         setMessages(previous => {
                             let messages = [...previous]
-                            messages.push({ text: input, files: currentFiles.map(file => file.name), is_user_message: true })
+                            messages.push({ text: input, files: currentFiles.map(file => { return { name: file.name } }), is_user_message: true })
                             messages.push({ text: "", files: [], is_user_message: false })
                             return messages
                         })
@@ -215,8 +214,8 @@ export default function ChatPage() {
                                         <h1 className="attachment-icon-h1">Text</h1>
                                         <div className="attachment-info-div">
                                             <>
-                                                <h1 className="attachment-file-h1">{file}</h1>
-                                                <p className="attachment-type-p">{file.endsWith(".txt") ? "Text" : file.endsWith(".md") ? "Markdown" : "File"}</p>
+                                                <h1 className="attachment-file-h1">{file.name}</h1>
+                                                <p className="attachment-type-p">{file.name.endsWith(".txt") ? "Text" : file.name.endsWith(".md") ? "Markdown" : "File"}</p>
                                             </>
                                         </div>
                                     </div>
@@ -244,7 +243,7 @@ export default function ChatPage() {
                                     }}>Cancel</button>
                                     <button className="edit-button" onClick={_ => {
                                         if (webSocket.current) {
-                                            webSocket.current.send(JSON.stringify({ "model": model, "message": editingMessageInput, message_index: index }))
+                                            webSocket.current.send(JSON.stringify({ "action": "edit_message", "model": model, "message": editingMessageInput, message_index: index }))
                                         }
                                         setMessages(previous => {
                                             const messages = [...previous]

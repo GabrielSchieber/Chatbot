@@ -12,7 +12,8 @@ from django.utils.html import escape
 from jwt import decode as jwt_decode
 
 from .models import Chat, Message, MessageFile, User
-from .sample import Model, sample_model
+from .sample import Model
+from .tasks import generate_message, get_group_name
 from .utils import markdown_to_html
 
 generate_message_tasks: dict[str, asyncio.Task] = {}
@@ -48,18 +49,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.channel_layer.group_discard(self.get_group_name(), self.channel_name)
 
     async def receive_json(self, content):
-        model = content.get("model", "SmolLM2-135M")
-        if model not in get_args(Model):
-            model = "SmolLM2-135M"
-
-        message = content.get("message")
-        if not message:
-            await self.close()
-            return
-
-        files = content.get("files", [])
-        message_index = content.get("message_index", -1)
-
         non_complete_chats = await self.get_non_complete_chats()
 
         if len(non_complete_chats) == 0:
@@ -74,9 +63,29 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 await self.close()
                 return
 
-        task = asyncio.create_task(self.generate_message(model, message, message_index, files))
-        task.add_done_callback(lambda t: t.exception() and logger.exception("Task failed", exc_info = t.exception()))
-        generate_message_tasks[self.chat.uuid] = task
+        model = content.get("model", "SmolLM2-135M")
+        if model not in get_args(Model):
+            model = "SmolLM2-135M"
+
+        action = content.get("action", "new_message")
+
+        message = content.get("message")
+        if not message:
+            await self.close()
+            return  
+
+        match action:
+            case "new_message":
+                files = content.get("files", [])
+                await self.handle_new_message(model, message, files)
+            case "edit_message":
+                message_index = content.get("message_index")
+                if message_index is None:
+                    await self.close()
+                    return
+                await self.handle_edit_message(model, message, message_index)
+            case _:
+                await self.close()
 
     @database_sync_to_async
     def get_user_from_cookie(self):
@@ -101,97 +110,34 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         except Exception:
             return AnonymousUser()
 
-    async def generate_message(self, model: Model, message: str, message_index: int, files: list[dict[str, str]]):
-        self.chat.is_complete = False
-        await database_sync_to_async(self.chat.save)()
+    async def handle_new_message(self, model: Model, message: str, files: list[dict[str, str]]):
+        user_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = message, is_user_message = True)
+        if len(files) > 0:
+            await database_sync_to_async(MessageFile.objects.bulk_create)(
+                [MessageFile(message = user_message, file = file["file"], name = file["name"]) for file in files]
+            )
+        bot_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = "", is_user_message = False)
+        await self.create_generate_message_task(model, user_message, bot_message)
 
-        if message_index < 0:
-            messages = await self.get_messages(message, files)
-            user_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = message, is_user_message = True)
-            if len(files) > 0:
-                await database_sync_to_async(MessageFile.objects.bulk_create)(
-                    [MessageFile(message = user_message, file = file["file"], name = file["name"]) for file in files]
-                )
-            bot_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = "", is_user_message = False)
-        else:
-            messages = await self.get_messages_for_editing(message, message_index)
-            bot_message = await self.get_message_at_index(message_index + 1)
+    async def handle_edit_message(self, model: Model, message: str, message_index: int):
+        messages = await database_sync_to_async(Message.objects.filter)(chat = self.chat)
+        messages = await database_sync_to_async(messages.order_by)("date_time")
+        messages = await database_sync_to_async(list)(messages)
 
-        async for token in sample_model(model, messages, 256):
-            bot_message.text += token
-            await database_sync_to_async(bot_message.save)()
-            await self.channel_layer.group_send(f"chat_{self.chat.uuid}", {"type": "send_token", "token": escape(token), "message_index": message_index})
+        user_message = messages[message_index]
+        user_message.text = message
+        await database_sync_to_async(user_message.save)()
 
-        self.chat.is_complete = True
-        await database_sync_to_async(self.chat.save)()
-        generate_message_tasks.pop(self.chat.uuid)
+        bot_message = messages[message_index + 1]
+        bot_message.text = ""
+        await database_sync_to_async(bot_message.save)()
 
-        await self.channel_layer.group_send(f"chat_{self.chat.uuid}", {"type": "send_message", "message": markdown_to_html(bot_message.text), "message_index": message_index})
+        await self.create_generate_message_task(model, user_message, bot_message)
 
-    @database_sync_to_async
-    def get_messages(self, new_user_message: str, new_files: list[dict[str, str]]) -> list[dict[str, str]]:
-        user_messages = [m.text for m in Message.objects.filter(chat = self.chat, is_user_message = True)]
-
-        user_files: list[list[dict[str, str]]] = []
-        for m in Message.objects.filter(chat = self.chat, is_user_message = True):
-            if MessageFile.objects.filter(message = m).count() == 0:
-                user_files.append([])
-            else:
-                files = [f for f in MessageFile.objects.filter(message = m).all()]
-                user_files.append([{"file": f.file.path, "name": f.name} for f in files])
-
-        bot_messages = [m.text for m in Message.objects.filter(chat = self.chat, is_user_message = False)]
-
-        messages = []
-        for user_message, user_message_files, bot_message in zip(user_messages, user_files, bot_messages):
-            messages.extend([
-                {"role": "user", "content": get_message_with_files(user_message, user_message_files)},
-                {"role": "assistant", "content": bot_message}
-            ])
-        user_message_with_files = get_message_with_files(new_user_message, new_files)
-        messages.append({"role": "user", "content": user_message_with_files})
-        return messages
-
-    @database_sync_to_async
-    def get_messages_for_editing(self, new_user_message: str, message_index: int):
-        all_messages = list(Message.objects.filter(chat = self.chat).order_by("id"))
-
-        if 0 <= message_index < len(all_messages):
-            all_messages[message_index].text = new_user_message
-            all_messages[message_index].save()
-
-        if 0 <= message_index + 1 < len(all_messages):
-            all_messages[message_index + 1].text = ""
-            all_messages[message_index + 1].save()
-
-        user_messages_all = [m for m in all_messages if m.is_user_message]
-        user_message_ids = [m.id for m in user_messages_all]
-
-        files_by_message_id = {}
-        for mf in MessageFile.objects.filter(message_id__in=user_message_ids):
-            files_by_message_id.setdefault(mf.message_id, []).append({
-                "file": mf.file.path,
-                "name": mf.name
-            })
-
-        user_files = [
-            files_by_message_id.get(m.id, [])
-            for m in user_messages_all
-        ]
-
-        messages_up_to_index = all_messages[:message_index]
-        user_messages = [m for m in messages_up_to_index if m.is_user_message]
-        bot_messages = [m for m in messages_up_to_index if not m.is_user_message]
-
-        messages = []
-        for user_message, user_message_files, bot_message in zip(user_messages, user_files, bot_messages):
-            messages.extend([
-                {"role": "user", "content": get_message_with_files(user_message.text, user_message_files)},
-                {"role": "assistant", "content": bot_message.text}
-            ])
-        messages.append({"role": "user", "content": all_messages[message_index].text})
-
-        return messages
+    async def create_generate_message_task(self, model: Model, user_message: Message, bot_message: Message):
+        task = asyncio.create_task(generate_message(self.chat, model, user_message, bot_message))
+        task.add_done_callback(lambda t: t.exception() and logger.exception("Task failed", exc_info = t.exception()))
+        generate_message_tasks[self.chat.uuid] = task
 
     @database_sync_to_async
     def create_chat(self) -> Chat:
@@ -210,26 +156,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         return Message.objects.filter(chat = self.chat)[index]
 
     def get_group_name(self) -> str:
-        return f"chat_{self.chat.uuid}"
+        return get_group_name(self.chat)
 
     async def send_token(self, event):
-        await self.send_json({"token": event["token"], "message_index": event["message_index"]})
+        await self.send_json({"token": escape(event["token"]), "message_index": event["message_index"]})
 
     async def send_message(self, event):
-        await self.send_json({"message": event["message"], "message_index": event["message_index"]})
+        await self.send_json({"message": markdown_to_html(event["message"]), "message_index": event["message_index"]})
         if self.redirect:
             await self.send_json({"redirect": self.redirect})
-
-def get_message_with_files(message: str, files: list[dict[str, str]]) -> str:
-    if len(files) == 0:
-        return message
-
-    file_contents = []
-    for file in files:
-        with open(file["file"], encoding = "utf-8") as file_reader:
-            file_contents.append(f"=== File: {file["name"]} ===\n{file_reader.read()}")
-
-    return f"{message}\n\nFiles:\n{"\n\n".join(file_contents)}"
 
 def get_non_complete_chats(user: User) -> list[Chat]:
     return list(Chat.objects.filter(user = user, is_complete = False))
