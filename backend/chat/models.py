@@ -67,4 +67,4 @@ class MessageFile(models.Model):
     name = models.TextField()
 
     def __str__(self):
-        return f"File {self.name} for message {self.message.id} at {self.date_time}"
+        return f"File {self.name} for message {self.message.id} at {self.message.date_time}"
