@@ -6,6 +6,10 @@ import "./ChatPage.css"
 import { logout } from "../utils/auth"
 import { useTheme } from "../context/ThemeProvider"
 import type { Theme } from "../utils/theme"
+import { PastChatDropdownDiv } from "../components/Dropdown"
+import { ConfirmPopup } from "../components/ConfirmPopup"
+import { throttle } from "../utils/throttle"
+import { getChats, getMessages } from "../utils/api"
 
 type Chat = { title: string, uuid: string }
 type Message = { text: string, files: { name: string }[], is_user_message: boolean }
@@ -79,34 +83,14 @@ export default function ChatPage() {
     function loadChats() {
         if (shouldLoadChats.current) {
             shouldLoadChats.current = false
-            fetch("/api/get-chats/", {
-                credentials: "include",
-                headers: { "Content-Type": "application/json" }
-            }).then(response => response.json()).then(data => {
-                if (data.chats) {
-                    data.chats.forEach((chat: Chat) => setChats(previous => [...previous, chat]))
-                } else {
-                    alert("Fetching of messages was not possible")
-                }
-            })
+            getChats().then(setChats)
         }
     }
 
     function loadMessages() {
         if (shouldLoadMessages.current && chatUUID) {
             shouldLoadMessages.current = false
-            fetch("/api/get-messages/", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ chat_uuid: chatUUID })
-            }).then(response => response.json()).then(data => {
-                if (data.messages) {
-                    setMessages(data.messages)
-                } else {
-                    alert("Fetching of messages was not possible")
-                }
-            })
+            getMessages(chatUUID).then(setMessages)
         }
     }
 
@@ -145,13 +129,8 @@ export default function ChatPage() {
     function sendMessage(event: React.KeyboardEvent) {
         if (webSocket.current && event.key === "Enter" && !event.shiftKey && input.trim()) {
             event.preventDefault()
-            fetch("/api/get-chats/", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ incomplete: true })
-            }).then(response => response.json()).then(data => {
-                if (data.chats.length === 0) {
+            getChats(true).then(chats => {
+                if (chats.length === 0) {
                     if (webSocket.current) {
                         setMessages(previous => {
                             let messages = [...previous]
@@ -180,7 +159,7 @@ export default function ChatPage() {
                     if (!generatingWarnP) {
                         generatingWarnP = document.createElement("p")
                         generatingWarnP.className = "generating-warn-p"
-                        generatingWarnP.innerHTML = `A message is already being generated in <a href="/chat/${data.chats[0].uuid}">${data.chats[0].title}<a>`
+                        generatingWarnP.innerHTML = `A message is already being generated in <a href="/chat/${chats[0].uuid}">${chats[0].title}<a>`
                         document.getElementById("chat-div")?.appendChild(generatingWarnP)
 
                         generatingWarnP.style.filter = "brightness(0.9)"
@@ -870,12 +849,6 @@ function deleteAccount(
     })
 }
 
-function PastChatDropdownDiv({ index, children }: { index: number, children: React.ReactNode }) {
-    const button = document.querySelectorAll(".past-chat-dropdown-button")[index]
-    const className = button && button.getBoundingClientRect().bottom < window.innerHeight - 100 ? "past-chat-dropdown-div" : "past-chat-dropdown-div open-upwards"
-    return <div className={className}>{children}</div>
-}
-
 function closePopup(
     setIsHidingPopup: React.Dispatch<React.SetStateAction<boolean>>,
     setConfirmPopup: React.Dispatch<React.SetStateAction<{
@@ -889,41 +862,4 @@ function closePopup(
         setIsHidingPopup(false)
         setConfirmPopup(null)
     }, 300)
-}
-
-function ConfirmPopup({
-    message,
-    isHiding,
-    ref,
-    onConfirm,
-    onCancel
-}: {
-    message: string,
-    isHiding: boolean,
-    ref: React.RefObject<HTMLDivElement | null>,
-    onConfirm: () => void,
-    onCancel?: () => void
-}) {
-    return (
-        <div className="confirm-popup-backdrop-div">
-            <div className={`confirm-popup-div ${isHiding ? "fade-out" : "fade-in"}`} ref={ref}>
-                <p>{message}</p>
-                <div className="confirm-popup-buttons-div">
-                    {onCancel && <button className="confirm-popup-cancel-button" onClick={onCancel}>Cancel</button>}
-                    <button className="confirm-popup-confirm-button" onClick={onConfirm}>Confirm</button>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-function throttle<T extends (...args: any[]) => void>(func: T, limit: number): T {
-    let lastCall = 0
-    return function (this: any, ...args: any[]) {
-        const now = Date.now()
-        if (now - lastCall >= limit) {
-            lastCall = now
-            func.apply(this, args)
-        }
-    } as T
 }
