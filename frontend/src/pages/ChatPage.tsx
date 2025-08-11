@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
 import "./ChatPage.css"
-import { logout } from "../auth"
+import { logout } from "../utils/auth"
 import { useTheme } from "../context/ThemeProvider"
 import type { Theme } from "../utils/theme"
 

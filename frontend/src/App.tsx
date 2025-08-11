@@ -2,7 +2,7 @@ import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router"
 import ChatPage from "./pages/ChatPage"
 import LoginPage from "./pages/LoginPage"
 import SignupPage from "./pages/SignupPage"
-import { useAuth } from "./auth"
+import { useAuth } from "./utils/auth"
 
 export default function App() {
   const { loading, isLoggedIn } = useAuth()

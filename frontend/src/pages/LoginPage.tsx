@@ -1,6 +1,6 @@
 import { useState } from "react"
 import "./AuthPages.css"
-import { login } from "../auth"
+import { login } from "../utils/auth"
 
 export default function LoginPage() {
     const [email, setEmail] = useState("")
