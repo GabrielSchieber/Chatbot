@@ -9,12 +9,8 @@ import type { Theme } from "../utils/theme"
 import { PastChatDropdownDiv } from "../components/Dropdown"
 import { ConfirmPopup } from "../components/ConfirmPopup"
 import { throttle } from "../utils/throttle"
-import { getChats, getMessages } from "../utils/api"
-
-type Chat = { title: string, uuid: string }
-type Message = { text: string, files: { name: string }[], is_user_message: boolean }
-type SearchResults = { title: string, matches: string[], uuid: string }
-type Model = "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B"
+import { getChats, getMessage, getMessages } from "../utils/api"
+import type { Chat, Message, Model, SearchResults } from "../types"
 
 export default function ChatPage() {
     const { chatUUID } = useParams()
@@ -708,14 +704,9 @@ function copyMessage(chatUUID: string, message: Message, index: number) {
         if (message.is_user_message) {
             writeToClipboard(message.text)
         } else {
-            fetch("/api/get-message/", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ chat_uuid: chatUUID, message_index: index })
-            }).then(response => response.json()).then(data => {
-                if (data.text) {
-                    writeToClipboard(data.text)
+            getMessage(chatUUID, index).then(text => {
+                if (text) {
+                    writeToClipboard(text)
                 } else {
                     alert("Copying of message was not possible")
                 }
