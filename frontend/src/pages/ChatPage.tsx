@@ -6,7 +6,7 @@ import "./ChatPage.css"
 import { logout } from "../auth"
 
 type Chat = { title: string, uuid: string }
-type Message = { text: string, files: string[], index: number }
+type Message = { text: string, files: string[], is_user_message: boolean }
 type Theme = "system" | "light" | "dark"
 type SearchResults = { title: string, matches: string[], uuid: string }
 type Model = "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B"
@@ -55,7 +55,7 @@ export default function ChatPage() {
     const [currentFiles, setCurrentFiles] = useState<File[]>([])
 
     const [editingMessageInput, setEditingMessageInput] = useState("")
-    const [editingMessageIndex, setEditingMessageIndex] = useState(-1)
+    const editingMessageRef = useRef<Message | null>(null)
 
     const moveSelectionDown = useCallback(
         throttle(() => {
@@ -103,11 +103,7 @@ export default function ChatPage() {
                 body: JSON.stringify({ chat_uuid: chatUUID })
             }).then(response => response.json()).then(data => {
                 if (data.messages) {
-                    data.messages.forEach(
-                        (message_and_files: { text: string, files: string[] }, index: number) =>
-                            setMessages(previous =>
-                                [...previous, { text: message_and_files.text, files: message_and_files.files, index: index }]
-                            ))
+                    setMessages(data.messages)
                 } else {
                     alert("Fetching of messages was not possible")
                 }
@@ -124,13 +120,15 @@ export default function ChatPage() {
                 if (data.recover || data.message) {
                     setMessages(previous => {
                         let messages = [...previous]
-                        messages[messages.length - 1] = { text: data.recover ? data.recover : data.message, files: [], index: messages.length - 1 }
+                        const message_index = data.message_index >= 0 ? data.message_index + 1 : messages.length - 1
+                        messages[message_index] = { text: data.recover ? data.recover : data.message, files: [], is_user_message: false }
                         return messages
                     })
                 } else if (data.token) {
                     setMessages(previous => {
                         let messages = [...previous]
-                        messages[messages.length - 1] = { text: messages[messages.length - 1].text + data.token, files: [], index: messages.length - 1 }
+                        const message_index = data.message_index >= 0 ? data.message_index + 1 : messages.length - 1
+                        messages[message_index] = { text: messages[message_index].text + data.token, files: [], is_user_message: false }
                         return messages
                     })
                 } else if (data.redirect) {
@@ -159,8 +157,8 @@ export default function ChatPage() {
                     if (webSocket.current) {
                         setMessages(previous => {
                             let messages = [...previous]
-                            messages.push({ text: input, files: currentFiles.map(file => file.name), index: messages.length })
-                            messages.push({ text: "", files: [], index: messages.length })
+                            messages.push({ text: input, files: currentFiles.map(file => file.name), is_user_message: true })
+                            messages.push({ text: "", files: [], is_user_message: false })
                             return messages
                         })
                         if (currentFiles.length > 0) {
@@ -205,10 +203,10 @@ export default function ChatPage() {
         }
     }
 
-    function getHTMLMessage(message: Message) {
+    function getHTMLMessage(message: Message, index: number) {
         return (
-            <React.Fragment key={message.index}>
-                {message.index % 2 === 0 ? (
+            <React.Fragment key={index}>
+                {message.is_user_message ? (
                     <div className="user-message-items-div">
                         {message.files.length > 0 && (
                             <div className="attachment-items-div">
@@ -225,15 +223,15 @@ export default function ChatPage() {
                                 ))}
                             </div>
                         )}
-                        {message.index !== editingMessageIndex ? (
+                        {message !== editingMessageRef.current ? (
                             <>
                                 <div className="user-message-div">{message.text}</div>
                                 <div className="user-message-footer-div">
                                     <button className="edit-button" onClick={_ => {
-                                        setEditingMessageIndex(message.index)
+                                        editingMessageRef.current = message
                                         setEditingMessageInput(message.text)
                                     }}>Edit</button>
-                                    <button className="copy-button" onClick={copyMessage(chatUUID!, message)}>Copy</button>
+                                    <button className="copy-button" onClick={copyMessage(chatUUID!, message, index)}>Copy</button>
                                 </div>
                             </>
                         ) : (
@@ -241,12 +239,20 @@ export default function ChatPage() {
                                 <textarea id="edit-textarea" value={editingMessageInput} onChange={event => setEditingMessageInput(event.target.value)}></textarea>
                                 <div>
                                     <button className="copy-button" onClick={_ => {
-                                        setEditingMessageIndex(-1)
+                                        editingMessageRef.current = null
                                         setEditingMessageInput("")
                                     }}>Cancel</button>
                                     <button className="edit-button" onClick={_ => {
+                                        if (webSocket.current) {
+                                            webSocket.current.send(JSON.stringify({ "model": model, "message": editingMessageInput, message_index: index }))
+                                        }
+                                        setMessages(previous => {
+                                            const messages = [...previous]
+                                            messages[index + 1].text = ""
+                                            return messages
+                                        })
                                         message.text = editingMessageInput
-                                        setEditingMessageIndex(-1)
+                                        editingMessageRef.current = null
                                         setEditingMessageInput("")
                                     }}>Confirm</button>
                                 </div>
@@ -256,7 +262,7 @@ export default function ChatPage() {
                 ) : (
                     <div className="bot-message-items-div">
                         <div className="bot-message-div" dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message.text) }}></div>
-                        <button className="copy-button" onClick={copyMessage(chatUUID!, message)}>Copy</button>
+                        <button className="copy-button" onClick={copyMessage(chatUUID!, message, index)}>Copy</button>
                     </div>
                 )}
             </React.Fragment>
@@ -274,7 +280,7 @@ export default function ChatPage() {
     }, [input])
 
     useEffect(() => {
-        if (editingMessageIndex >= 0) {
+        if (editingMessageRef.current) {
             autoResizeTextArea(document.getElementById("edit-textarea") as HTMLTextAreaElement)
         }
     }, [editingMessageInput])
@@ -658,7 +664,7 @@ export default function ChatPage() {
             </div>
 
             <div id="chat-div">
-                <div id="messages-div" className={hasChatBegun ? "expanded" : ""}>{messages.map(getHTMLMessage)}</div>
+                <div id="messages-div" className={hasChatBegun ? "expanded" : ""}>{messages.map((message, index) => getHTMLMessage(message, index))}</div>
                 {hasChatBegun === false && <h1 id="new-chat-h1">Ask me anything</h1>}
                 {currentFiles.length > 0 && (
                     <div className="attachment-items-div">
@@ -756,7 +762,7 @@ function autoResizeTextArea(textArea: HTMLTextAreaElement) {
     textArea.style.height = height + "px"
 }
 
-function copyMessage(chatUUID: string, message: Message) {
+function copyMessage(chatUUID: string, message: Message, index: number) {
     return (event: React.MouseEvent<HTMLButtonElement>) => {
         const button = event.currentTarget
 
@@ -767,14 +773,14 @@ function copyMessage(chatUUID: string, message: Message) {
             })
         }
 
-        if (message.index % 2 === 0) {
+        if (message.is_user_message) {
             writeToClipboard(message.text)
         } else {
             fetch("/api/get-message/", {
                 method: "POST",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ chat_uuid: chatUUID, message_index: message.index })
+                body: JSON.stringify({ chat_uuid: chatUUID, message_index: index })
             }).then(response => response.json()).then(data => {
                 if (data.text) {
                     writeToClipboard(data.text)

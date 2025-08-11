@@ -45,11 +45,17 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.channel_layer.group_discard(self.get_group_name(), self.channel_name)
 
     async def receive_json(self, content):
-        model = content["model"]
+        model = content.get("model", "SmolLM2-135M")
         if model not in get_args(Model):
             model = "SmolLM2-135M"
-        message = content["message"]
+
+        message = content.get("message")
+        if not message:
+            await self.close()
+            return
+
         files = content.get("files", [])
+        message_index = content.get("message_index", -1)
 
         non_complete_chats = await self.get_non_complete_chats()
 
@@ -58,17 +64,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 self.chat = await self.create_chat()
                 self.redirect = f"/chat/{self.chat.uuid}"
                 await self.channel_layer.group_add(self.get_group_name(), self.channel_name)
-
-            generate_message_tasks[self.chat.uuid] = asyncio.create_task(self.generate_message(model, message, files))
         else:
             await self.reset_non_complete_chats()
-
             non_complete_chats = await self.get_non_complete_chats()
-            if len(non_complete_chats) == 0:
-                await self.receive_json(content)
+            if len(non_complete_chats) != 0:
+                await self.close()
                 return
 
-            await self.send_json({"redirect": f"/chat/{non_complete_chats[0].uuid}"})
+        task = asyncio.create_task(self.generate_message(model, message, message_index, files))
+        generate_message_tasks[self.chat.uuid] = task
 
     @database_sync_to_async
     def get_user_from_cookie(self):
@@ -93,28 +97,32 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         except Exception:
             return AnonymousUser()
 
-    async def generate_message(self, model: Model, message: str, files: list[dict[str, str]]):
+    async def generate_message(self, model: Model, message: str, message_index: int, files: list[dict[str, str]]):
         self.chat.is_complete = False
         await database_sync_to_async(self.chat.save)()
 
-        messages = await self.get_messages(message, files)
-        user_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = message, is_user_message = True)
-        if len(files) > 0:
-            await database_sync_to_async(MessageFile.objects.bulk_create)(
-                [MessageFile(message = user_message, file = file["file"], name = file["name"]) for file in files]
-            )
-        bot_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = "", is_user_message = False)
+        if message_index < 0:
+            messages = await self.get_messages(message, files)
+            user_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = message, is_user_message = True)
+            if len(files) > 0:
+                await database_sync_to_async(MessageFile.objects.bulk_create)(
+                    [MessageFile(message = user_message, file = file["file"], name = file["name"]) for file in files]
+                )
+            bot_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = "", is_user_message = False)
+        else:
+            messages = await self.get_messages_for_editing(message, message_index)
+            bot_message = await self.get_message_at_index(message_index + 1)
 
         async for token in sample_model(model, messages, 256):
             bot_message.text += token
             await database_sync_to_async(bot_message.save)()
-            await self.channel_layer.group_send(f"chat_{self.chat.uuid}", {"type": "send_token", "token": escape(token)})
+            await self.channel_layer.group_send(f"chat_{self.chat.uuid}", {"type": "send_token", "token": escape(token), "message_index": message_index})
 
         self.chat.is_complete = True
         await database_sync_to_async(self.chat.save)()
         generate_message_tasks.pop(self.chat.uuid)
 
-        await self.channel_layer.group_send(f"chat_{self.chat.uuid}", {"type": "send_message", "message": markdown_to_html(bot_message.text)})
+        await self.channel_layer.group_send(f"chat_{self.chat.uuid}", {"type": "send_message", "message": markdown_to_html(bot_message.text), "message_index": message_index})
 
     @database_sync_to_async
     def get_messages(self, new_user_message: str, new_files: list[dict[str, str]]) -> list[dict[str, str]]:
@@ -141,6 +149,47 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         return messages
 
     @database_sync_to_async
+    def get_messages_for_editing(self, new_user_message: str, message_index: int):
+        all_messages = list(Message.objects.filter(chat = self.chat).order_by("id"))
+
+        if 0 <= message_index < len(all_messages):
+            all_messages[message_index].text = new_user_message
+            all_messages[message_index].save()
+
+        if 0 <= message_index + 1 < len(all_messages):
+            all_messages[message_index + 1].text = ""
+            all_messages[message_index + 1].save()
+
+        user_messages_all = [m for m in all_messages if m.is_user_message]
+        user_message_ids = [m.id for m in user_messages_all]
+
+        files_by_message_id = {}
+        for mf in MessageFile.objects.filter(message_id__in=user_message_ids):
+            files_by_message_id.setdefault(mf.message_id, []).append({
+                "file": mf.file.path,
+                "name": mf.name
+            })
+
+        user_files = [
+            files_by_message_id.get(m.id, [])
+            for m in user_messages_all
+        ]
+
+        messages_up_to_index = all_messages[:message_index]
+        user_messages = [m for m in messages_up_to_index if m.is_user_message]
+        bot_messages = [m for m in messages_up_to_index if not m.is_user_message]
+
+        messages = []
+        for user_message, user_message_files, bot_message in zip(user_messages, user_files, bot_messages):
+            messages.extend([
+                {"role": "user", "content": get_message_with_files(user_message.text, user_message_files)},
+                {"role": "assistant", "content": bot_message.text}
+            ])
+        messages.append({"role": "user", "content": all_messages[message_index].text})
+
+        return messages
+
+    @database_sync_to_async
     def create_chat(self) -> Chat:
         return Chat.objects.create(user = self.user, title = f"Chat {Chat.objects.filter(user = self.user).count() + 1}")
 
@@ -152,14 +201,18 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     def reset_non_complete_chats(self):
         reset_non_complete_chats(self.user)
 
+    @database_sync_to_async
+    def get_message_at_index(self, index: int) -> Message:
+        return Message.objects.filter(chat = self.chat)[index]
+
     def get_group_name(self) -> str:
         return f"chat_{self.chat.uuid}"
 
     async def send_token(self, event):
-        await self.send_json({"token": event["token"]})
+        await self.send_json({"token": event["token"], "message_index": event["message_index"]})
 
     async def send_message(self, event):
-        await self.send_json({"message": event["message"]})
+        await self.send_json({"message": event["message"], "message_index": event["message_index"]})
         if self.redirect:
             await self.send_json({"redirect": self.redirect})
 
