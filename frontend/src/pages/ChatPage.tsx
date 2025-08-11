@@ -4,17 +4,17 @@ import { useParams } from "react-router"
 
 import "./ChatPage.css"
 import { logout } from "../auth"
+import { useTheme } from "../context/ThemeProvider"
+import type { Theme } from "../utils/theme"
 
 type Chat = { title: string, uuid: string }
 type Message = { text: string, files: { name: string }[], is_user_message: boolean }
-type Theme = "system" | "light" | "dark"
 type SearchResults = { title: string, matches: string[], uuid: string }
 type Model = "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B"
 
-autoAdaptTheme()
-
 export default function ChatPage() {
     const { chatUUID } = useParams()
+    const { theme, setTheme } = useTheme()
 
     const [chats, setChats] = useState<Chat[]>([])
     const [messages, setMessages] = useState<Message[]>([])
@@ -25,7 +25,6 @@ export default function ChatPage() {
     const shouldLoadChats = useRef(true)
     const shouldLoadMessages = useRef(true)
 
-    const [theme, setTheme] = useState<Theme>(() => { return (localStorage.getItem("theme") as Theme) || "system" })
     const [model, setModel] = useState<Model>(() => { return (localStorage.getItem("model") as Model) || "SmolLM2-135M" })
 
     const [isSidebarVisible, setIsSidebarVisible] = useState(() => {
@@ -297,11 +296,6 @@ export default function ChatPage() {
         document.addEventListener("click", closeDropdownOnOutsideClick)
         return () => document.removeEventListener("click", closeDropdownOnOutsideClick)
     }, [])
-
-    useEffect(() => {
-        localStorage.setItem("theme", theme)
-        autoAdaptTheme()
-    }, [theme])
 
     useEffect(() => {
         localStorage.setItem("model", model)
@@ -700,46 +694,6 @@ export default function ChatPage() {
             {confirmPopup && <ConfirmPopup message={confirmPopup.message} isHiding={isHidingPopup} ref={popupRef} onConfirm={confirmPopup.onConfirm} onCancel={confirmPopup.onCancel} />}
         </>
     )
-}
-
-function autoAdaptTheme() {
-    const theme = localStorage.getItem("theme")
-    switch (theme) {
-        case "light":
-            document.documentElement.classList.remove("dark")
-            document.documentElement.classList.add("light")
-            updateCodeTheme("light")
-            break
-        case "dark":
-            document.documentElement.classList.remove("light")
-            document.documentElement.classList.add("dark")
-            updateCodeTheme("dark")
-            break
-        default:
-            document.documentElement.classList.remove("light", "dark")
-            updateCodeTheme("system")
-    }
-}
-
-function updateCodeTheme(theme: Theme) {
-    let link = document.getElementById("code-block-theme-link") as HTMLLinkElement
-    if (!link) {
-        link = document.createElement("link")
-        link.id = "code-block-theme-link"
-        link.rel = "stylesheet"
-    }
-    switch (theme) {
-        case "light":
-            link.href = "/code_light.css"
-            break
-        case "dark":
-            link.href = "/code_dark.css"
-            break
-        default:
-            link.href = matchMedia("(prefers-color-scheme: dark)").matches ? "/code_dark.css" : "/code_light.css"
-            break
-    }
-    document.head.appendChild(link)
 }
 
 function autoResizeTextArea(textArea: HTMLTextAreaElement) {
