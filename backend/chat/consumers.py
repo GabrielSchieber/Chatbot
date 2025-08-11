@@ -1,5 +1,8 @@
 import asyncio
+import logging
 from typing import get_args
+
+logger = logging.getLogger(__name__)
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
@@ -72,6 +75,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 return
 
         task = asyncio.create_task(self.generate_message(model, message, message_index, files))
+        task.add_done_callback(lambda t: t.exception() and logger.exception("Task failed", exc_info = t.exception()))
         generate_message_tasks[self.chat.uuid] = task
 
     @database_sync_to_async
