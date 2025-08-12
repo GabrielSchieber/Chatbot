@@ -200,34 +200,16 @@ export default function ChatPage() {
                             <>
                                 <div className="user-message-div">{message.text}</div>
                                 <div className="user-message-footer-div">
-                                    <button className="message-button" onClick={_ => {
-                                        editingMessageRef.current = message
-                                        setEditingMessageInput(message.text)
-                                    }}>Edit</button>
-                                    <button className="message-button" onClick={copyMessage(chatUUID!, message, index)}>Copy</button>
+                                    <button className="message-button" onClick={_ => handleEditButton(message)}>Edit</button>
+                                    <button className="message-button" onClick={copyMessage(message, index)}>Copy</button>
                                 </div>
                             </>
                         ) : (
                             <div className="message-editor-div">
                                 <textarea id="edit-textarea" value={editingMessageInput} onChange={event => setEditingMessageInput(event.target.value)}></textarea>
                                 <div>
-                                    <button className="message-button" onClick={_ => {
-                                        editingMessageRef.current = null
-                                        setEditingMessageInput(editingMessageInput === "" ? " " : "")
-                                    }}>Cancel</button>
-                                    <button className="message-button" onClick={_ => {
-                                        if (webSocket.current) {
-                                            webSocket.current.send(JSON.stringify({ "action": "edit_message", "model": model, "message": editingMessageInput, message_index: index }))
-                                        }
-                                        setMessages(previous => {
-                                            const messages = [...previous]
-                                            messages[index + 1].text = ""
-                                            return messages
-                                        })
-                                        message.text = editingMessageInput
-                                        editingMessageRef.current = null
-                                        setEditingMessageInput("")
-                                    }} disabled={editingMessageInput.trim() === "" || editingMessageInput === message.text}>Confirm</button>
+                                    <button className="message-button" onClick={handleEditorCancelButton}>Cancel</button>
+                                    <button className="message-button" onClick={_ => handleEditorSendButton(message, index)} disabled={editingMessageInput.trim() === "" || editingMessageInput === message.text}>Send</button>
                                 </div>
                             </div>
                         )}
@@ -236,13 +218,76 @@ export default function ChatPage() {
                     <div className="bot-message-items-div">
                         <div className="bot-message-div" dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message.text) }}></div>
                         <div className="bot-message-footer-div">
-                            <button className="message-button" onClick={copyMessage(chatUUID!, message, index)}>Copy</button>
-                            <button className="message-button" onClick={regenerateMesssage(webSocket.current!, setMessages, model, index)}>Renegerate</button>
+                            <button className="message-button" onClick={copyMessage(message, index)}>Copy</button>
+                            <button className="message-button" onClick={regenerateMesssage(index)}>Renegerate</button>
                         </div>
                     </div>
                 )}
             </React.Fragment>
         )
+    }
+
+    function handleEditButton(message: Message) {
+        editingMessageRef.current = message
+        setEditingMessageInput(message.text)
+    }
+
+    function copyMessage(message: Message, index: number) {
+        return (event: React.MouseEvent<HTMLButtonElement>) => {
+            const button = event.currentTarget
+
+            function writeToClipboard(text: string) {
+                navigator.clipboard.writeText(text).then(_ => {
+                    button.textContent = "Copied!"
+                    setTimeout(() => button.textContent = "Copy", 2000)
+                })
+            }
+
+            if (message.is_user_message) {
+                writeToClipboard(message.text)
+            } else {
+                getMessage(chatUUID!, index).then(text => {
+                    text ? writeToClipboard(text) : alert("Copying of message was not possible")
+                })
+            }
+        }
+    }
+
+    function handleEditorCancelButton() {
+        editingMessageRef.current = null
+        setEditingMessageInput(editingMessageInput === "" ? " " : "")
+    }
+
+    function handleEditorSendButton(message: Message, index: number) {
+        if (webSocket.current) {
+            webSocket.current.send(JSON.stringify({ "action": "edit_message", "model": model, "message": editingMessageInput, message_index: index }))
+        }
+
+        setMessages(previous => {
+            const messages = [...previous]
+            messages[index + 1].text = ""
+            return messages
+        })
+
+        message.text = editingMessageInput
+        editingMessageRef.current = null
+        setEditingMessageInput("")
+    }
+
+    function regenerateMesssage(index: number) {
+        return (event: React.MouseEvent<HTMLButtonElement>) => {
+            const button = event.currentTarget
+            button.textContent = "Regenerating..."
+            webSocket.current?.addEventListener("message", _ => { button.textContent = "Regenerate" }, { once: true })
+
+            setMessages(previous => {
+                const messages = [...previous]
+                messages[index].text = ""
+                return messages
+            })
+
+            webSocket.current?.send(JSON.stringify({ "action": "regenerate_message", "model": model, message_index: index }))
+        }
     }
 
     useEffect(() => {
@@ -700,47 +745,6 @@ function autoResizeTextArea(textArea: HTMLTextAreaElement) {
 
     const height = Math.min(lines * fontSize + fontSize * 2, Math.round(document.body.scrollHeight * 0.5))
     textArea.style.height = height + "px"
-}
-
-function copyMessage(chatUUID: string, message: Message, index: number) {
-    return (event: React.MouseEvent<HTMLButtonElement>) => {
-        const button = event.currentTarget
-
-        const writeToClipboard = (text: string) => {
-            navigator.clipboard.writeText(text).then(_ => {
-                button.textContent = "Copied!"
-                setTimeout(() => { button.textContent = "Copy" }, 2000)
-            })
-        }
-
-        if (message.is_user_message) {
-            writeToClipboard(message.text)
-        } else {
-            getMessage(chatUUID, index).then(text => {
-                if (text) {
-                    writeToClipboard(text)
-                } else {
-                    alert("Copying of message was not possible")
-                }
-            })
-        }
-    }
-}
-
-function regenerateMesssage(webSocket: WebSocket, setMessages: React.Dispatch<React.SetStateAction<Message[]>>, model: Model, index: number) {
-    return (event: React.MouseEvent<HTMLButtonElement>) => {
-        const button = event.currentTarget
-        button.textContent = "Regenerating..."
-        webSocket.addEventListener("message", _ => { button.textContent = "Regenerate" }, { once: true })
-
-        setMessages(previous => {
-            const messages = [...previous]
-            messages[index].text = ""
-            return messages
-        })
-
-        webSocket.send(JSON.stringify({ "action": "regenerate_message", "model": model, message_index: index }))
-    }
 }
 
 function createBotMessageHTML(message: string) {
