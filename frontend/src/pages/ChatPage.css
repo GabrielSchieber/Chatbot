@@ -509,6 +509,16 @@ body {
         flex-direction: column;
         width: auto;
     }
+
+    .user-message-footer-div {
+        opacity: 0;
+    }
+}
+
+.user-message-items-div:hover {
+    .user-message-footer-div {
+        opacity: 1;
+    }
 }
 
 .user-message-div,
@@ -527,11 +537,12 @@ body {
     display: flex;
     flex-direction: column;
     width: 100%;
-    margin: 10px;
+    margin-top: 5px;
     padding: 5px;
     align-self: flex-end;
     border-radius: 10px;
     background-color: var(--background-color5);
+    transform: translateX(5px);
 
     textarea {
         padding: 10px;
@@ -602,11 +613,11 @@ body {
 
 .edit-button,
 .copy-button {
-    padding: 5px 10px;
-    align-self: flex-end;
-    font-size: 12px;
+    padding: 4px 8px;
+    font-size: 11px;
     border-radius: 5px;
     background-color: transparent;
+    transition: background-color 0.3s ease-in-out;
 }
 
 .edit-button:hover,
@@ -623,9 +634,11 @@ body {
 .bot-message-footer-div {
     display: flex;
     gap: 10px;
-    margin-top: 5px;
+    margin-top: 3px;
     padding: 6px;
     border-radius: 10px;
+    align-items: center;
+    transition: background-color 0.3s ease-in-out, opacity 0.3s ease-in-out;
 }
 
 .user-message-footer-div:hover,
