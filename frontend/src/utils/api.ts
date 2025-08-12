@@ -34,3 +34,23 @@ export async function getMessage(chatUUID: string, message_index: number): Promi
     const data = await response.json()
     return data.text
 }
+
+export async function renameChat(chatUUID: string, newTitle: string) {
+    const response = await fetch("/api/rename-chat/", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_uuid: chatUUID, new_title: newTitle })
+    })
+    return response.status
+}
+
+export async function deleteChat(chatUUID: string) {
+    const response = await fetch("/api/delete-chat/", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_uuid: chatUUID })
+    })
+    return response.status
+}

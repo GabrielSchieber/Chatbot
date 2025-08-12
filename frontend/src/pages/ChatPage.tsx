@@ -9,7 +9,7 @@ import type { Theme } from "../utils/theme"
 import { PastChatDropdownDiv } from "../components/Dropdown"
 import { ConfirmPopup } from "../components/ConfirmPopup"
 import { throttle } from "../utils/throttle"
-import { getChats, getMessage, getMessages } from "../utils/api"
+import { deleteChat, getChats, getMessage, getMessages, renameChat } from "../utils/api"
 import type { Chat, Message, Model, SearchResults } from "../types"
 
 export default function ChatPage() {
@@ -418,7 +418,11 @@ export default function ChatPage() {
         setConfirmPopup({
             message: `Are you sure you want to delete ${chat.title}?`,
             onConfirm: () => {
-                deleteChat(chat)
+                deleteChat(chat.uuid).then(status => {
+                    if (status !== 200) {
+                        alert("Deletion of chat was not possible")
+                    }
+                })
                 setChats(previous => previous.filter(c => c.uuid !== chat.uuid))
                 if (location.pathname.includes(chat.uuid)) {
                     location.href = "/"
@@ -432,7 +436,11 @@ export default function ChatPage() {
 
     function handleRenameInput(event: React.KeyboardEvent, chat: Chat) {
         if (event.key === "Enter" && renamingTitle.trim()) {
-            renameChat(chat, renamingTitle.trim())
+            renameChat(chat.uuid, renamingTitle.trim()).then(status => {
+                if (status !== 200) {
+                    alert("Renaming of chat was not possible")
+                }
+            })
             setChats(previous =>
                 previous.map(previous_chat =>
                     previous_chat.uuid === chat.uuid ? { ...previous_chat, title: renamingTitle.trim() } : previous_chat
@@ -756,32 +764,6 @@ function addEventListenerToCodeBlockCopyButtons() {
                 }
             })
         })
-    })
-}
-
-function renameChat(chat: Chat, newTitle: string) {
-    fetch("/api/rename-chat/", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_uuid: chat.uuid, new_title: newTitle })
-    }).then(response => {
-        if (response.status !== 200) {
-            alert("Renaming of chat was not possible")
-        }
-    })
-}
-
-function deleteChat(chat: Chat) {
-    fetch("/api/delete-chat/", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_uuid: chat.uuid })
-    }).then(response => {
-        if (response.status !== 200) {
-            alert("Deletion of chat was not possible")
-        }
     })
 }
 
