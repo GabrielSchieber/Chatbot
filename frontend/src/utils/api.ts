@@ -54,3 +54,7 @@ export async function deleteChat(chatUUID: string) {
     })
     return response.status
 }
+
+export async function deleteChats() {
+    return (await fetch("/api/delete-chats/", { credentials: "include" })).status
+}

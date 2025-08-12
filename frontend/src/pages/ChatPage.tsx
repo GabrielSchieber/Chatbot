@@ -9,7 +9,7 @@ import type { Theme } from "../utils/theme"
 import { PastChatDropdownDiv } from "../components/Dropdown"
 import { ConfirmPopup } from "../components/ConfirmPopup"
 import { throttle } from "../utils/throttle"
-import { deleteChat, getChats, getMessage, getMessages, renameChat } from "../utils/api"
+import { deleteChat, deleteChats, getChats, getMessage, getMessages, renameChat } from "../utils/api"
 import type { Chat, Message, Model, SearchResults } from "../types"
 
 export default function ChatPage() {
@@ -554,7 +554,7 @@ export default function ChatPage() {
 
                     <div id="delete-chats-button-div">
                         <label id="delete-chats-button-label">Delete all chats</label>
-                        <button id="delete-chats-button" onClick={_ => deleteChats(setIsHidingPopup, setConfirmPopup)}>Delete all</button>
+                        <button id="delete-chats-button" onClick={_ => deleteChatsPopup(setIsHidingPopup, setConfirmPopup)}>Delete all</button>
                     </div>
 
                     <div id="delete-account-button-div">
@@ -767,7 +767,7 @@ function addEventListenerToCodeBlockCopyButtons() {
     })
 }
 
-function deleteChats(
+function deleteChatsPopup(
     setIsHidingPopup: React.Dispatch<React.SetStateAction<boolean>>,
     setConfirmPopup: React.Dispatch<React.SetStateAction<{
         message: string,
@@ -777,8 +777,8 @@ function deleteChats(
     setConfirmPopup({
         message: "Are you sure you want to delete all of your chats?",
         onConfirm: () => {
-            fetch("/api/delete-chats/", { credentials: "include" }).then(response => {
-                if (response.status !== 200) {
+            deleteChats().then(status => {
+                if (status !== 200) {
                     setConfirmPopup({
                         message: "Deletion of chats was not possible",
                         onConfirm: () => setConfirmPopup(null)
