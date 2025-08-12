@@ -10,7 +10,7 @@ import { PastChatDropdownDiv } from "../components/Dropdown"
 import { ConfirmPopup } from "../components/ConfirmPopup"
 import { throttle } from "../utils/throttle"
 import { deleteAccount, deleteChat, deleteChats, getChats, getMessage, getMessages, renameChat, searchChats as searchChatsAPI } from "../utils/api"
-import type { Chat, Message, Model, SearchResults } from "../types"
+import type { Chat, Message, Model, SearchEntry } from "../types"
 
 export default function ChatPage() {
     const { chatUUID } = useParams()
@@ -46,7 +46,7 @@ export default function ChatPage() {
     const sidebarRef = useRef<HTMLDivElement | null>(null)
     const popupRef = useRef<HTMLDivElement | null>(null)
 
-    const [searchResults, setSearchResults] = useState<SearchResults[]>([])
+    const [searchResults, setSearchResults] = useState<SearchEntry[]>([])
     const [selectedIndex, setSelectedIndex] = useState<number>(-1)
 
     const [hasChatBegun, setHasChatBegun] = useState(chatUUID !== undefined)
