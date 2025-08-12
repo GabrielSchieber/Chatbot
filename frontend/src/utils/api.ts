@@ -58,3 +58,7 @@ export async function deleteChat(chatUUID: string) {
 export async function deleteChats() {
     return (await fetch("/api/delete-chats/", { credentials: "include" })).status
 }
+
+export async function deleteAccount() {
+    return (await fetch("/api/delete-account/", { credentials: "include" })).status
+}

@@ -9,7 +9,7 @@ import type { Theme } from "../utils/theme"
 import { PastChatDropdownDiv } from "../components/Dropdown"
 import { ConfirmPopup } from "../components/ConfirmPopup"
 import { throttle } from "../utils/throttle"
-import { deleteChat, deleteChats, getChats, getMessage, getMessages, renameChat } from "../utils/api"
+import { deleteAccount, deleteChat, deleteChats, getChats, getMessage, getMessages, renameChat } from "../utils/api"
 import type { Chat, Message, Model, SearchResults } from "../types"
 
 export default function ChatPage() {
@@ -559,7 +559,7 @@ export default function ChatPage() {
 
                     <div id="delete-account-button-div">
                         <label id="delete-account-button-label">Delete account</label>
-                        <button id="delete-account-button" onClick={_ => deleteAccount(setIsHidingPopup, setConfirmPopup)}>Delete</button>
+                        <button id="delete-account-button" onClick={_ => deleteAccountPopup(setIsHidingPopup, setConfirmPopup)}>Delete</button>
                     </div>
 
                     <div id="logout-button-div">
@@ -797,7 +797,7 @@ function deleteChatsPopup(
     })
 }
 
-function deleteAccount(
+function deleteAccountPopup(
     setIsHidingPopup: React.Dispatch<React.SetStateAction<boolean>>,
     setConfirmPopup: React.Dispatch<React.SetStateAction<{
         message: string,
@@ -807,8 +807,8 @@ function deleteAccount(
     setConfirmPopup({
         message: "Are you sure you want to delete your account?",
         onConfirm: () => {
-            fetch("/api/delete-account/", { credentials: "include" }).then(response => {
-                if (response.status !== 200) {
+            deleteAccount().then(status => {
+                if (status !== 200) {
                     setConfirmPopup({
                         message: "Deletion of account was not possible",
                         onConfirm: () => setConfirmPopup(null)
