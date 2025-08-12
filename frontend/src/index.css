@@ -8,8 +8,8 @@
   --dark-background-color1: rgb(15, 17, 20);
   --dark-background-color2: rgb(25, 27, 30);
   --dark-background-color3: rgb(35, 37, 40);
-  --dark-background-color4: rgb(45, 47, 50);
-  --dark-background-color5: rgb(55, 57, 60);
+  --dark-background-color4: rgb(55, 57, 60);
+  --dark-background-color5: rgb(70, 72, 75);
 
   @media(prefers-color-scheme: light) {
     --background-color1: var(--light-background-color1);

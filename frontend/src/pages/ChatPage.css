@@ -483,6 +483,7 @@ body {
     gap: 10px;
     width: 100%;
     height: 40%;
+    margin-top: 15px;
     align-items: center;
     overflow-x: hidden;
     overflow-y: auto;
@@ -500,39 +501,25 @@ body {
     display: flex;
     flex-direction: column;
     width: 60%;
+    gap: 3px;
 }
 
 .user-message-items-div {
     align-items: flex-end;
-
-    .attachment-items-div {
-        flex-direction: column;
-        width: auto;
-    }
-
-    .user-message-footer-div {
-        opacity: 0;
-    }
-}
-
-.user-message-items-div:hover {
-    .user-message-footer-div {
-        opacity: 1;
-    }
 }
 
 .user-message-div,
 .bot-message-div {
     display: flex;
     flex-direction: column;
-    padding: 10px;
-    border-radius: 10px;
     word-break: break-word;
     white-space: pre-wrap;
 }
 
 .user-message-div {
-    background-color: var(--background-color2);
+    padding: 10px;
+    border-radius: 10px;
+    background-color: var(--background-color4);
 }
 
 .message-editor-div {
@@ -563,13 +550,15 @@ body {
             font-size: 17px;
         }
     }
+
+    .message-button:hover {
+        background-color: var(--background-color2);
+    }
 }
 
 .bot-message-div {
-    background-color: var(--background-color4);
-
     p {
-        margin: 0;
+        margin: 10px 0;
         padding: 0;
     }
 
@@ -614,7 +603,7 @@ body {
 }
 
 .message-button {
-    padding: 3px 8px;
+    padding: 5px 10px;
     font-size: 12px;
     border-radius: 5px;
     outline: none;
@@ -623,7 +612,7 @@ body {
 }
 
 .message-button:hover {
-    background-color: var(--background-color2);
+    background-color: var(--background-color5);
 }
 
 .message-button:active {
@@ -641,16 +630,6 @@ body {
 .bot-message-footer-div {
     display: flex;
     gap: 10px;
-    margin-top: 3px;
-    padding: 6px;
-    border-radius: 10px;
-    align-items: center;
-    transition: background-color 0.3s ease-in-out, opacity 0.3s ease-in-out;
-}
-
-.user-message-footer-div:hover,
-.bot-message-footer-div:hover {
-    background-color: var(--background-color5);
 }
 
 .generating-warn-p {
