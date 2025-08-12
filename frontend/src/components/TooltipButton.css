@@ -1,0 +1,30 @@
+.tooltip-div {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-button {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.tooltip-inner-div {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-top: 5px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    background-color: black;
+    transform: translate(-50%, 10px);
+    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.tooltip-button:hover+.tooltip-inner-div {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+}

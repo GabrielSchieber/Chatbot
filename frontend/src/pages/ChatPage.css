@@ -551,12 +551,20 @@ body {
         }
     }
 
-    .message-button:hover {
+    .tooltip-button:hover {
         background-color: var(--background-color2);
+    }
+
+    .tooltip-button:active {
+        background-color: transparent;
     }
 }
 
 .bot-message-div {
+    * {
+        color: rgb(220, 220, 220);
+    }
+
     p {
         margin: 10px 0;
         padding: 0;
@@ -602,7 +610,7 @@ body {
     }
 }
 
-.message-button {
+.tooltip-button {
     padding: 5px 10px;
     font-size: 12px;
     border-radius: 5px;
@@ -611,19 +619,23 @@ body {
     transition: background-color 0.3s ease-in-out;
 }
 
-.message-button:hover {
+.tooltip-button:hover {
     background-color: var(--background-color5);
 }
 
-.message-button:active {
+.tooltip-button:active {
     background-color: transparent;
 }
 
-.message-button:disabled {
+.tooltip-button:disabled {
     background-color: transparent;
     transition: none;
     pointer-events: none;
     opacity: 0.5;
+}
+
+.tooltip-inner-div {
+    font-size: 12px;
 }
 
 .user-message-footer-div,

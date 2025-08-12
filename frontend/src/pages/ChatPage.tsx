@@ -11,6 +11,7 @@ import { ConfirmPopup } from "../components/ConfirmPopup"
 import { throttle } from "../utils/throttle"
 import { deleteAccount, deleteChat, deleteChats, getChats, getMessage, getMessages, renameChat, searchChats as searchChatsAPI, uploadFiles } from "../utils/api"
 import type { Chat, Message, Model, SearchEntry } from "../types"
+import TooltipButton from "../components/TooltipButton"
 
 export default function ChatPage() {
     const { chatUUID } = useParams()
@@ -200,16 +201,22 @@ export default function ChatPage() {
                             <>
                                 <div className="user-message-div">{message.text}</div>
                                 <div className="user-message-footer-div">
-                                    <button className="message-button" onClick={_ => handleEditButton(message)}>Edit</button>
-                                    <button className="message-button" onClick={copyMessage(message, index)}>Copy</button>
+                                    <TooltipButton label="Edit" tooltipText="Edit" onClick={_ => handleEditButton(message)}></TooltipButton>
+                                    <TooltipButton label="Copy" tooltipText="Copy" onClick={copyMessage(message, index)}></TooltipButton>
                                 </div>
                             </>
                         ) : (
                             <div className="message-editor-div">
                                 <textarea id="edit-textarea" value={editingMessageInput} onChange={event => setEditingMessageInput(event.target.value)}></textarea>
                                 <div>
-                                    <button className="message-button" onClick={handleEditorCancelButton}>Cancel</button>
-                                    <button className="message-button" onClick={_ => handleEditorSendButton(message, index)} disabled={editingMessageInput.trim() === "" || editingMessageInput === message.text}>Send</button>
+                                    <button className="tooltip-button" onClick={handleEditorCancelButton}>Cancel</button>
+                                    <button
+                                        className="tooltip-button"
+                                        onClick={_ => handleEditorSendButton(message, index)}
+                                        disabled={editingMessageInput.trim() === "" || editingMessageInput === message.text}
+                                    >
+                                        Send
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -218,8 +225,8 @@ export default function ChatPage() {
                     <div className="bot-message-items-div">
                         <div className="bot-message-div" dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message.text) }}></div>
                         <div className="bot-message-footer-div">
-                            <button className="message-button" onClick={copyMessage(message, index)}>Copy</button>
-                            <button className="message-button" onClick={regenerateMesssage(index)}>Renegerate</button>
+                            <TooltipButton label="Copy" tooltipText="Copy" onClick={copyMessage(message, index)}></TooltipButton>
+                            <TooltipButton label="Regenerate" tooltipText="Try again..." onClick={regenerateMesssage(index)}></TooltipButton>
                         </div>
                     </div>
                 )}
