@@ -9,7 +9,7 @@ import type { Theme } from "../utils/theme"
 import { PastChatDropdownDiv } from "../components/Dropdown"
 import { ConfirmPopup } from "../components/ConfirmPopup"
 import { throttle } from "../utils/throttle"
-import { deleteAccount, deleteChat, deleteChats, getChats, getMessage, getMessages, renameChat, searchChats as searchChatsAPI } from "../utils/api"
+import { deleteAccount, deleteChat, deleteChats, getChats, getMessage, getMessages, renameChat, searchChats as searchChatsAPI, uploadFiles } from "../utils/api"
 import type { Chat, Message, Model, SearchEntry } from "../types"
 
 export default function ChatPage() {
@@ -516,15 +516,6 @@ export default function ChatPage() {
 
             event.target.value = ""
         }
-    }
-
-    async function uploadFiles(files: File[]) {
-        const formData = new FormData()
-        files.forEach(file => formData.append("files", file))
-
-        const response = await fetch("/api/upload-files/", { method: "POST", body: formData })
-
-        return await response.json()
     }
 
     return (

@@ -73,3 +73,12 @@ export async function searchChats(search: string): Promise<SearchEntry[] | undef
     const data = await response.json()
     return data.chats
 }
+
+export async function uploadFiles(files: File[]): Promise<{ name: string, content_type: string, file: string, url: string }> {
+    const formData = new FormData()
+    files.forEach(file => formData.append("files", file))
+
+    const response = await fetch("/api/upload-files/", { method: "POST", body: formData })
+
+    return await response.json()
+}
