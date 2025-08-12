@@ -63,27 +63,41 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 await self.close()
                 return
 
+        action = content.get("action", "new_message")
+
         model = content.get("model", "SmolLM2-135M")
         if model not in get_args(Model):
             model = "SmolLM2-135M"
 
-        action = content.get("action", "new_message")
-
         message = content.get("message")
-        if not message:
-            await self.close()
-            return  
 
         match action:
             case "new_message":
+                if not message:
+                    await self.close()
+                    return
+
                 files = content.get("files", [])
+
                 await self.handle_new_message(model, message, files)
             case "edit_message":
+                if not message:
+                    await self.close()
+                    return
+
                 message_index = content.get("message_index")
                 if message_index is None:
                     await self.close()
                     return
+
                 await self.handle_edit_message(model, message, message_index)
+            case "regenerate_message":
+                message_index = content.get("message_index")
+                if message_index is None:
+                    await self.close()
+                    return
+
+                await self.handle_regenerate_message(model, message_index)
             case _:
                 await self.close()
 
@@ -120,15 +134,24 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.create_generate_message_task(model, user_message, bot_message)
 
     async def handle_edit_message(self, model: Model, message: str, message_index: int):
-        messages = await database_sync_to_async(Message.objects.filter)(chat = self.chat)
-        messages = await database_sync_to_async(messages.order_by)("date_time")
-        messages = await database_sync_to_async(list)(messages)
+        messages = await self.get_messages()
 
         user_message = messages[message_index]
         user_message.text = message
         await database_sync_to_async(user_message.save)()
 
         bot_message = messages[message_index + 1]
+        bot_message.text = ""
+        await database_sync_to_async(bot_message.save)()
+
+        await self.create_generate_message_task(model, user_message, bot_message)
+
+    async def handle_regenerate_message(self, model: Model, message_index: int):
+        messages = await self.get_messages()
+
+        user_message = messages[message_index - 1]
+
+        bot_message = messages[message_index]
         bot_message.text = ""
         await database_sync_to_async(bot_message.save)()
 
@@ -150,6 +173,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def reset_non_complete_chats(self):
         reset_non_complete_chats(self.user)
+
+    @database_sync_to_async
+    def get_messages(self) -> list[Message]:
+        return list(Message.objects.filter(chat = self.chat).order_by("date_time"))
 
     @database_sync_to_async
     def get_message_at_index(self, index: int) -> Message:

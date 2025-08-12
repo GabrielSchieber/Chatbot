@@ -237,6 +237,7 @@ export default function ChatPage() {
                         <div className="bot-message-div" dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message.text) }}></div>
                         <div className="bot-message-footer-div">
                             <button className="message-button" onClick={copyMessage(chatUUID!, message, index)}>Copy</button>
+                            <button className="message-button" onClick={regenerateMesssage(webSocket.current!, setMessages, model, index)}>Renegerate</button>
                         </div>
                     </div>
                 )}
@@ -723,6 +724,22 @@ function copyMessage(chatUUID: string, message: Message, index: number) {
                 }
             })
         }
+    }
+}
+
+function regenerateMesssage(webSocket: WebSocket, setMessages: React.Dispatch<React.SetStateAction<Message[]>>, model: Model, index: number) {
+    return (event: React.MouseEvent<HTMLButtonElement>) => {
+        const button = event.currentTarget
+        button.textContent = "Regenerating..."
+        webSocket.addEventListener("message", _ => { button.textContent = "Regenerate" }, { once: true })
+
+        setMessages(previous => {
+            const messages = [...previous]
+            messages[index].text = ""
+            return messages
+        })
+
+        webSocket.send(JSON.stringify({ "action": "regenerate_message", "model": model, message_index: index }))
     }
 }
 
