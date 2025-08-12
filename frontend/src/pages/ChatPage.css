@@ -617,6 +617,7 @@ body {
     padding: 3px 8px;
     font-size: 12px;
     border-radius: 5px;
+    outline: none;
     background-color: transparent;
     transition: background-color 0.3s ease-in-out;
 }
@@ -627,6 +628,13 @@ body {
 
 .message-button:active {
     background-color: transparent;
+}
+
+.message-button:disabled {
+    background-color: transparent;
+    transition: none;
+    pointer-events: none;
+    opacity: 0.5;
 }
 
 .user-message-footer-div,

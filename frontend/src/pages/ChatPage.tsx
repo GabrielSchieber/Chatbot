@@ -213,7 +213,7 @@ export default function ChatPage() {
                                 <div>
                                     <button className="message-button" onClick={_ => {
                                         editingMessageRef.current = null
-                                        setEditingMessageInput("")
+                                        setEditingMessageInput(editingMessageInput === "" ? " " : "")
                                     }}>Cancel</button>
                                     <button className="message-button" onClick={_ => {
                                         if (webSocket.current) {
@@ -227,7 +227,7 @@ export default function ChatPage() {
                                         message.text = editingMessageInput
                                         editingMessageRef.current = null
                                         setEditingMessageInput("")
-                                    }}>Confirm</button>
+                                    }} disabled={editingMessageInput.trim() === "" || editingMessageInput === message.text}>Confirm</button>
                                 </div>
                             </div>
                         )}
