@@ -9,7 +9,7 @@ import type { Theme } from "../utils/theme"
 import { PastChatDropdownDiv } from "../components/Dropdown"
 import { ConfirmPopup } from "../components/ConfirmPopup"
 import { throttle } from "../utils/throttle"
-import { deleteAccount, deleteChat, deleteChats, getChats, getMessage, getMessages, renameChat } from "../utils/api"
+import { deleteAccount, deleteChat, deleteChats, getChats, getMessage, getMessages, renameChat, searchChats as searchChatsAPI } from "../utils/api"
 import type { Chat, Message, Model, SearchResults } from "../types"
 
 export default function ChatPage() {
@@ -394,14 +394,9 @@ export default function ChatPage() {
     }, [isSidebarVisible])
 
     function searchChats(search: string) {
-        fetch("/api/search-chats/", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ search: search })
-        }).then(response => response.json()).then(data => {
-            if (data.chats) {
-                setSearchResults(data.chats)
+        searchChatsAPI(search).then(chats => {
+            if (chats) {
+                setSearchResults(chats)
             } else {
                 alert("Search of chats was not possible")
             }

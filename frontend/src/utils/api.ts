@@ -1,4 +1,4 @@
-import type { Chat, Message } from "../types"
+import type { Chat, Message, SearchResults } from "../types"
 
 export async function getChats(incomplete: boolean = false): Promise<Chat[]> {
     const method = incomplete ? "POST" : "GET"
@@ -61,4 +61,15 @@ export async function deleteChats() {
 
 export async function deleteAccount() {
     return (await fetch("/api/delete-account/", { credentials: "include" })).status
+}
+
+export async function searchChats(search: string): Promise<SearchResults[] | undefined> {
+    const response = await fetch("/api/search-chats/", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ search: search })
+    })
+    const data = await response.json()
+    return data.chats
 }
