@@ -527,6 +527,8 @@ body {
     flex-direction: column;
     padding: 10px;
     border-radius: 10px;
+    word-break: break-word;
+    white-space: pre-wrap;
 }
 
 .user-message-div {
