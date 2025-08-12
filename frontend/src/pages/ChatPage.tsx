@@ -447,6 +447,12 @@ export default function ChatPage() {
         }
     }
 
+    function handleSearchChatsButton() {
+        setIsSearchVisible(true)
+        searchChats("")
+        setTimeout(() => document.getElementById("search-input")?.focus(), 300)
+    }
+
     useEffect(() => {
         if (!isSearchVisible) return
 
@@ -594,7 +600,7 @@ export default function ChatPage() {
                         <span className="buttons-icon-span">≡</span>
                         <span className="buttons-text-span">Close sidebar</span>
                     </button>
-                    <button id="open-search-button" onClick={_ => { setIsSearchVisible(true); searchChats("") }}>
+                    <button id="open-search-button" onClick={handleSearchChatsButton}>
                         <span className="buttons-icon-span">🔍</span>
                         <span className="buttons-text-span">Search chats</span>
                     </button>
