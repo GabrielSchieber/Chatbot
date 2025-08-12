@@ -235,7 +235,9 @@ export default function ChatPage() {
                 ) : (
                     <div className="bot-message-items-div">
                         <div className="bot-message-div" dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message.text) }}></div>
-                        <button className="copy-button" onClick={copyMessage(chatUUID!, message, index)}>Copy</button>
+                        <div className="bot-message-footer-div">
+                            <button className="copy-button" onClick={copyMessage(chatUUID!, message, index)}>Copy</button>
+                        </div>
                     </div>
                 )}
             </React.Fragment>
