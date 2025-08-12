@@ -611,23 +611,20 @@ body {
     }
 }
 
-.edit-button,
-.copy-button {
-    padding: 4px 8px;
-    font-size: 11px;
+.message-button {
+    padding: 3px 8px;
+    font-size: 12px;
     border-radius: 5px;
     background-color: transparent;
     transition: background-color 0.3s ease-in-out;
 }
 
-.edit-button:hover,
-.copy-button:hover {
-    background-color: var(--background-color3);
+.message-button:hover {
+    background-color: var(--background-color2);
 }
 
-.edit-button:active,
-.copy-button:active {
-    background-color: var(--background-color1);
+.message-button:active {
+    background-color: transparent;
 }
 
 .user-message-footer-div,

@@ -200,22 +200,22 @@ export default function ChatPage() {
                             <>
                                 <div className="user-message-div">{message.text}</div>
                                 <div className="user-message-footer-div">
-                                    <button className="edit-button" onClick={_ => {
+                                    <button className="message-button" onClick={_ => {
                                         editingMessageRef.current = message
                                         setEditingMessageInput(message.text)
                                     }}>Edit</button>
-                                    <button className="copy-button" onClick={copyMessage(chatUUID!, message, index)}>Copy</button>
+                                    <button className="message-button" onClick={copyMessage(chatUUID!, message, index)}>Copy</button>
                                 </div>
                             </>
                         ) : (
                             <div className="message-editor-div">
                                 <textarea id="edit-textarea" value={editingMessageInput} onChange={event => setEditingMessageInput(event.target.value)}></textarea>
                                 <div>
-                                    <button className="copy-button" onClick={_ => {
+                                    <button className="message-button" onClick={_ => {
                                         editingMessageRef.current = null
                                         setEditingMessageInput("")
                                     }}>Cancel</button>
-                                    <button className="edit-button" onClick={_ => {
+                                    <button className="message-button" onClick={_ => {
                                         if (webSocket.current) {
                                             webSocket.current.send(JSON.stringify({ "action": "edit_message", "model": model, "message": editingMessageInput, message_index: index }))
                                         }
@@ -236,7 +236,7 @@ export default function ChatPage() {
                     <div className="bot-message-items-div">
                         <div className="bot-message-div" dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message.text) }}></div>
                         <div className="bot-message-footer-div">
-                            <button className="copy-button" onClick={copyMessage(chatUUID!, message, index)}>Copy</button>
+                            <button className="message-button" onClick={copyMessage(chatUUID!, message, index)}>Copy</button>
                         </div>
                     </div>
                 )}
