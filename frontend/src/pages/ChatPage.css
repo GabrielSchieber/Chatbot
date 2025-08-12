@@ -539,6 +539,20 @@ body {
     background-color: var(--background-color2);
 }
 
+.user-message-footer-div {
+    display: flex;
+    align-self: flex-end;
+    gap: 5px;
+    margin: 3px;
+    padding: 5px;
+    border-radius: 10px;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.user-message-footer-div:hover {
+    background-color: var(--background-color5);
+}
+
 .message-editor-div {
     display: flex;
     flex-direction: column;
