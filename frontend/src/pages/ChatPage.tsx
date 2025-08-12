@@ -297,6 +297,57 @@ export default function ChatPage() {
         }
     }
 
+    function deleteChatsPopup() {
+        setConfirmPopup({
+            message: "Are you sure you want to delete all of your chats?",
+            onConfirm: () => {
+                deleteChats().then(status => {
+                    if (status !== 200) {
+                        setConfirmPopup({
+                            message: "Deletion of chats was not possible",
+                            onConfirm: () => setConfirmPopup(null)
+                        })
+                    } else {
+                        if (location.href.includes("/chat/")) {
+                            location.href = "/"
+                        } else {
+                            closePopup()
+                            document.getElementById("history-div")!.innerHTML = ""
+                        }
+                    }
+                })
+            },
+            onCancel: () => closePopup()
+        })
+    }
+
+    function deleteAccountPopup() {
+        setConfirmPopup({
+            message: "Are you sure you want to delete your account?",
+            onConfirm: () => {
+                deleteAccount().then(status => {
+                    if (status !== 200) {
+                        setConfirmPopup({
+                            message: "Deletion of account was not possible",
+                            onConfirm: () => setConfirmPopup(null)
+                        })
+                    } else {
+                        location.href = "/"
+                    }
+                })
+            },
+            onCancel: () => closePopup()
+        })
+    }
+
+    function closePopup() {
+        setIsHidingPopup(true)
+        setTimeout(() => {
+            setIsHidingPopup(false)
+            setConfirmPopup(null)
+        }, 300)
+    }
+
     useEffect(() => {
         loadChats()
         loadMessages()
@@ -413,7 +464,7 @@ export default function ChatPage() {
 
         function closePopupOnOutsideClick(event: MouseEvent) {
             if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
-                closePopup(setIsHidingPopup, setConfirmPopup)
+                closePopup()
             }
         }
 
@@ -426,7 +477,7 @@ export default function ChatPage() {
 
         function closePopupOnEscape(event: KeyboardEvent) {
             if (event.key === "Escape") {
-                closePopup(setIsHidingPopup, setConfirmPopup)
+                closePopup()
             }
         }
 
@@ -474,7 +525,7 @@ export default function ChatPage() {
                         if (location.pathname.includes(chat.uuid)) {
                             location.href = "/"
                         }
-                        closePopup(setIsHidingPopup, setConfirmPopup)
+                        closePopup()
                     } else {
                         setConfirmPopup({
                             message: "Deletion of chat was not possible",
@@ -483,7 +534,7 @@ export default function ChatPage() {
                     }
                 })
             },
-            onCancel: () => { closePopup(setIsHidingPopup, setConfirmPopup) }
+            onCancel: () => closePopup()
         })
         setOpenDropdownUUID(null)
     }
@@ -610,12 +661,12 @@ export default function ChatPage() {
 
                     <div id="delete-chats-button-div">
                         <label id="delete-chats-button-label">Delete all chats</label>
-                        <button id="delete-chats-button" onClick={_ => deleteChatsPopup(setIsHidingPopup, setConfirmPopup)}>Delete all</button>
+                        <button id="delete-chats-button" onClick={deleteChatsPopup}>Delete all</button>
                     </div>
 
                     <div id="delete-account-button-div">
                         <label id="delete-account-button-label">Delete account</label>
-                        <button id="delete-account-button" onClick={_ => deleteAccountPopup(setIsHidingPopup, setConfirmPopup)}>Delete</button>
+                        <button id="delete-account-button" onClick={deleteAccountPopup}>Delete</button>
                     </div>
 
                     <div id="logout-button-div">
@@ -796,74 +847,4 @@ function addEventListenerToCodeBlockCopyButtons() {
             })
         })
     })
-}
-
-function deleteChatsPopup(
-    setIsHidingPopup: React.Dispatch<React.SetStateAction<boolean>>,
-    setConfirmPopup: React.Dispatch<React.SetStateAction<{
-        message: string,
-        onConfirm: () => void,
-        onCancel?: () => void
-    } | null>>) {
-    setConfirmPopup({
-        message: "Are you sure you want to delete all of your chats?",
-        onConfirm: () => {
-            deleteChats().then(status => {
-                if (status !== 200) {
-                    setConfirmPopup({
-                        message: "Deletion of chats was not possible",
-                        onConfirm: () => setConfirmPopup(null)
-                    })
-                } else {
-                    if (location.href.includes("/chat/")) {
-                        location.href = "/"
-                    } else {
-                        closePopup(setIsHidingPopup, setConfirmPopup)
-                        document.getElementById("history-div")!.innerHTML = ""
-                    }
-                }
-            })
-        },
-        onCancel: () => { closePopup(setIsHidingPopup, setConfirmPopup) }
-    })
-}
-
-function deleteAccountPopup(
-    setIsHidingPopup: React.Dispatch<React.SetStateAction<boolean>>,
-    setConfirmPopup: React.Dispatch<React.SetStateAction<{
-        message: string,
-        onConfirm: () => void,
-        onCancel?: () => void,
-    } | null>>) {
-    setConfirmPopup({
-        message: "Are you sure you want to delete your account?",
-        onConfirm: () => {
-            deleteAccount().then(status => {
-                if (status !== 200) {
-                    setConfirmPopup({
-                        message: "Deletion of account was not possible",
-                        onConfirm: () => setConfirmPopup(null)
-                    })
-                } else {
-                    location.href = "/"
-                }
-            })
-        },
-        onCancel: () => { closePopup(setIsHidingPopup, setConfirmPopup) }
-    })
-}
-
-function closePopup(
-    setIsHidingPopup: React.Dispatch<React.SetStateAction<boolean>>,
-    setConfirmPopup: React.Dispatch<React.SetStateAction<{
-        message: string,
-        onConfirm: () => void,
-        onCancel?: () => void,
-    } | null>>
-) {
-    setIsHidingPopup(true)
-    setTimeout(() => {
-        setIsHidingPopup(false)
-        setConfirmPopup(null)
-    }, 300)
 }
