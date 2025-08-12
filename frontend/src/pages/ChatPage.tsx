@@ -453,6 +453,11 @@ export default function ChatPage() {
         setTimeout(() => document.getElementById("search-input")?.focus(), 300)
     }
 
+    async function handleLogoutButton() {
+        await logout()
+        location.reload()
+    }
+
     useEffect(() => {
         if (!isSearchVisible) return
 
@@ -556,7 +561,7 @@ export default function ChatPage() {
 
                     <div id="logout-button-div">
                         <label id="logout-button-label">Log out</label>
-                        <button id="logout-button" onClick={async _ => { await logout(); location.reload() }}>Log out</button>
+                        <button id="logout-button" onClick={handleLogoutButton}>Log out</button>
                     </div>
                 </div>
             )}
