@@ -319,7 +319,7 @@ export default function ChatPage() {
         return () => document.removeEventListener("keydown", closeSettingsOnEscape)
     }, [isSettingsVisible, confirmPopup])
 
-    const closeSearch = () => {
+    function closeSearch() {
         setIsHidingSearch(true)
         setTimeout(() => {
             setIsHidingSearch(false)
@@ -414,15 +414,19 @@ export default function ChatPage() {
             message: `Are you sure you want to delete ${chat.title}?`,
             onConfirm: () => {
                 deleteChat(chat.uuid).then(status => {
-                    if (status !== 200) {
-                        alert("Deletion of chat was not possible")
+                    if (status === 200) {
+                        setChats(previous => previous.filter(c => c.uuid !== chat.uuid))
+                        if (location.pathname.includes(chat.uuid)) {
+                            location.href = "/"
+                        }
+                        closePopup(setIsHidingPopup, setConfirmPopup)
+                    } else {
+                        setConfirmPopup({
+                            message: "Deletion of chat was not possible",
+                            onConfirm: () => setConfirmPopup(null)
+                        })
                     }
                 })
-                setChats(previous => previous.filter(c => c.uuid !== chat.uuid))
-                if (location.pathname.includes(chat.uuid)) {
-                    location.href = "/"
-                }
-                closePopup(setIsHidingPopup, setConfirmPopup)
             },
             onCancel: () => { closePopup(setIsHidingPopup, setConfirmPopup) }
         })

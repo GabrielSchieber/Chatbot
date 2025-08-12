@@ -16,8 +16,14 @@ export function ConfirmPopup({
             <div className={`confirm-popup-div ${isHiding ? "fade-out" : "fade-in"}`} ref={ref}>
                 <p>{message}</p>
                 <div className="confirm-popup-buttons-div">
-                    {onCancel && <button className="confirm-popup-cancel-button" onClick={onCancel}>Cancel</button>}
-                    <button className="confirm-popup-confirm-button" onClick={onConfirm}>Confirm</button>
+                    {onCancel ? (
+                        <>
+                            <button className="confirm-popup-cancel-button" onClick={onCancel}>Cancel</button>
+                            <button className="confirm-popup-confirm-button" onClick={onConfirm}>Confirm</button>
+                        </>
+                    ) : (
+                        <button className="confirm-popup-cancel-button" onClick={onConfirm}>Close</button>
+                    )}
                 </div>
             </div>
         </div>
