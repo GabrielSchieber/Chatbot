@@ -40,9 +40,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.reset_non_complete_chats()
 
         await self.accept()
-        if self.chat and not self.chat.is_complete:
-            message = await database_sync_to_async(self.chat.messages.last)()
-            await self.send_json({"recover": message.text if message else ""})
 
     async def disconnect(self, code):
         if self.chat:
