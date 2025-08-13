@@ -215,11 +215,10 @@ export default function ChatPage() {
                             </>
                         ) : (
                             <div className="message-editor-div">
-                                <textarea id="edit-textarea" value={editingMessageInput} onChange={event => setEditingMessageInput(event.target.value)}></textarea>
+                                <textarea value={editingMessageInput} onChange={event => setEditingMessageInput(event.target.value)}></textarea>
                                 <div>
-                                    <button className="tooltip-button" onClick={handleEditorCancelButton}>Cancel</button>
+                                    <button onClick={handleEditorCancelButton}>Cancel</button>
                                     <button
-                                        className="tooltip-button"
                                         onClick={_ => handleEditorSendButton(message, index)}
                                         disabled={editingMessageInput.trim() === "" || editingMessageInput === message.text}
                                     >
@@ -363,7 +362,7 @@ export default function ChatPage() {
 
     useEffect(() => {
         if (editingMessageRef.current) {
-            autoResizeTextArea(document.getElementById("edit-textarea") as HTMLTextAreaElement)
+            autoResizeTextArea(document.querySelector(".message-editor-div")!.querySelector("textarea")!)
         }
     }, [editingMessageInput])
 

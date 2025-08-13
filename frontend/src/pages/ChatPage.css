@@ -551,11 +551,18 @@ body {
         }
     }
 
-    .tooltip-button:hover {
+    button {
+        padding: 8px 12px;
+        border-radius: 10px;
+        background-color: transparent;
+        transition: background-color 0.2s ease-in-out;
+    }
+
+    button:hover {
         background-color: var(--background-color2);
     }
 
-    .tooltip-button:active {
+    button:active {
         background-color: transparent;
     }
 }
@@ -608,47 +615,6 @@ body {
         overflow: hidden;
         border-radius: 10px;
     }
-}
-
-.tooltip-button {
-    padding: 5px 10px;
-    font-size: 12px;
-    border-radius: 5px;
-    outline: none;
-    background-color: transparent;
-    transition: background-color 0.3s ease-in-out;
-}
-
-.tooltip-button:hover {
-    background-color: var(--background-color5);
-}
-
-.tooltip-button:active {
-    background-color: transparent;
-}
-
-.tooltip-button:disabled {
-    background-color: transparent;
-    transition: none;
-    pointer-events: none;
-    opacity: 0.5;
-}
-
-.tooltip-inner-div {
-    font-size: 12px;
-}
-
-.message-copy-button {
-    border-radius: 6px;
-    transition: background-color 0.1s ease-in-out;
-}
-
-.message-copy-button:hover {
-    background-color: var(--background-color5);
-}
-
-.message-copy-button:active {
-    background-color: transparent;
 }
 
 .user-message-footer-div,

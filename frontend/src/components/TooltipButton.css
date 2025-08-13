@@ -7,21 +7,38 @@
 .tooltip-button {
     height: 100%;
     padding: 8px 12px;
+    font-size: 12px;
     cursor: pointer;
+    border-radius: 6px;
+    outline: none;
+    background-color: transparent;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.tooltip-button:hover {
+    background-color: var(--background-color5);
+}
+
+.tooltip-button:disabled {
+    background-color: transparent;
+    transition: none;
+    pointer-events: none;
+    opacity: 0.5;
 }
 
 .tooltip-inner-div {
-    height: 100%;
     position: absolute;
-    top: 100%;
-    left: 50%;
+    height: 100%;
     margin-top: 5px;
     padding: 0 6px;
-    align-content: center;
-    border-radius: 4px;
-    white-space: nowrap;
+    top: 100%;
+    left: 50%;
+    font-size: 12px;
     opacity: 0;
+    align-content: center;
+    white-space: nowrap;
     pointer-events: none;
+    border-radius: 4px;
     background-color: black;
     transform: translate(-50%, 10px);
     transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
