@@ -60,6 +60,8 @@ export default function ChatPage() {
     const [editingMessageInput, setEditingMessageInput] = useState("")
     const editingMessageRef = useRef<Message | null>(null)
 
+    const [regeneratingMessageIndex, setRegeneratingMessageIndex] = useState(-1)
+
     const moveSelectionDown = useCallback(
         throttle(() => {
             setSelectedIndex(previous => searchResults.length > 0 ? Math.min(previous + 1, searchResults.length - 1) : -1)
@@ -238,7 +240,7 @@ export default function ChatPage() {
                                 tooltipText="Copy"
                             ></TooltipButton>
                             <TooltipButton
-                                button={<RegenerateButton buttonClass="tooltip-button" onRegenerate={() => regenerateMesssage(index)}></RegenerateButton>}
+                                button={<RegenerateButton buttonClass="tooltip-button" onRegenerate={() => regenerateMesssage(index)} loading={regeneratingMessageIndex === index}></RegenerateButton>}
                                 tooltipText="Regenerate"
                             ></TooltipButton>
                         </div>
@@ -290,7 +292,20 @@ export default function ChatPage() {
             messages[index].text = ""
             return messages
         })
+
         webSocket.current?.send(JSON.stringify({ "action": "regenerate_message", "model": model, message_index: index }))
+
+        setRegeneratingMessageIndex(index)
+
+        function resetRegeneratingMessageIndex(event: MessageEvent<any>) {
+            const data = JSON.parse(event.data)
+            if (data.message) {
+                setRegeneratingMessageIndex(-1)
+                webSocket.current?.removeEventListener("message", resetRegeneratingMessageIndex)
+            }
+        }
+
+        webSocket.current?.addEventListener("message", resetRegeneratingMessageIndex)
     }
 
     function deleteChatsPopup() {

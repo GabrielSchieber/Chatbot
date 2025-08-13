@@ -6,13 +6,15 @@ interface IconButtonProps {
     children: ReactNode
     animateSelector?: string
     buttonClass?: string
+    disabled?: boolean
 }
 
 export default function IconButton({
     onClick,
     children,
     animateSelector,
-    buttonClass = ""
+    buttonClass = "",
+    disabled = false
 }: IconButtonProps) {
     const buttonRef = useRef<HTMLButtonElement>(null)
 
@@ -30,7 +32,7 @@ export default function IconButton({
     }
 
     return (
-        <button type="button" ref={buttonRef} className={`icon-button ${buttonClass}`} onClick={handleClick}>
+        <button type="button" ref={buttonRef} className={`icon-button ${buttonClass}`} onClick={handleClick} disabled={disabled}>
             {children}
         </button>
     )
