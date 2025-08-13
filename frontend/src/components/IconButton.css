@@ -1,17 +1,17 @@
-.message-copy-button {
+.icon-button {
     color: #d1d5db;
     background: none;
     border: none;
     padding: 4px;
     cursor: pointer;
-    outline: none;
+    position: relative;
 }
 
-.message-copy-button:hover {
+.icon-button:hover {
     color: #f9fafb;
 }
 
-.message-copy-svg {
+.icon-button-svg {
     display: block;
 }
 
@@ -34,4 +34,30 @@
 
 .back-sheet.animate {
     animation: slide-back 0.25s ease;
+}
+
+@keyframes pencil-wiggle {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-15deg);
+    }
+
+    50% {
+        transform: rotate(10deg);
+    }
+
+    75% {
+        transform: rotate(-5deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+.pencil.animate {
+    animation: pencil-wiggle 0.25s ease;
 }

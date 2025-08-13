@@ -1,42 +1,10 @@
-import { useRef } from "react"
-import "./CopyButton.css"
+import IconButton from "./IconButton"
 
-interface CopyButtonProps {
-    onCopy: () => void
-    buttonClass?: string
-    ariaLabel?: string
-}
-
-export default function CopyButton({ onCopy, buttonClass = "", ariaLabel = "Copy message" }: CopyButtonProps) {
-    const backSheetRef = useRef<SVGPathElement>(null)
-
-    const handleClick = () => {
-        onCopy()
-
-        if (backSheetRef.current) {
-            backSheetRef.current.classList.remove("animate")
-            void backSheetRef.current.clientWidth
-            backSheetRef.current.classList.add("animate")
-        }
-    }
-
+export default function CopyButton({ buttonClass, onCopy }: { buttonClass: string, onCopy: () => void }) {
     return (
-        <button
-            type="button"
-            className={`message-copy-button ${buttonClass}`}
-            aria-label={ariaLabel}
-            onClick={handleClick}
-        >
-            <svg
-                className="message-copy-svg"
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-                aria-hidden="true"
-                focusable="false"
-            >
+        <IconButton onClick={onCopy} animateSelector=".back-sheet" buttonClass={buttonClass}>
+            <svg className="icon-button-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
                 <path
-                    ref={backSheetRef}
                     className="back-sheet"
                     d="M5 15V5a2 2 0 0 1 2-2h10"
                     stroke="currentColor"
@@ -60,6 +28,6 @@ export default function CopyButton({ onCopy, buttonClass = "", ariaLabel = "Copy
                     strokeLinejoin="round"
                 />
             </svg>
-        </button>
+        </IconButton>
     )
 }
