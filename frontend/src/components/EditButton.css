@@ -1,0 +1,42 @@
+.message-edit-button {
+    color: #d1d5db;
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    position: relative;
+}
+
+.message-edit-button:hover {
+    color: #f9fafb;
+}
+
+.message-edit-svg {
+    display: block;
+}
+
+@keyframes pencil-wiggle {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-15deg);
+    }
+
+    50% {
+        transform: rotate(10deg);
+    }
+
+    75% {
+        transform: rotate(-5deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+.message-edit-svg .animate {
+    animation: pencil-wiggle 0.25s ease;
+}

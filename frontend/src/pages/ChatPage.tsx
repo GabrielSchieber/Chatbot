@@ -13,6 +13,7 @@ import { deleteAccount, deleteChat, deleteChats, getChats, getMessage, getMessag
 import type { Chat, Message, Model, SearchEntry } from "../types"
 import TooltipButton from "../components/TooltipButton"
 import CopyButton from "../components/CopyButton"
+import EditButton from "../components/EditButton"
 
 export default function ChatPage() {
     const { chatUUID } = useParams()
@@ -203,20 +204,11 @@ export default function ChatPage() {
                                 <div className="user-message-div">{message.text}</div>
                                 <div className="user-message-footer-div">
                                     <TooltipButton
-                                        button={
-                                            <CopyButton buttonClass="tooltip-button" onCopy={() => copyMessage(message, index)}></CopyButton>
-                                        }
+                                        button={<CopyButton buttonClass="tooltip-button" onCopy={() => copyMessage(message, index)}></CopyButton>}
                                         tooltipText="Copy"
                                     ></TooltipButton>
                                     <TooltipButton
-                                        button={
-                                            <button
-                                                className="tooltip-button"
-                                                style={{ padding: "0 5px", fontSize: "20px" }}
-                                                onClick={_ => handleEditButton(message)}>
-                                                ✏
-                                            </button>
-                                        }
+                                        button={<EditButton buttonClass="tooltip-button" onEdit={() => handleEditButton(message)}></EditButton>}
                                         tooltipText="Edit"
                                     ></TooltipButton>
                                 </div>
@@ -242,15 +234,11 @@ export default function ChatPage() {
                         <div className="bot-message-div" dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message.text) }}></div>
                         <div className="bot-message-footer-div">
                             <TooltipButton
-                                button={
-                                    <CopyButton buttonClass="tooltip-button" onCopy={() => copyMessage(message, index)}></CopyButton>
-                                }
+                                button={<CopyButton buttonClass="tooltip-button" onCopy={() => copyMessage(message, index)}></CopyButton>}
                                 tooltipText="Copy"
                             ></TooltipButton>
                             <TooltipButton
-                                button={
-                                    <button className="tooltip-button" onClick={regenerateMesssage(index)}>Regenerate</button>
-                                }
+                                button={<button className="tooltip-button" onClick={regenerateMesssage(index)}>Regenerate</button>}
                                 tooltipText="Regenerate"
                             ></TooltipButton>
                         </div>
