@@ -27,7 +27,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 class ChatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chat
-        fields = ["title", "uuid"]
+        fields = ["title", "is_complete", "uuid"]
 
 class MessageFileSerializer(serializers.ModelSerializer):
     class Meta:
