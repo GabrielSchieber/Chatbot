@@ -600,6 +600,7 @@ body {
         padding: 5px 10px 5px 10px;
         font-size: 14px;
         border-radius: 10px;
+        outline: none;
         background-color: var(--background-color3);
     }
 

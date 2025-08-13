@@ -366,7 +366,7 @@ export default function ChatPage() {
         }
     }, [editingMessageInput])
 
-    useEffect(() => addEventListenerToCodeBlockCopyButtons(), [messages, input])
+    useEffect(() => addEventListenerToCodeBlockCopyButtons(), [messages, input, editingMessageInput])
     useEffect(() => localStorage.setItem("isSidebarVisible", String(isSidebarVisible)), [isSidebarVisible])
 
     useEffect(() => {
