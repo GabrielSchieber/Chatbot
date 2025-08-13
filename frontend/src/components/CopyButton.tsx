@@ -3,10 +3,11 @@ import "./CopyButton.css"
 
 interface CopyButtonProps {
     onCopy: () => void
+    buttonClass?: string
     ariaLabel?: string
 }
 
-export default function CopyButton({ onCopy, ariaLabel = "Copy message" }: CopyButtonProps) {
+export default function CopyButton({ onCopy, buttonClass = "", ariaLabel = "Copy message" }: CopyButtonProps) {
     const backSheetRef = useRef<SVGPathElement>(null)
 
     const handleClick = () => {
@@ -22,7 +23,7 @@ export default function CopyButton({ onCopy, ariaLabel = "Copy message" }: CopyB
     return (
         <button
             type="button"
-            className="message-copy-button"
+            className={`message-copy-button ${buttonClass}`}
             aria-label={ariaLabel}
             onClick={handleClick}
         >

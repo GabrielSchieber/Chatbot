@@ -202,8 +202,23 @@ export default function ChatPage() {
                             <>
                                 <div className="user-message-div">{message.text}</div>
                                 <div className="user-message-footer-div">
-                                    <TooltipButton label="Edit" tooltipText="Edit" onClick={_ => handleEditButton(message)}></TooltipButton>
-                                    <CopyButton onCopy={() => copyMessage(message, index)}></CopyButton>
+                                    <TooltipButton
+                                        button={
+                                            <CopyButton buttonClass="tooltip-button" onCopy={() => copyMessage(message, index)}></CopyButton>
+                                        }
+                                        tooltipText="Copy"
+                                    ></TooltipButton>
+                                    <TooltipButton
+                                        button={
+                                            <button
+                                                className="tooltip-button"
+                                                style={{ padding: "0 5px", fontSize: "20px" }}
+                                                onClick={_ => handleEditButton(message)}>
+                                                ✏
+                                            </button>
+                                        }
+                                        tooltipText="Edit"
+                                    ></TooltipButton>
                                 </div>
                             </>
                         ) : (
@@ -226,8 +241,18 @@ export default function ChatPage() {
                     <div className="bot-message-items-div">
                         <div className="bot-message-div" dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message.text) }}></div>
                         <div className="bot-message-footer-div">
-                            <CopyButton onCopy={() => copyMessage(message, index)}></CopyButton>
-                            <TooltipButton label="Regenerate" tooltipText="Try again..." onClick={regenerateMesssage(index)}></TooltipButton>
+                            <TooltipButton
+                                button={
+                                    <CopyButton buttonClass="tooltip-button" onCopy={() => copyMessage(message, index)}></CopyButton>
+                                }
+                                tooltipText="Copy"
+                            ></TooltipButton>
+                            <TooltipButton
+                                button={
+                                    <button className="tooltip-button" onClick={regenerateMesssage(index)}>Regenerate</button>
+                                }
+                                tooltipText="Regenerate"
+                            ></TooltipButton>
                         </div>
                     </div>
                 )}
