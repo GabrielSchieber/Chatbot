@@ -61,3 +61,18 @@
 .pencil.animate {
     animation: pencil-wiggle 0.25s ease;
 }
+
+@keyframes regen-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.regen-icon.animate {
+    animation: regen-spin 0.4s ease;
+    transform-origin: center;
+}

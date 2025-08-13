@@ -14,6 +14,7 @@ import type { Chat, Message, Model, SearchEntry } from "../types"
 import TooltipButton from "../components/TooltipButton"
 import CopyButton from "../components/CopyButton"
 import EditButton from "../components/EditButton"
+import RegenerateButton from "../components/RegenerateButton"
 
 export default function ChatPage() {
     const { chatUUID } = useParams()
@@ -237,7 +238,7 @@ export default function ChatPage() {
                                 tooltipText="Copy"
                             ></TooltipButton>
                             <TooltipButton
-                                button={<button className="tooltip-button" onClick={regenerateMesssage(index)}>Regenerate</button>}
+                                button={<RegenerateButton buttonClass="tooltip-button" onRegenerate={() => regenerateMesssage(index)}></RegenerateButton>}
                                 tooltipText="Regenerate"
                             ></TooltipButton>
                         </div>
@@ -284,19 +285,12 @@ export default function ChatPage() {
     }
 
     function regenerateMesssage(index: number) {
-        return (event: React.MouseEvent<HTMLButtonElement>) => {
-            const button = event.currentTarget
-            button.textContent = "Regenerating..."
-            webSocket.current?.addEventListener("message", _ => { button.textContent = "Regenerate" }, { once: true })
-
-            setMessages(previous => {
-                const messages = [...previous]
-                messages[index].text = ""
-                return messages
-            })
-
-            webSocket.current?.send(JSON.stringify({ "action": "regenerate_message", "model": model, message_index: index }))
-        }
+        setMessages(previous => {
+            const messages = [...previous]
+            messages[index].text = ""
+            return messages
+        })
+        webSocket.current?.send(JSON.stringify({ "action": "regenerate_message", "model": model, message_index: index }))
     }
 
     function deleteChatsPopup() {
