@@ -12,6 +12,7 @@ import { throttle } from "../utils/throttle"
 import { deleteAccount, deleteChat, deleteChats, getChats, getMessage, getMessages, renameChat, searchChats as searchChatsAPI, uploadFiles } from "../utils/api"
 import type { Chat, Message, Model, SearchEntry } from "../types"
 import TooltipButton from "../components/TooltipButton"
+import CopyButton from "../components/CopyButton"
 
 export default function ChatPage() {
     const { chatUUID } = useParams()
@@ -202,7 +203,7 @@ export default function ChatPage() {
                                 <div className="user-message-div">{message.text}</div>
                                 <div className="user-message-footer-div">
                                     <TooltipButton label="Edit" tooltipText="Edit" onClick={_ => handleEditButton(message)}></TooltipButton>
-                                    <TooltipButton label="Copy" tooltipText="Copy" onClick={copyMessage(message, index)}></TooltipButton>
+                                    <CopyButton onCopy={() => copyMessage(message, index)}></CopyButton>
                                 </div>
                             </>
                         ) : (
@@ -225,7 +226,7 @@ export default function ChatPage() {
                     <div className="bot-message-items-div">
                         <div className="bot-message-div" dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message.text) }}></div>
                         <div className="bot-message-footer-div">
-                            <TooltipButton label="Copy" tooltipText="Copy" onClick={copyMessage(message, index)}></TooltipButton>
+                            <CopyButton onCopy={() => copyMessage(message, index)}></CopyButton>
                             <TooltipButton label="Regenerate" tooltipText="Try again..." onClick={regenerateMesssage(index)}></TooltipButton>
                         </div>
                     </div>
@@ -240,23 +241,12 @@ export default function ChatPage() {
     }
 
     function copyMessage(message: Message, index: number) {
-        return (event: React.MouseEvent<HTMLButtonElement>) => {
-            const button = event.currentTarget
-
-            function writeToClipboard(text: string) {
-                navigator.clipboard.writeText(text).then(_ => {
-                    button.textContent = "Copied!"
-                    setTimeout(() => button.textContent = "Copy", 2000)
-                })
-            }
-
-            if (message.is_user_message) {
-                writeToClipboard(message.text)
-            } else {
-                getMessage(chatUUID!, index).then(text => {
-                    text ? writeToClipboard(text) : alert("Copying of message was not possible")
-                })
-            }
+        if (message.is_user_message) {
+            navigator.clipboard.writeText(message.text)
+        } else {
+            getMessage(chatUUID!, index).then(text => {
+                text ? navigator.clipboard.writeText(text) : alert("Copying of message was not possible")
+            })
         }
     }
 

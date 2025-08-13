@@ -638,6 +638,19 @@ body {
     font-size: 12px;
 }
 
+.message-copy-button {
+    border-radius: 6px;
+    transition: background-color 0.1s ease-in-out;
+}
+
+.message-copy-button:hover {
+    background-color: var(--background-color5);
+}
+
+.message-copy-button:active {
+    background-color: transparent;
+}
+
 .user-message-footer-div,
 .bot-message-footer-div {
     display: flex;
