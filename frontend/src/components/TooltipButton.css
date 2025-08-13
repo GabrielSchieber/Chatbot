@@ -1,19 +1,23 @@
 .tooltip-div {
+    height: 100%;
     position: relative;
     display: inline-block;
 }
 
 .tooltip-button {
+    height: 100%;
     padding: 8px 12px;
     cursor: pointer;
 }
 
 .tooltip-inner-div {
+    height: 100%;
     position: absolute;
     top: 100%;
     left: 50%;
     margin-top: 5px;
-    padding: 6px 10px;
+    padding: 0 6px;
+    align-content: center;
     border-radius: 4px;
     white-space: nowrap;
     opacity: 0;
@@ -24,6 +28,7 @@
 }
 
 .tooltip-button:hover+.tooltip-inner-div {
+    height: 100%;
     opacity: 1;
     pointer-events: auto;
     transform: translate(-50%, 0);
