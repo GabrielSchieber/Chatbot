@@ -16,6 +16,12 @@ import CopyButton from "../components/CopyButton"
 import EditButton from "../components/EditButton"
 import RegenerateButton from "../components/RegenerateButton"
 
+type UIAttachment = {
+    id: string
+    file: File
+    isRemoving: boolean
+}
+
 export default function ChatPage() {
     const { chatUUID } = useParams()
     const { theme, setTheme } = useTheme()
@@ -56,6 +62,7 @@ export default function ChatPage() {
     const [hasChatBegun, setHasChatBegun] = useState(chatUUID !== undefined)
 
     const [currentFiles, setCurrentFiles] = useState<File[]>([])
+    const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
 
     const [editingMessageInput, setEditingMessageInput] = useState("")
     const editingMessageRef = useRef<Message | null>(null)
@@ -162,6 +169,7 @@ export default function ChatPage() {
                                     setInput("")
                                     setHasChatBegun(true)
                                     setCurrentFiles([])
+                                    setVisibleFiles([])
                                     setGeneratingMessageIndex(messages.length + 1)
                                 }
                             })
@@ -653,38 +661,56 @@ export default function ChatPage() {
         document.getElementById("prompt-textarea")?.focus()
     }, [])
 
+    function getID() {
+        return Math.random().toString(36).slice(2) + Date.now().toString(36)
+    }
+
     function handleFilesChange(event: React.ChangeEvent<HTMLInputElement>) {
-        if (event.target.files) {
-            if (event.target.files.length + currentFiles.length > 10) {
-                alert("You can only attach up to 10 files at a time.")
-                event.target.value = ""
-                return
-            }
+        if (!event.target.files) return
 
-            let totalSize = 0
-            for (const file of currentFiles) {
-                totalSize += file.size
-            }
-            for (const file of event.target.files) {
-                totalSize += file.size
-            }
-            if (totalSize > 1_000_000) {
-                alert("Total file size exceeds 1 MB limit. Please select smaller files.")
-                event.target.value = ""
-                return
-            }
-
-            const newFiles = Array.from(event.target.files)
-
-            const mergedFiles = [...currentFiles, ...newFiles].filter(
-                (file, index, self) =>
-                    index === self.findIndex(f => f.name === file.name && f.size === file.size)
-            )
-
-            setCurrentFiles(mergedFiles)
-
+        if (event.target.files.length + currentFiles.length > 10) {
+            alert("You can only attach up to 10 files at a time.")
             event.target.value = ""
+            return
         }
+
+        let totalSize = 0
+        for (const file of currentFiles) {
+            totalSize += file.size
+        }
+        for (const file of event.target.files) {
+            totalSize += file.size
+        }
+        if (totalSize > 1_000_000) {
+            alert("Total file size exceeds 1 MB limit. Please select smaller files.")
+            event.target.value = ""
+            return
+        }
+
+        const newFiles = Array.from(event.target.files)
+
+        const existingKeys = new Set(currentFiles.map(f => f.name + "|" + f.size))
+        const uniqueNew = newFiles.filter(f => !existingKeys.has(f.name + "|" + f.size))
+
+        setCurrentFiles(previous => [...previous, ...uniqueNew])
+
+        setVisibleFiles(previous => [
+            ...previous,
+            ...uniqueNew.map(f => ({ id: getID(), file: f, isRemoving: false }))
+        ])
+
+        event.target.value = ""
+    }
+
+    function handleRemoveAttachment(id: string) {
+        const ui = visibleFiles.find(a => a.id === id)
+        if (!ui) return
+
+        setCurrentFiles(previous => previous.filter(f => !(f.name === ui.file.name && f.size === ui.file.size)))
+
+        setVisibleFiles(previous => previous.map(a => (a.id === id ? { ...a, isRemoving: true } : a)))
+
+        setTimeout(() => setVisibleFiles(previous => previous.filter(a => a.id !== id)), 300)
     }
 
     return (
@@ -797,20 +823,28 @@ export default function ChatPage() {
             <div id="chat-div">
                 <div id="messages-div" className={hasChatBegun ? "expanded" : ""}>{messages.map((message, index) => getHTMLMessage(message, index))}</div>
                 {hasChatBegun === false && <h1 id="new-chat-h1">Ask me anything</h1>}
-                {currentFiles.length > 0 && (
+                {visibleFiles.length > 0 && (
                     <div className="attachment-items-div">
-                        {currentFiles.map((file, index) => (
-                            <div key={index} className="attachment-item-div">
-                                <button className="attachment-remove-button" onClick={() => setCurrentFiles(currentFiles.filter((_, i) => i !== index))}>X</button>
-                                <h1 className="attachment-icon-h1">Text</h1>
-                                <div className="attachment-info-div">
-                                    <>
-                                        <h1 className="attachment-file-h1">{file.name}</h1>
-                                        <p className="attachment-type-p">{file.name.endsWith(".txt") ? "Text" : file.name.endsWith(".md") ? "Markdown" : "File"}</p>
-                                    </>
+                        <div className="attachment-items-div">
+                            {visibleFiles.map(attachment => (
+                                <div key={attachment.id} className={`attachment-item-div ${attachment.isRemoving ? "removing" : ""}`}>
+                                    <button className="attachment-remove-button" onClick={() => handleRemoveAttachment(attachment.id)}>X</button>
+                                    <h1 className="attachment-icon-h1">Text</h1>
+                                    <div className="attachment-info-div">
+                                        <>
+                                            <h1 className="attachment-file-h1">{attachment.file.name}</h1>
+                                            <p className="attachment-type-p">
+                                                {attachment.file.name.endsWith(".txt")
+                                                    ? "Text"
+                                                    : attachment.file.name.endsWith(".md")
+                                                        ? "Markdown"
+                                                        : "File"}
+                                            </p>
+                                        </>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 )}
                 <div id="prompt-div">

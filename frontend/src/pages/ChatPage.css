@@ -770,11 +770,20 @@ body {
     position: relative;
     display: flex;
     width: 250px;
+    height: 40px;
     gap: 5px;
     padding: 5px;
     overflow: hidden;
     border-radius: 10px;
+    opacity: 1;
     background-color: var(--background-color4);
+    transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out, padding 0.3s ease-in-out;
+}
+
+.attachment-item-div.removing {
+    opacity: 0;
+    height: 0;
+    padding: 0;
 }
 
 .attachment-remove-button {
