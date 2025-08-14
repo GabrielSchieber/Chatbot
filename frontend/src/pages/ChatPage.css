@@ -506,6 +506,11 @@ body {
 
 .user-message-items-div {
     align-items: flex-end;
+
+    .attachment-items-div {
+        width: auto;
+        justify-content: flex-end;
+    }
 }
 
 .user-message-div,
@@ -758,6 +763,7 @@ body {
     gap: 5px;
     width: 61%;
     margin-bottom: 5px;
+    justify-content: center;
 }
 
 .attachment-item-div {
@@ -766,8 +772,6 @@ body {
     width: 250px;
     gap: 5px;
     padding: 5px;
-    align-items: center;
-    align-self: flex-start;
     overflow: hidden;
     border-radius: 10px;
     background-color: var(--background-color4);
