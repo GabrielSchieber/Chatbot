@@ -60,7 +60,10 @@ export default function ChatPage() {
     const [editingMessageInput, setEditingMessageInput] = useState("")
     const editingMessageRef = useRef<Message | null>(null)
 
-    const [regeneratingMessageIndex, setRegeneratingMessageIndex] = useState(-1)
+    const [isAnyChatIncomplete, setIsAnyChatIncomplete] = useState(false)
+
+    const [generatingMessageIndex, setGeneratingMessageIndex] = useState(parseInt(localStorage.getItem("generatingMessageIndex") || "-1"))
+    const [regeneratingMessageIndex, setRegeneratingMessageIndex] = useState(parseInt(localStorage.getItem("regeneratingMessageIndex") || "-1"))
 
     const moveSelectionDown = useCallback(
         throttle(() => {
@@ -102,13 +105,23 @@ export default function ChatPage() {
 
             webSocket.current.addEventListener("message", event => {
                 const data = JSON.parse(event.data)
+
+                if (data.generating_message_index) {
+                    setGeneratingMessageIndex(data.generating_message_index)
+                    if (data.generating_message_action === "regenerate_message") {
+                        setRegeneratingMessageIndex(data.generating_message_index)
+                    }
+                }
+
                 const message_index = data.message_index + 1
-                if (data.recover || data.message) {
+
+                if (data.message) {
                     setMessages(previous => {
                         let messages = [...previous]
-                        messages[message_index] = { text: data.recover ? data.recover : data.message, files: [], is_user_message: false }
+                        messages[message_index] = { text: data.message, files: [], is_user_message: false }
                         return messages
                     })
+                    setGeneratingMessageIndex(-1)
                 } else if (data.token) {
                     setMessages(previous => {
                         let messages = [...previous]
@@ -147,12 +160,14 @@ export default function ChatPage() {
                                     setInput("")
                                     setHasChatBegun(true)
                                     setCurrentFiles([])
+                                    setGeneratingMessageIndex(messages.length + 1)
                                 }
                             })
                         } else {
                             webSocket.current.send(JSON.stringify({ model: model, message: input }))
                             setInput("")
                             setHasChatBegun(true)
+                            setGeneratingMessageIndex(messages.length + 1)
                         }
                     }
                 } else {
@@ -240,7 +255,14 @@ export default function ChatPage() {
                                 tooltipText="Copy"
                             ></TooltipButton>
                             <TooltipButton
-                                button={<RegenerateButton buttonClass="tooltip-button" onRegenerate={() => regenerateMesssage(index)} loading={regeneratingMessageIndex === index}></RegenerateButton>}
+                                button={
+                                    <RegenerateButton
+                                        buttonClass="tooltip-button"
+                                        onRegenerate={() => regenerateMesssage(index)}
+                                        loading={regeneratingMessageIndex === index}
+                                        disabled={generatingMessageIndex >= 0 || regeneratingMessageIndex >= 0 || isAnyChatIncomplete}
+                                    ></RegenerateButton>
+                                }
                                 tooltipText="Regenerate"
                             ></TooltipButton>
                         </div>
@@ -284,6 +306,7 @@ export default function ChatPage() {
         message.text = editingMessageInput
         editingMessageRef.current = null
         setEditingMessageInput("")
+        setGeneratingMessageIndex(index)
     }
 
     function regenerateMesssage(index: number) {
@@ -295,6 +318,7 @@ export default function ChatPage() {
 
         webSocket.current?.send(JSON.stringify({ "action": "regenerate_message", "model": model, message_index: index }))
 
+        setGeneratingMessageIndex(-1)
         setRegeneratingMessageIndex(index)
 
         function resetRegeneratingMessageIndex(event: MessageEvent<any>) {
@@ -377,6 +401,20 @@ export default function ChatPage() {
 
     useEffect(() => addEventListenerToCodeBlockCopyButtons(), [messages, input, editingMessageInput])
     useEffect(() => localStorage.setItem("isSidebarVisible", String(isSidebarVisible)), [isSidebarVisible])
+    useEffect(() => localStorage.setItem("generatingMessageIndex", generatingMessageIndex.toString()), [generatingMessageIndex])
+    useEffect(() => localStorage.setItem("regeneratingMessageIndex", regeneratingMessageIndex.toString()), [regeneratingMessageIndex])
+
+    useEffect(() => {
+        for (const chat of chats) {
+            if (!chat.is_complete) {
+                setIsAnyChatIncomplete(true)
+                return
+            }
+        }
+        setGeneratingMessageIndex(-1)
+        setRegeneratingMessageIndex(-1)
+        setIsAnyChatIncomplete(false)
+    }, [chats])
 
     useEffect(() => {
         const closeDropdownOnOutsideClick = (event: MouseEvent) => {

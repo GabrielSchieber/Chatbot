@@ -4,11 +4,12 @@ interface RegenerateButtonProps {
     onRegenerate: () => void
     buttonClass?: string
     loading?: boolean
+    disabled?: boolean
 }
 
-export default function RegenerateButton({ onRegenerate, buttonClass = "", loading = false, }: RegenerateButtonProps) {
+export default function RegenerateButton({ onRegenerate, buttonClass = "", loading = false, disabled = false }: RegenerateButtonProps) {
     return (
-        <IconButton onClick={onRegenerate} buttonClass={buttonClass} animateSelector={!loading ? ".regen-icon" : undefined} disabled={loading}>
+        <IconButton onClick={onRegenerate} buttonClass={buttonClass} animateSelector={!loading ? ".regen-icon" : undefined} disabled={loading || disabled}>
             <svg className={`icon-button-svg ${loading ? "regen-loading" : ""}`} viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
                 <path
                     className="regen-icon"

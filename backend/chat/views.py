@@ -10,8 +10,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .consumers import generate_message_tasks
 from .models import Chat, Message, MessageFile, User
+from .tasks import reset_non_complete_chats
 from .utils import markdown_to_html
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -160,11 +160,7 @@ class GetChats(APIView):
         if incomplete_flag is None:
             return Response({"error": "'incomplete' field required"}, status = 400)
 
-        chats = Chat.objects.filter(user = request.user, is_complete = False)
-        for chat in chats:
-            if chat.uuid not in generate_message_tasks:
-                chat.is_complete = True
-                chat.save()
+        reset_non_complete_chats(request.user)
 
         chats = Chat.objects.filter(user = request.user, is_complete = False)
         serializer = ChatSerializer(chats, many = True)

@@ -1,8 +1,37 @@
+import asyncio
+import dataclasses
+import logging
+from typing import Literal
+
+logger = logging.getLogger(__name__)
+
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 
-from .models import Chat, Message, MessageFile
+from .models import Chat, Message, MessageFile, User
 from .sample import Model, sample_model
+
+MessageAction = Literal["new_message", "edit_message", "regenerate_message"]
+
+@dataclasses.dataclass(frozen = True)
+class ChatTask:
+    chat_uuid: str
+    message_action: MessageAction
+    message_index: int
+
+global_chat_tasks: dict[ChatTask, asyncio.Task] = {}
+
+def task_done_callback(task: asyncio.Task[None], chat_task: ChatTask):
+    global global_chat_tasks
+    global_chat_tasks.pop(chat_task)
+    exception = task.exception()
+    return exception and logger.exception("Task failed", exc_info = task.exception())
+
+async def create_generate_message_task(chat: Chat, model: Model, user_message: Message, bot_message: Message, message_index: int, message_action: MessageAction):
+    task = asyncio.create_task(generate_message(chat, model, user_message, bot_message))
+    chat_task = ChatTask(str(chat.uuid), message_action, message_index)
+    task.add_done_callback(lambda t: task_done_callback(t, chat_task))
+    global_chat_tasks[chat_task] = task
 
 async def generate_message(chat: Chat, model: Model, user_message: Message, bot_message: Message):
     chat.is_complete = False
@@ -15,7 +44,7 @@ async def generate_message(chat: Chat, model: Model, user_message: Message, bot_
     group_name = get_group_name(chat)
     channel_layer = get_channel_layer()
 
-    async for token in sample_model(model, messages, 32):
+    async for token in sample_model(model, messages, 256):
         bot_message.text += token
         await database_sync_to_async(bot_message.save)()
         await channel_layer.group_send(group_name, {"type": "send_token", "token": token, "message_index": message_index})
@@ -61,3 +90,20 @@ def get_message_with_files(message: str, files: list[dict[str, str]]) -> str:
 
 def get_group_name(chat: Chat) -> str:
     return f"chat_{chat.uuid}"
+
+def get_non_complete_chats(user: User) -> list[Chat]:
+    return list(Chat.objects.filter(user = user, is_complete = False))
+
+def reset_non_complete_chats(user: User):
+    non_complete_chats = get_non_complete_chats(user)
+    chat_uuids_in_tasks = [task.chat_uuid for task in global_chat_tasks]
+    for chat in non_complete_chats:
+        if str(chat.uuid) not in chat_uuids_in_tasks:
+            chat.is_complete = True
+            chat.save()
+
+def get_running_chat_task_for_chat(chat: Chat):
+    if not chat.is_complete:
+        for task in global_chat_tasks:
+            if str(chat.uuid) == task.chat_uuid:
+                return task

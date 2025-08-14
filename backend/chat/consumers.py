@@ -1,8 +1,4 @@
-import asyncio
-import logging
 from typing import get_args
-
-logger = logging.getLogger(__name__)
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
@@ -13,10 +9,8 @@ from jwt import decode as jwt_decode
 
 from .models import Chat, Message, MessageFile, User
 from .sample import Model
-from .tasks import generate_message, get_group_name
+from .tasks import create_generate_message_task, get_group_name, get_non_complete_chats, get_running_chat_task_for_chat, reset_non_complete_chats
 from .utils import markdown_to_html
-
-generate_message_tasks: dict[str, asyncio.Task] = {}
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -40,6 +34,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.reset_non_complete_chats()
 
         await self.accept()
+
+        if self.chat:
+            running_chat_task = get_running_chat_task_for_chat(self.chat)
+            if running_chat_task:
+                await self.send_json({"generating_message_action": running_chat_task.message_action, "generating_message_index": running_chat_task.message_index})
 
     async def disconnect(self, code):
         if self.chat:
@@ -122,13 +121,18 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             return AnonymousUser()
 
     async def handle_new_message(self, model: Model, message: str, files: list[dict[str, str]]):
+        message_index = await database_sync_to_async(Message.objects.filter)(chat = self.chat)
+        message_index = await database_sync_to_async(message_index.count)()
+
         user_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = message, is_user_message = True)
         if len(files) > 0:
             await database_sync_to_async(MessageFile.objects.bulk_create)(
                 [MessageFile(message = user_message, file = file["file"], name = file["name"]) for file in files]
             )
+
         bot_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = "", is_user_message = False)
-        await self.create_generate_message_task(model, user_message, bot_message)
+
+        await create_generate_message_task(self.chat, model, user_message, bot_message, message_index, "new_message")
 
     async def handle_edit_message(self, model: Model, message: str, message_index: int):
         messages = await self.get_messages()
@@ -141,7 +145,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         bot_message.text = ""
         await database_sync_to_async(bot_message.save)()
 
-        await self.create_generate_message_task(model, user_message, bot_message)
+        await create_generate_message_task(self.chat, model, user_message, bot_message, message_index, "edit_message")
 
     async def handle_regenerate_message(self, model: Model, message_index: int):
         messages = await self.get_messages()
@@ -152,12 +156,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         bot_message.text = ""
         await database_sync_to_async(bot_message.save)()
 
-        await self.create_generate_message_task(model, user_message, bot_message)
-
-    async def create_generate_message_task(self, model: Model, user_message: Message, bot_message: Message):
-        task = asyncio.create_task(generate_message(self.chat, model, user_message, bot_message))
-        task.add_done_callback(lambda t: t.exception() and logger.exception("Task failed", exc_info = t.exception()))
-        generate_message_tasks[self.chat.uuid] = task
+        await create_generate_message_task(self.chat, model, user_message, bot_message, message_index, "regenerate_message")
 
     @database_sync_to_async
     def create_chat(self) -> Chat:
@@ -189,13 +188,3 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({"message": markdown_to_html(event["message"]), "message_index": event["message_index"]})
         if self.redirect:
             await self.send_json({"redirect": self.redirect})
-
-def get_non_complete_chats(user: User) -> list[Chat]:
-    return list(Chat.objects.filter(user = user, is_complete = False))
-
-def reset_non_complete_chats(user: User):
-    non_complete_chats = get_non_complete_chats(user)
-    for chat in non_complete_chats:
-        if chat.uuid not in generate_message_tasks:
-            chat.is_complete = True
-            chat.save()
