@@ -297,31 +297,34 @@ export default function ChatPage() {
     function handleEditorSendButton(message: Message, index: number) {
         if (webSocket.current) {
             webSocket.current.send(JSON.stringify({ "action": "edit_message", "model": model, "message": editingMessageInput, message_index: index }))
+
+            setMessages(previous => {
+                const messages = [...previous]
+                messages[index + 1].text = ""
+                return messages
+            })
+
+            message.text = editingMessageInput
+            editingMessageRef.current = null
+
+            setEditingMessageInput("")
+            setGeneratingMessageIndex(index)
         }
-
-        setMessages(previous => {
-            const messages = [...previous]
-            messages[index + 1].text = ""
-            return messages
-        })
-
-        message.text = editingMessageInput
-        editingMessageRef.current = null
-        setEditingMessageInput("")
-        setGeneratingMessageIndex(index)
     }
 
     function regenerateMesssage(index: number) {
-        setMessages(previous => {
-            const messages = [...previous]
-            messages[index].text = ""
-            return messages
-        })
+        if (webSocket.current) {
+            webSocket.current.send(JSON.stringify({ "action": "regenerate_message", "model": model, message_index: index }))
 
-        webSocket.current?.send(JSON.stringify({ "action": "regenerate_message", "model": model, message_index: index }))
+            setMessages(previous => {
+                const messages = [...previous]
+                messages[index].text = ""
+                return messages
+            })
 
-        setGeneratingMessageIndex(-1)
-        setRegeneratingMessageIndex(index)
+            setGeneratingMessageIndex(-1)
+            setRegeneratingMessageIndex(index)
+        }
     }
 
     function deleteChatsPopup() {
