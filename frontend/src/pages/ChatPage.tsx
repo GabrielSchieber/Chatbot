@@ -121,7 +121,7 @@ export default function ChatPage() {
                         messages[message_index] = { text: data.message, files: [], is_user_message: false }
                         return messages
                     })
-                    setGeneratingMessageIndex(-1)
+                    resetGeneratingStates()
                 } else if (data.token) {
                     setMessages(previous => {
                         let messages = [...previous]
@@ -146,6 +146,8 @@ export default function ChatPage() {
             event.preventDefault()
             getChats(true).then(chats => {
                 if (chats.length === 0) {
+                    resetGeneratingStates()
+
                     if (webSocket.current) {
                         setMessages(previous => {
                             let messages = [...previous]
@@ -320,16 +322,6 @@ export default function ChatPage() {
 
         setGeneratingMessageIndex(-1)
         setRegeneratingMessageIndex(index)
-
-        function resetRegeneratingMessageIndex(event: MessageEvent<any>) {
-            const data = JSON.parse(event.data)
-            if (data.message) {
-                setRegeneratingMessageIndex(-1)
-                webSocket.current?.removeEventListener("message", resetRegeneratingMessageIndex)
-            }
-        }
-
-        webSocket.current?.addEventListener("message", resetRegeneratingMessageIndex)
     }
 
     function deleteChatsPopup() {
@@ -404,6 +396,12 @@ export default function ChatPage() {
     useEffect(() => localStorage.setItem("generatingMessageIndex", generatingMessageIndex.toString()), [generatingMessageIndex])
     useEffect(() => localStorage.setItem("regeneratingMessageIndex", regeneratingMessageIndex.toString()), [regeneratingMessageIndex])
 
+    function resetGeneratingStates() {
+        setGeneratingMessageIndex(-1)
+        setRegeneratingMessageIndex(-1)
+        setIsAnyChatIncomplete(false)
+    }
+
     useEffect(() => {
         for (const chat of chats) {
             if (!chat.is_complete) {
@@ -411,9 +409,7 @@ export default function ChatPage() {
                 return
             }
         }
-        setGeneratingMessageIndex(-1)
-        setRegeneratingMessageIndex(-1)
-        setIsAnyChatIncomplete(false)
+        resetGeneratingStates()
     }, [chats])
 
     useEffect(() => {
