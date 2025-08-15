@@ -4,8 +4,6 @@ import { useParams } from "react-router"
 
 import "./ChatPage.css"
 import { logout } from "../utils/auth"
-import { useTheme } from "../context/ThemeProvider"
-import type { Theme } from "../utils/theme"
 import { PastChatDropdownDiv } from "../components/Dropdown"
 import { ConfirmPopup } from "../components/ConfirmPopup"
 import { throttle } from "../utils/throttle"
@@ -15,6 +13,7 @@ import TooltipButton from "../components/TooltipButton"
 import CopyButton from "../components/CopyButton"
 import EditButton from "../components/EditButton"
 import RegenerateButton from "../components/RegenerateButton"
+import Settings from "../components/ChatPage/Settings"
 
 type UIAttachment = {
     id: string
@@ -24,7 +23,6 @@ type UIAttachment = {
 
 export default function ChatPage() {
     const { chatUUID } = useParams()
-    const { theme, setTheme } = useTheme()
 
     const [chats, setChats] = useState<Chat[]>([])
     const [messages, setMessages] = useState<Message[]>([])
@@ -719,35 +717,7 @@ export default function ChatPage() {
 
             {isSettingsVisible && <div id="settings-backdrop-div"></div>}
             {(isSettingsVisible || isHidingSettings) && (
-                <div id="settings-div" className={isHidingSettings ? "fade-out" : "fade-in"} ref={settingsRef}>
-                    <p id="settings-p">Settings</p>
-
-                    <button id="close-settings-button" onClick={closeSettings}>X</button>
-
-                    <div id="theme-select-div">
-                        <label id="theme-select-label">Theme</label>
-                        <select id="theme-select" value={theme} onChange={event => setTheme(event.target.value as Theme)}>
-                            <option value="system">System</option>
-                            <option value="light">Light</option>
-                            <option value="dark">Dark</option>
-                        </select>
-                    </div>
-
-                    <div id="delete-chats-button-div">
-                        <label id="delete-chats-button-label">Delete all chats</label>
-                        <button id="delete-chats-button" onClick={deleteChatsPopup}>Delete all</button>
-                    </div>
-
-                    <div id="delete-account-button-div">
-                        <label id="delete-account-button-label">Delete account</label>
-                        <button id="delete-account-button" onClick={deleteAccountPopup}>Delete</button>
-                    </div>
-
-                    <div id="logout-button-div">
-                        <label id="logout-button-label">Log out</label>
-                        <button id="logout-button" onClick={handleLogoutButton}>Log out</button>
-                    </div>
-                </div>
+                <Settings ref={settingsRef} isHiding={isHidingSettings} close={closeSettings} deleteChats={deleteChatsPopup} deleteAccount={deleteAccountPopup} logout={handleLogoutButton} />
             )}
 
             {isSearchVisible && <div id="search-backdrop-div"></div>}
