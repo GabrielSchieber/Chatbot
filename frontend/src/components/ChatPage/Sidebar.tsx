@@ -1,42 +1,123 @@
-import type { Chat } from "../../types"
+import { useEffect, useRef, useState } from "react"
+import type { Chat, SearchEntry } from "../../types"
 import { PastChatDropdownDiv } from "../Dropdown"
 import "./Sidebar.css"
+import { deleteChat, renameChat, searchChats } from "../../utils/api"
 
 interface SidebarProps {
-    ref: React.RefObject<HTMLDivElement | null>
-    isVisible: boolean
-    chats: Chat[]
     chatUUID: string | undefined
-    openDropdownUUID: string | null
-    renamingTitle: string
-    renamingUUID: string | null
-    setIsVisible: (value: React.SetStateAction<boolean>) => void
-    setOpenDropdownUUID: (value: React.SetStateAction<string | null>) => void
-    setRenamingTitle: (value: React.SetStateAction<string>) => void
-    handleRenameInput: (event: React.KeyboardEvent<Element>, chat: Chat) => void
-    handleSearchChatsButton: () => void
-    handleRenameChatButton: (chat: Chat) => void
-    handleDeleteChatButton: (chat: Chat) => void
+    chats: Chat[]
+    setChats: React.Dispatch<React.SetStateAction<Chat[]>>
+    setConfirmPopup: React.Dispatch<React.SetStateAction<{
+        message: string;
+        onConfirm: () => void;
+        onCancel?: () => void;
+    } | null>>
+    closePopup: () => void
+    setSearchResults: React.Dispatch<React.SetStateAction<SearchEntry[]>>
+    setIsSearchVisible: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export default function Sidebar(
-    {
-        ref,
-        isVisible,
-        chats,
-        chatUUID,
-        openDropdownUUID,
-        renamingTitle,
-        renamingUUID,
-        setIsVisible,
-        setOpenDropdownUUID,
-        setRenamingTitle,
-        handleRenameInput,
-        handleSearchChatsButton,
-        handleRenameChatButton,
-        handleDeleteChatButton,
-    }: SidebarProps
-) {
+export default function Sidebar({
+    chatUUID,
+    chats,
+    setChats,
+    setConfirmPopup,
+    closePopup,
+    setSearchResults,
+    setIsSearchVisible
+}: SidebarProps) {
+    const ref = useRef<HTMLDivElement | null>(null)
+
+    const [isVisible, setIsVisible] = useState(() => {
+        const stored = localStorage.getItem("isVisible")
+        return stored === null ? true : stored === "true"
+    })
+    const [openDropdownUUID, setOpenDropdownUUID] = useState<string | null>(null)
+    const [renamingUUID, setRenamingUUID] = useState<string | null>(null)
+    const [renamingTitle, setRenamingTitle] = useState<string>("")
+
+    useEffect(() => localStorage.setItem("isSidebarVisible", String(isVisible)), [isVisible])
+
+    useEffect(() => {
+        if (!isVisible) return
+
+        function handleClickOutsideSidebar(event: MouseEvent) {
+            if (document.body.clientWidth >= 700) return
+            if (ref.current && !ref.current.contains(event.target as Node)) {
+                setIsVisible(false)
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutsideSidebar)
+        return () => document.removeEventListener("mousedown", handleClickOutsideSidebar)
+    }, [isVisible])
+
+    useEffect(() => {
+        const closeDropdownOnOutsideClick = (event: MouseEvent) => {
+            const target = event.target as HTMLElement
+            if (!target.closest(".past-chat-div")) {
+                setOpenDropdownUUID(null)
+            }
+        }
+        document.addEventListener("click", closeDropdownOnOutsideClick)
+        return () => document.removeEventListener("click", closeDropdownOnOutsideClick)
+    }, [])
+
+    function handleRenameChatButton(chat: Chat) {
+        setRenamingUUID(chat.uuid)
+        setRenamingTitle(chat.title)
+        setOpenDropdownUUID(null)
+    }
+
+    function handleDeleteChatButton(chat: Chat) {
+        setConfirmPopup({
+            message: `Are you sure you want to delete ${chat.title}?`,
+            onConfirm: () => {
+                deleteChat(chat.uuid).then(status => {
+                    if (status === 200) {
+                        setChats(previous => previous.filter(c => c.uuid !== chat.uuid))
+                        if (location.pathname.includes(chat.uuid)) {
+                            location.href = "/"
+                        }
+                        closePopup()
+                    } else {
+                        setConfirmPopup({
+                            message: "Deletion of chat was not possible",
+                            onConfirm: () => setConfirmPopup(null)
+                        })
+                    }
+                })
+            },
+            onCancel: () => closePopup()
+        })
+        setOpenDropdownUUID(null)
+    }
+
+    function handleRenameInput(event: React.KeyboardEvent, chat: Chat) {
+        if (event.key === "Enter" && renamingTitle.trim()) {
+            renameChat(chat.uuid, renamingTitle.trim()).then(status => {
+                if (status !== 200) {
+                    alert("Renaming of chat was not possible")
+                }
+            })
+            setChats(previous =>
+                previous.map(previous_chat =>
+                    previous_chat.uuid === chat.uuid ? { ...previous_chat, title: renamingTitle.trim() } : previous_chat
+                )
+            )
+            setRenamingUUID(null)
+        } else if (event.key === "Escape") {
+            setRenamingUUID(null)
+        }
+    }
+
+    function handleSearchChatsButton() {
+        setIsSearchVisible(true)
+        searchChats("").then(chats => chats && setSearchResults(chats))
+        setTimeout(() => document.getElementById("search-input")?.focus(), 300)
+    }
+
     return (
         <>
             {document.body.clientWidth < 700 && isVisible && <div id="sidebar-backdrop-div" onClick={_ => setIsVisible(false)}></div>}
