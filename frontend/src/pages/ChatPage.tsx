@@ -14,6 +14,7 @@ import CopyButton from "../components/CopyButton"
 import EditButton from "../components/EditButton"
 import RegenerateButton from "../components/RegenerateButton"
 import Settings from "../components/ChatPage/Settings"
+import Search from "../components/ChatPage/Search"
 
 type UIAttachment = {
     id: string
@@ -722,34 +723,7 @@ export default function ChatPage() {
 
             {isSearchVisible && <div id="search-backdrop-div"></div>}
             {(isSearchVisible || isHidingSearch) && (
-                <div id="search-div" className={isHidingSearch ? "fade-out" : "fade-in"} ref={searchRef}>
-                    <div id="search-header-div">
-                        <input id="search-input" placeholder="Search here..." onInput={event => chats.length > 0 && searchChats(event.currentTarget.value)} />
-                        <button id="search-close-button" onClick={closeSearch}>X</button>
-                    </div>
-                    <div id="search-entries-div">
-                        {chats.length === 0 ? (
-                            <p>You have no chats to search.</p>
-                        ) : (
-                            <>{searchResults.length === 0 ? (
-                                <p>No chats found.</p>
-                            ) : (
-                                <>{searchResults.map((entry, index) => (
-                                    <a key={entry.uuid} className={`search-entry-a ${index === selectedIndex ? "selected" : ""}`} href={`/chat/${entry.uuid}`}>
-                                        {entry.title}
-                                        {entry.matches?.length > 0 && (
-                                            <ul>
-                                                {entry.matches.map((message: string, i: number) => (
-                                                    <li key={i}>{message.slice(0, 100)}...</li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                    </a>
-                                ))}</>
-                            )}</>
-                        )}
-                    </div>
-                </div>
+                <Search ref={searchRef} isHiding={isHidingSearch} chats={chats} results={searchResults} selectedIndex={selectedIndex} close={closeSearch} searchChats={searchChats} />
             )}
 
             {document.body.clientWidth < 700 && isSidebarVisible && <div id="sidebar-backdrop-div" onClick={_ => setIsSidebarVisible(false)}></div>}
