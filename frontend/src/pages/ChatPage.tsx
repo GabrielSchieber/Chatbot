@@ -7,7 +7,7 @@ import { logout } from "../utils/auth"
 import { ConfirmPopup } from "../components/ConfirmPopup"
 import { throttle } from "../utils/throttle"
 import { deleteAccount, deleteChat, deleteChats, getChats, getMessage, getMessages, renameChat, searchChats as searchChatsAPI, uploadFiles } from "../utils/api"
-import type { Chat, Message, Model, SearchEntry } from "../types"
+import type { Chat, Message, Model, SearchEntry, UIAttachment } from "../types"
 import TooltipButton from "../components/TooltipButton"
 import CopyButton from "../components/CopyButton"
 import EditButton from "../components/EditButton"
@@ -15,12 +15,7 @@ import RegenerateButton from "../components/RegenerateButton"
 import Settings from "../components/ChatPage/Settings"
 import Search from "../components/ChatPage/Search"
 import Sidebar from "../components/ChatPage/Sidebar"
-
-type UIAttachment = {
-    id: string
-    file: File
-    isRemoving: boolean
-}
+import ChatPanel from "../components/ChatPage/Chat"
 
 export default function ChatPage() {
     const { chatUUID } = useParams()
@@ -744,48 +739,19 @@ export default function ChatPage() {
                 handleDeleteChatButton={handleDeleteChatButton}
             />
 
-            <div id="chat-div">
-                <div id="messages-div" className={hasChatBegun ? "expanded" : ""}>{messages.map((message, index) => getHTMLMessage(message, index))}</div>
-                {hasChatBegun === false && <h1 id="new-chat-h1">Ask me anything</h1>}
-                {visibleFiles.length > 0 && (
-                    <div className="attachment-items-div">
-                        <div className="attachment-items-div">
-                            {visibleFiles.map(attachment => (
-                                <div key={attachment.id} className={`attachment-item-div ${attachment.isRemoving ? "removing" : ""}`}>
-                                    <button className="attachment-remove-button" onClick={() => handleRemoveAttachment(attachment.id)}>X</button>
-                                    <h1 className="attachment-icon-h1">Text</h1>
-                                    <div className="attachment-info-div">
-                                        <>
-                                            <h1 className="attachment-file-h1">{attachment.file.name}</h1>
-                                            <p className="attachment-type-p">
-                                                {attachment.file.name.endsWith(".txt")
-                                                    ? "Text"
-                                                    : attachment.file.name.endsWith(".md")
-                                                        ? "Markdown"
-                                                        : "File"}
-                                            </p>
-                                        </>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-                <div id="prompt-div">
-                    <textarea id="prompt-textarea" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => sendMessage(event)} placeholder="Type here..."></textarea>
-                    <div id="prompt-footer-div">
-                        <select id="model-select" value={model} onChange={event => setModel(event.target.value as Model)}>
-                            <option value="SmolLM2-135M" className="model-select-option">SmolLM2-135M</option>
-                            <option value="SmolLM2-360M" className="model-select-option">SmolLM2-360M</option>
-                            <option value="SmolLM2-1.7B" className="model-select-option">SmolLM2-1.7B</option>
-                        </select>
-                        <div id="attachment-div">
-                            <label id="attachment-label" htmlFor="attachment-input">📎</label>
-                            <input id="attachment-input" type="file" onChange={handleFilesChange} multiple />
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <ChatPanel
+                hasChatBegun={hasChatBegun}
+                messages={messages}
+                visibleFiles={visibleFiles}
+                input={input}
+                model={model}
+                getHTMLMessage={getHTMLMessage}
+                handleRemoveAttachment={handleRemoveAttachment}
+                setInput={setInput}
+                sendMessage={sendMessage}
+                setModel={setModel}
+                handleFilesChange={handleFilesChange}
+            />
 
             {confirmPopup && <ConfirmPopup message={confirmPopup.message} isHiding={isHidingPopup} ref={popupRef} onConfirm={confirmPopup.onConfirm} onCancel={confirmPopup.onCancel} />}
         </>
