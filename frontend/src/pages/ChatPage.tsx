@@ -4,7 +4,6 @@ import { useParams } from "react-router"
 
 import "./ChatPage.css"
 import { logout } from "../utils/auth"
-import { PastChatDropdownDiv } from "../components/Dropdown"
 import { ConfirmPopup } from "../components/ConfirmPopup"
 import { throttle } from "../utils/throttle"
 import { deleteAccount, deleteChat, deleteChats, getChats, getMessage, getMessages, renameChat, searchChats as searchChatsAPI, uploadFiles } from "../utils/api"
@@ -15,6 +14,7 @@ import EditButton from "../components/EditButton"
 import RegenerateButton from "../components/RegenerateButton"
 import Settings from "../components/ChatPage/Settings"
 import Search from "../components/ChatPage/Search"
+import Sidebar from "../components/ChatPage/Sidebar"
 
 type UIAttachment = {
     id: string
@@ -727,42 +727,22 @@ export default function ChatPage() {
             )}
 
             {document.body.clientWidth < 700 && isSidebarVisible && <div id="sidebar-backdrop-div" onClick={_ => setIsSidebarVisible(false)}></div>}
-            <div id="sidebar-div" className={isSidebarVisible ? "visible" : "invisible"} ref={sidebarRef}>
-                <div id="buttons-div">
-                    <button id="toggle-sidebar-button" onClick={_ => setIsSidebarVisible(previous => !previous)}>
-                        <span className="buttons-icon-span">≡</span>
-                        <span className="buttons-text-span">Close sidebar</span>
-                    </button>
-                    <button id="open-search-button" onClick={handleSearchChatsButton}>
-                        <span className="buttons-icon-span">🔍</span>
-                        <span className="buttons-text-span">Search chats</span>
-                    </button>
-                    <a id="new-chat-a" href="/">
-                        <span className="buttons-icon-span">✏</span>
-                        <span className="buttons-text-span">New Chat</span>
-                    </a>
-                </div>
-                <div id="history-div">
-                    {chats.map((chat, index) => (
-                        <div key={chat.uuid} className={`past-chat-div${chat.uuid === chatUUID ? " selected" : ""}${openDropdownUUID === chat.uuid ? " dropdown-open" : ""}`}>
-                            {renamingUUID === chat.uuid ? (
-                                <input className="past-chat-rename-input" type="text" value={renamingTitle} onChange={event => setRenamingTitle(event.target.value)} onKeyDown={event => { handleRenameInput(event, chat) }} autoFocus />
-                            ) : (
-                                <>
-                                    <a className="past-chat-a" href={`/chat/${chat.uuid}`}>{chat.title}</a>
-                                    <button className="past-chat-dropdown-button" onClick={_ => setOpenDropdownUUID(previous => (previous === chat.uuid ? null : chat.uuid))}>≡</button>
-                                </>
-                            )}
-                            {openDropdownUUID === chat.uuid && (
-                                <PastChatDropdownDiv index={index}>
-                                    <button className="past-chat-rename-button" onClick={_ => handleRenameChatButton(chat)}>Rename</button>
-                                    <button className="past-chat-delete-button" onClick={_ => handleDeleteChatButton(chat)}>Delete</button>
-                                </PastChatDropdownDiv>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
+            <Sidebar
+                ref={sidebarRef}
+                isVisible={isSidebarVisible}
+                chats={chats}
+                chatUUID={chatUUID}
+                openDropdownUUID={openDropdownUUID}
+                renamingTitle={renamingTitle}
+                renamingUUID={renamingUUID}
+                setIsVisible={setIsSidebarVisible}
+                setOpenDropdownUUID={setOpenDropdownUUID}
+                setRenamingTitle={setRenamingTitle}
+                handleRenameInput={handleRenameInput}
+                handleSearchChatsButton={handleSearchChatsButton}
+                handleRenameChatButton={handleRenameChatButton}
+                handleDeleteChatButton={handleDeleteChatButton}
+            />
 
             <div id="chat-div">
                 <div id="messages-div" className={hasChatBegun ? "expanded" : ""}>{messages.map((message, index) => getHTMLMessage(message, index))}</div>
