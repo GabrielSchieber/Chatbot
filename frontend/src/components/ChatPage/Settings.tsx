@@ -1,5 +1,6 @@
 import { useTheme } from "../../context/ThemeProvider"
 import type { Theme } from "../../utils/theme"
+import "./Settings.css"
 
 interface SettingsProps {
     ref: React.RefObject<HTMLDivElement | null>

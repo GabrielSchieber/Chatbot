@@ -28,17 +28,11 @@ body {
     background-color: var(--background-color5);
 }
 
-#settings-div {
+#settings-backdrop-div {
     position: absolute;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 500px;
-    padding: 25px;
-    border-radius: 10px;
-    align-items: center;
-    background-color: var(--background-color4);
-    z-index: 5;
+    inset: 0;
+    background-color: var(--backdrop-color);
+    z-index: 4;
 }
 
 @keyframes fadeIn {
@@ -71,79 +65,6 @@ body {
 
 .fade-out {
     animation: fadeOut 0.3s ease-in forwards;
-}
-
-#settings-backdrop-div {
-    position: absolute;
-    inset: 0;
-    background-color: var(--backdrop-color);
-    z-index: 4;
-}
-
-#settings-p {
-    align-self: center;
-    font-size: 30px;
-}
-
-#close-settings-button {
-    position: absolute;
-    right: 10px;
-    top: 10px;
-    padding: 5px 10px 5px 10px;
-    border-radius: 10px;
-    background-color: transparent;
-}
-
-#close-settings-button:hover {
-    background-color: var(--background-color2);
-}
-
-#close-settings-button:active {
-    background-color: transparent;
-}
-
-#delete-chats-button:hover,
-#delete-account-button:hover {
-    background-color: var(--red-color2);
-}
-
-#delete-chats-button:hover,
-#delete-account-button:active {
-    background-color: var(--red-color1);
-}
-
-#logout-button:hover {
-    background-color: var(--background-color3);
-}
-
-#logout-button:active {
-    background-color: var(--background-color2);
-}
-
-#theme-select-div,
-#delete-chats-button-div,
-#delete-account-button-div,
-#logout-button-div {
-    display: flex;
-    width: 90%;
-    padding: 10px;
-    align-items: center;
-    justify-content: space-between;
-    border-radius: 10px;
-    border: solid var(--background-color5) 3px;
-}
-
-#theme-select,
-#delete-chats-button,
-#delete-account-button,
-#logout-button {
-    width: 40%;
-    padding: 5px 0 5px 0;
-    text-align: center;
-    border: solid var(--background-color1) 2px;
-    border-radius: 10px;
-    outline: none;
-    background-color: var(--background-color2);
 }
 
 #buttons-div {
