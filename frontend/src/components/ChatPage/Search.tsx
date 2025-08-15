@@ -1,4 +1,5 @@
 import type { Chat, SearchEntry } from "../../types"
+import "./Search.css"
 
 interface SearchProps {
     ref: React.RefObject<HTMLDivElement | null>
