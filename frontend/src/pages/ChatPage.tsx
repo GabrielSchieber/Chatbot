@@ -1,11 +1,10 @@
-import React, { useCallback } from "react"
+import React from "react"
 import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
 import "./ChatPage.css"
 import { ConfirmPopup } from "../components/ConfirmPopup"
-import { throttle } from "../utils/throttle"
-import { deleteChat, getChats, getMessage, getMessages, renameChat, searchChats as searchChatsAPI, uploadFiles } from "../utils/api"
+import { deleteChat, getChats, getMessage, getMessages, renameChat, searchChats, uploadFiles } from "../utils/api"
 import type { Chat, Message, Model, SearchEntry, UIAttachment } from "../types"
 import TooltipButton from "../components/TooltipButton"
 import CopyButton from "../components/CopyButton"
@@ -35,19 +34,15 @@ export default function ChatPage() {
         return stored === null ? true : stored === "true"
     })
     const [isSearchVisible, setIsSearchVisible] = useState(false)
-    const [isHidingSearch, setIsHidingSearch] = useState(false)
     const [isHidingPopup, setIsHidingPopup] = useState(false)
-
     const [openDropdownUUID, setOpenDropdownUUID] = useState<string | null>(null)
     const [renamingUUID, setRenamingUUID] = useState<string | null>(null)
     const [renamingTitle, setRenamingTitle] = useState<string>("")
 
-    const searchRef = useRef<HTMLDivElement | null>(null)
     const sidebarRef = useRef<HTMLDivElement | null>(null)
     const popupRef = useRef<HTMLDivElement | null>(null)
 
     const [searchResults, setSearchResults] = useState<SearchEntry[]>([])
-    const [selectedIndex, setSelectedIndex] = useState<number>(-1)
 
     const [hasChatBegun, setHasChatBegun] = useState(chatUUID !== undefined)
 
@@ -61,20 +56,6 @@ export default function ChatPage() {
 
     const [generatingMessageIndex, setGeneratingMessageIndex] = useState(parseInt(localStorage.getItem("generatingMessageIndex") || "-1"))
     const [regeneratingMessageIndex, setRegeneratingMessageIndex] = useState(parseInt(localStorage.getItem("regeneratingMessageIndex") || "-1"))
-
-    const moveSelectionDown = useCallback(
-        throttle(() => {
-            setSelectedIndex(previous => searchResults.length > 0 ? Math.min(previous + 1, searchResults.length - 1) : -1)
-        }, 100),
-        [searchResults.length]
-    )
-
-    const moveSelectionUp = useCallback(
-        throttle(() => {
-            setSelectedIndex(previous => Math.max(previous - 1, 0))
-        }, 100),
-        []
-    )
 
     const [confirmPopup, setConfirmPopup] = useState<{
         message: string,
@@ -385,40 +366,6 @@ export default function ChatPage() {
         localStorage.setItem("model", model)
     }, [model])
 
-    function closeSearch() {
-        setIsHidingSearch(true)
-        setTimeout(() => {
-            setIsHidingSearch(false)
-            setIsSearchVisible(false)
-        }, 300)
-    }
-
-    useEffect(() => {
-        if (!isSearchVisible) return
-
-        function closeSearchOnOutsideClick(event: MouseEvent) {
-            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-                closeSearch()
-            }
-        }
-
-        document.addEventListener("mousedown", closeSearchOnOutsideClick)
-        return () => document.removeEventListener("mousedown", closeSearchOnOutsideClick)
-    }, [isSearchVisible])
-
-    useEffect(() => {
-        if (!isSearchVisible) return
-
-        function closeSearchOnEscape(event: KeyboardEvent) {
-            if (event.key === "Escape") {
-                closeSearch()
-            }
-        }
-
-        document.addEventListener("keydown", closeSearchOnEscape)
-        return () => document.removeEventListener("keydown", closeSearchOnEscape)
-    }, [isSearchVisible])
-
     useEffect(() => {
         if (!confirmPopup) return
 
@@ -458,16 +405,6 @@ export default function ChatPage() {
         document.addEventListener("mousedown", handleClickOutsideSidebar)
         return () => document.removeEventListener("mousedown", handleClickOutsideSidebar)
     }, [isSidebarVisible])
-
-    function searchChats(search: string) {
-        searchChatsAPI(search).then(chats => {
-            if (chats) {
-                setSearchResults(chats)
-            } else {
-                alert("Search of chats was not possible")
-            }
-        })
-    }
 
     function handleRenameChatButton(chat: Chat) {
         setRenamingUUID(chat.uuid)
@@ -519,42 +456,9 @@ export default function ChatPage() {
 
     function handleSearchChatsButton() {
         setIsSearchVisible(true)
-        searchChats("")
+        searchChats("").then(chats => chats && setSearchResults(chats))
         setTimeout(() => document.getElementById("search-input")?.focus(), 300)
     }
-
-    useEffect(() => {
-        if (!isSearchVisible) return
-
-        function handleKeyboardNavigation(event: KeyboardEvent) {
-            if (event.key === "Escape") {
-                closeSearch()
-            } else if (event.key === "ArrowDown") {
-                event.preventDefault()
-                moveSelectionDown()
-            } else if (event.key === "ArrowUp") {
-                event.preventDefault()
-                moveSelectionUp()
-            } else if (event.key === "Enter" && selectedIndex >= 0 && selectedIndex < searchResults.length) {
-                const selected = searchResults[selectedIndex]
-                location.href = `/chat/${selected.uuid}`
-            }
-        }
-
-        document.addEventListener("keydown", handleKeyboardNavigation)
-        return () => document.removeEventListener("keydown", handleKeyboardNavigation)
-    }, [isSearchVisible, searchResults, selectedIndex, moveSelectionDown, moveSelectionUp])
-
-    useEffect(() => {
-        if (selectedIndex < 0) return
-        const entries = document.querySelectorAll(".search-entry-a")
-        const selected = entries[selectedIndex] as HTMLElement | undefined
-        selected?.scrollIntoView({ block: "nearest" })
-    }, [selectedIndex])
-
-    useEffect(() => {
-        setSelectedIndex(searchResults.length > 0 ? 0 : -1)
-    }, [searchResults])
 
     useEffect(() => {
         document.getElementById("prompt-textarea")?.focus()
@@ -616,10 +520,7 @@ export default function ChatPage() {
         <>
             <Settings popup={popupRef} confirmPopup={confirmPopup} setConfirmPopup={setConfirmPopup} closePopup={closePopup} />
 
-            {isSearchVisible && <div id="search-backdrop-div"></div>}
-            {(isSearchVisible || isHidingSearch) && (
-                <Search ref={searchRef} isHiding={isHidingSearch} chats={chats} results={searchResults} selectedIndex={selectedIndex} close={closeSearch} searchChats={searchChats} />
-            )}
+            <Search chats={chats} isVisible={isSearchVisible} results={searchResults} setResults={setSearchResults} setIsVisible={setIsSearchVisible} />
 
             {document.body.clientWidth < 700 && isSidebarVisible && <div id="sidebar-backdrop-div" onClick={_ => setIsSidebarVisible(false)}></div>}
             <Sidebar
