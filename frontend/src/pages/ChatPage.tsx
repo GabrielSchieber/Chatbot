@@ -522,7 +522,6 @@ export default function ChatPage() {
 
             <Search chats={chats} isVisible={isSearchVisible} results={searchResults} setResults={setSearchResults} setIsVisible={setIsSearchVisible} />
 
-            {document.body.clientWidth < 700 && isSidebarVisible && <div id="sidebar-backdrop-div" onClick={_ => setIsSidebarVisible(false)}></div>}
             <Sidebar
                 ref={sidebarRef}
                 isVisible={isSidebarVisible}

@@ -39,6 +39,13 @@
     background-color: transparent;
 }
 
+#sidebar-backdrop-div {
+    position: absolute;
+    inset: 0;
+    background-color: var(--backdrop-color);
+    z-index: 2;
+}
+
 #sidebar-div {
     display: flex;
     flex-direction: column;

@@ -40,10 +40,3 @@ body {
 .fade-out {
     animation: fadeOut 0.3s ease-in forwards;
 }
-
-#sidebar-backdrop-div {
-    position: absolute;
-    inset: 0;
-    background-color: var(--backdrop-color);
-    z-index: 2;
-}
