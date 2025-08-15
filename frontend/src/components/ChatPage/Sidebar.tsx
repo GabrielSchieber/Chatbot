@@ -1,5 +1,6 @@
 import type { Chat } from "../../types"
 import { PastChatDropdownDiv } from "../Dropdown"
+import "./Sidebar.css"
 
 interface SidebarProps {
     ref: React.RefObject<HTMLDivElement | null>
