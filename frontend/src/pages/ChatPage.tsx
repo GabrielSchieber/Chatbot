@@ -3,10 +3,9 @@ import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
 import "./ChatPage.css"
-import { logout } from "../utils/auth"
 import { ConfirmPopup } from "../components/ConfirmPopup"
 import { throttle } from "../utils/throttle"
-import { deleteAccount, deleteChat, deleteChats, getChats, getMessage, getMessages, renameChat, searchChats as searchChatsAPI, uploadFiles } from "../utils/api"
+import { deleteChat, getChats, getMessage, getMessages, renameChat, searchChats as searchChatsAPI, uploadFiles } from "../utils/api"
 import type { Chat, Message, Model, SearchEntry, UIAttachment } from "../types"
 import TooltipButton from "../components/TooltipButton"
 import CopyButton from "../components/CopyButton"
@@ -35,8 +34,6 @@ export default function ChatPage() {
         const stored = localStorage.getItem("isSidebarVisible")
         return stored === null ? true : stored === "true"
     })
-    const [isSettingsVisible, setIsSettingsVisible] = useState(false)
-    const [isHidingSettings, setIsHidingSettings] = useState(false)
     const [isSearchVisible, setIsSearchVisible] = useState(false)
     const [isHidingSearch, setIsHidingSearch] = useState(false)
     const [isHidingPopup, setIsHidingPopup] = useState(false)
@@ -45,7 +42,6 @@ export default function ChatPage() {
     const [renamingUUID, setRenamingUUID] = useState<string | null>(null)
     const [renamingTitle, setRenamingTitle] = useState<string>("")
 
-    const settingsRef = useRef<HTMLDivElement | null>(null)
     const searchRef = useRef<HTMLDivElement | null>(null)
     const sidebarRef = useRef<HTMLDivElement | null>(null)
     const popupRef = useRef<HTMLDivElement | null>(null)
@@ -329,49 +325,6 @@ export default function ChatPage() {
         }
     }
 
-    function deleteChatsPopup() {
-        setConfirmPopup({
-            message: "Are you sure you want to delete all of your chats?",
-            onConfirm: () => {
-                deleteChats().then(status => {
-                    if (status !== 200) {
-                        setConfirmPopup({
-                            message: "Deletion of chats was not possible",
-                            onConfirm: () => setConfirmPopup(null)
-                        })
-                    } else {
-                        if (location.href.includes("/chat/")) {
-                            location.href = "/"
-                        } else {
-                            closePopup()
-                            document.getElementById("history-div")!.innerHTML = ""
-                        }
-                    }
-                })
-            },
-            onCancel: () => closePopup()
-        })
-    }
-
-    function deleteAccountPopup() {
-        setConfirmPopup({
-            message: "Are you sure you want to delete your account?",
-            onConfirm: () => {
-                deleteAccount().then(status => {
-                    if (status !== 200) {
-                        setConfirmPopup({
-                            message: "Deletion of account was not possible",
-                            onConfirm: () => setConfirmPopup(null)
-                        })
-                    } else {
-                        location.href = "/"
-                    }
-                })
-            },
-            onCancel: () => closePopup()
-        })
-    }
-
     function closePopup() {
         setIsHidingPopup(true)
         setTimeout(() => {
@@ -431,49 +384,6 @@ export default function ChatPage() {
     useEffect(() => {
         localStorage.setItem("model", model)
     }, [model])
-
-    function closeSettings() {
-        setIsHidingSettings(true)
-        setTimeout(() => {
-            setIsHidingSettings(false)
-            setIsSettingsVisible(false)
-        }, 300)
-    }
-
-    useEffect(() => {
-        if (!isSettingsVisible) return
-
-        function closeSettingsOnOutsideClick(event: MouseEvent) {
-            if (confirmPopup) return
-
-            const target = event.target as Node
-            if (
-                (settingsRef.current && settingsRef.current.contains(target)) ||
-                (popupRef.current && popupRef.current.contains(target))
-            ) {
-                return
-            }
-
-            closeSettings()
-        }
-
-        document.addEventListener("mousedown", closeSettingsOnOutsideClick)
-        return () => document.removeEventListener("mousedown", closeSettingsOnOutsideClick)
-    }, [isSettingsVisible, confirmPopup])
-
-    useEffect(() => {
-        if (!isSettingsVisible) return
-
-        function closeSettingsOnEscape(event: KeyboardEvent) {
-            if (confirmPopup) return
-            if (event.key === "Escape") {
-                closeSettings()
-            }
-        }
-
-        document.addEventListener("keydown", closeSettingsOnEscape)
-        return () => document.removeEventListener("keydown", closeSettingsOnEscape)
-    }, [isSettingsVisible, confirmPopup])
 
     function closeSearch() {
         setIsHidingSearch(true)
@@ -613,11 +523,6 @@ export default function ChatPage() {
         setTimeout(() => document.getElementById("search-input")?.focus(), 300)
     }
 
-    async function handleLogoutButton() {
-        await logout()
-        location.reload()
-    }
-
     useEffect(() => {
         if (!isSearchVisible) return
 
@@ -709,12 +614,7 @@ export default function ChatPage() {
 
     return (
         <>
-            {!isSettingsVisible && <button id="open-settings-button" onClick={_ => setIsSettingsVisible(true)}>⚙</button>}
-
-            {isSettingsVisible && <div id="settings-backdrop-div"></div>}
-            {(isSettingsVisible || isHidingSettings) && (
-                <Settings ref={settingsRef} isHiding={isHidingSettings} close={closeSettings} deleteChats={deleteChatsPopup} deleteAccount={deleteAccountPopup} logout={handleLogoutButton} />
-            )}
+            <Settings popup={popupRef} confirmPopup={confirmPopup} setConfirmPopup={setConfirmPopup} closePopup={closePopup} />
 
             {isSearchVisible && <div id="search-backdrop-div"></div>}
             {(isSearchVisible || isHidingSearch) && (

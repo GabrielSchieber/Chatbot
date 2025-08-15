@@ -9,32 +9,6 @@ body {
     display: flex;
 }
 
-#open-settings-button {
-    position: absolute;
-    right: 0;
-    margin: 10px;
-    padding: 5px 10px 5px 10px;
-    border-radius: 10px;
-    align-self: start;
-    background-color: var(--background-color5);
-    z-index: 1;
-}
-
-#open-settings-button:hover {
-    background-color: var(--background-color4);
-}
-
-#open-settings-button:active {
-    background-color: var(--background-color5);
-}
-
-#settings-backdrop-div {
-    position: absolute;
-    inset: 0;
-    background-color: var(--backdrop-color);
-    z-index: 4;
-}
-
 @keyframes fadeIn {
     from {
         opacity: 0;
