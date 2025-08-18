@@ -13,7 +13,7 @@ export async function getChats(incomplete: boolean = false): Promise<Chat[]> {
     return data.chats
 }
 
-export async function getMessages(chatUUID: string): Promise<Message[]> {
+export async function getMessages(chatUUID: string): Promise<Message[] | undefined> {
     const response = await fetch("/api/get-messages/", {
         method: "POST",
         credentials: "include",
