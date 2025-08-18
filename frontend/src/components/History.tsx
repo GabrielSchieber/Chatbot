@@ -1,9 +1,10 @@
 import { DotsVerticalIcon } from "@radix-ui/react-icons"
-import { AlertDialog, DropdownMenu } from "radix-ui"
+import { DropdownMenu } from "radix-ui"
 import type { Chat } from "../types"
 import { useState } from "react"
 import { deleteChat, renameChat } from "../utils/api"
 import { useParams } from "react-router"
+import ConfirmDialog from "./ConfirmDialog"
 
 export default function History({ chats, setChats }: {
     chats: Chat[]
@@ -86,46 +87,18 @@ export default function History({ chats, setChats }: {
                             <DropdownMenu.Item className="hover:bg-gray-700 p-2 text-center outline-none rounded" onSelect={_ => startRename(chat)}>
                                 Rename
                             </DropdownMenu.Item>
-                            <AlertDialog.Root>
-                                <AlertDialog.Trigger asChild>
-                                    <DropdownMenu.Item asChild onSelect={e => e.preventDefault()}>
-                                        <button className="w-full text-center hover:bg-gray-700 p-2 outline-none rounded">
-                                            Delete
-                                        </button>
-                                    </DropdownMenu.Item>
-                                </AlertDialog.Trigger>
-
-                                <AlertDialog.Portal>
-                                    <AlertDialog.Overlay className="bg-black/50 fixed inset-0" />
-                                    <AlertDialog.Content className="bg-gray-800 p-6 rounded-xl shadow-xl fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm">
-                                        <AlertDialog.Title className="text-lg font-semibold text-white">
-                                            Delete Chat
-                                        </AlertDialog.Title>
-                                        <AlertDialog.Description className="mt-2 text-sm text-gray-300">
-                                            Are you sure you want to delete{" "}
-                                            <span className="font-medium">{chat.title}</span>?
-                                            This action cannot be undone.
-                                        </AlertDialog.Description>
-
-                                        <div className="mt-4 flex justify-end gap-2">
-                                            <AlertDialog.Cancel asChild>
-                                                <button className="px-4 py-2 rounded bg-gray-600 hover:bg-gray-500 text-white">
-                                                    Cancel
-                                                </button>
-                                            </AlertDialog.Cancel>
-
-                                            <AlertDialog.Action asChild>
-                                                <button
-                                                    className="px-4 py-2 rounded bg-red-600 hover:bg-red-500 text-white"
-                                                    onClick={_ => handleDelete(chat.uuid)}
-                                                >
-                                                    Delete
-                                                </button>
-                                            </AlertDialog.Action>
-                                        </div>
-                                    </AlertDialog.Content>
-                                </AlertDialog.Portal>
-                            </AlertDialog.Root>
+                            <ConfirmDialog
+                                trigger={
+                                    <button className="w-full text-center hover:bg-gray-700 p-2 outline-none rounded">
+                                        Delete
+                                    </button>
+                                }
+                                title="Delete Chat"
+                                description={`Are you sure you want to delete "${chat.title}"? This action cannot be undone.`}
+                                confirmText="Delete"
+                                cancelText="Cancel"
+                                onConfirm={() => handleDelete(chat.uuid)}
+                            />
                         </DropdownMenu.Content>
                     </DropdownMenu.Root>
                 </div>
