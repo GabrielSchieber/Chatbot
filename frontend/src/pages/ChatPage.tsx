@@ -1,4 +1,3 @@
-import "./ChatPage.css"
 import Sidebar from "../components/Sidebar"
 import ChatPanel from "../components/Chat"
 

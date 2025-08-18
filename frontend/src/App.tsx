@@ -1,4 +1,5 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router"
+import "./App.css"
 import ChatPage from "./pages/ChatPage"
 import LoginPage from "./pages/LoginPage"
 import SignupPage from "./pages/SignupPage"

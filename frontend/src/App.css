@@ -11,6 +11,10 @@
     scrollbar-color: var(--scrollbar-color) transparent;
 }
 
+input::-ms-reveal {
+    filter: invert(100%);
+}
+
 .bot-message {
     * {
         color: rgb(220, 220, 220);
