@@ -2,6 +2,7 @@ import { GearIcon } from "@radix-ui/react-icons";
 import { Dialog } from "radix-ui";
 import { deleteAccount, deleteChats } from "../utils/api";
 import { logout } from "../utils/auth";
+import ConfirmDialog from "./ConfirmDialog";
 
 export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) {
     function handleDeleteChats() {
@@ -72,21 +73,33 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                     </div>
                     <div className="flex justify-between items-center">
                         <label>Delete Chats</label>
-                        <button
-                            className="bg-gray-900 rounded px-2 py-1 hover:bg-gray-700 active:bg-gray-900 transition-all duration-200 bg"
-                            onClick={handleDeleteChats}
-                        >
-                            Delete all
-                        </button>
+                        <ConfirmDialog
+                            trigger={
+                                <button className="bg-gray-900 rounded px-2 py-1 hover:bg-gray-700 active:bg-gray-900 transition-all duration-200 bg">
+                                    Delete all
+                                </button>
+                            }
+                            title="Delete Chats"
+                            description="Are you sure you want to delete all of your chats? This action cannot be undone."
+                            confirmText="Delete all"
+                            cancelText="Cancel"
+                            onConfirm={handleDeleteChats}
+                        />
                     </div>
                     <div className="flex justify-between items-center">
                         <label>Delete Account</label>
-                        <button
-                            className="bg-gray-900 rounded px-2 py-1 hover:bg-gray-700 active:bg-gray-900 transition-all duration-200 bg"
-                            onClick={handleDeleteAccount}
-                        >
-                            Delete
-                        </button>
+                        <ConfirmDialog
+                            trigger={
+                                <button className="bg-gray-900 rounded px-2 py-1 hover:bg-gray-700 active:bg-gray-900 transition-all duration-200 bg">
+                                    Delete
+                                </button>
+                            }
+                            title="Delete Account"
+                            description="Are you sure you want to delete your account? This action cannot be undone."
+                            confirmText="Delete Account"
+                            cancelText="Cancel"
+                            onConfirm={handleDeleteAccount}
+                        />
                     </div>
                     <div className="flex justify-between items-center">
                         <label>Log out</label>
