@@ -96,7 +96,7 @@ export default function Messages({ webSocket, messages, setMessages }: {
                             {message.text}
                         </div>
                     ) : (
-                        <div className="whitespace-pre-wrap text-gray-300">
+                        <div className="w-full whitespace-pre-wrap text-gray-300">
                             <ReactMarkdown
                                 children={message.text}
                                 remarkPlugins={[remarkGfm]}
