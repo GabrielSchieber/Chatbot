@@ -16,6 +16,7 @@ export default function Messages({ webSocket, messages, setMessages }: {
 }) {
     const { chatUUID } = useParams()
     const shouldLoadMessages = useRef(true)
+    const [copiedMessageIndex, setCopiedMessageIndex] = useState(-1)
 
     function loadMessages() {
         if (shouldLoadMessages.current && chatUUID) {
@@ -74,6 +75,8 @@ export default function Messages({ webSocket, messages, setMessages }: {
                 })
             }
         }
+        setCopiedMessageIndex(index)
+        setTimeout(() => setCopiedMessageIndex(-1), 2000)
     }
 
     useEffect(() => {
@@ -130,13 +133,13 @@ export default function Messages({ webSocket, messages, setMessages }: {
 
                                         return (
                                             <div className="rounded-lg overflow-hidden my-2">
-                                                <div className="flex items-center justify-between bg-gray-700 px-4 py-2">
+                                                <div className="flex items-center justify-between bg-gray-700 px-4 py-1">
                                                     <p className="text-sm m-0">{language}</p>
                                                     <button
-                                                        className="flex items-center gap-1 px-2 py-1 text-sm rounded bg-gray-600 hover:bg-gray-500"
+                                                        className="flex items-center gap-1 px-2 py-[2px] text-xs rounded bg-gray-600 hover:bg-gray-500"
                                                         onClick={copyCodeBlock}
                                                     >
-                                                        {copied ? <CheckIcon /> : <CopyIcon />}
+                                                        {copied ? <CheckIcon className="scale-[1.3]" /> : <CopyIcon />}
                                                         {copied ? "Copied" : "Copy"}
                                                     </button>
                                                 </div>
@@ -151,10 +154,10 @@ export default function Messages({ webSocket, messages, setMessages }: {
                         </div>
                     )}
                     <button
-                        className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 active:bg-transparent rounded-lg transition-all duration-200 bg cursor-pointer"
+                        className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-lg transition-all duration-200 bg cursor-pointer"
                         onClick={_ => copyMessage(message, index)}
                     >
-                        <CopyIcon />
+                        {copiedMessageIndex === index ? <CheckIcon className="scale-[1.5]" /> : <CopyIcon className="scale-[1.2]" />}
                     </button>
                 </div>
             ))}
