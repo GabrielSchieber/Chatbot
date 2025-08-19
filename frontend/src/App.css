@@ -2,66 +2,8 @@
 
 :root {
     --scrollbar-color: theme(colors.gray.500);
-    --code-block-header-div-color: theme(colors.gray.700);
-    --code-block-header-button-color: theme(colors.gray.600);
-    --code-block-header-button-color-hover: theme(colors.gray.500);
 }
 
 * {
     scrollbar-color: var(--scrollbar-color) transparent;
-}
-
-input::-ms-reveal {
-    filter: invert(100%);
-}
-
-.bot-message {
-    * {
-        color: rgb(220, 220, 220);
-    }
-
-    p {
-        margin: 10px 0;
-        padding: 0;
-    }
-
-    pre {
-        padding: 5px 15px 10px 15px;
-        overflow-x: auto;
-        overflow-y: hidden;
-    }
-
-    .code-block-header-div {
-        display: flex;
-        height: 40px;
-        padding: 0 20px 0 20px;
-        align-items: center;
-        justify-content: space-between;
-        background-color: var(--code-block-header-div-color);
-    }
-
-    .code-block-header-p {
-        font-size: 17px;
-    }
-
-    .code-block-header-button {
-        padding: 5px 10px 5px 10px;
-        font-size: 14px;
-        border-radius: 10px;
-        outline: none;
-        background-color: var(--code-block-header-button-color);
-    }
-
-    .code-block-header-button:hover {
-        background-color: var(--code-block-header-button-color-hover);
-    }
-
-    .code-block-header-button:active {
-        background-color: var(--code-block-header-button-color);
-    }
-
-    .codehilite {
-        overflow: hidden;
-        border-radius: 10px;
-    }
 }

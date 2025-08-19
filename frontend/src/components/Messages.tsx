@@ -1,8 +1,13 @@
-import { CopyIcon } from "@radix-ui/react-icons"
-import type { Message } from "../types"
-import { getMessage, getMessages } from "../utils/api"
+import { CheckIcon, CopyIcon } from "@radix-ui/react-icons"
+import React, { type ReactElement, useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
-import { useEffect, useRef } from "react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import rehypeHighlight from "rehype-highlight"
+import "highlight.js/styles/github-dark.css"
+
+import { getMessage, getMessages } from "../utils/api"
+import type { Message } from "../types"
 
 export default function Messages({ webSocket, messages, setMessages }: {
     webSocket: React.RefObject<WebSocket | null>
@@ -76,8 +81,6 @@ export default function Messages({ webSocket, messages, setMessages }: {
         receiveMessage()
     }, [])
 
-    useEffect(() => addEventListenerToCodeBlockCopyButtons(), [messages, prompt])
-
     return (
         <div className="flex-1 overflow-y-auto w-full">
             {messages.map((message, index) => (
@@ -90,10 +93,62 @@ export default function Messages({ webSocket, messages, setMessages }: {
                             {message.text}
                         </div>
                     ) : (
-                        <div
-                            className="bot-message whitespace-pre-wrap text-gray-300"
-                            dangerouslySetInnerHTML={{ __html: createBotMessageHTML(message.text) }}
-                        ></div>
+                        <div className="whitespace-pre-wrap text-gray-300">
+                            <ReactMarkdown
+                                children={message.text}
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeHighlight]}
+                                components={{
+                                    code({ node, className, children, ...props }) {
+                                        const isInline = !className
+                                        if (isInline) {
+                                            return (
+                                                <code className="px-1 bg-gray-700 rounded" {...props}>
+                                                    {children}
+                                                </code>
+                                            )
+                                        }
+                                        return <code className={className} {...props}>{children}</code>
+                                    },
+
+                                    pre({ node, children, ...props }) {
+                                        const [copied, setCopied] = useState(false)
+
+                                        function copyCodeBlock(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+                                            const codeBlock = e.currentTarget?.parentElement?.parentElement?.querySelector("pre")
+                                            navigator.clipboard.writeText(codeBlock?.textContent || "")
+                                            setCopied(true)
+                                            setTimeout(() => setCopied(false), 2000)
+                                        }
+
+                                        const childArray = React.Children.toArray(children)
+                                        const codeNode = childArray[0] as ReactElement<{ className?: string, children?: React.ReactNode }>
+
+                                        const className = codeNode?.props.className || ""
+                                        const languageMatch = /language-(\w+)/.exec(className)
+                                        const language = languageMatch ? languageMatch[1] : "code"
+
+                                        return (
+                                            <div className="rounded-lg overflow-hidden my-2">
+                                                <div className="flex items-center justify-between bg-gray-700 px-4 py-2">
+                                                    <p className="text-sm m-0">{language}</p>
+                                                    <button
+                                                        className="flex items-center gap-1 px-2 py-1 text-sm rounded bg-gray-600 hover:bg-gray-500"
+                                                        onClick={copyCodeBlock}
+                                                    >
+                                                        {copied ? <CheckIcon /> : <CopyIcon />}
+                                                        {copied ? "Copied" : "Copy"}
+                                                    </button>
+                                                </div>
+                                                <pre className="overflow-x-auto m-0" {...props}>
+                                                    {children}
+                                                </pre>
+                                            </div>
+                                        )
+                                    }
+                                }}
+                            />
+                        </div>
                     )}
                     <button
                         className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 active:bg-transparent rounded-lg transition-all duration-200 bg cursor-pointer"
@@ -105,48 +160,4 @@ export default function Messages({ webSocket, messages, setMessages }: {
             ))}
         </div>
     )
-}
-
-function createBotMessageHTML(message: string) {
-    const botMessageDiv = document.createElement("div")
-    botMessageDiv.innerHTML = message
-
-    const codehilites = botMessageDiv.querySelectorAll(".codehilite")
-    codehilites.forEach(codehilite => {
-        const codeBlockHeaderDiv = document.createElement("div")
-        codeBlockHeaderDiv.className = "code-block-header-div"
-
-        const codeBlockHeaderP = document.createElement("p")
-        codeBlockHeaderP.className = "code-block-header-p"
-        codeBlockHeaderP.textContent = codehilite.getAttribute("data-language") || "code"
-        codeBlockHeaderDiv.appendChild(codeBlockHeaderP)
-
-        const codeBlockHeaderButton = document.createElement("button")
-        codeBlockHeaderButton.className = "code-block-header-button"
-        codeBlockHeaderButton.textContent = "Copy"
-        codeBlockHeaderDiv.appendChild(codeBlockHeaderButton)
-
-        codehilite.insertBefore(codeBlockHeaderDiv, codehilite.childNodes[0])
-    })
-
-    return botMessageDiv.innerHTML
-}
-
-function addEventListenerToCodeBlockCopyButtons() {
-    const botMessageDivs = document.querySelectorAll(".bot-message")
-    botMessageDivs.forEach(botMessageDiv => {
-        const buttons = botMessageDiv.querySelectorAll(".code-block-header-button")
-        buttons.forEach(button => {
-            button.addEventListener("click", _ => {
-                const code = button.parentElement?.nextElementSibling?.textContent
-                if (code) {
-                    navigator.clipboard.writeText(code).then(_ => {
-                        const originalText = button.textContent
-                        button.textContent = "Copied!"
-                        setTimeout(() => { button.textContent = originalText }, 2000)
-                    })
-                }
-            })
-        })
-    })
 }

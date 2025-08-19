@@ -12,7 +12,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Chat, Message, MessageFile, User
 from .tasks import reset_non_complete_chats
-from .utils import markdown_to_html
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only = True)
@@ -43,9 +42,7 @@ class MessageSerializer(serializers.ModelSerializer):
         fields = ["text", "files", "is_user_message"]
 
     def get_text(self, obj):
-        if obj.is_user_message:
-            return obj.text
-        return markdown_to_html(obj.text)
+        return obj.text
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()

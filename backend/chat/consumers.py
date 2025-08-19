@@ -4,13 +4,11 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
-from django.utils.html import escape
 from jwt import decode as jwt_decode
 
 from .models import Chat, Message, MessageFile, User
 from .sample import Model
 from .tasks import create_generate_message_task, get_group_name, get_non_complete_chats, get_running_chat_task_for_chat, reset_non_complete_chats
-from .utils import markdown_to_html
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -182,9 +180,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         return get_group_name(self.chat)
 
     async def send_token(self, event):
-        await self.send_json({"token": escape(event["token"]), "message_index": event["message_index"]})
+        await self.send_json({"token": event["token"], "message_index": event["message_index"]})
 
     async def send_message(self, event):
-        await self.send_json({"message": markdown_to_html(event["message"]), "message_index": event["message_index"]})
+        await self.send_json({"message": event["message"], "message_index": event["message_index"]})
         if self.redirect:
             await self.send_json({"redirect": self.redirect})
