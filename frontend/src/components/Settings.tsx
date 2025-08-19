@@ -3,8 +3,20 @@ import { Dialog } from "radix-ui";
 import { deleteAccount, deleteChats } from "../utils/api";
 import { logout } from "../utils/auth";
 import ConfirmDialog from "./ConfirmDialog";
+import type { ReactNode } from "react";
 
 export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) {
+    const entryClasses = "bg-gray-900 rounded px-2 py-1 hover:bg-gray-700 active:bg-gray-900 transition-all duration-200 bg"
+
+    function Entry({ name, item }: { name: string, item: ReactNode }) {
+        return (
+            <div className="flex justify-between items-center border-b py-2">
+                <label>{name}</label>
+                {item}
+            </div>
+        )
+    }
+
     function handleDeleteChats() {
         deleteChats().then(status => {
             if (status === 200) {
@@ -63,53 +75,58 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                 </div>
 
                 <div className="flex flex-col border-t-2">
-                    <div className="flex justify-between items-center border-b py-2">
-                        <label>Theme</label>
-                        <select className="bg-gray-900 rounded p-1 outline-none hover:bg-gray-700 transition-all duration-200 bg" defaultValue="system">
-                            <option value="system">System</option>
-                            <option value="light">Light</option>
-                            <option value="dark">Dark</option>
-                        </select>
-                    </div>
-                    <div className="flex justify-between items-center border-b py-2">
-                        <label>Delete Chats</label>
-                        <ConfirmDialog
-                            trigger={
-                                <button className="bg-gray-900 rounded px-2 py-1 hover:bg-gray-700 active:bg-gray-900 transition-all duration-200 bg">
-                                    Delete all
-                                </button>
-                            }
-                            title="Delete Chats"
-                            description="Are you sure you want to delete all of your chats? This action cannot be undone."
-                            confirmText="Delete all"
-                            cancelText="Cancel"
-                            onConfirm={handleDeleteChats}
-                        />
-                    </div>
-                    <div className="flex justify-between items-center border-b py-2">
-                        <label>Delete Account</label>
-                        <ConfirmDialog
-                            trigger={
-                                <button className="bg-gray-900 rounded px-2 py-1 hover:bg-gray-700 active:bg-gray-900 transition-all duration-200 bg">
-                                    Delete
-                                </button>
-                            }
-                            title="Delete Account"
-                            description="Are you sure you want to delete your account? This action cannot be undone."
-                            confirmText="Delete Account"
-                            cancelText="Cancel"
-                            onConfirm={handleDeleteAccount}
-                        />
-                    </div>
-                    <div className="flex justify-between items-center border-b py-2">
-                        <label>Log out</label>
-                        <button
-                            className="bg-gray-900 rounded px-2 py-1 hover:bg-gray-700 active:bg-gray-900 transition-all duration-200 bg"
-                            onClick={handleLogout}
-                        >
-                            Log out
-                        </button>
-                    </div>
+                    <Entry
+                        name="Theme"
+                        item={
+                            <select className={entryClasses} defaultValue="system">
+                                <option value="system">System</option>
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                        }
+                    />
+                    <Entry
+                        name="Delete chats"
+                        item={
+                            <ConfirmDialog
+                                trigger={
+                                    <button className={entryClasses}>
+                                        Delete all
+                                    </button>
+                                }
+                                title="Delete Chats"
+                                description="Are you sure you want to delete all of your chats? This action cannot be undone."
+                                confirmText="Delete all"
+                                cancelText="Cancel"
+                                onConfirm={handleDeleteChats}
+                            />
+                        }
+                    />
+                    <Entry
+                        name="Delete account"
+                        item={
+                            <ConfirmDialog
+                                trigger={
+                                    <button className={entryClasses}>
+                                        Delete
+                                    </button>
+                                }
+                                title="Delete Account"
+                                description="Are you sure you want to delete your account? This action cannot be undone."
+                                confirmText="Delete Account"
+                                cancelText="Cancel"
+                                onConfirm={handleDeleteAccount}
+                            />
+                        }
+                    />
+                    <Entry
+                        name="Log out"
+                        item={
+                            <button className={entryClasses} onClick={handleLogout}>
+                                Log out
+                            </button>
+                        }
+                    />
                 </div>
             </Dialog.Content>
         </Dialog.Root>
