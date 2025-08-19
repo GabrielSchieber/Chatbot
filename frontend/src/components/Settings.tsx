@@ -1,4 +1,4 @@
-import { GearIcon } from "@radix-ui/react-icons";
+import { Cross1Icon, GearIcon } from "@radix-ui/react-icons";
 import { Dialog } from "radix-ui";
 import { deleteAccount, deleteChats } from "../utils/api";
 import { logout } from "../utils/auth";
@@ -55,15 +55,15 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                     <Dialog.Title className="text-lg font-semibold">Settings</Dialog.Title>
                     <Dialog.Close asChild>
                         <button
-                            className="px-2 py-1 pb-1.5 content-center justify-center hover:bg-gray-700 rounded-[30px] text-xl outline-none transition-all duration-200 bg"
+                            className="p-2 content-center justify-center hover:bg-gray-700 rounded-[30px] text-xl outline-none transition-all duration-200 bg"
                         >
-                            X
+                            <Cross1Icon className="scale-[1.2]" />
                         </button>
                     </Dialog.Close>
                 </div>
 
-                <div className="flex flex-col gap-5">
-                    <div className="flex justify-between items-center">
+                <div className="flex flex-col border-t-2">
+                    <div className="flex justify-between items-center border-b py-2">
                         <label>Theme</label>
                         <select className="bg-gray-900 rounded p-1 outline-none hover:bg-gray-700 transition-all duration-200 bg" defaultValue="system">
                             <option value="system">System</option>
@@ -71,7 +71,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                             <option value="dark">Dark</option>
                         </select>
                     </div>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center border-b py-2">
                         <label>Delete Chats</label>
                         <ConfirmDialog
                             trigger={
@@ -86,7 +86,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                             onConfirm={handleDeleteChats}
                         />
                     </div>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center border-b py-2">
                         <label>Delete Account</label>
                         <ConfirmDialog
                             trigger={
@@ -101,7 +101,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                             onConfirm={handleDeleteAccount}
                         />
                     </div>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center border-b py-2">
                         <label>Log out</label>
                         <button
                             className="bg-gray-900 rounded px-2 py-1 hover:bg-gray-700 active:bg-gray-900 transition-all duration-200 bg"
