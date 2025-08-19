@@ -8,6 +8,7 @@ import "highlight.js/styles/github-dark.css"
 
 import { getChats, getMessage, getMessages } from "../utils/api"
 import type { Message } from "../types"
+import { Tooltip } from "radix-ui"
 
 export default function Messages({ webSocket, messages, setMessages }: {
     webSocket: React.RefObject<WebSocket | null>
@@ -20,18 +21,29 @@ export default function Messages({ webSocket, messages, setMessages }: {
     const [isAnyChatIncomplete, setIsAnyChatIncomplete] = useState(false)
     const [generatingMessageIndex, setGeneratingMessageIndex] = useState(-1)
 
-    function MessageButton({ children, onClick, isDisabled = false }: { children: ReactNode, onClick: () => void, isDisabled?: boolean }) {
+    function MessageButton({ children, onClick, tooltip, isDisabled = false }: { children: ReactNode, onClick: () => void, tooltip: string, isDisabled?: boolean }) {
         return (
-            <button
-                className={`
-                    p-2 text-gray-400 rounded-lg transition-all duration-200 bg
-                    ${isDisabled ? "opacity-50" : "hover:text-gray-200 hover:bg-gray-700 cursor-pointer"}
-                `}
-                onClick={onClick}
-                disabled={isDisabled}
-            >
-                {children}
-            </button>
+            <Tooltip.Provider delayDuration={200}>
+                <Tooltip.Root>
+                    <Tooltip.Trigger asChild>
+                        <button
+                            className={`
+                                p-2 text-gray-400 rounded-lg transition-all duration-200 bg
+                                ${isDisabled ? "opacity-50" : "hover:text-gray-200 hover:bg-gray-700 cursor-pointer"}
+                            `}
+                            onClick={onClick}
+                            disabled={isDisabled}
+                        >
+                            {children}
+                        </button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Portal>
+                        <Tooltip.Content className="text-white text-sm bg-gray-800 px-2 py-1 rounded-xl" side="bottom" sideOffset={3}>
+                            {tooltip}
+                        </Tooltip.Content>
+                    </Tooltip.Portal>
+                </Tooltip.Root>
+            </Tooltip.Provider>
         )
     }
 
@@ -41,6 +53,7 @@ export default function Messages({ webSocket, messages, setMessages }: {
                 children={
                     copiedMessageIndex === index ? <CheckIcon className="scale-[1.5]" /> : <CopyIcon className="scale-[1.2]" />
                 }
+                tooltip="Copy"
                 onClick={() => copyMessage(message, index)}
             />
         )
@@ -52,6 +65,7 @@ export default function Messages({ webSocket, messages, setMessages }: {
                 children={
                     <UpdateIcon className="scale-[1.15]" />
                 }
+                tooltip="Regenerate"
                 onClick={() => regenerateMessage(index)}
                 isDisabled={isAnyChatIncomplete || generatingMessageIndex >= 0}
             />
