@@ -1,5 +1,5 @@
 import { CheckIcon, CopyIcon } from "@radix-ui/react-icons"
-import React, { type ReactElement, useEffect, useRef, useState } from "react"
+import React, { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -17,6 +17,28 @@ export default function Messages({ webSocket, messages, setMessages }: {
     const { chatUUID } = useParams()
     const shouldLoadMessages = useRef(true)
     const [copiedMessageIndex, setCopiedMessageIndex] = useState(-1)
+
+    function MessageButton({ children, onClick }: { children: ReactNode, onClick: () => void }) {
+        return (
+            <button
+                className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-lg transition-all duration-200 bg cursor-pointer"
+                onClick={onClick}
+            >
+                {children}
+            </button>
+        )
+    }
+
+    function CopyButton({ message, index }: { message: Message, index: number }) {
+        return (
+            <MessageButton
+                children={
+                    copiedMessageIndex === index ? <CheckIcon className="scale-[1.5]" /> : <CopyIcon className="scale-[1.2]" />
+                }
+                onClick={() => copyMessage(message, index)}
+            />
+        )
+    }
 
     function loadMessages() {
         if (shouldLoadMessages.current && chatUUID) {
@@ -37,7 +59,6 @@ export default function Messages({ webSocket, messages, setMessages }: {
 
             webSocket.current.addEventListener("message", event => {
                 const data = JSON.parse(event.data)
-
                 const message_index = data.message_index + 1
 
                 if (data.message) {
@@ -153,12 +174,14 @@ export default function Messages({ webSocket, messages, setMessages }: {
                             />
                         </div>
                     )}
-                    <button
-                        className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-lg transition-all duration-200 bg cursor-pointer"
-                        onClick={_ => copyMessage(message, index)}
-                    >
-                        {copiedMessageIndex === index ? <CheckIcon className="scale-[1.5]" /> : <CopyIcon className="scale-[1.2]" />}
-                    </button>
+
+                    <div className="flex gap-1">
+                        {message.is_user_message ? (
+                            <CopyButton message={message} index={index} />
+                        ) : (
+                            <CopyButton message={message} index={index} />
+                        )}
+                    </div>
                 </div>
             ))}
         </div>
