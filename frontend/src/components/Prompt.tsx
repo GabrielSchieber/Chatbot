@@ -146,7 +146,15 @@ export default function Prompt({ webSocket, setMessages }: {
                 ))}
             </div>
 
-            <div className="flex gap-2 w-full bg-gray-700 rounded-[30px] px-4 py-3 items-center">
+            <div
+                className="flex gap-2 w-full bg-gray-700 rounded-[30px] px-4 py-3 items-center cursor-text"
+                onClick={(e) => {
+                    if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
+                        return
+                    }
+                    textAreaRef.current?.focus()
+                }}
+            >
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger asChild>
                         <button className="hover:bg-gray-600 p-2.25 rounded-[20px] outline-none cursor-pointer self-end">
