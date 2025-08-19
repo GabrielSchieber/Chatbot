@@ -1,4 +1,4 @@
-import { CheckIcon, CopyIcon } from "@radix-ui/react-icons"
+import { CheckIcon, CopyIcon, UpdateIcon } from "@radix-ui/react-icons"
 import React, { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 import ReactMarkdown from "react-markdown"
@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 import "highlight.js/styles/github-dark.css"
 
-import { getMessage, getMessages } from "../utils/api"
+import { getChats, getMessage, getMessages } from "../utils/api"
 import type { Message } from "../types"
 
 export default function Messages({ webSocket, messages, setMessages }: {
@@ -17,12 +17,18 @@ export default function Messages({ webSocket, messages, setMessages }: {
     const { chatUUID } = useParams()
     const shouldLoadMessages = useRef(true)
     const [copiedMessageIndex, setCopiedMessageIndex] = useState(-1)
+    const [isAnyChatIncomplete, setIsAnyChatIncomplete] = useState(false)
+    const [generatingMessageIndex, setGeneratingMessageIndex] = useState(-1)
 
-    function MessageButton({ children, onClick }: { children: ReactNode, onClick: () => void }) {
+    function MessageButton({ children, onClick, isDisabled = false }: { children: ReactNode, onClick: () => void, isDisabled?: boolean }) {
         return (
             <button
-                className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-lg transition-all duration-200 bg cursor-pointer"
+                className={`
+                    p-2 text-gray-400 rounded-lg transition-all duration-200 bg
+                    ${isDisabled ? "opacity-50" : "hover:text-gray-200 hover:bg-gray-700 cursor-pointer"}
+                `}
                 onClick={onClick}
+                disabled={isDisabled}
             >
                 {children}
             </button>
@@ -36,6 +42,18 @@ export default function Messages({ webSocket, messages, setMessages }: {
                     copiedMessageIndex === index ? <CheckIcon className="scale-[1.5]" /> : <CopyIcon className="scale-[1.2]" />
                 }
                 onClick={() => copyMessage(message, index)}
+            />
+        )
+    }
+
+    function RegenerateButton({ index }: { index: number }) {
+        return (
+            <MessageButton
+                children={
+                    <UpdateIcon className="scale-[1.15]" />
+                }
+                onClick={() => regenerateMessage(index)}
+                isDisabled={isAnyChatIncomplete || generatingMessageIndex >= 0}
             />
         )
     }
@@ -59,6 +77,11 @@ export default function Messages({ webSocket, messages, setMessages }: {
 
             webSocket.current.addEventListener("message", event => {
                 const data = JSON.parse(event.data)
+
+                if (data.generating_message_index) {
+                    setGeneratingMessageIndex(data.generating_message_index)
+                }
+
                 const message_index = data.message_index + 1
 
                 if (data.message) {
@@ -67,6 +90,8 @@ export default function Messages({ webSocket, messages, setMessages }: {
                         messages[message_index] = { text: data.message, files: [], is_user_message: false }
                         return messages
                     })
+                    setGeneratingMessageIndex(-1)
+                    setIsAnyChatIncomplete(false)
                 } else if (data.token) {
                     setMessages(previous => {
                         let messages = [...previous]
@@ -100,9 +125,22 @@ export default function Messages({ webSocket, messages, setMessages }: {
         setTimeout(() => setCopiedMessageIndex(-1), 2000)
     }
 
+    function regenerateMessage(index: number) {
+        if (webSocket.current) {
+            webSocket.current.send(JSON.stringify({ "action": "regenerate_message", message_index: index }))
+            setGeneratingMessageIndex(index)
+            setMessages(previous => {
+                const messages = [...previous]
+                messages[index].text = ""
+                return messages
+            })
+        }
+    }
+
     useEffect(() => {
         loadMessages()
         receiveMessage()
+        getChats(true).then(chats => chats.length > 0 ? setIsAnyChatIncomplete(true) : setIsAnyChatIncomplete(false))
     }, [])
 
     return (
@@ -179,7 +217,10 @@ export default function Messages({ webSocket, messages, setMessages }: {
                         {message.is_user_message ? (
                             <CopyButton message={message} index={index} />
                         ) : (
-                            <CopyButton message={message} index={index} />
+                            <>
+                                <CopyButton message={message} index={index} />
+                                <RegenerateButton index={index} />
+                            </>
                         )}
                     </div>
                 </div>
