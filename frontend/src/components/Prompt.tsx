@@ -171,8 +171,8 @@ export default function Prompt({ webSocket, setMessages }: {
             >
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger asChild>
-                        <button className="hover:bg-gray-600 p-2.25 rounded-[20px] outline-none cursor-pointer self-end">
-                            <PlusIcon className="scale-[1.5]" />
+                        <button className="hover:bg-gray-600 p-1.5 rounded-[20px] outline-none cursor-pointer self-end">
+                            <PlusIcon className="size-6" />
                         </button>
                     </DropdownMenu.Trigger>
                     <DropdownMenu.Content className="flex flex-col bg-gray-600 p-2 rounded-xl translate-x-7 -translate-y-2">
@@ -234,10 +234,10 @@ export default function Prompt({ webSocket, setMessages }: {
                 />
                 {prompt.trim() &&
                     <button
-                        className="bg-blue-700 hover:bg-blue-600 active:bg-blue-700 rounded-[25px] p-2 self-end"
+                        className="bg-blue-700 hover:bg-blue-600 active:bg-blue-700 rounded-[25px] p-1.5 self-end"
                         onClick={sendMessage}
                     >
-                        <ArrowUpIcon className="scale-[1.5]" />
+                        <ArrowUpIcon className="size-6" />
                     </button>
                 }
             </div>

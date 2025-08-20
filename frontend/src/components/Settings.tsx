@@ -69,7 +69,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                         <button
                             className="p-2 content-center justify-center hover:bg-gray-700 rounded-[30px] text-xl outline-none transition-all duration-200 bg"
                         >
-                            <Cross1Icon className="scale-[1.2]" />
+                            <Cross1Icon className="size-5" />
                         </button>
                     </Dialog.Close>
                 </div>

@@ -51,7 +51,7 @@ export default function Messages({ webSocket, messages, setMessages }: {
         return (
             <MessageButton
                 children={
-                    copiedMessageIndex === index ? <CheckIcon className="scale-[1.5]" /> : <CopyIcon className="scale-[1.2]" />
+                    copiedMessageIndex === index ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />
                 }
                 tooltip="Copy"
                 onClick={() => copyMessage(message, index)}
@@ -63,7 +63,7 @@ export default function Messages({ webSocket, messages, setMessages }: {
         return (
             <MessageButton
                 children={
-                    <UpdateIcon className="scale-[1.15]" />
+                    <UpdateIcon className="size-4.5" />
                 }
                 tooltip="Regenerate"
                 onClick={() => regenerateMessage(index)}
@@ -212,7 +212,7 @@ export default function Messages({ webSocket, messages, setMessages }: {
                                                         className="flex items-center gap-1 px-2 py-[2px] text-xs rounded bg-gray-600 hover:bg-gray-500"
                                                         onClick={copyCodeBlock}
                                                     >
-                                                        {copied ? <CheckIcon className="scale-[1.3]" /> : <CopyIcon />}
+                                                        {copied ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />}
                                                         {copied ? "Copied" : "Copy"}
                                                     </button>
                                                 </div>
