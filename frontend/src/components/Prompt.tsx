@@ -19,9 +19,59 @@ export default function Prompt({ webSocket, setMessages }: {
 
     function GeneratingMessageNotification({ title, uuid, }: { title: string, uuid: string }) {
         return (
-            <div className="bg-gray-700 px-4 py-2 rounded-xl">
+            <div className="px-4 py-2 rounded-xl bg-gray-700 light:bg-gray-300">
                 A message is already being generated in <a className="underline" href={`/chat/${uuid}`}>{title}</a>
             </div>
+        )
+    }
+
+    function AddDropdown() {
+        const buttonClassNames = "flex gap-2 px-2 py-1 items-center outline-none rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-100"
+        const itemClassNames = "px-2 py-1 outline-none rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-200"
+        const selectedItemClassNames = itemClassNames + " bg-gray-500 light:bg-gray-100"
+
+        return (
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                    <button className="hover:bg-gray-600 light:hover:bg-gray-200 p-1.5 rounded-[20px] outline-none cursor-pointer self-end">
+                        <PlusIcon className="size-6" />
+                    </button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content className="flex flex-col bg-gray-700 light:bg-gray-300 p-2 rounded-xl translate-x-7 -translate-y-2 shadow-xl">
+                    <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild>
+                            <button className={buttonClassNames}>
+                                <BoxModelIcon /> Model <ChevronRightIcon />
+                            </button>
+                        </DropdownMenu.Trigger>
+
+                        <DropdownMenu.Content className="bg-gray-700 light:bg-gray-300 p-2 translate-x-2 -translate-y-8 rounded-xl" side="right">
+                            <DropdownMenu.Item
+                                className={model === "SmolLM2-135M" ? selectedItemClassNames : itemClassNames}
+                                onSelect={_ => setModel("SmolLM2-135M")}
+                            >
+                                SmolLM2-135M
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                                className={model === "SmolLM2-360M" ? selectedItemClassNames : itemClassNames}
+                                onSelect={_ => setModel("SmolLM2-360M")}
+                            >
+                                SmolLM2-360M
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                                className={model === "SmolLM2-1.7B" ? selectedItemClassNames : itemClassNames}
+                                onSelect={_ => setModel("SmolLM2-1.7B")}
+                            >
+                                SmolLM2-1.7B
+                            </DropdownMenu.Item>
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Root>
+
+                    <DropdownMenu.Item className={buttonClassNames} onSelect={handleFileClick}>
+                        <UploadIcon /> Add files
+                    </DropdownMenu.Item>
+                </DropdownMenu.Content>
+            </DropdownMenu.Root>
         )
     }
 
@@ -139,17 +189,19 @@ export default function Prompt({ webSocket, setMessages }: {
 
             <div
                 className={`
-                    flex flex-col gap-2 bg-gray-800 p-3 rounded-xl shadow-md transform transition-all duration-300 origin-bottom
+                    flex flex-col gap-2 bg-gray-800 light:bg-gray-200 p-3 rounded-xl shadow-md transform transition-all duration-300 origin-bottom
                     ${visibleFiles.length > 0 ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none h-0 p-0"}
                 `}
             >
                 {visibleFiles.map(file => (
                     <div
                         key={file.id}
-                        className={`flex justify-between items-center bg-gray-700 px-3 py-1 rounded-lg transition-all duration-300
-                    ${file.isRemoving ? "opacity-0 translate-x-4" : "opacity-100 translate-x-0"}`}
+                        className={`
+                            flex justify-between items-center bg-gray-700 light:bg-gray-300 px-3 py-1 rounded-lg
+                            transition-all duration-300 ${file.isRemoving ? "opacity-0 translate-x-4" : "opacity-100 translate-x-0"}
+                        `}
                     >
-                        <span className="text-sm text-white truncate">{file.file.name}</span>
+                        <span className="text-sm truncate">{file.file.name}</span>
                         <button
                             className="text-red-400 hover:text-red-500 ml-2"
                             onClick={() => removeFile(file.id)}
@@ -161,7 +213,10 @@ export default function Prompt({ webSocket, setMessages }: {
             </div>
 
             <div
-                className="flex gap-2 w-full bg-gray-700 rounded-[30px] px-4 py-3 items-center cursor-text"
+                className="
+                    flex gap-2 w-full px-4 py-3 items-center rounded-[30px] cursor-text shadow-xl/50
+                    border-t-4 border-gray-600 light:border-gray-400 bg-gray-700 light:bg-gray-300
+                "
                 onClick={e => {
                     if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
                         return
@@ -169,49 +224,7 @@ export default function Prompt({ webSocket, setMessages }: {
                     textAreaRef.current?.focus()
                 }}
             >
-                <DropdownMenu.Root>
-                    <DropdownMenu.Trigger asChild>
-                        <button className="hover:bg-gray-600 p-1.5 rounded-[20px] outline-none cursor-pointer self-end">
-                            <PlusIcon className="size-6" />
-                        </button>
-                    </DropdownMenu.Trigger>
-                    <DropdownMenu.Content className="flex flex-col bg-gray-600 p-2 rounded-xl translate-x-7 -translate-y-2">
-                        <DropdownMenu.Root>
-                            <DropdownMenu.Trigger asChild>
-                                <button className="flex items-center gap-2 hover:bg-gray-700 outline-none px-2 py-1 rounded cursor-pointer">
-                                    <BoxModelIcon /> Model <ChevronRightIcon />
-                                </button>
-                            </DropdownMenu.Trigger>
-
-                            <DropdownMenu.Content className="bg-gray-700 p-2 translate-x-2 -translate-y-8 rounded-xl" side="right">
-                                <DropdownMenu.Item
-                                    className={`hover:bg-gray-600 outline-none px-2 py-1 rounded cursor-pointer ${model === "SmolLM2-135M" && "bg-gray-800"}`}
-                                    onSelect={_ => setModel("SmolLM2-135M")}
-                                >
-                                    SmolLM2-135M
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Item
-                                    className={`hover:bg-gray-600 outline-none px-2 py-1 rounded cursor-pointer ${model === "SmolLM2-360M" && "bg-gray-800"}`}
-                                    onSelect={_ => setModel("SmolLM2-360M")}
-                                >
-                                    SmolLM2-360M
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Item
-                                    className={`hover:bg-gray-600 outline-none px-2 py-1 rounded cursor-pointer ${model === "SmolLM2-1.7B" && "bg-gray-800"}`}
-                                    onSelect={_ => setModel("SmolLM2-1.7B")}
-                                >
-                                    SmolLM2-1.7B
-                                </DropdownMenu.Item>
-                            </DropdownMenu.Content>
-                        </DropdownMenu.Root>
-
-                        <DropdownMenu.Item
-                            className="flex items-center gap-2 hover:bg-gray-700 outline-none px-2 py-1 rounded cursor-pointer"
-                            onSelect={handleFileClick}>
-                            <UploadIcon /> Add files
-                        </DropdownMenu.Item>
-                    </DropdownMenu.Content>
-                </DropdownMenu.Root>
+                <AddDropdown />
 
                 <input
                     type="file"
@@ -222,7 +235,7 @@ export default function Prompt({ webSocket, setMessages }: {
                 />
 
                 <textarea
-                    className="flex-1 resize-none text-white outline-none px-2"
+                    className="flex-1 resize-none outline-none px-2"
                     value={prompt}
                     placeholder="Ask me anything..."
                     rows={1}
@@ -234,10 +247,10 @@ export default function Prompt({ webSocket, setMessages }: {
                 />
                 {prompt.trim() &&
                     <button
-                        className="bg-blue-700 hover:bg-blue-600 active:bg-blue-700 rounded-[25px] p-1.5 self-end"
+                        className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end"
                         onClick={sendMessage}
                     >
-                        <ArrowUpIcon className="size-6" />
+                        <ArrowUpIcon className="size-6 text-white" />
                     </button>
                 }
             </div>
