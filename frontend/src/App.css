@@ -7,3 +7,5 @@
 * {
     scrollbar-color: var(--scrollbar-color) transparent;
 }
+
+@custom-variant light (&:where(.light, .light *));

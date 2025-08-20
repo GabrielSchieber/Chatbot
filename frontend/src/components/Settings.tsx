@@ -1,13 +1,16 @@
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon, Cross1Icon, GearIcon } from "@radix-ui/react-icons";
-import { Dialog, Select } from "radix-ui";
-import { type ReactNode } from "react";
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon, Cross1Icon, GearIcon } from "@radix-ui/react-icons"
+import { Dialog, Select } from "radix-ui"
+import { type ReactNode } from "react"
 
-import ConfirmDialog from "./ConfirmDialog";
-import { deleteAccount, deleteChats } from "../utils/api";
-import { logout } from "../utils/auth";
+import ConfirmDialog from "./ConfirmDialog"
+import { deleteAccount, deleteChats } from "../utils/api"
+import { logout } from "../utils/auth"
+import { useTheme } from "../context/ThemeProvider"
 
 export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) {
-    const entryClasses = "px-2 py-1 rounded-lg border border-gray-500 hover:bg-gray-600"
+    const { theme, setTheme } = useTheme()
+
+    const entryClasses = "px-2 py-1 rounded-lg border border-gray-200 hover:bg-gray-600 light:border-gray-800 light:hover:bg-gray-400"
     const destructiveEntryClasses = entryClasses + " text-red-500"
 
     function Entry({ name, item }: { name: string, item: ReactNode }) {
@@ -20,10 +23,10 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
     }
 
     function ThemeSelect() {
-        const itemClasses = "flex items-center px-2 py-1 rounded cursor-pointer hover:bg-gray-500"
+        const itemClasses = "flex items-center px-2 py-1 rounded cursor-pointer hover:bg-gray-500 light:hover:bg-gray-300"
 
         return (
-            <Select.Root defaultValue="system">
+            <Select.Root value={theme} onValueChange={setTheme}>
                 <Select.Trigger
                     className={entryClasses + " inline-flex items-center justify-between w-30"}
                     aria-label="Theme"
@@ -35,7 +38,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                 </Select.Trigger>
 
                 <Select.Portal>
-                    <Select.Content className="overflow-hidden bg-gray-600 rounded-md shadow-lg text-white">
+                    <Select.Content className="overflow-hidden rounded-md shadow-lg text-white bg-gray-600 light:text-black light:bg-gray-200">
                         <Select.ScrollUpButton>
                             <ChevronUpIcon />
                         </Select.ScrollUpButton>
@@ -64,7 +67,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                         </Select.ScrollDownButton>
                     </Select.Content>
                 </Select.Portal>
-            </Select.Root >
+            </Select.Root>
         )
     }
 
@@ -112,14 +115,15 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
             <Dialog.Overlay className="fixed inset-0 bg-black/60" />
 
             <Dialog.Content
-                className="fixed flex flex-col gap-5 top-1/2 left-1/2 w-[400px] -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white rounded-2xl shadow-lg p-6"
+                className="
+                    fixed flex flex-col gap-5 w-100 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                    p-6 rounded-xl bg-gray-800 light:bg-gray-300 light:text-black
+                "
             >
                 <div className="flex justify-between items-center">
                     <Dialog.Title className="text-lg font-semibold">Settings</Dialog.Title>
                     <Dialog.Close asChild>
-                        <button
-                            className="p-2 content-center justify-center hover:bg-gray-700 rounded-[30px] text-xl outline-none transition-all duration-200 bg"
-                        >
+                        <button className="p-2 rounded-3xl outline-none hover:bg-gray-700 light:hover:bg-gray-200">
                             <Cross1Icon className="size-5" />
                         </button>
                     </Dialog.Close>

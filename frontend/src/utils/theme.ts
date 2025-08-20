@@ -15,26 +15,9 @@ export function applyTheme(theme: Theme) {
 
     root.classList.remove("light", "dark")
 
-    if (theme === "light") root.classList.add("light")
-    else if (theme === "dark") root.classList.add("dark")
-
-    updateCodeTheme(theme)
-}
-
-function updateCodeTheme(theme: Theme) {
-    let link = document.getElementById("code-block-theme-link") as HTMLLinkElement
-    if (!link) {
-        link = document.createElement("link")
-        link.id = "code-block-theme-link"
-        link.rel = "stylesheet"
-        document.head.appendChild(link)
+    if (theme === "system") {
+        root.classList.add(matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    } else {
+        root.classList.add(theme)
     }
-    link.href =
-        theme === "light"
-            ? "/code_light.css"
-            : theme === "dark"
-                ? "/code_dark.css"
-                : matchMedia("(prefers-color-scheme: dark)").matches
-                    ? "/code_dark.css"
-                    : "/code_light.css"
 }
