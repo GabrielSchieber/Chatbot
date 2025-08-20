@@ -55,7 +55,10 @@ export default function History({ chats, setChats }: {
             {chats.map(chat => (
                 <div
                     key={chat.uuid}
-                    className={`flex group px-2 py-1 justify-between rounded hover:bg-gray-600 ${(chatUUID === chat.uuid || renameChatUUID === chat.uuid) && "bg-gray-700"}`}
+                    className={`
+                        flex group px-2 py-1 justify-between rounded hover:bg-gray-700 light:hover:bg-gray-300
+                        ${(chatUUID === chat.uuid || renameChatUUID === chat.uuid) && "bg-gray-600 light:bg-gray-400"}
+                    `}
                 >
                     {renameChatUUID === chat.uuid ? (
                         <input
@@ -78,12 +81,12 @@ export default function History({ chats, setChats }: {
 
                     <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild>
-                            <button className="hover:bg-gray-600 outline-none rounded">
+                            <button className="hover:bg-gray-600 light:hover:bg-gray-400 outline-none rounded">
                                 <DotsVerticalIcon />
                             </button>
                         </DropdownMenu.Trigger>
 
-                        <DropdownMenu.Content className="bg-gray-700 p-2 rounded shadow-xl/30">
+                        <DropdownMenu.Content className="bg-gray-700 light:bg-gray-300 p-2 rounded shadow-xl/30">
                             <DropdownMenu.Item
                                 className="p-2 text-center outline-none rounded hover:bg-gray-500/50"
                                 onSelect={_ => startRename(chat)}
