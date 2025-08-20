@@ -154,7 +154,7 @@ export default function Messages({ webSocket, messages, setMessages }: {
     }, [])
 
     return (
-        <div className="flex-1 overflow-y-auto w-full">
+        <div className="flex-1 overflow-y-auto w-full pt-10 pb-25">
             {messages.map((message, index) => (
                 <div
                     key={index}

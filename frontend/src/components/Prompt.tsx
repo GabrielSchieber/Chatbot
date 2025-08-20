@@ -184,12 +184,12 @@ export default function Prompt({ webSocket, setMessages }: {
     }
 
     return (
-        <div className="flex flex-col w-[50vw] p-4 self-center">
+        <div className="absolute bottom-0 flex flex-col w-[50vw] pb-4 self-center">
             {inProgressChat && <GeneratingMessageNotification title={inProgressChat.title} uuid={inProgressChat.uuid} />}
 
             <div
                 className={`
-                    flex flex-col gap-2 bg-gray-800 light:bg-gray-200 p-3 rounded-xl shadow-md transform transition-all duration-300 origin-bottom
+                    flex flex-col gap-2 bg-gray-800 light:bg-gray-200 rounded-xl shadow-md transform transition-all duration-300 origin-bottom
                     ${visibleFiles.length > 0 ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none h-0 p-0"}
                 `}
             >
