@@ -4,7 +4,6 @@ import { useParams } from "react-router"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
-import "highlight.js/styles/github-dark.css"
 
 import { getChats, getMessage, getMessages } from "../utils/api"
 import type { Message } from "../types"
@@ -27,10 +26,7 @@ export default function Messages({ webSocket, messages, setMessages }: {
                 <Tooltip.Root>
                     <Tooltip.Trigger asChild>
                         <button
-                            className={`
-                                p-2 text-gray-400 rounded-lg transition-all duration-200 bg
-                                ${isDisabled ? "opacity-50" : "hover:text-gray-200 hover:bg-gray-700 cursor-pointer"}
-                            `}
+                            className={`p-2 rounded-lg hover:bg-gray-700 light:hover:bg-gray-300 ${isDisabled ? "opacity-50" : "cursor-pointer"}`}
                             onClick={onClick}
                             disabled={isDisabled}
                         >
@@ -38,7 +34,7 @@ export default function Messages({ webSocket, messages, setMessages }: {
                         </button>
                     </Tooltip.Trigger>
                     <Tooltip.Portal>
-                        <Tooltip.Content className="text-white text-sm bg-gray-800 px-2 py-1 rounded-xl" side="bottom" sideOffset={3}>
+                        <Tooltip.Content className="text-white text-sm bg-black px-2 py-1 rounded-xl" side="bottom" sideOffset={3}>
                             {tooltip}
                         </Tooltip.Content>
                     </Tooltip.Portal>
@@ -165,11 +161,11 @@ export default function Messages({ webSocket, messages, setMessages }: {
                     className={`flex flex-col w-[50vw] justify-self-center ${message.is_user_message ? "items-end" : "items-start"} gap-2`}
                 >
                     {message.is_user_message ? (
-                        <div className="px-3 py-2 rounded-2xl max-w-[80%] whitespace-pre-wrap bg-gray-700 text-white">
+                        <div className="px-3 py-2 rounded-2xl max-w-[80%] whitespace-pre-wrap bg-gray-700 light:bg-gray-300">
                             {message.text}
                         </div>
                     ) : (
-                        <div className="w-full whitespace-pre-wrap text-gray-300">
+                        <div className="w-full whitespace-pre-wrap">
                             <ReactMarkdown
                                 children={message.text}
                                 remarkPlugins={[remarkGfm]}
@@ -179,7 +175,7 @@ export default function Messages({ webSocket, messages, setMessages }: {
                                         const isInline = !className
                                         if (isInline) {
                                             return (
-                                                <code className="px-1 bg-gray-700 rounded" {...props}>
+                                                <code className="px-1 bg-gray-700 light:bg-gray-300 rounded" {...props}>
                                                     {children}
                                                 </code>
                                             )
@@ -206,10 +202,13 @@ export default function Messages({ webSocket, messages, setMessages }: {
 
                                         return (
                                             <div className="rounded-lg overflow-hidden my-2">
-                                                <div className="flex items-center justify-between bg-gray-700 px-4 py-1">
+                                                <div className="flex items-center justify-between bg-gray-700 light:bg-gray-300 px-4 py-1">
                                                     <p className="text-sm m-0">{language}</p>
                                                     <button
-                                                        className="flex items-center gap-1 px-2 py-[2px] text-xs rounded bg-gray-600 hover:bg-gray-500"
+                                                        className="
+                                                            flex items-center gap-1 px-2 py-[2px] text-xs cursor-pointer
+                                                            rounded hover:bg-gray-800 light:hover:bg-gray-200
+                                                        "
                                                         onClick={copyCodeBlock}
                                                     >
                                                         {copied ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />}
