@@ -1,12 +1,14 @@
-import { Cross1Icon, GearIcon } from "@radix-ui/react-icons";
-import { Dialog } from "radix-ui";
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon, Cross1Icon, GearIcon } from "@radix-ui/react-icons";
+import { Dialog, Select } from "radix-ui";
+import { type ReactNode } from "react";
+
+import ConfirmDialog from "./ConfirmDialog";
 import { deleteAccount, deleteChats } from "../utils/api";
 import { logout } from "../utils/auth";
-import ConfirmDialog from "./ConfirmDialog";
-import type { ReactNode } from "react";
 
 export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) {
-    const entryClasses = "bg-gray-900 rounded px-2 py-1 hover:bg-gray-700 active:bg-gray-900 transition-all duration-200 bg"
+    const entryClasses = "px-2 py-1 rounded-lg border border-gray-500 hover:bg-gray-600"
+    const destructiveEntryClasses = entryClasses + " text-red-500"
 
     function Entry({ name, item }: { name: string, item: ReactNode }) {
         return (
@@ -14,6 +16,55 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                 <label>{name}</label>
                 {item}
             </div>
+        )
+    }
+
+    function ThemeSelect() {
+        const itemClasses = "flex items-center px-2 py-1 rounded cursor-pointer hover:bg-gray-500"
+
+        return (
+            <Select.Root defaultValue="system">
+                <Select.Trigger
+                    className={entryClasses + " inline-flex items-center justify-between w-30"}
+                    aria-label="Theme"
+                >
+                    <Select.Value placeholder="Select theme…" />
+                    <Select.Icon>
+                        <ChevronDownIcon />
+                    </Select.Icon>
+                </Select.Trigger>
+
+                <Select.Portal>
+                    <Select.Content className="overflow-hidden bg-gray-600 rounded-md shadow-lg text-white">
+                        <Select.ScrollUpButton>
+                            <ChevronUpIcon />
+                        </Select.ScrollUpButton>
+                        <Select.Viewport className="p-1">
+                            <Select.Item value="system" className={itemClasses}>
+                                <Select.ItemText>System</Select.ItemText>
+                                <Select.ItemIndicator className="ml-auto">
+                                    <CheckIcon />
+                                </Select.ItemIndicator>
+                            </Select.Item>
+                            <Select.Item value="light" className={itemClasses}>
+                                <Select.ItemText>Light</Select.ItemText>
+                                <Select.ItemIndicator className="ml-auto">
+                                    <CheckIcon />
+                                </Select.ItemIndicator>
+                            </Select.Item>
+                            <Select.Item value="dark" className={itemClasses}>
+                                <Select.ItemText>Dark</Select.ItemText>
+                                <Select.ItemIndicator className="ml-auto">
+                                    <CheckIcon />
+                                </Select.ItemIndicator>
+                            </Select.Item>
+                        </Select.Viewport>
+                        <Select.ScrollDownButton>
+                            <ChevronDownIcon />
+                        </Select.ScrollDownButton>
+                    </Select.Content>
+                </Select.Portal>
+            </Select.Root >
         )
     }
 
@@ -75,22 +126,13 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                 </div>
 
                 <div className="flex flex-col border-t-2">
-                    <Entry
-                        name="Theme"
-                        item={
-                            <select className={entryClasses} defaultValue="system">
-                                <option value="system">System</option>
-                                <option value="light">Light</option>
-                                <option value="dark">Dark</option>
-                            </select>
-                        }
-                    />
+                    <Entry name="Theme" item={ThemeSelect()} />
                     <Entry
                         name="Delete chats"
                         item={
                             <ConfirmDialog
                                 trigger={
-                                    <button className={entryClasses}>
+                                    <button className={destructiveEntryClasses}>
                                         Delete all
                                     </button>
                                 }
@@ -107,7 +149,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                         item={
                             <ConfirmDialog
                                 trigger={
-                                    <button className={entryClasses}>
+                                    <button className={destructiveEntryClasses}>
                                         Delete
                                     </button>
                                 }
