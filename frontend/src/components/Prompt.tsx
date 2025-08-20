@@ -1,7 +1,7 @@
 import { ArrowUpIcon, BoxModelIcon, ChevronRightIcon, Cross2Icon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
 import { getChats, uploadFiles } from "../utils/api"
 import { useRef, useState } from "react"
-import type { Model, Message, UIAttachment } from "../types"
+import type { Model, Message, UIAttachment, Chat } from "../types"
 import { DropdownMenu } from "radix-ui"
 
 export default function Prompt({ webSocket, setMessages }: {
@@ -15,6 +15,15 @@ export default function Prompt({ webSocket, setMessages }: {
     const [model, setModel] = useState<Model>("SmolLM2-135M")
     const [currentFiles, setCurrentFiles] = useState<File[]>([])
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
+    const [inProgressChat, setInProgressChat] = useState<Chat | null>(null)
+
+    function GeneratingMessageNotification({ title, uuid, }: { title: string, uuid: string }) {
+        return (
+            <div className="bg-gray-700 px-4 py-2 rounded-xl">
+                A message is already being generated in <a className="underline" href={`/chat/${uuid}`}>{title}</a>
+            </div>
+        )
+    }
 
     function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
         setPrompt(e.target.value)
@@ -51,7 +60,8 @@ export default function Prompt({ webSocket, setMessages }: {
                     }
                 }
             } else {
-                alert("A chat is already in progress")
+                setInProgressChat(chats[0])
+                setTimeout(() => setInProgressChat(null), 2000)
             }
         })
     }
@@ -125,9 +135,13 @@ export default function Prompt({ webSocket, setMessages }: {
 
     return (
         <div className="flex flex-col w-[50vw] p-4 self-center">
+            {inProgressChat && <GeneratingMessageNotification title={inProgressChat.title} uuid={inProgressChat.uuid} />}
+
             <div
-                className={`flex flex-col gap-2 bg-gray-800 p-3 rounded-xl shadow-md transform transition-all duration-300 origin-bottom
-            ${visibleFiles.length > 0 ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none h-0 p-0"}`}
+                className={`
+                    flex flex-col gap-2 bg-gray-800 p-3 rounded-xl shadow-md transform transition-all duration-300 origin-bottom
+                    ${visibleFiles.length > 0 ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none h-0 p-0"}
+                `}
             >
                 {visibleFiles.map(file => (
                     <div
@@ -148,7 +162,7 @@ export default function Prompt({ webSocket, setMessages }: {
 
             <div
                 className="flex gap-2 w-full bg-gray-700 rounded-[30px] px-4 py-3 items-center cursor-text"
-                onClick={(e) => {
+                onClick={e => {
                     if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
                         return
                     }
