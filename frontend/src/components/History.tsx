@@ -83,13 +83,16 @@ export default function History({ chats, setChats }: {
                             </button>
                         </DropdownMenu.Trigger>
 
-                        <DropdownMenu.Content className="bg-gray-600 p-2 rounded">
-                            <DropdownMenu.Item className="hover:bg-gray-700 p-2 text-center outline-none rounded" onSelect={_ => startRename(chat)}>
+                        <DropdownMenu.Content className="bg-gray-700 p-2 rounded shadow-xl/30">
+                            <DropdownMenu.Item
+                                className="p-2 text-center outline-none rounded hover:bg-gray-500/50"
+                                onSelect={_ => startRename(chat)}
+                            >
                                 Rename
                             </DropdownMenu.Item>
                             <ConfirmDialog
                                 trigger={
-                                    <button className="w-full text-center hover:bg-gray-700 p-2 outline-none rounded">
+                                    <button className="p-2 text-center outline-none rounded w-full hover:bg-red-400/40 text-red-400">
                                         Delete
                                     </button>
                                 }
