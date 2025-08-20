@@ -21,10 +21,10 @@ export default function Sidebar() {
     useEffect(() => loadChats(), [])
 
     return (
-        <div className={`flex flex-col bg-gray-800 p-2 transition-all duration-300 justify-between ${isSidebarOpen ? "w-[250px]" : "w-[50px]"}`}>
+        <div className={`flex flex-col p-2 bg-gray-800 light:bg-gray-200 transition-all duration-300 justify-between ${isSidebarOpen ? "w-[250px]" : "w-[50px]"}`}>
             <div className={`flex flex-col gap-2 pb-2 border-b border-gray-700 ${!isSidebarOpen && "items-center"}`}>
                 <button
-                    className="flex items-center gap-2 p-2 rounded hover:bg-gray-700 outline-none"
+                    className="flex items-center gap-2 p-2 rounded outline-none hover:bg-gray-700 light:hover:bg-gray-300"
                     onClick={_ => setIsSidebarOpen(!isSidebarOpen)}
                 >
                     {isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
@@ -32,7 +32,7 @@ export default function Sidebar() {
                 </button>
 
                 <a
-                    className="flex items-center gap-2 p-2 rounded hover:bg-gray-700"
+                    className="flex items-center gap-2 p-2 rounded hover:bg-gray-700 light:hover:bg-gray-300"
                     href="/"
                 >
                     <PlusIcon />
