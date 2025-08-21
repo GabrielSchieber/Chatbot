@@ -125,10 +125,8 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
             >
                 <div className="flex justify-between items-center">
                     <Dialog.Title className="text-lg font-semibold">Settings</Dialog.Title>
-                    <Dialog.Close asChild>
-                        <button className="p-2 rounded-3xl outline-none hover:bg-gray-700 light:hover:bg-gray-200">
-                            <Cross1Icon className="size-5" />
-                        </button>
+                    <Dialog.Close className="p-2 rounded-3xl hover:bg-gray-700 light:hover:bg-gray-200">
+                        <Cross1Icon className="size-5" />
                     </Dialog.Close>
                 </div>
 

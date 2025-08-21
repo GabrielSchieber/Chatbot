@@ -1,4 +1,4 @@
-import { MagnifyingGlassIcon } from "@radix-ui/react-icons"
+import { Cross1Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons"
 import { Dialog } from "radix-ui"
 import type { Chat, SearchEntry } from "../types"
 import { searchChats } from "../utils/api"
@@ -42,10 +42,8 @@ export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolea
                         onInput={e => search(e.currentTarget.value)}
                         autoFocus
                     />
-                    <Dialog.Close asChild>
-                        <button className="px-3 py-1 hover:bg-gray-700 light:hover:bg-gray-300 rounded text-lg rounded-[25px]">
-                            X
-                        </button>
+                    <Dialog.Close className="p-1 rounded-3xl hover:bg-gray-700">
+                        <Cross1Icon className="size-4" />
                     </Dialog.Close>
                 </div>
 
