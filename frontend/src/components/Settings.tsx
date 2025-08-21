@@ -38,7 +38,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                 </Select.Trigger>
 
                 <Select.Portal>
-                    <Select.Content className="overflow-hidden rounded-md shadow-lg text-white bg-gray-600 light:text-black light:bg-gray-200">
+                    <Select.Content className="z-50 overflow-hidden rounded-md shadow-lg text-white bg-gray-600 light:text-black light:bg-gray-200">
                         <Select.ScrollUpButton>
                             <ChevronUpIcon />
                         </Select.ScrollUpButton>
@@ -112,11 +112,11 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                 </button>
             </Dialog.Trigger>
 
-            <Dialog.Overlay className="fixed inset-0 bg-black/60" />
+            <Dialog.Overlay className="fixed z-40 inset-0 bg-black/60" />
 
             <Dialog.Content
                 className="
-                    fixed flex flex-col gap-5 w-100 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                    fixed z-50 flex flex-col gap-5 w-100 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
                     p-6 rounded-xl bg-gray-800 light:bg-gray-300 light:text-black
                 "
             >
