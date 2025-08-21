@@ -13,11 +13,15 @@ export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolea
 
     return (
         <Dialog.Root>
-            <Dialog.Trigger asChild>
-                <button className="flex items-center gap-2 p-2 rounded outline-none hover:bg-gray-700 light:hover:bg-gray-300" onClick={_ => search("")}>
-                    <MagnifyingGlassIcon />
-                    {isSidebarOpen && <span>Search</span>}
-                </button>
+            <Dialog.Trigger
+                className="
+                    flex items-center gap-2 p-2 rounded outline-none cursor-pointer
+                    hover:bg-gray-700 light:hover:bg-gray-300 focus:bg-gray-700 light:focus:bg-gray-300
+                "
+                onClick={_ => search("")}
+            >
+                <MagnifyingGlassIcon />
+                {isSidebarOpen && <span>Search</span>}
             </Dialog.Trigger>
 
             <Dialog.Overlay className="fixed inset-0 bg-black/50" />
