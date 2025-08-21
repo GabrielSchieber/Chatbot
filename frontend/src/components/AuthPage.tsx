@@ -24,14 +24,14 @@ export default function AuthPage({ type }: { type: "Signup" | "Login" }) {
     }
 
     return (
-        <div className="flex flex-col w-screen h-screen bg-gray-900 items-center justify-center">
+        <div className="flex flex-col w-screen h-screen bg-gray-900 light:bg-gray-300 items-center justify-center">
             <form
-                className="flex flex-col gap-3 w-[500px] p-4 items-center justify-center rounded-xl bg-gray-800"
+                className="flex flex-col gap-3 w-[500px] p-4 items-center justify-center rounded-xl bg-gray-800 light:bg-gray-100"
                 onSubmit={handleSubmit}
             >
-                <h1 className="text-white text-2xl pb-4">{headerText}</h1>
+                <h1 className="text-white light:text-black text-2xl pb-4">{headerText}</h1>
                 <input
-                    className="text-white text-xl outline-none w-full bg-gray-700 rounded-xl px-3 py-2"
+                    className="text-white light:text-black text-xl outline-none w-full bg-gray-700 light:bg-gray-200 rounded-xl px-3 py-2"
                     type="email"
                     placeholder="Email"
                     value={email}
@@ -41,7 +41,7 @@ export default function AuthPage({ type }: { type: "Signup" | "Login" }) {
                 />
                 {type === "Signup" && error && <p className="text-red-600 text-lg">{error}</p>}
                 <input
-                    className="text-white text-xl outline-none w-full bg-gray-700 rounded-xl px-3 py-2"
+                    className="text-white light:text-black text-xl outline-none w-full bg-gray-700 light:bg-gray-200 rounded-xl px-3 py-2"
                     type="password"
                     placeholder="Password"
                     value={password}
@@ -50,10 +50,17 @@ export default function AuthPage({ type }: { type: "Signup" | "Login" }) {
                     required
                 />
                 {type === "Login" && error && <p className="text-red-600 text-lg">{error}</p>}
-                <button className="text-white text-xl bg-gray-700 hover:bg-gray-600 active:bg-gray-700 rounded-xl px-6 py-1">{headerText}</button>
-                <p className="text-white text-xl">
+                <button
+                    className="
+                        text-white light:text-black text-xl bg-gray-700 light:bg-gray-300
+                        hover:bg-gray-600 light:hover:bg-gray-400 rounded-xl px-6 py-1 cursor-pointer
+                    "
+                >
+                    {headerText}
+                </button>
+                <p className="text-white light:text-black text-xl">
                     {recommendationText + " "}
-                    <a className="text-white text-xl underline" href={type === "Signup" ? "/login" : "/signup"}>
+                    <a className="text-white light:text-black text-xl underline" href={type === "Signup" ? "/login" : "/signup"}>
                         {type === "Signup" ? "Log in!" : "Sign up!"}
                     </a>
                 </p>
