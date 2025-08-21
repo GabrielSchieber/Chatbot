@@ -105,11 +105,14 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
 
     return (
         <Dialog.Root>
-            <Dialog.Trigger asChild>
-                <button className="flex justify-center items-center p-2 gap-2 rounded hover:bg-gray-700 light:hover:bg-gray-300 outline-none">
-                    <GearIcon />
-                    {isSidebarOpen && <span>Settings</span>}
-                </button>
+            <Dialog.Trigger
+                className={`
+                    flex gap-2 p-2 justify-center items-center rounded outline-none cursor-pointer
+                    hover:bg-gray-700 light:hover:bg-gray-300 focus:bg-gray-700 light:focus:bg-gray-300
+                `}
+            >
+                <GearIcon />
+                {isSidebarOpen && <span>Settings</span>}
             </Dialog.Trigger>
 
             <Dialog.Overlay className="fixed z-40 inset-0 bg-black/60" />
