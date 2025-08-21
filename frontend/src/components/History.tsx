@@ -82,24 +82,37 @@ export default function History({ chats, setChats }: {
                     )}
 
                     <DropdownMenu.Root onOpenChange={o => setSelectedDropdownIndex(o ? index : -1)}>
-                        <DropdownMenu.Trigger asChild>
-                            <button className="hover:bg-gray-600 light:hover:bg-gray-400 outline-none rounded">
-                                <DotsVerticalIcon />
-                            </button>
+                        <DropdownMenu.Trigger
+                            className="
+                                h-full py-1 self-center outline-none rounded hover:bg-gray-500 
+                                light:hover:bg-gray-400 focus:bg-gray-500 light:focus:bg-gray-400
+                            "
+                        >
+                            <DotsVerticalIcon />
                         </DropdownMenu.Trigger>
 
                         <DropdownMenu.Content className="bg-gray-700 light:bg-gray-200 p-2 rounded-xl shadow-xl/30 translate-x-7" sideOffset={2}>
                             <DropdownMenu.Item
-                                className="px-4 py-2 text-center outline-none rounded-xl select-none cursor-pointer hover:bg-gray-600 light:hover:bg-gray-300"
+                                className="
+                                    px-4 py-2 text-center outline-none rounded-xl select-none cursor-pointer
+                                    hover:bg-gray-600 light:hover:bg-gray-300 focus:bg-gray-600 light:focus:bg-gray-300
+                                "
                                 onSelect={_ => startRename(chat)}
                             >
                                 Rename
                             </DropdownMenu.Item>
+
                             <ConfirmDialog
                                 trigger={
-                                    <button className="px-4 py-2 text-center outline-none rounded-xl w-full hover:bg-red-300/30 text-red-400 cursor-pointer">
+                                    <DropdownMenu.Item
+                                        className="
+                                            px-4 py-2 text-center text-red-400 outline-none rounded-xl
+                                            select-none cursor-pointer hover:bg-red-300/30 focus:bg-red-300/40
+                                        "
+                                        onSelect={e => e.preventDefault()}
+                                    >
                                         Delete
-                                    </button>
+                                    </DropdownMenu.Item>
                                 }
                                 title="Delete Chat"
                                 description={`Are you sure you want to delete "${chat.title}"? This action cannot be undone.`}
