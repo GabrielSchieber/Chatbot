@@ -24,14 +24,12 @@ export default function Messages({ webSocket, messages, setMessages }: {
         return (
             <Tooltip.Provider delayDuration={200}>
                 <Tooltip.Root>
-                    <Tooltip.Trigger asChild>
-                        <button
-                            className={`p-2 rounded-lg hover:bg-gray-700 light:hover:bg-gray-300 ${isDisabled ? "opacity-50" : "cursor-pointer"}`}
-                            onClick={onClick}
-                            disabled={isDisabled}
-                        >
-                            {children}
-                        </button>
+                    <Tooltip.Trigger
+                        className={`p-2 rounded-lg hover:bg-gray-700 light:hover:bg-gray-300 ${isDisabled ? "opacity-50" : "cursor-pointer"}`}
+                        onClick={onClick}
+                        disabled={isDisabled}
+                    >
+                        {children}
                     </Tooltip.Trigger>
                     <Tooltip.Portal>
                         <Tooltip.Content className="text-white text-sm bg-black px-2 py-1 rounded-xl" side="bottom" sideOffset={3}>
