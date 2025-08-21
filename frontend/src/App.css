@@ -9,3 +9,11 @@
 }
 
 @custom-variant light (&:where(.light, .light *));
+
+.light {
+    @import "highlight.js/styles/a11y-light.css";
+}
+
+.dark {
+    @import "highlight.js/styles/a11y-dark.css";
+}
