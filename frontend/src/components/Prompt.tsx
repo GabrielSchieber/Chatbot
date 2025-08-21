@@ -1,6 +1,6 @@
 import { ArrowUpIcon, BoxModelIcon, ChevronRightIcon, Cross2Icon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
 import { getChats, uploadFiles } from "../utils/api"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { Model, Message, UIAttachment, Chat } from "../types"
 import { DropdownMenu } from "radix-ui"
 
@@ -12,7 +12,7 @@ export default function Prompt({ webSocket, setMessages }: {
     const fileInputRef = useRef<HTMLInputElement | null>(null)
 
     const [prompt, setPrompt] = useState("")
-    const [model, setModel] = useState<Model>("SmolLM2-135M")
+    const [model, setModel] = useState(() => localStorage.getItem("model") as Model || "SmolLM2-135M")
     const [currentFiles, setCurrentFiles] = useState<File[]>([])
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
     const [inProgressChat, setInProgressChat] = useState<Chat | null>(null)
@@ -182,6 +182,10 @@ export default function Prompt({ webSocket, setMessages }: {
             )
         }, 300)
     }
+
+    useEffect(() => {
+        localStorage.setItem("model", model)
+    }, [model])
 
     return (
         <div className="absolute bottom-0 flex flex-col w-[50vw] pb-4 self-center">
