@@ -1,4 +1,4 @@
-import { ArrowUpIcon, BoxModelIcon, ChevronRightIcon, Cross2Icon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
+import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronRightIcon, Cross2Icon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
 import { getChats, uploadFiles } from "../utils/api"
 import { useEffect, useRef, useState } from "react"
 import type { Model, Message, UIAttachment, Chat } from "../types"
@@ -26,46 +26,51 @@ export default function Prompt({ webSocket, setMessages }: {
     }
 
     function AddDropdown() {
-        const buttonClassNames = "flex gap-2 px-2 py-1 items-center outline-none rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-100"
-        const itemClassNames = "px-2 py-1 outline-none rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-200"
-        const selectedItemClassNames = itemClassNames + " bg-gray-500 light:bg-gray-100"
+        const buttonClassNames = `
+            flex gap-2 px-2 py-1 items-center outline-none rounded cursor-pointer
+            data-[highlighted]:bg-gray-600/60 light:data-[highlighted]:bg-gray-400/40
+        `
+        const itemClassNames = `
+            flex w-40 justify-between items-center px-2 py-1 outline-none rounded cursor-pointer
+            data-[highlighted]:bg-gray-600/60 light:data-[highlighted]:bg-gray-400/40
+        `
 
         return (
             <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                    <button className="hover:bg-gray-600 light:hover:bg-gray-200 p-1.5 rounded-[20px] outline-none cursor-pointer self-end">
-                        <PlusIcon className="size-6" />
-                    </button>
+                <DropdownMenu.Trigger tabIndex={2} id="add-dropdown-trigger" className="hover:bg-gray-600 light:hover:bg-gray-200 p-1.5 rounded-[20px] cursor-pointer self-end">
+                    <PlusIcon className="size-6" />
                 </DropdownMenu.Trigger>
-                <DropdownMenu.Content className="flex flex-col bg-gray-700 light:bg-gray-300 p-2 rounded-xl translate-x-7 -translate-y-2 shadow-xl">
-                    <DropdownMenu.Root>
-                        <DropdownMenu.Trigger asChild>
-                            <button className={buttonClassNames}>
-                                <BoxModelIcon /> Model <ChevronRightIcon />
-                            </button>
-                        </DropdownMenu.Trigger>
 
-                        <DropdownMenu.Content className="bg-gray-700 light:bg-gray-300 p-2 translate-x-2 -translate-y-8 rounded-xl" side="right">
+                <DropdownMenu.Content className="flex flex-col bg-gray-700 light:bg-gray-300 p-2 rounded-xl translate-x-7 -translate-y-2 shadow-xl/30">
+                    <DropdownMenu.Sub>
+                        <DropdownMenu.SubTrigger className={buttonClassNames}>
+                            <BoxModelIcon /> Model <ChevronRightIcon />
+                        </DropdownMenu.SubTrigger>
+
+                        <DropdownMenu.SubContent className="bg-gray-700 light:bg-gray-300 p-2 rounded-xl -translate-y-20 shadow-xl/30" sideOffset={5}>
                             <DropdownMenu.Item
-                                className={model === "SmolLM2-135M" ? selectedItemClassNames : itemClassNames}
-                                onSelect={_ => setModel("SmolLM2-135M")}
+                                className={itemClassNames}
+                                onSelect={() => setModel("SmolLM2-135M")}
                             >
                                 SmolLM2-135M
+                                {model === "SmolLM2-135M" && <CheckIcon className="size-5" />}
                             </DropdownMenu.Item>
                             <DropdownMenu.Item
-                                className={model === "SmolLM2-360M" ? selectedItemClassNames : itemClassNames}
-                                onSelect={_ => setModel("SmolLM2-360M")}
+                                className={itemClassNames}
+                                onSelect={() => setModel("SmolLM2-360M")}
                             >
                                 SmolLM2-360M
+                                {model === "SmolLM2-360M" && <CheckIcon className="size-5" />}
                             </DropdownMenu.Item>
                             <DropdownMenu.Item
-                                className={model === "SmolLM2-1.7B" ? selectedItemClassNames : itemClassNames}
-                                onSelect={_ => setModel("SmolLM2-1.7B")}
+                                className={itemClassNames}
+                                onSelect={() => setModel("SmolLM2-1.7B")}
                             >
                                 SmolLM2-1.7B
+                                {model === "SmolLM2-1.7B" && <CheckIcon className="size-5" />}
                             </DropdownMenu.Item>
-                        </DropdownMenu.Content>
-                    </DropdownMenu.Root>
+                        </DropdownMenu.SubContent>
+                    </DropdownMenu.Sub>
 
                     <DropdownMenu.Item className={buttonClassNames} onSelect={handleFileClick}>
                         <UploadIcon /> Add files
@@ -243,6 +248,7 @@ export default function Prompt({ webSocket, setMessages }: {
                     value={prompt}
                     placeholder="Ask me anything..."
                     rows={1}
+                    tabIndex={1}
                     ref={textAreaRef}
                     onChange={handleChange}
                     onKeyDown={sendMessageWithEvent}
@@ -252,6 +258,7 @@ export default function Prompt({ webSocket, setMessages }: {
                 {prompt.trim() &&
                     <button
                         className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end"
+                        tabIndex={3}
                         onClick={sendMessage}
                     >
                         <ArrowUpIcon className="size-6 text-white" />
