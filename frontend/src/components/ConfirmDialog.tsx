@@ -40,19 +40,17 @@ export default function ConfirmDialog({
                     )}
 
                     <div className="mt-4 flex justify-end gap-2">
-                        <AlertDialog.Cancel asChild>
-                            <button className="px-4 py-2 rounded bg-gray-500 light:bg-gray-400 hover:bg-gray-400 light:hover:bg-gray-300">
-                                {cancelText}
-                            </button>
+                        <AlertDialog.Cancel
+                            className="px-4 py-2 rounded bg-gray-500 light:bg-gray-400 hover:bg-gray-400 light:hover:bg-gray-300"
+                        >
+                            {cancelText}
                         </AlertDialog.Cancel>
 
-                        <AlertDialog.Action asChild>
-                            <button
-                                className="px-4 py-2 rounded bg-red-600 hover:bg-red-500 text-white"
-                                onClick={onConfirm}
-                            >
-                                {confirmText}
-                            </button>
+                        <AlertDialog.Action
+                            className="px-4 py-2 rounded bg-red-600 hover:bg-red-500 text-white"
+                            onClick={onConfirm}
+                        >
+                            {confirmText}
                         </AlertDialog.Action>
                     </div>
                 </AlertDialog.Content>
