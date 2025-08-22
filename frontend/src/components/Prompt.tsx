@@ -188,6 +188,17 @@ export default function Prompt({ webSocket, setMessages }: {
         }, 300)
     }
 
+    function removeFiles() {
+        setVisibleFiles(previous =>
+            previous.map(f => { return { ...f, isRemoving: true } })
+        )
+
+        setTimeout(() => {
+            setVisibleFiles([])
+            setCurrentFiles([])
+        }, 300)
+    }
+
     useEffect(() => {
         localStorage.setItem("model", model)
     }, [model])
@@ -198,10 +209,16 @@ export default function Prompt({ webSocket, setMessages }: {
 
             <div
                 className={`
-                    flex flex-col gap-2 bg-gray-800 light:bg-gray-200 rounded-xl shadow-md transform transition-all duration-300 origin-bottom
+                    flex flex-col gap-2 p-3 bg-gray-800 light:bg-gray-200 rounded-xl shadow-md transform transition-all duration-300 origin-bottom
                     ${visibleFiles.length > 0 ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none h-0 p-0"}
                 `}
             >
+                <div className="absolute flex items-center gap-2 left-0 top-0 -translate-y-7 rounded-t-xl pl-4 pr-2 py-1 pb-3 bg-gray-800">
+                    <p>Attachments</p>
+                    <button className="text-red-400 hover:text-red-500 hover:bg-red-400/40 rounded-3xl p-1" onClick={removeFiles}>
+                        <Cross2Icon />
+                    </button>
+                </div>
                 {visibleFiles.map(file => (
                     <div
                         key={file.id}
@@ -212,7 +229,7 @@ export default function Prompt({ webSocket, setMessages }: {
                     >
                         <span className="text-sm truncate">{file.file.name}</span>
                         <button
-                            className="text-red-400 hover:text-red-500 ml-2"
+                            className="text-red-400 hover:text-red-500 hover:bg-red-400/40 rounded-3xl p-1"
                             onClick={() => removeFile(file.id)}
                         >
                             <Cross2Icon />
