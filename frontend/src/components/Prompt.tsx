@@ -1,4 +1,4 @@
-import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronRightIcon, Cross2Icon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
+import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronRightIcon, Cross2Icon, FileIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
 import { getChats, uploadFiles } from "../utils/api"
 import { useEffect, useRef, useState } from "react"
 import type { Model, Message, UIAttachment, Chat } from "../types"
@@ -199,6 +199,18 @@ export default function Prompt({ webSocket, setMessages }: {
         }, 300)
     }
 
+    function getFileType(name: string) {
+        const fileTypes = new Map(
+            [[".txt", "Text"], [".md", "Markdown"], [".py", "Python"], [".js", "JavaScript"]]
+        )
+        for (const fileType of fileTypes) {
+            if (name.endsWith(fileType[0])) {
+                return fileType[1]
+            }
+        }
+        return "File"
+    }
+
     useEffect(() => {
         localStorage.setItem("model", model)
     }, [model])
@@ -209,29 +221,26 @@ export default function Prompt({ webSocket, setMessages }: {
 
             <div
                 className={`
-                    flex flex-col gap-2 p-3 bg-gray-800 light:bg-gray-200 rounded-xl shadow-md transform transition-all duration-300 origin-bottom
+                    flex flex-col gap-1 p-2 rounded-xl bg-gray-800 shadow-xl transform transition-all duration-300 origin-bottom
                     ${visibleFiles.length > 0 ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none h-0 p-0"}
                 `}
             >
-                <div className="absolute flex items-center gap-2 left-0 top-0 -translate-y-7 rounded-t-xl pl-4 pr-2 py-1 pb-3 bg-gray-800">
-                    <p>Attachments</p>
-                    <button className="text-red-400 hover:text-red-500 hover:bg-red-400/40 rounded-3xl p-1" onClick={removeFiles}>
-                        <Cross2Icon />
-                    </button>
-                </div>
+                <button className="self-end text-red-400 hover:text-red-500" onClick={removeFiles}>
+                    <Cross2Icon />
+                </button>
                 {visibleFiles.map(file => (
                     <div
-                        key={file.id}
                         className={`
-                            flex justify-between items-center bg-gray-700 light:bg-gray-300 px-3 py-1 rounded-lg
+                            flex gap-1 px-2 items-center border rounded-xl border-gray-500 bg-gray-700
                             transition-all duration-300 ${file.isRemoving ? "opacity-0 translate-x-4" : "opacity-100 translate-x-0"}
                         `}
                     >
-                        <span className="text-sm truncate">{file.file.name}</span>
-                        <button
-                            className="text-red-400 hover:text-red-500 hover:bg-red-400/40 rounded-3xl p-1"
-                            onClick={() => removeFile(file.id)}
-                        >
+                        <FileIcon className="size-8 p-1 rounded-md bg-gray-900" />
+                        <div className="w-full text-sm">
+                            <div>{file.file.name}</div>
+                            <div>{getFileType(file.file.name)}</div>
+                        </div>
+                        <button className="text-red-400 hover:text-red-500" onClick={_ => removeFile(file.id)}>
                             <Cross2Icon />
                         </button>
                     </div>
