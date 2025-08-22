@@ -159,8 +159,20 @@ export default function Messages({ webSocket, messages, setMessages }: {
                     className={`flex flex-col w-[50vw] justify-self-center ${message.is_user_message ? "items-end" : "items-start"} gap-2`}
                 >
                     {message.is_user_message ? (
-                        <div className="px-3 py-2 rounded-2xl max-w-[80%] whitespace-pre-wrap bg-gray-700 light:bg-gray-300">
-                            {message.text}
+                        <div className="flex flex-col gap-1 max-w-[80%]">
+                            {message.files.length > 0 && (
+                                <div className="relative flex">
+                                    <p className="absolute top-0 left-0 -translate-y-6 rounded-t-xl px-2 pb-3 bg-gray-800">Attachments</p>
+                                    <div className="flex z-1 gap-1 bg-gray-800 bg-gray-800 px-2 py-1 rounded-xl">
+                                        {message.files.map(file => (
+                                            <div className="rounded-xl px-2 py-1 bg-gray-700">{file.name}</div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            <div className="px-3 py-2 rounded-2xl whitespace-pre-wrap bg-gray-700 light:bg-gray-300">
+                                {message.text}
+                            </div>
                         </div>
                     ) : (
                         <div className="w-full whitespace-pre-wrap">
