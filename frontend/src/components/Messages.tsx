@@ -1,4 +1,4 @@
-import { CheckIcon, CopyIcon, UpdateIcon } from "@radix-ui/react-icons"
+import { CheckIcon, CopyIcon, FileIcon, UpdateIcon } from "@radix-ui/react-icons"
 import React, { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 import ReactMarkdown from "react-markdown"
@@ -145,6 +145,18 @@ export default function Messages({ webSocket, messages, setMessages }: {
         }
     }
 
+    function getFileType(name: string) {
+        const fileTypes = new Map(
+            [[".txt", "Text"], [".md", "Markdown"], [".py", "Python"], [".js", "JavaScript"]]
+        )
+        for (const fileType of fileTypes) {
+            if (name.endsWith(fileType[0])) {
+                return fileType[1]
+            }
+        }
+        return "File"
+    }
+
     useEffect(() => {
         loadMessages()
         receiveMessage()
@@ -161,13 +173,16 @@ export default function Messages({ webSocket, messages, setMessages }: {
                     {message.is_user_message ? (
                         <div className="flex flex-col gap-1 max-w-[80%]">
                             {message.files.length > 0 && (
-                                <div className="relative flex">
-                                    <p className="absolute top-0 left-0 -translate-y-6 rounded-t-xl px-2 pb-3 bg-gray-800">Attachments</p>
-                                    <div className="flex z-1 gap-1 bg-gray-800 bg-gray-800 px-2 py-1 rounded-xl">
-                                        {message.files.map(file => (
-                                            <div className="rounded-xl px-2 py-1 bg-gray-700">{file.name}</div>
-                                        ))}
-                                    </div>
+                                <div className="flex flex-col gap-1">
+                                    {message.files.map(file => (
+                                        <div className="flex items-center gap-1 px-2 py-1 border border-gray-500 bg-gray-800 rounded-xl">
+                                            <FileIcon className="size-9 p-1 rounded-md bg-gray-900" />
+                                            <div>
+                                                <p className="text-sm rounded-xl">{file.name}</p>
+                                                <p className="text-sm rounded-xl">{getFileType(file.name)}</p>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                             <div className="px-3 py-2 rounded-2xl whitespace-pre-wrap bg-gray-700 light:bg-gray-300">
