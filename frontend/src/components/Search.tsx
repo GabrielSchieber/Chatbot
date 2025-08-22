@@ -1,8 +1,9 @@
-import { Cross1Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons"
+import { ChatBubbleIcon, Cross1Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons"
 import { Dialog } from "radix-ui"
-import type { Chat, SearchEntry } from "../types"
-import { searchChats } from "../utils/api"
 import { useState } from "react"
+
+import { searchChats } from "../utils/api"
+import type { Chat, SearchEntry } from "../types"
 
 export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolean, chats: Chat[] }) {
     const [results, setResults] = useState<SearchEntry[]>([])
@@ -24,44 +25,45 @@ export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolea
                 {isSidebarOpen && <span>Search</span>}
             </Dialog.Trigger>
 
-            <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+            <Dialog.Overlay className="fixed z-40 inset-0 bg-black/50" />
 
             <Dialog.Content
                 className="
-                    fixed top-[20vh] left-1/2 w-[700px] max-w-[90vw] -translate-x-1/2
-                    bg-gray-800 rounded-2xl shadow-lg p-4
-                    light:bg-gray-200
+                    fixed z-50 flex flex-col w-150 items-center
+                    top-[20vh] left-1/2 -translate-x-1/2
+                    rounded-xl bg-gray-800
                 "
             >
                 <Dialog.Title hidden>Search</Dialog.Title>
-                <div className="flex items-center border-b border-gray-700 light:border-gray-300 pb-2 mb-3">
+                <div className="flex w-full px-5 py-5 gap-5 border-b border-gray-600">
                     <input
-                        className="flex-1 bg-transparent outline-none placeholder-gray-400 pl-5 pr-3"
+                        className="flex-1 outline-none placeholder-gray-400"
                         type="text"
                         placeholder="Search chats..."
                         onInput={e => search(e.currentTarget.value)}
                         autoFocus
                     />
-                    <Dialog.Close className="p-1 rounded-3xl hover:bg-gray-700">
+                    <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700">
                         <Cross1Icon className="size-4" />
                     </Dialog.Close>
                 </div>
 
-                <div className="max-h-[50vh] overflow-y-auto space-y-1">
+                <div className="flex flex-col w-full max-h-[50vh] overflow-y-auto gap-3 p-3">
                     {chats.length === 0 ? (
-                        <p className="text-gray-400 light:text-gray-600 text-sm px-3 py-2">You have no chats to search.</p>
+                        <p className="text-gray-400 light:text-gray-600 px-3 py-2">You have no chats to search.</p>
                     ) : (
-                        <>
-                            {results.length === 0 ? (
-                                <p className="text-gray-400 light:text-gray-600 text-sm px-3 py-2">No chats found.</p>
-                            ) : (
-                                results.map(entry => (
-                                    <a
-                                        key={entry.uuid}
-                                        className="block px-3 py-2 rounded hover:bg-gray-700 light:hover:bg-gray-300"
-                                        href={`/chat/${entry.uuid}`}
-                                    >
-                                        {entry.title}
+                        results.length === 0 ? (
+                            <p className="text-gray-400 light:text-gray-600 px-3 py-2">No chats found.</p>
+                        ) : (
+                            results.map(entry => (
+                                <a
+                                    key={entry.uuid}
+                                    className="flex px-2 py-1 items-center gap-3 rounded-lg hover:bg-gray-600"
+                                    href={`/chat/${entry.uuid}`}
+                                >
+                                    <ChatBubbleIcon className="size-6" />
+                                    <div className="flex flex-col">
+                                        <p>{entry.title}</p>
                                         {entry.matches.length > 0 && (
                                             <ul>
                                                 {entry.matches.map((message: string, i: number) => (
@@ -69,10 +71,10 @@ export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolea
                                                 ))}
                                             </ul>
                                         )}
-                                    </a>
-                                ))
-                            )}
-                        </>
+                                    </div>
+                                </a>
+                            ))
+                        )
                     )}
                 </div>
             </Dialog.Content>
