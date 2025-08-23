@@ -52,7 +52,8 @@ export default function History({ chats, setChats }: {
     }
 
     return (
-        <div className="history flex flex-col gap-1 w-full h-full p-1 overflow-x-hidden overflow-y-auto">
+        <div className="history flex flex-col gap-1 p-2 w-full h-full p-1 overflow-x-hidden overflow-y-auto">
+            <p className="pl-2 text-sm text-gray-400">Chats</p>
             {chats.map((chat, index) => (
                 <div
                     key={chat.uuid}

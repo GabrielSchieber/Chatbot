@@ -107,7 +107,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
         <Dialog.Root>
             <Dialog.Trigger
                 className={`
-                    flex gap-2 p-2 justify-center items-center rounded outline-none cursor-pointer
+                    flex gap-2 m-2 p-2 justify-center items-center rounded outline-none cursor-pointer
                     hover:bg-gray-700 light:hover:bg-gray-300 focus:bg-gray-700 light:focus:bg-gray-300
                 `}
             >
