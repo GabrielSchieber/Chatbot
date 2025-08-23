@@ -228,8 +228,9 @@ export default function Prompt({ webSocket, setMessages }: {
                 <button className="self-end text-red-400 hover:text-red-500" onClick={removeFiles}>
                     <Cross2Icon />
                 </button>
-                {visibleFiles.map(file => (
+                {visibleFiles.map((file, index) => (
                     <div
+                        key={index}
                         className={`
                             flex gap-1 px-2 items-center border rounded-xl border-gray-500 bg-gray-700
                             transition-all duration-300 ${file.isRemoving ? "opacity-0 translate-x-4" : "opacity-100 translate-x-0"}

@@ -174,8 +174,8 @@ export default function Messages({ webSocket, messages, setMessages }: {
                         <div className="flex flex-col gap-1 max-w-[80%]">
                             {message.files.length > 0 && (
                                 <div className="flex flex-col gap-1">
-                                    {message.files.map(file => (
-                                        <div className="flex items-center gap-1 px-2 py-1 border border-gray-500 bg-gray-800 rounded-xl">
+                                    {message.files.map((file, index) => (
+                                        <div key={index} className="flex items-center gap-1 px-2 py-1 border border-gray-500 bg-gray-800 rounded-xl">
                                             <FileIcon className="size-9 p-1 rounded-md bg-gray-900" />
                                             <div>
                                                 <p className="text-sm rounded-xl">{file.name}</p>
