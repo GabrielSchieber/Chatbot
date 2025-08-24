@@ -88,16 +88,20 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                 const message_index = data.message_index + 1
                 if (data.token) {
                     setMessages(previous => {
-                        let messages = [...previous]
-                        messages[message_index] = { text: messages[message_index].text + data.token, files: [], is_user_message: false }
-                        return messages
+                        let previousMessages = [...previous]
+                        if (previousMessages[message_index]) {
+                            previousMessages[message_index] = { text: previousMessages[message_index].text + data.token, files: [], is_user_message: false }
+                        }
+                        return previousMessages
                     })
                     setIsAnyChatIncomplete(true)
                 } else if (data.message) {
                     setMessages(previous => {
-                        let messages = [...previous]
-                        messages[message_index] = { text: data.message, files: [], is_user_message: false }
-                        return messages
+                        let previousMessages = [...previous]
+                        if (previousMessages[message_index]) {
+                            previousMessages[message_index] = { text: data.message, files: [], is_user_message: false }
+                        }
+                        return previousMessages
                     })
                     setIsAnyChatIncomplete(false)
                 } else if (data.redirect) {
