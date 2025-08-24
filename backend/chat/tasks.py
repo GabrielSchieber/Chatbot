@@ -44,10 +44,15 @@ async def generate_message(chat: Chat, model: Model, user_message: Message, bot_
     group_name = get_group_name(chat)
     channel_layer = get_channel_layer()
 
-    async for token in sample_model(model, messages, 256):
-        bot_message.text += token
-        await database_sync_to_async(bot_message.save)()
-        await channel_layer.group_send(group_name, {"type": "send_token", "token": token, "message_index": message_index})
+    try:
+        async for token in sample_model(model, messages, 256):
+            bot_message.text += token
+            await database_sync_to_async(bot_message.save)()
+            await channel_layer.group_send(group_name, {"type": "send_token", "token": token, "message_index": message_index})
+    except asyncio.CancelledError:
+        chat.is_complete = True
+        await database_sync_to_async(chat.save)()
+        return
 
     await channel_layer.group_send(group_name, {"type": "send_message", "message": bot_message.text, "message_index": message_index})
 
@@ -107,3 +112,14 @@ def get_running_chat_task_for_chat(chat: Chat):
         for task in global_chat_tasks:
             if str(chat.uuid) == task.chat_uuid:
                 return task
+
+def cancel_chat_task(chat_task: ChatTask):
+    task = global_chat_tasks.get(chat_task)
+    if task and not task.done():
+        task.cancel()
+    try:
+        chat = Chat.objects.get(uuid = chat_task.chat_uuid)
+        chat.is_complete = True
+        chat.save()
+    except Exception:
+        pass

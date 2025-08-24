@@ -8,7 +8,14 @@ from jwt import decode as jwt_decode
 
 from .models import Chat, Message, MessageFile, User
 from .sample import Model
-from .tasks import create_generate_message_task, get_group_name, get_non_complete_chats, get_running_chat_task_for_chat, reset_non_complete_chats
+from .tasks import (
+    cancel_chat_task,
+    create_generate_message_task,
+    get_group_name,
+    get_non_complete_chats,
+    get_running_chat_task_for_chat,
+    reset_non_complete_chats
+)
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -45,6 +52,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def receive_json(self, content):
         non_complete_chats = await self.get_non_complete_chats()
 
+        action = content.get("action", "new_message")
+
+        if action == "stop_message":
+            await self.handle_stop_message()
+            return
+
         if len(non_complete_chats) == 0:
             if not self.chat:
                 self.chat = await self.create_chat()
@@ -56,8 +69,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             if len(non_complete_chats) != 0:
                 await self.close()
                 return
-
-        action = content.get("action", "new_message")
 
         model = content.get("model", "SmolLM2-135M")
         if model not in get_args(Model):
@@ -155,6 +166,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await database_sync_to_async(bot_message.save)()
 
         await create_generate_message_task(self.chat, model, user_message, bot_message, message_index, "regenerate_message")
+
+    async def handle_stop_message(self):
+        running_chat_task = get_running_chat_task_for_chat(self.chat)
+        if running_chat_task:
+            await database_sync_to_async(cancel_chat_task)(running_chat_task)
 
     @database_sync_to_async
     def create_chat(self) -> Chat:

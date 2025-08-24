@@ -1,4 +1,4 @@
-import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronRightIcon, Cross2Icon, FileIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
+import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronRightIcon, Cross2Icon, FileIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
 import { getChats, uploadFiles } from "../utils/api"
 import { useEffect, useRef, useState } from "react"
 import type { Model, Message, UIAttachment, Chat } from "../types"
@@ -16,6 +16,7 @@ export default function Prompt({ webSocket, setMessages }: {
     const [currentFiles, setCurrentFiles] = useState<File[]>([])
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
     const [inProgressChat, setInProgressChat] = useState<Chat | null>(null)
+    const [isGenerating, setIsGenerating] = useState(false)
 
     function GeneratingMessageNotification({ title, uuid, }: { title: string, uuid: string }) {
         return (
@@ -108,12 +109,14 @@ export default function Prompt({ webSocket, setMessages }: {
                                     setPrompt("")
                                     setCurrentFiles([])
                                     setVisibleFiles([])
+                                    setIsGenerating(true)
                                 }
                             }
                         })
                     } else {
                         webSocket.current.send(JSON.stringify({ model: model, message: prompt }))
                         setPrompt("")
+                        setIsGenerating(true)
                     }
                 }
             } else {
@@ -217,6 +220,32 @@ export default function Prompt({ webSocket, setMessages }: {
         localStorage.setItem("model", model)
     }, [model])
 
+    useEffect(() => {
+        if (!webSocket.current) return
+        function handleMessage(event: MessageEvent) {
+            try {
+                const data = JSON.parse(event.data)
+                if ("token" in data || "generating_message_action" in data) {
+                    setIsGenerating(true)
+                }
+                if ("message" in data) {
+                    setIsGenerating(false)
+                }
+            } catch { }
+        }
+        webSocket.current.addEventListener("message", handleMessage)
+        return () => {
+            webSocket.current?.removeEventListener("message", handleMessage)
+        }
+    }, [webSocket])
+
+    function handleStop() {
+        if (webSocket.current) {
+            webSocket.current.send(JSON.stringify({ action: "stop_message" }))
+        }
+        setIsGenerating(false)
+    }
+
     return (
         <div className="absolute bottom-0 flex flex-col w-[50vw] pb-4 self-center">
             {inProgressChat && <GeneratingMessageNotification title={inProgressChat.title} uuid={inProgressChat.uuid} />}
@@ -284,13 +313,24 @@ export default function Prompt({ webSocket, setMessages }: {
                     style={{ maxHeight: "300px", overflowY: "auto" }}
                     autoFocus
                 />
-                {prompt.trim() &&
+
+                {prompt.trim() && !isGenerating &&
                     <button
                         className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end"
                         tabIndex={3}
                         onClick={sendMessage}
                     >
                         <ArrowUpIcon className="size-6 text-white" />
+                    </button>
+                }
+
+                {isGenerating &&
+                    <button
+                        className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end"
+                        tabIndex={3}
+                        onClick={handleStop}
+                    >
+                        <PauseIcon className="size-6 text-white" />
                     </button>
                 }
             </div>
