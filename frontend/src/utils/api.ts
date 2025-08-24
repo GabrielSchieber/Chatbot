@@ -74,7 +74,7 @@ export async function searchChats(search: string): Promise<SearchEntry[] | undef
     return data.chats
 }
 
-export async function uploadFiles(files: File[]): Promise<{ name: string, content_type: string, file: string, url: string }> {
+export async function uploadFiles(files: File[]): Promise<any> {
     const formData = new FormData()
     files.forEach(file => formData.append("files", file))
 

@@ -102,11 +102,13 @@ export default function Prompt({ webSocket, setMessages }: {
                     })
                     if (currentFiles.length > 0) {
                         uploadFiles(currentFiles).then(files => {
-                            if (webSocket.current) {
-                                webSocket.current.send(JSON.stringify({ model: model, message: prompt, files: files }))
-                                setPrompt("")
-                                setCurrentFiles([])
-                                setVisibleFiles([])
+                            if (!files.error) {
+                                if (webSocket.current) {
+                                    webSocket.current.send(JSON.stringify({ model: model, message: prompt, files: files }))
+                                    setPrompt("")
+                                    setCurrentFiles([])
+                                    setVisibleFiles([])
+                                }
                             }
                         })
                     } else {
