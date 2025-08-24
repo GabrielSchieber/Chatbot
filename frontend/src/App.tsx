@@ -1,7 +1,7 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router"
 
 import "./App.css"
-import AuthPage from "./components/AuthPage"
+import AuthPage from "./pages/AuthPage"
 import ChatPage from "./pages/ChatPage"
 import { useAuth } from "./utils/auth"
 
