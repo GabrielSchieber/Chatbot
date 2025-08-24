@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from "react"
 import type { Model, Message, UIAttachment, Chat } from "../types"
 import { DropdownMenu } from "radix-ui"
 
-export default function Prompt({ webSocket, setMessages }: {
+export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete }: {
     webSocket: React.RefObject<WebSocket | null>,
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+    isAnyChatIncomplete: boolean
+    setIsAnyChatIncomplete: React.Dispatch<React.SetStateAction<boolean>>
 }) {
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -16,7 +18,6 @@ export default function Prompt({ webSocket, setMessages }: {
     const [currentFiles, setCurrentFiles] = useState<File[]>([])
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
     const [inProgressChat, setInProgressChat] = useState<Chat | null>(null)
-    const [isGenerating, setIsGenerating] = useState(false)
 
     function GeneratingMessageNotification({ title, uuid, }: { title: string, uuid: string }) {
         return (
@@ -109,14 +110,14 @@ export default function Prompt({ webSocket, setMessages }: {
                                     setPrompt("")
                                     setCurrentFiles([])
                                     setVisibleFiles([])
-                                    setIsGenerating(true)
+                                    setIsAnyChatIncomplete(true)
                                 }
                             }
                         })
                     } else {
                         webSocket.current.send(JSON.stringify({ model: model, message: prompt }))
                         setPrompt("")
-                        setIsGenerating(true)
+                        setIsAnyChatIncomplete(true)
                     }
                 }
             } else {
@@ -220,30 +221,15 @@ export default function Prompt({ webSocket, setMessages }: {
         localStorage.setItem("model", model)
     }, [model])
 
-    useEffect(() => {
-        if (!webSocket.current) return
-        function handleMessage(event: MessageEvent) {
-            try {
-                const data = JSON.parse(event.data)
-                if ("token" in data || "generating_message_action" in data) {
-                    setIsGenerating(true)
-                }
-                if ("message" in data) {
-                    setIsGenerating(false)
-                }
-            } catch { }
-        }
-        webSocket.current.addEventListener("message", handleMessage)
-        return () => {
-            webSocket.current?.removeEventListener("message", handleMessage)
-        }
-    }, [webSocket])
-
     function handleStop() {
-        if (webSocket.current) {
-            webSocket.current.send(JSON.stringify({ action: "stop_message" }))
-        }
-        setIsGenerating(false)
+        getChats(true).then(chats => {
+            if (webSocket.current) {
+                if (chats.length > 0) {
+                    webSocket.current.send(JSON.stringify({ action: "stop_message", "chat_uuid": chats[0].uuid }))
+                }
+            }
+        })
+        setIsAnyChatIncomplete(false)
     }
 
     return (
@@ -314,7 +300,7 @@ export default function Prompt({ webSocket, setMessages }: {
                     autoFocus
                 />
 
-                {prompt.trim() && !isGenerating &&
+                {prompt.trim() && !isAnyChatIncomplete &&
                     <button
                         className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end"
                         tabIndex={3}
@@ -324,7 +310,7 @@ export default function Prompt({ webSocket, setMessages }: {
                     </button>
                 }
 
-                {isGenerating &&
+                {isAnyChatIncomplete &&
                     <button
                         className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end"
                         tabIndex={3}

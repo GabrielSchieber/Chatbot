@@ -9,16 +9,16 @@ import { getChats, getMessage, getMessages } from "../utils/api"
 import type { Message } from "../types"
 import { Tooltip } from "radix-ui"
 
-export default function Messages({ webSocket, messages, setMessages }: {
+export default function Messages({ webSocket, messages, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete }: {
     webSocket: React.RefObject<WebSocket | null>
     messages: Message[]
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+    isAnyChatIncomplete: boolean
+    setIsAnyChatIncomplete: React.Dispatch<React.SetStateAction<boolean>>
 }) {
     const { chatUUID } = useParams()
     const shouldLoadMessages = useRef(true)
     const [copiedMessageIndex, setCopiedMessageIndex] = useState(-1)
-    const [isAnyChatIncomplete, setIsAnyChatIncomplete] = useState(false)
-    const [generatingMessageIndex, setGeneratingMessageIndex] = useState(-1)
 
     function MessageButton({ children, onClick, tooltip, isDisabled = false }: { children: ReactNode, onClick: () => void, tooltip: string, isDisabled?: boolean }) {
         return (
@@ -61,7 +61,7 @@ export default function Messages({ webSocket, messages, setMessages }: {
                 }
                 tooltip="Regenerate"
                 onClick={() => regenerateMessage(index)}
-                isDisabled={isAnyChatIncomplete || generatingMessageIndex >= 0}
+                isDisabled={isAnyChatIncomplete}
             />
         )
     }
@@ -85,27 +85,21 @@ export default function Messages({ webSocket, messages, setMessages }: {
 
             webSocket.current.addEventListener("message", event => {
                 const data = JSON.parse(event.data)
-
-                if (data.generating_message_index) {
-                    setGeneratingMessageIndex(data.generating_message_index)
-                }
-
                 const message_index = data.message_index + 1
-
-                if (data.message) {
-                    setMessages(previous => {
-                        let messages = [...previous]
-                        messages[message_index] = { text: data.message, files: [], is_user_message: false }
-                        return messages
-                    })
-                    setGeneratingMessageIndex(-1)
-                    setIsAnyChatIncomplete(false)
-                } else if (data.token) {
+                if (data.token) {
                     setMessages(previous => {
                         let messages = [...previous]
                         messages[message_index] = { text: messages[message_index].text + data.token, files: [], is_user_message: false }
                         return messages
                     })
+                    setIsAnyChatIncomplete(true)
+                } else if (data.message) {
+                    setMessages(previous => {
+                        let messages = [...previous]
+                        messages[message_index] = { text: data.message, files: [], is_user_message: false }
+                        return messages
+                    })
+                    setIsAnyChatIncomplete(false)
                 } else if (data.redirect) {
                     location.href = data.redirect
                 }
@@ -136,7 +130,7 @@ export default function Messages({ webSocket, messages, setMessages }: {
     function regenerateMessage(index: number) {
         if (webSocket.current) {
             webSocket.current.send(JSON.stringify({ "action": "regenerate_message", message_index: index }))
-            setGeneratingMessageIndex(index)
+            setIsAnyChatIncomplete(true)
             setMessages(previous => {
                 const messages = [...previous]
                 messages[index].text = ""

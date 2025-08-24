@@ -55,7 +55,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         action = content.get("action", "new_message")
 
         if action == "stop_message":
-            await self.handle_stop_message()
+            chat_uuid = content.get("chat_uuid")
+            await self.handle_stop_message(chat_uuid)
             return
 
         if len(non_complete_chats) == 0:
@@ -167,8 +168,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         await create_generate_message_task(self.chat, model, user_message, bot_message, message_index, "regenerate_message")
 
-    async def handle_stop_message(self):
-        running_chat_task = get_running_chat_task_for_chat(self.chat)
+    async def handle_stop_message(self, chat_uuid=None):
+        target_chat = self.chat
+        if chat_uuid:
+            try:
+                target_chat = await database_sync_to_async(Chat.objects.get)(uuid = chat_uuid)
+            except Chat.DoesNotExist:
+                return
+        running_chat_task = get_running_chat_task_for_chat(target_chat)
         if running_chat_task:
             await database_sync_to_async(cancel_chat_task)(running_chat_task)
 
