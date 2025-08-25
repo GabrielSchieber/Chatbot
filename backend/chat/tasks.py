@@ -1,5 +1,4 @@
 import asyncio
-import dataclasses
 import logging
 from typing import Literal, get_args
 
@@ -12,40 +11,11 @@ from ollama import AsyncClient
 from .models import Chat, Message, MessageFile, User
 
 ModelName = Literal["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B"]
-type MessageAction = Literal["new_message", "edit_message", "regenerate_message"]
+MessageAction = Literal["new_message", "edit_message", "regenerate_message"]
 
-@dataclasses.dataclass(frozen = True)
-class ChatTask:
-    chat_uuid: str
-    message_action: MessageAction
+global_chat_tasks: dict[str, asyncio.Task[None]] = {}
 
-global_chat_tasks: dict[ChatTask, asyncio.Task[None]] = {}
-
-async def generate_message(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName, message_action: MessageAction):
-    async def sample_model():
-        chat.is_complete = False
-        await database_sync_to_async(chat.save)()
-
-        messages: list[dict[str, str]] = await database_sync_to_async(get_messages)(chat, user_message)
-        messages.pop()
-        message_index = len(messages) - 1
-
-        try:
-            async for part in await AsyncClient().chat(model_name, messages, stream = True, options = options):
-                token = part["message"]["content"]
-                bot_message.text += token
-                await database_sync_to_async(bot_message.save)()
-                await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_token", "token": token, "message_index": message_index})
-        except asyncio.CancelledError:
-            chat.is_complete = True
-            await database_sync_to_async(chat.save)()
-            return
-
-        await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": bot_message.text, "message_index": message_index})
-
-        chat.is_complete = False
-        await database_sync_to_async(chat.save)()
-
+async def generate_message(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName):
     if model_name not in get_args(ModelName):
         raise ValueError(f"Invalid model name: \"{model_name}\"")
     model_name = model_name.lower().replace("-", ":")
@@ -53,12 +23,35 @@ async def generate_message(chat: Chat, user_message: Message, bot_message: Messa
     options = {"num_predict": 256, "temperature": 0.2, "top_p": 0.9, "seed": 0}
     channel_layer = get_channel_layer()
 
-    chat_task = ChatTask(str(chat.uuid), message_action)
-    task = asyncio.create_task(sample_model())
-    task.add_done_callback(lambda t: task_done_callback(t, chat_task))
+    task = asyncio.create_task(sample_model(chat, user_message, bot_message, model_name, channel_layer, options))
+    task.add_done_callback(lambda t: task_done_callback(t, str(chat.uuid)))
 
     global global_chat_tasks
-    global_chat_tasks[chat_task] = task
+    global_chat_tasks[str(chat.uuid)] = task
+
+async def sample_model(chat: Chat, user_message: Message, bot_message: Message, model_name: str, channel_layer, options):
+    chat.is_complete = False
+    await database_sync_to_async(chat.save)()
+
+    messages: list[dict[str, str]] = await database_sync_to_async(get_messages)(chat, user_message)
+    messages.pop()
+    message_index = len(messages) - 1
+
+    try:
+        async for part in await AsyncClient().chat(model_name, messages, stream = True, options = options):
+            token = part["message"]["content"]
+            bot_message.text += token
+            await database_sync_to_async(bot_message.save)()
+            await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_token", "token": token, "message_index": message_index})
+    except asyncio.CancelledError:
+        chat.is_complete = True
+        await database_sync_to_async(chat.save)()
+        return
+
+    await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": bot_message.text, "message_index": message_index})
+
+    chat.is_complete = True
+    await database_sync_to_async(chat.save)()
 
 def task_done_callback(task: asyncio.Task[None], chat_uuid: str):
     global global_chat_tasks
@@ -102,7 +95,7 @@ def get_message_with_files(message: str, files: list[dict[str, str]]) -> str:
 def get_incomplete_chats(user: User) -> list[Chat]:
     return list(Chat.objects.filter(user = user, is_complete = False))
 
-def reset_incomplete_chats(user: User):
+def reset_stopped_incomplete_chats(user: User):
     non_complete_chats = get_incomplete_chats(user)
     chat_uuids_in_tasks = [task for task in global_chat_tasks]
     for chat in non_complete_chats:
@@ -110,18 +103,12 @@ def reset_incomplete_chats(user: User):
             chat.is_complete = True
             chat.save()
 
-def get_running_chat_task_for_chat(chat: Chat):
-    if not chat.is_complete:
-        for task in global_chat_tasks:
-            if str(chat.uuid) == task.chat_uuid:
-                return task
-
-def cancel_chat_task(chat_task: ChatTask):
-    task = global_chat_tasks.get(chat_task)
+def cancel_chat_task(chat_uuid: str):
+    task = global_chat_tasks.get(chat_uuid)
     if task and not task.done():
         task.cancel()
     try:
-        chat = Chat.objects.get(uuid = chat_task.chat_uuid)
+        chat = Chat.objects.get(uuid = chat_uuid)
         chat.is_complete = True
         chat.save()
     except Exception:

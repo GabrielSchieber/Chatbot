@@ -94,7 +94,6 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                         }
                         return previousMessages
                     })
-                    setIsAnyChatIncomplete(true)
                 } else if (data.message) {
                     setMessages(previous => {
                         let previousMessages = [...previous]

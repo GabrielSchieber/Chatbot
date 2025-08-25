@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Chat, Message, MessageFile, User
-from .tasks import reset_incomplete_chats
+from .tasks import reset_stopped_incomplete_chats
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only = True)
@@ -165,7 +165,7 @@ class GetChats(APIView):
         if incomplete_flag is None:
             return Response({"error": "'incomplete' field required"}, status = 400)
 
-        reset_incomplete_chats(request.user)
+        reset_stopped_incomplete_chats(request.user)
 
         chats = Chat.objects.filter(user = request.user, is_complete = False)
         serializer = ChatSerializer(chats, many = True)

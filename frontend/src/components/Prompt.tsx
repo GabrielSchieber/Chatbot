@@ -244,13 +244,11 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
 
     function handleStop() {
         getChats(true).then(chats => {
-            if (webSocket.current) {
-                if (chats.length > 0) {
-                    webSocket.current.send(JSON.stringify({ action: "stop_message", chat_uuid: chats[0].uuid }))
-                }
+            if (chats.length > 0 && webSocket.current) {
+                webSocket.current.send(JSON.stringify({ action: "stop_message" }))
+                setIsAnyChatIncomplete(false)
             }
         })
-        setIsAnyChatIncomplete(false)
     }
 
     return (

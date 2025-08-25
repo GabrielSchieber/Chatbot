@@ -7,7 +7,7 @@ from django.contrib.auth.models import AnonymousUser
 from jwt import decode as jwt_decode
 
 from .models import Chat, Message, MessageFile, User
-from .tasks import ModelName, cancel_chat_task, generate_message, get_incomplete_chats, get_running_chat_task_for_chat, reset_incomplete_chats
+from .tasks import ModelName, cancel_chat_task, generate_message, get_incomplete_chats, reset_stopped_incomplete_chats
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -27,7 +27,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 await self.close()
                 return
 
-        await self.reset_incomplete_chats()
+        await self.reset_stopped_incomplete_chats()
         await self.accept()
 
     async def disconnect(self, code):
@@ -36,16 +36,18 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive_json(self, content):
         action = content.get("action", "new_message")
-        chat_uuid = content.get("chat_uuid")
 
         if action == "stop_message":
-            await self.handle_stop_message(chat_uuid)
+            incomplete_chats = await self.get_incomplete_chats()
+            if len(incomplete_chats) > 0:
+                await database_sync_to_async(cancel_chat_task)(str(incomplete_chats[0].uuid))
             return
 
+        chat_uuid = content.get("chat_uuid")
         if chat_uuid:
             self.chat = await database_sync_to_async(Chat.objects.get)(user = self.user, uuid = chat_uuid)
 
-        await self.reset_incomplete_chats()
+        await self.reset_stopped_incomplete_chats()
         incomplete_chats = await self.get_incomplete_chats()
         if len(incomplete_chats) > 0:
             await self.close()
@@ -119,7 +121,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         bot_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = "", is_user_message = False)
 
-        await generate_message(self.chat, user_message, bot_message, model_name, "new_message")
+        await generate_message(self.chat, user_message, bot_message, model_name)
 
     async def handle_edit_message(self, model_name: ModelName, message: str, message_index: int):
         messages = await self.get_messages()
@@ -132,7 +134,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         bot_message.text = ""
         await database_sync_to_async(bot_message.save)()
 
-        await generate_message(self.chat, user_message, bot_message, model_name, "edit_message")
+        await generate_message(self.chat, user_message, bot_message, model_name)
 
     async def handle_regenerate_message(self, model_name: ModelName, message_index: int):
         messages = await self.get_messages()
@@ -143,38 +145,19 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         bot_message.text = ""
         await database_sync_to_async(bot_message.save)()
 
-        await generate_message(self.chat, user_message, bot_message, model_name, "regenerate_message")
-
-    async def handle_stop_message(self, chat_uuid = None):
-        target_chat = self.chat
-        if chat_uuid:
-            try:
-                target_chat = await database_sync_to_async(Chat.objects.get)(uuid = chat_uuid)
-            except Chat.DoesNotExist:
-                return
-        running_chat_task = get_running_chat_task_for_chat(target_chat)
-        if running_chat_task:
-            await database_sync_to_async(cancel_chat_task)(running_chat_task)
-
-    @database_sync_to_async
-    def create_chat(self) -> Chat:
-        return Chat.objects.create(user = self.user, title = f"Chat {Chat.objects.filter(user = self.user).count() + 1}")
+        await generate_message(self.chat, user_message, bot_message, model_name)
 
     @database_sync_to_async
     def get_incomplete_chats(self) -> list[Chat]:
         return get_incomplete_chats(self.user)
 
     @database_sync_to_async
-    def reset_incomplete_chats(self):
-        reset_incomplete_chats(self.user)
+    def reset_stopped_incomplete_chats(self):
+        reset_stopped_incomplete_chats(self.user)
 
     @database_sync_to_async
     def get_messages(self) -> list[Message]:
         return list(Message.objects.filter(chat = self.chat).order_by("date_time"))
-
-    @database_sync_to_async
-    def get_message_at_index(self, index: int) -> Message:
-        return Message.objects.filter(chat = self.chat)[index]
 
     def get_group_name(self) -> str:
         return f"chat_{str(self.chat.uuid)}"
