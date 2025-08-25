@@ -1,5 +1,14 @@
 import type { Chat, Message, SearchEntry } from "../types"
 
+export async function createChat(): Promise<Chat> {
+    const response = await fetch("/api/create-chat/", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" }
+    })
+    return await response.json()
+}
+
 export async function getChats(incomplete: boolean = false): Promise<Chat[]> {
     const method = incomplete ? "POST" : "GET"
     const body = incomplete ? JSON.stringify({ incomplete: true }) : undefined

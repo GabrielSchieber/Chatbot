@@ -2,6 +2,7 @@ from django.conf import settings
 from django.urls import path, re_path
 
 from .views import (
+    CreateChat,
     DeleteAccount,
     DeleteChat,
     DeleteChats,
@@ -26,6 +27,7 @@ urlpatterns = [
     path("api/get-message/", GetMessage.as_view()),
     path("api/get-messages/", GetMessages.as_view()),
     path("api/upload-files/", UploadFiles.as_view()),
+    path("api/create-chat/", CreateChat.as_view()),
     path("api/get-chats/", GetChats.as_view()),
     path("api/search-chats/", SearchChats.as_view()),
     path("api/rename-chat/", RenameChat.as_view()),

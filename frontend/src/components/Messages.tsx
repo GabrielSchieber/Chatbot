@@ -1,13 +1,13 @@
 import { CheckIcon, CopyIcon, FileIcon, UpdateIcon } from "@radix-ui/react-icons"
+import { Tooltip } from "radix-ui"
 import React, { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react"
-import { useParams } from "react-router"
 import ReactMarkdown from "react-markdown"
+import { useParams } from "react-router"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 
 import { getChats, getMessage, getMessages } from "../utils/api"
 import type { Message } from "../types"
-import { Tooltip } from "radix-ui"
 
 export default function Messages({ webSocket, messages, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete }: {
     webSocket: React.RefObject<WebSocket | null>
@@ -83,6 +83,24 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
         if (!webSocket.current) {
             webSocket.current = new WebSocket(chatUUID ? `ws://${location.host}/ws/chat/${chatUUID}/` : `ws://${location.host}/ws/chat/`)
 
+            webSocket.current.addEventListener("open", _ => {
+                setTimeout(() => {
+                    const pendingMessage = localStorage.getItem("pendingMessage")
+                    if (pendingMessage && webSocket.current) {
+                        webSocket.current.send(JSON.stringify({ "message": pendingMessage }))
+
+                        setMessages(previous => {
+                            const previousMessages = [...previous]
+                            previousMessages.push({ "text": pendingMessage, "files": [], "is_user_message": true })
+                            previousMessages.push({ "text": "", "files": [], "is_user_message": false })
+                            return previousMessages
+                        })
+
+                        localStorage.removeItem("pendingMessage")
+                    }
+                }, 100)
+            })
+
             webSocket.current.addEventListener("message", event => {
                 const data = JSON.parse(event.data)
                 const message_index = data.message_index + 1
@@ -104,8 +122,6 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                         return previousMessages
                     })
                     setIsAnyChatIncomplete(false)
-                } else if (data.redirect) {
-                    location.href = data.redirect
                 }
             })
 
