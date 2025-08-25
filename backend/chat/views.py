@@ -92,11 +92,18 @@ class CookieTokenRefreshView(TokenRefreshView):
             return Response({"error": "No refresh token"}, status = status.HTTP_401_UNAUTHORIZED)
 
         serializer = self.get_serializer(data = {"refresh": refresh_token})
-        serializer.is_valid(raise_exception = True)
+        try:
+            serializer.is_valid(raise_exception = True)
+        except Exception:
+            return Response({"error": "Invalid refresh token"}, status = status.HTTP_401_UNAUTHORIZED)
+
         access = serializer.validated_data["access"]
+        new_refresh = serializer.validated_data.get("refresh")
 
         response = Response({"success": True})
         response.set_cookie("access_token", access, httponly = True, samesite = "Lax")
+        if new_refresh:
+            response.set_cookie("refresh_token", new_refresh, httponly = True, samesite = "Lax")
         return response
 
 class GetMessage(APIView):
