@@ -83,24 +83,6 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
         if (!webSocket.current) {
             webSocket.current = new WebSocket(chatUUID ? `ws://${location.host}/ws/chat/${chatUUID}/` : `ws://${location.host}/ws/chat/`)
 
-            webSocket.current.addEventListener("open", _ => {
-                setTimeout(() => {
-                    const pendingMessage = localStorage.getItem("pendingMessage")
-                    if (pendingMessage && webSocket.current) {
-                        webSocket.current.send(JSON.stringify({ "message": pendingMessage }))
-
-                        setMessages(previous => {
-                            const previousMessages = [...previous]
-                            previousMessages.push({ "text": pendingMessage, "files": [], "is_user_message": true })
-                            previousMessages.push({ "text": "", "files": [], "is_user_message": false })
-                            return previousMessages
-                        })
-
-                        localStorage.removeItem("pendingMessage")
-                    }
-                }, 100)
-            })
-
             webSocket.current.addEventListener("message", event => {
                 const data = JSON.parse(event.data)
                 const message_index = data.message_index + 1
@@ -149,7 +131,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
 
     function regenerateMessage(index: number) {
         if (webSocket.current) {
-            webSocket.current.send(JSON.stringify({ "action": "regenerate_message", message_index: index }))
+            webSocket.current.send(JSON.stringify({ action: "regenerate_message", message_index: index }))
             setIsAnyChatIncomplete(true)
             setMessages(previous => {
                 const messages = [...previous]

@@ -1,5 +1,5 @@
 import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronRightIcon, Cross2Icon, FileIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
-import { createChat, getChats } from "../utils/api"
+import { createChat, getChats, uploadFiles } from "../utils/api"
 import { useEffect, useRef, useState } from "react"
 import type { Model, Message, UIAttachment, Chat } from "../types"
 import { DropdownMenu } from "radix-ui"
@@ -95,16 +95,29 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     }
 
     function sendMessage() {
-        getChats(true).then(chats => {
+        getChats(true).then(async chats => {
             if (chats.length === 0) {
                 if (!chatUUID) {
                     createChat().then(chat => {
-                        localStorage.setItem("pendingMessage", prompt)
-                        location.href = `/chat/${chat.uuid}`
+                        if (webSocket.current) {
+                            if (currentFiles.length > 0) {
+                                uploadFiles(currentFiles).then(files => {
+                                    if (!files.error && webSocket.current) {
+                                        webSocket.current.send(JSON.stringify({ model: model, message: prompt, files: files, chat_uuid: chat.uuid }))
+                                        setPrompt("")
+                                        setCurrentFiles([])
+                                        setVisibleFiles([])
+                                        setIsAnyChatIncomplete(true)
+                                        location.href = `/chat/${chat.uuid}`
+                                    }
+                                })
+                            } else {
+                                webSocket.current.send(JSON.stringify({ model: model, message: prompt, chat_uuid: chat.uuid }))
+                                location.href = `/chat/${chat.uuid}`
+                            }
+                        }
                     })
                 } else if (webSocket.current) {
-                    webSocket.current.send(JSON.stringify({ "message": prompt }))
-
                     setMessages(previous => {
                         const previousMessages = [...previous]
                         previousMessages.push({ "text": prompt, "files": [], "is_user_message": true })
@@ -112,8 +125,21 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                         return previousMessages
                     })
 
-                    setPrompt("")
-                    setIsAnyChatIncomplete(true)
+                    if (currentFiles.length > 0) {
+                        uploadFiles(currentFiles).then(files => {
+                            if (!files.error && webSocket.current) {
+                                webSocket.current.send(JSON.stringify({ model: model, message: prompt, files: files }))
+                                setPrompt("")
+                                setCurrentFiles([])
+                                setVisibleFiles([])
+                                setIsAnyChatIncomplete(true)
+                            }
+                        })
+                    } else {
+                        webSocket.current.send(JSON.stringify({ message: prompt }))
+                        setPrompt("")
+                        setIsAnyChatIncomplete(true)
+                    }
                 }
             } else {
                 setInProgressChat(chats[0])
@@ -220,7 +246,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
         getChats(true).then(chats => {
             if (webSocket.current) {
                 if (chats.length > 0) {
-                    webSocket.current.send(JSON.stringify({ action: "stop_message", "chat_uuid": chats[0].uuid }))
+                    webSocket.current.send(JSON.stringify({ action: "stop_message", chat_uuid: chats[0].uuid }))
                 }
             }
         })
