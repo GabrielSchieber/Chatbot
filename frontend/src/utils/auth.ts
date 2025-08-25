@@ -13,7 +13,7 @@ export async function login(email: string, password: string) {
 }
 
 export async function logout() {
-    await fetch("/api/logout/", { credentials: "include" })
+    await apiFetch("/api/logout/", { credentials: "include" })
 }
 
 export async function signup(email: string, password: string) {
@@ -49,9 +49,26 @@ export function useAuth() {
 }
 
 async function getCurrentUser(): Promise<{ id: number; email: string } | null> {
-    const response = await fetch("/api/me/", { credentials: "include" })
+    const response = await apiFetch("/api/me/", { credentials: "include" })
     if (!response.ok) {
         return null
     }
     return await response.json()
+}
+
+export async function apiFetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
+    let response = await fetch(input, { ...init, credentials: "include" })
+
+    if (response.status === 401) {
+        const refreshResponse = await fetch("/api/refresh-token/", {
+            method: "POST",
+            credentials: "include"
+        })
+
+        if (refreshResponse.ok) {
+            response = await fetch(input, { ...init, credentials: "include" })
+        }
+    }
+
+    return response
 }

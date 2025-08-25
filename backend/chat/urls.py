@@ -16,6 +16,7 @@ from .views import (
     RenameChat,
     SearchChats,
     UploadFiles,
+    CookieTokenRefreshView,
     index
 )
 
@@ -33,7 +34,8 @@ urlpatterns = [
     path("api/rename-chat/", RenameChat.as_view()),
     path("api/delete-chat/", DeleteChat.as_view()),
     path("api/delete-chats/", DeleteChats.as_view()),
-    path("api/delete-account/", DeleteAccount.as_view())
+    path("api/delete-account/", DeleteAccount.as_view()),
+    path("api/refresh-token/", CookieTokenRefreshView.as_view())
 ]
 
 if not settings.DEBUG:

@@ -3,12 +3,13 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db.models import Prefetch, Q
 from django.shortcuts import render
-from rest_framework import generics, serializers
+from rest_framework import generics, serializers, status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from .models import Chat, Message, MessageFile, User
 from .tasks import reset_stopped_incomplete_chats
@@ -83,6 +84,20 @@ class MeView(APIView):
     def get(self, request):
         user = request.user
         return Response({"id": user.id, "email": user.email})
+
+class CookieTokenRefreshView(TokenRefreshView):
+    def post(self, request):
+        refresh_token = request.COOKIES.get("refresh_token")
+        if not refresh_token:
+            return Response({"error": "No refresh token"}, status = status.HTTP_401_UNAUTHORIZED)
+
+        serializer = self.get_serializer(data = {"refresh": refresh_token})
+        serializer.is_valid(raise_exception = True)
+        access = serializer.validated_data["access"]
+
+        response = Response({"success": True})
+        response.set_cookie("access_token", access, httponly = True, samesite = "Lax")
+        return response
 
 class GetMessage(APIView):
     permission_classes = [IsAuthenticated]
