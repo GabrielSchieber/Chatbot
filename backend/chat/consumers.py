@@ -1,3 +1,4 @@
+import random
 from typing import get_args
 
 from channels.db import database_sync_to_async
@@ -148,6 +149,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         bot_message.text = ""
         await database_sync_to_async(bot_message.save)()
 
+        options["seed"] = random.randint(0, 1_000_000_000)
         await generate_message(self.chat, user_message, bot_message, model_name, options)
 
     @database_sync_to_async
