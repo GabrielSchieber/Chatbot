@@ -1,7 +1,8 @@
 import type { Chat, Message, SearchEntry } from "../types"
+import { apiFetch } from "./auth"
 
 export async function createChat(): Promise<Chat> {
-    const response = await fetch("/api/create-chat/", {
+    const response = await apiFetch("/api/create-chat/", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" }
@@ -12,7 +13,7 @@ export async function createChat(): Promise<Chat> {
 export async function getChats(incomplete: boolean = false): Promise<Chat[]> {
     const method = incomplete ? "POST" : "GET"
     const body = incomplete ? JSON.stringify({ incomplete: true }) : undefined
-    const response = await fetch("/api/get-chats/", {
+    const response = await apiFetch("/api/get-chats/", {
         method,
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -23,7 +24,7 @@ export async function getChats(incomplete: boolean = false): Promise<Chat[]> {
 }
 
 export async function getMessages(chatUUID: string): Promise<Message[] | undefined> {
-    const response = await fetch("/api/get-messages/", {
+    const response = await apiFetch("/api/get-messages/", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -34,7 +35,7 @@ export async function getMessages(chatUUID: string): Promise<Message[] | undefin
 }
 
 export async function getMessage(chatUUID: string, message_index: number): Promise<string | undefined> {
-    const response = await fetch("/api/get-message/", {
+    const response = await apiFetch("/api/get-message/", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -45,7 +46,7 @@ export async function getMessage(chatUUID: string, message_index: number): Promi
 }
 
 export async function renameChat(chatUUID: string, newTitle: string) {
-    const response = await fetch("/api/rename-chat/", {
+    const response = await apiFetch("/api/rename-chat/", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -55,7 +56,7 @@ export async function renameChat(chatUUID: string, newTitle: string) {
 }
 
 export async function deleteChat(chatUUID: string) {
-    const response = await fetch("/api/delete-chat/", {
+    const response = await apiFetch("/api/delete-chat/", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -65,15 +66,15 @@ export async function deleteChat(chatUUID: string) {
 }
 
 export async function deleteChats() {
-    return (await fetch("/api/delete-chats/", { credentials: "include" })).status
+    return (await apiFetch("/api/delete-chats/", { credentials: "include" })).status
 }
 
 export async function deleteAccount() {
-    return (await fetch("/api/delete-account/", { credentials: "include" })).status
+    return (await apiFetch("/api/delete-account/", { credentials: "include" })).status
 }
 
 export async function searchChats(search: string): Promise<SearchEntry[] | undefined> {
-    const response = await fetch("/api/search-chats/", {
+    const response = await apiFetch("/api/search-chats/", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -87,7 +88,7 @@ export async function uploadFiles(files: File[]): Promise<any> {
     const formData = new FormData()
     files.forEach(file => formData.append("files", file))
 
-    const response = await fetch("/api/upload-files/", { method: "POST", body: formData })
+    const response = await apiFetch("/api/upload-files/", { method: "POST", credentials: "include", body: formData })
 
     return await response.json()
 }
