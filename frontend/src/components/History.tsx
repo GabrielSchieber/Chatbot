@@ -52,13 +52,13 @@ export default function History({ chats, setChats }: {
     }
 
     return (
-        <div className="history flex flex-col gap-1 p-2 w-full h-full p-1 overflow-x-hidden overflow-y-auto">
+        <div className="flex flex-col gap-1 p-2 w-full h-full p-1 overflow-x-hidden overflow-y-auto">
             <p className="pl-2 text-sm text-gray-400">Chats</p>
             {chats.map((chat, index) => (
                 <div
                     key={chat.uuid}
                     className={`
-                        flex group px-2 py-1 justify-between rounded
+                        history flex group px-2 py-1 justify-between rounded
                         ${(chatUUID === chat.uuid || renameChatUUID === chat.uuid) && "bg-gray-700 light:bg-gray-400/40"}
                         ${selectedDropdownIndex === index ? "bg-gray-600 light:bg-gray-300" : "hover:bg-gray-600 light:hover:bg-gray-300"}
                     `}
