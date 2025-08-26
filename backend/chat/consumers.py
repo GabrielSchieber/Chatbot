@@ -175,20 +175,20 @@ def parse_options(options: dict[str, int | float] | None):
     def clamp(number: int | float, minimum: int | float, maximum: int | float):
         return max(min(number, maximum), minimum)
 
+    new_options = {"num_predict": 256, "temperature": 0.2, "top_p": 0.9, "seed": 0}
+
     if options:
         if "max_tokens" in options:
             max_tokens = int(options["max_tokens"])
-            max_tokens = clamp(max_tokens, 32, 4096)
+            new_options["num_predict"] = clamp(max_tokens, 32, 4096)
         if "temperature" in options:
             temperature = float(options["temperature"])
-            temperature = clamp(temperature, 0.01, 10)
+            new_options["temperature"] = clamp(temperature, 0.01, 10)
         if "top_p" in options:
             top_p = float(options["top_p"])
-            top_p = clamp(top_p, 0.01, 10)
+            new_options["top_p"] = clamp(top_p, 0.01, 10)
         if "seed" in options:
             seed = int(options["seed"])
-        options = {"num_predict": max_tokens, "temperature": temperature, "top_p": top_p, "seed": seed}
-    else:
-        options = {"num_predict": 256, "temperature": 0.2, "top_p": 0.9, "seed": 0}
+            new_options["seed"] = seed
 
-    return options
+    return new_options
