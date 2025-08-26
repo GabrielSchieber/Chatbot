@@ -1,8 +1,7 @@
-import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronRightIcon, Cross2Icon, FileIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
+import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Cross2Icon, FileIcon, GearIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
 import { createChat, getChats, uploadFiles } from "../utils/api"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import type { Model, Message, UIAttachment, Chat } from "../types"
-import { DropdownMenu } from "radix-ui"
 import { useParams } from "react-router"
 
 export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete }: {
@@ -21,6 +20,31 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
     const [inProgressChat, setInProgressChat] = useState<Chat | null>(null)
 
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+    const [isDropdownOptionsOpen, setIsDropdownOptionsOpen] = useState(false)
+    const [isDropdownModelOpen, setIsDropdownModelOpen] = useState(false)
+
+    function getStoredOptions() {
+        const storedOptions = localStorage.getItem("options")
+        if (storedOptions) {
+            return JSON.parse(storedOptions)
+        } else {
+            return {
+                max_tokens: 256,
+                temperature: 0.2,
+                top_p: 0.9,
+                seed: 0
+            }
+        }
+    }
+
+    const [options, setOptions] = useState<{
+        max_tokens: number
+        temperature: number
+        top_p: number
+        seed: number
+    }>(() => getStoredOptions())
+
     function GeneratingMessageNotification({ title, uuid, }: { title: string, uuid: string }) {
         return (
             <div className="px-4 py-2 rounded-xl bg-gray-700 light:bg-gray-300">
@@ -30,57 +54,117 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     }
 
     function AddDropdown() {
-        const buttonClassNames = `
-            flex gap-2 px-2 py-1 items-center outline-none rounded cursor-pointer
-            data-[highlighted]:bg-gray-600/60 light:data-[highlighted]:bg-gray-400/40
-        `
-        const itemClassNames = `
-            flex w-40 justify-between items-center px-2 py-1 outline-none rounded cursor-pointer
-            data-[highlighted]:bg-gray-600/60 light:data-[highlighted]:bg-gray-400/40
-        `
+        function OptionItem({ label, optionKey }: { label: ReactNode, optionKey: "max_tokens" | "temperature" | "top_p" | "seed" }) {
+            const optionsClassNames = "flex items-center justify-between text-sm gap-1 px-1 rounded bg-gray-700"
+            const optionsPClassNames = "truncate"
+            const optionsInputClassNames = "w-15 px-1.5 m-1 outline-none rounded bg-gray-600 hover:bg-gray-500 focus:bg-gray-500"
+
+            function handleSetOptions(value: string) {
+                if (optionKey === "max_tokens" || optionKey === "seed") {
+                    setOptions(previous => {
+                        const previousOptions = { ...previous }
+                        previousOptions[optionKey] = optionKey === "max_tokens" ? clamp(parseInt(value), 32, 4096) : parseInt(value)
+                        return previousOptions
+                    })
+                } else {
+                    setOptions(previous => {
+                        const previousOptions = { ...previous }
+                        previousOptions[optionKey] = clamp(parseFloat(value), 0.01, 10)
+                        return previousOptions
+                    })
+                }
+            }
+
+            return (
+                <div className={optionsClassNames}>
+                    <p className={optionsPClassNames}>{label}</p>
+                    <input
+                        className={optionsInputClassNames}
+                        defaultValue={options[optionKey]}
+                        onBlur={e => handleSetOptions(e.currentTarget.value)}
+                        onKeyDown={e => {
+                            if (e.key === "Enter") {
+                                handleSetOptions(e.currentTarget.value)
+                            }
+                        }}
+                    />
+                </div>
+            )
+        }
+
+        function ModelItem({ modelName }: { modelName: "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" }) {
+            return (
+                <div className="flex gap-1 w-40 px-2 py-1 items-center justify-between rounded hover:bg-gray-700">
+                    <button className="truncate cursor-pointer" onClick={_ => setModel(modelName)}>{modelName}</button>
+                    {modelName == model && <CheckIcon className="size-5" />}
+                </div>
+            )
+        }
+
+        const buttonClassNames = "flex w-full px-1 gap-2 justify-between items-center cursor-pointer rounded hover:bg-gray-700"
+        const dropdownClassNames = "absolute flex flex-col gap-1 p-2 rounded-xl bg-gray-800"
 
         return (
-            <DropdownMenu.Root>
-                <DropdownMenu.Trigger tabIndex={2} id="add-dropdown-trigger" className="hover:bg-gray-600 light:hover:bg-gray-200 p-1.5 rounded-[20px] cursor-pointer self-end">
+            <div className="relative flex flex-col" onClick={e => e.stopPropagation()}>
+                <button className="p-1.5 rounded-3xl hover:bg-gray-600" tabIndex={2} onClick={_ => setIsDropdownOpen(!isDropdownOpen)}>
                     <PlusIcon className="size-6" />
-                </DropdownMenu.Trigger>
+                </button>
+                {isDropdownOpen && (
+                    <div className="absolute flex flex-col gap-1 p-2 self-center items-center cursor-auto bottom-10 rounded-xl bg-gray-800">
+                        <button
+                            className={buttonClassNames}
+                            onClick={_ => {
+                                setIsDropdownOptionsOpen(!isDropdownOptionsOpen)
+                                setIsDropdownModelOpen(false)
+                            }}
+                        >
+                            <GearIcon /> Options {isDropdownOptionsOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
+                        </button>
+                        {isDropdownOptionsOpen && (
+                            <div className={dropdownClassNames + " bottom-10 left-32"}>
+                                <OptionItem label="🔣 Max. Tokens" optionKey="max_tokens" />
+                                <OptionItem label="🌡 Temperature" optionKey="temperature" />
+                                <OptionItem
+                                    label={
+                                        <span className="flex items-center gap-1">
+                                            <ArrowUpIcon /> Top P
+                                        </span>
+                                    }
+                                    optionKey="top_p"
+                                />
+                                <OptionItem label="🌱 Seed" optionKey="seed" />
+                            </div>
+                        )}
 
-                <DropdownMenu.Content className="flex flex-col bg-gray-700 light:bg-gray-300 p-2 rounded-xl translate-x-7 -translate-y-2 shadow-xl/30">
-                    <DropdownMenu.Sub>
-                        <DropdownMenu.SubTrigger className={buttonClassNames}>
-                            <BoxModelIcon /> Model <ChevronRightIcon />
-                        </DropdownMenu.SubTrigger>
+                        <button
+                            className={buttonClassNames}
+                            onClick={_ => {
+                                setIsDropdownModelOpen(!isDropdownModelOpen)
+                                setIsDropdownOptionsOpen(false)
+                            }}
+                        >
+                            <BoxModelIcon /> Model {isDropdownModelOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
+                        </button>
 
-                        <DropdownMenu.SubContent className="bg-gray-700 light:bg-gray-300 p-2 rounded-xl -translate-y-20 shadow-xl/30" sideOffset={5}>
-                            <DropdownMenu.Item
-                                className={itemClassNames}
-                                onSelect={() => setModel("SmolLM2-135M")}
-                            >
-                                SmolLM2-135M
-                                {model === "SmolLM2-135M" && <CheckIcon className="size-5" />}
-                            </DropdownMenu.Item>
-                            <DropdownMenu.Item
-                                className={itemClassNames}
-                                onSelect={() => setModel("SmolLM2-360M")}
-                            >
-                                SmolLM2-360M
-                                {model === "SmolLM2-360M" && <CheckIcon className="size-5" />}
-                            </DropdownMenu.Item>
-                            <DropdownMenu.Item
-                                className={itemClassNames}
-                                onSelect={() => setModel("SmolLM2-1.7B")}
-                            >
-                                SmolLM2-1.7B
-                                {model === "SmolLM2-1.7B" && <CheckIcon className="size-5" />}
-                            </DropdownMenu.Item>
-                        </DropdownMenu.SubContent>
-                    </DropdownMenu.Sub>
+                        {isDropdownModelOpen && (
+                            <div className={dropdownClassNames + " bottom-0 left-32"}>
+                                <ModelItem modelName="SmolLM2-135M" />
+                                <ModelItem modelName="SmolLM2-360M" />
+                                <ModelItem modelName="SmolLM2-1.7B" />
+                            </div>
+                        )}
 
-                    <DropdownMenu.Item className={buttonClassNames} onSelect={handleFileClick}>
-                        <UploadIcon /> Add files
-                    </DropdownMenu.Item>
-                </DropdownMenu.Content>
-            </DropdownMenu.Root>
+                        <button
+                            className={buttonClassNames + " justify-start"}
+                            onClick={_ => {
+                                handleFileClick()
+                                setIsDropdownOpen(false)
+                            }}>
+                            <UploadIcon /> Add files
+                        </button>
+                    </div>
+                )}
+            </div>
         )
     }
 
@@ -103,7 +187,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                             if (currentFiles.length > 0) {
                                 uploadFiles(currentFiles).then(files => {
                                     if (!files.error && webSocket.current) {
-                                        webSocket.current.send(JSON.stringify({ model: model, message: prompt, files: files, chat_uuid: chat.uuid }))
+                                        webSocket.current.send(JSON.stringify({ model: model, message: prompt, files: files, chat_uuid: chat.uuid, options: options }))
                                         setPrompt("")
                                         setCurrentFiles([])
                                         setVisibleFiles([])
@@ -112,7 +196,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                                     }
                                 })
                             } else {
-                                webSocket.current.send(JSON.stringify({ model: model, message: prompt, chat_uuid: chat.uuid }))
+                                webSocket.current.send(JSON.stringify({ model: model, message: prompt, chat_uuid: chat.uuid, options: options }))
                                 location.href = `/chat/${chat.uuid}`
                             }
                         }
@@ -128,7 +212,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                     if (currentFiles.length > 0) {
                         uploadFiles(currentFiles).then(files => {
                             if (!files.error && webSocket.current) {
-                                webSocket.current.send(JSON.stringify({ model: model, message: prompt, files: files }))
+                                webSocket.current.send(JSON.stringify({ model: model, message: prompt, files: files, options: options }))
                                 setPrompt("")
                                 setCurrentFiles([])
                                 setVisibleFiles([])
@@ -136,7 +220,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                             }
                         })
                     } else {
-                        webSocket.current.send(JSON.stringify({ message: prompt }))
+                        webSocket.current.send(JSON.stringify({ message: prompt, options: options }))
                         setPrompt("")
                         setIsAnyChatIncomplete(true)
                     }
@@ -238,10 +322,6 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
         return "File"
     }
 
-    useEffect(() => {
-        localStorage.setItem("model", model)
-    }, [model])
-
     function handleStop() {
         getChats(true).then(chats => {
             if (chats.length > 0 && webSocket.current) {
@@ -250,6 +330,18 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
             }
         })
     }
+
+    function clamp(number: number, min: number, max: number) {
+        return Math.max(Math.min(number, max), min)
+    }
+
+    useEffect(() => {
+        localStorage.setItem("model", model)
+    }, [model])
+
+    useEffect(() => {
+        localStorage.setItem("options", JSON.stringify(options))
+    }, [options])
 
     return (
         <div className="absolute bottom-0 flex flex-col w-[50vw] pb-4 self-center">

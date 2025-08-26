@@ -15,12 +15,11 @@ MessageAction = Literal["new_message", "edit_message", "regenerate_message"]
 
 global_chat_tasks: dict[str, asyncio.Task[None]] = {}
 
-async def generate_message(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName):
+async def generate_message(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName, options: dict[str, int | float]):
     if model_name not in get_args(ModelName):
         raise ValueError(f"Invalid model name: \"{model_name}\"")
     model_name = model_name.lower().replace("-", ":")
 
-    options = {"num_predict": 256, "temperature": 0.2, "top_p": 0.9, "seed": 0}
     channel_layer = get_channel_layer()
 
     task = asyncio.create_task(sample_model(chat, user_message, bot_message, model_name, channel_layer, options))

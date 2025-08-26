@@ -59,6 +59,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         message = content.get("message")
 
+        options = content.get("options")
+        options = parse_options(options)
+
         match action:
             case "new_message":
                 if not message:
@@ -67,7 +70,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
                 files = content.get("files", [])
 
-                await self.handle_new_message(model, message, files)
+                await self.handle_new_message(model, message, files, options)
             case "edit_message":
                 if not message:
                     await self.close()
@@ -78,14 +81,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     await self.close()
                     return
 
-                await self.handle_edit_message(model, message, message_index)
+                await self.handle_edit_message(model, message, message_index, options)
             case "regenerate_message":
                 message_index = content.get("message_index")
                 if message_index is None:
                     await self.close()
                     return
 
-                await self.handle_regenerate_message(model, message_index)
+                await self.handle_regenerate_message(model, message_index, options)
             case _:
                 await self.close()
 
@@ -112,7 +115,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         except Exception:
             return AnonymousUser()
 
-    async def handle_new_message(self, model_name: ModelName, message: str, files: list[dict[str, str]]):
+    async def handle_new_message(self, model_name: ModelName, message: str, files: list[dict[str, str]], options: dict[str, int | float]):
         user_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = message, is_user_message = True)
         if len(files) > 0:
             await database_sync_to_async(MessageFile.objects.bulk_create)(
@@ -121,9 +124,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         bot_message = await database_sync_to_async(Message.objects.create)(chat = self.chat, text = "", is_user_message = False)
 
-        await generate_message(self.chat, user_message, bot_message, model_name)
+        await generate_message(self.chat, user_message, bot_message, model_name, options)
 
-    async def handle_edit_message(self, model_name: ModelName, message: str, message_index: int):
+    async def handle_edit_message(self, model_name: ModelName, message: str, message_index: int, options: dict[str, int | float]):
         messages = await self.get_messages()
 
         user_message = messages[message_index]
@@ -134,9 +137,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         bot_message.text = ""
         await database_sync_to_async(bot_message.save)()
 
-        await generate_message(self.chat, user_message, bot_message, model_name)
+        await generate_message(self.chat, user_message, bot_message, model_name, options)
 
-    async def handle_regenerate_message(self, model_name: ModelName, message_index: int):
+    async def handle_regenerate_message(self, model_name: ModelName, message_index: int, options: dict[str, int | float]):
         messages = await self.get_messages()
 
         user_message = messages[message_index - 1]
@@ -145,7 +148,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         bot_message.text = ""
         await database_sync_to_async(bot_message.save)()
 
-        await generate_message(self.chat, user_message, bot_message, model_name)
+        await generate_message(self.chat, user_message, bot_message, model_name, options)
 
     @database_sync_to_async
     def get_incomplete_chats(self) -> list[Chat]:
@@ -167,3 +170,25 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     async def send_message(self, event):
         await self.send_json({"message": event["message"], "message_index": event["message_index"]})
+
+def parse_options(options: dict[str, int | float] | None):
+    def clamp(number: int | float, minimum: int | float, maximum: int | float):
+        return max(min(number, maximum), minimum)
+
+    if options:
+        if "max_tokens" in options:
+            max_tokens = int(options["max_tokens"])
+            max_tokens = clamp(max_tokens, 32, 4096)
+        if "temperature" in options:
+            temperature = float(options["temperature"])
+            temperature = clamp(temperature, 0.01, 10)
+        if "top_p" in options:
+            top_p = float(options["top_p"])
+            top_p = clamp(top_p, 0.01, 10)
+        if "seed" in options:
+            seed = int(options["seed"])
+        options = {"num_predict": max_tokens, "temperature": temperature, "top_p": top_p, "seed": seed}
+    else:
+        options = {"num_predict": 256, "temperature": 0.2, "top_p": 0.9, "seed": 0}
+
+    return options
