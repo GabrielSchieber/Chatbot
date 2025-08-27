@@ -1,8 +1,9 @@
 import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Cross2Icon, FileIcon, MixIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
-import { createChat, getChats, uploadFiles } from "../utils/api"
+import { Slider } from "radix-ui"
 import { useEffect, useRef, useState, type ReactNode } from "react"
-import type { Model, Message, UIAttachment, Chat } from "../types"
 import { useParams } from "react-router"
+import { createChat, getChats, uploadFiles } from "../utils/api"
+import type { Model, Message, UIAttachment, Chat } from "../types"
 
 export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete }: {
     webSocket: React.RefObject<WebSocket | null>,
@@ -54,10 +55,16 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     }
 
     function AddDropdown() {
-        function OptionItem({ label, optionKey }: { label: ReactNode, optionKey: "max_tokens" | "temperature" | "top_p" | "seed" }) {
+        function OptionItem({ label, optionKey, slider }: {
+            label: ReactNode,
+            optionKey: "max_tokens" | "temperature" | "top_p" | "seed"
+            slider?: { min: number, max: number, step: number }
+        }) {
             const optionsClassNames = "flex items-center justify-between text-sm gap-1 px-1 rounded bg-gray-700"
-            const optionsPClassNames = "truncate"
-            const optionsInputClassNames = "w-15 px-1.5 m-1 outline-none rounded bg-gray-600 hover:bg-gray-500 focus:bg-gray-500"
+            const optionsPClassNames = "flex-1 truncate"
+            const optionsInputClassNames = "flex-1 px-1.5 m-1 outline-none rounded bg-gray-600 hover:bg-gray-500 focus:bg-gray-500"
+
+            const [sliderValue, setSliderValue] = useState<number | null>(null)
 
             function handleSetOptions(value: string) {
                 if (optionKey === "max_tokens" || optionKey === "seed") {
@@ -78,16 +85,38 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
             return (
                 <div className={optionsClassNames}>
                     <p className={optionsPClassNames}>{label}</p>
-                    <input
-                        className={optionsInputClassNames}
-                        defaultValue={options[optionKey]}
-                        onBlur={e => handleSetOptions(e.currentTarget.value)}
-                        onKeyDown={e => {
-                            if (e.key === "Enter") {
-                                handleSetOptions(e.currentTarget.value)
-                            }
-                        }}
-                    />
+                    <div className="flex flex-col gap-1">
+                        <input
+                            className={optionsInputClassNames}
+                            defaultValue={options[optionKey]}
+                            onBlur={e => handleSetOptions(e.currentTarget.value)}
+                            onKeyDown={e => {
+                                if (e.key === "Enter") {
+                                    handleSetOptions(e.currentTarget.value)
+                                }
+                            }}
+                        />
+                        {slider && (
+                            <Slider.Root
+                                className="relative flex pb-2 items-center touch-none select-none"
+                                defaultValue={[options[optionKey]]}
+                                min={slider.min}
+                                max={slider.max}
+                                step={slider.step}
+                                onValueChange={([v]) => setSliderValue(v)}
+                                onPointerUp={_ => {
+                                    if (sliderValue) {
+                                        handleSetOptions(sliderValue.toString())
+                                    }
+                                }}
+                            >
+                                <Slider.Track className="relative h-[4px] grow rounded-full">
+                                    <Slider.Range className="absolute h-full rounded-full bg-gray-300" />
+                                </Slider.Track>
+                                <Slider.Thumb className="block size-3 rounded-[10px] bg-gray-200 focus:shadow-[0_0_0_5px] focus:shadow-blackA5 focus:outline-none" />
+                            </Slider.Root>
+                        )}
+                    </div>
                 </div>
             )
         }
@@ -130,9 +159,9 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                             </button>
                             {isDropdownOptionsOpen && (
                                 <div className={dropdownClassNames + " bottom-15 left-32"}>
-                                    <OptionItem label="🔣 Max. Tokens" optionKey="max_tokens" />
-                                    <OptionItem label="🌡 Temperature" optionKey="temperature" />
-                                    <OptionItem label={"⬆ Top P"} optionKey="top_p" />
+                                    <OptionItem label="🔣 Max. Tokens" optionKey="max_tokens" slider={{ min: 32, max: 4096, step: 32 }} />
+                                    <OptionItem label="🌡 Temperature" optionKey="temperature" slider={{ min: 0.1, max: 2, step: 0.1 }} />
+                                    <OptionItem label={"⬆ Top P"} optionKey="top_p" slider={{ min: 0.1, max: 2, step: 0.1 }} />
                                     <OptionItem label="🌱 Seed" optionKey="seed" />
                                 </div>
                             )}
