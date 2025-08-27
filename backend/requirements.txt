@@ -1,6 +1,6 @@
-Django == 5.2.4
+Django == 5.2.5
 channels[daphne] == 4.3.1
-djangorestframework == 3.16.0
+djangorestframework == 3.16.1
 djangorestframework-simplejwt == 5.5.1
 ollama == 0.5.3
-selenium == 4.34.2
+selenium == 4.35.0
