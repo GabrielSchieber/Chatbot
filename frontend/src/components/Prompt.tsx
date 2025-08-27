@@ -1,4 +1,4 @@
-import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Cross2Icon, FileIcon, GearIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
+import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Cross2Icon, FileIcon, MixIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
 import { createChat, getChats, uploadFiles } from "../utils/api"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import type { Model, Message, UIAttachment, Chat } from "../types"
@@ -94,10 +94,16 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
 
         function ModelItem({ modelName }: { modelName: "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" }) {
             return (
-                <div className="flex gap-1 w-40 px-2 py-1 items-center justify-between rounded hover:bg-gray-700">
-                    <button className="truncate cursor-pointer" onClick={_ => setModel(modelName)}>{modelName}</button>
+                <button
+                    className={`
+                        flex gap-1 w-40 px-2 py-1 items-center justify-between rounded truncate cursor-pointer hover:bg-gray-600
+                        ${modelName === model ? "bg-gray-600/90" : "bg-gray-700"}
+                    `}
+                    onClick={_ => setModel(modelName)}
+                >
+                    {modelName}
                     {modelName == model && <CheckIcon className="size-5" />}
-                </div>
+                </button>
             )
         }
 
@@ -110,61 +116,58 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                     <PlusIcon className="size-6" />
                 </button>
                 {isDropdownOpen && (
-                    <div className="absolute flex flex-col gap-1 p-2 self-center items-center cursor-auto bottom-10 rounded-xl bg-gray-800">
-                        <button
-                            className={buttonClassNames}
-                            onClick={_ => {
-                                setIsDropdownOptionsOpen(!isDropdownOptionsOpen)
-                                setIsDropdownModelOpen(false)
-                            }}
-                        >
-                            <GearIcon /> Options {isDropdownOptionsOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
-                        </button>
-                        {isDropdownOptionsOpen && (
-                            <div className={dropdownClassNames + " bottom-10 left-32"}>
-                                <OptionItem label="🔣 Max. Tokens" optionKey="max_tokens" />
-                                <OptionItem label="🌡 Temperature" optionKey="temperature" />
-                                <OptionItem
-                                    label={
-                                        <span className="flex items-center gap-1">
-                                            <ArrowUpIcon /> Top P
-                                        </span>
-                                    }
-                                    optionKey="top_p"
-                                />
-                                <OptionItem label="🌱 Seed" optionKey="seed" />
-                            </div>
-                        )}
+                    <>
+                        <div className="fixed inset-0 z-1" onClick={_ => setIsDropdownOpen(false)}></div>
+                        <div className="absolute flex flex-col gap-1 p-2 self-center items-center cursor-auto bottom-12 left-0 rounded-xl bg-gray-800 z-2">
+                            <button
+                                className={buttonClassNames}
+                                onClick={_ => {
+                                    setIsDropdownOptionsOpen(!isDropdownOptionsOpen)
+                                    setIsDropdownModelOpen(false)
+                                }}
+                            >
+                                <MixIcon /> Options {isDropdownOptionsOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
+                            </button>
+                            {isDropdownOptionsOpen && (
+                                <div className={dropdownClassNames + " bottom-15 left-32"}>
+                                    <OptionItem label="🔣 Max. Tokens" optionKey="max_tokens" />
+                                    <OptionItem label="🌡 Temperature" optionKey="temperature" />
+                                    <OptionItem label={"⬆ Top P"} optionKey="top_p" />
+                                    <OptionItem label="🌱 Seed" optionKey="seed" />
+                                </div>
+                            )}
 
-                        <button
-                            className={buttonClassNames}
-                            onClick={_ => {
-                                setIsDropdownModelOpen(!isDropdownModelOpen)
-                                setIsDropdownOptionsOpen(false)
-                            }}
-                        >
-                            <BoxModelIcon /> Model {isDropdownModelOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
-                        </button>
+                            <button
+                                className={buttonClassNames}
+                                onClick={_ => {
+                                    setIsDropdownModelOpen(!isDropdownModelOpen)
+                                    setIsDropdownOptionsOpen(false)
+                                }}
+                            >
+                                <BoxModelIcon /> Model {isDropdownModelOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
+                            </button>
 
-                        {isDropdownModelOpen && (
-                            <div className={dropdownClassNames + " bottom-0 left-32"}>
-                                <ModelItem modelName="SmolLM2-135M" />
-                                <ModelItem modelName="SmolLM2-360M" />
-                                <ModelItem modelName="SmolLM2-1.7B" />
-                            </div>
-                        )}
+                            {isDropdownModelOpen && (
+                                <div className={dropdownClassNames + " bottom-0 left-32"}>
+                                    <ModelItem modelName="SmolLM2-135M" />
+                                    <ModelItem modelName="SmolLM2-360M" />
+                                    <ModelItem modelName="SmolLM2-1.7B" />
+                                </div>
+                            )}
 
-                        <button
-                            className={buttonClassNames + " justify-start"}
-                            onClick={_ => {
-                                handleFileClick()
-                                setIsDropdownOpen(false)
-                            }}>
-                            <UploadIcon /> Add files
-                        </button>
-                    </div>
+                            <button
+                                className={buttonClassNames + " justify-start"}
+                                onClick={_ => {
+                                    handleFileClick()
+                                    setIsDropdownOpen(false)
+                                }}>
+                                <UploadIcon /> Add files
+                            </button>
+                        </div>
+                    </>
                 )}
             </div>
+
         )
     }
 
