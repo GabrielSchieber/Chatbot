@@ -60,9 +60,12 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
             optionKey: "max_tokens" | "temperature" | "top_p" | "seed"
             slider?: { min: number, max: number, step: number }
         }) {
-            const optionsClassNames = "flex items-center justify-between text-sm gap-1 px-1 rounded bg-gray-700"
+            const optionsClassNames = "flex items-center justify-between text-sm gap-1 px-1 rounded bg-gray-700 light:bg-gray-300"
             const optionsPClassNames = "flex-1 truncate"
-            const optionsInputClassNames = "flex-1 px-1.5 m-1 outline-none rounded bg-gray-600 hover:bg-gray-500 focus:bg-gray-500"
+            const optionsInputClassNames = `
+                flex-1 px-1.5 m-1 outline-none rounded bg-gray-600 light:bg-gray-400/30
+                hover:bg-gray-500 light:hover:bg-gray-400/70 focus:bg-gray-500 light:focus:bg-gray-400/70
+            `
 
             const [sliderValue, setSliderValue] = useState<number | null>(null)
 
@@ -111,11 +114,11 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                                 }}
                             >
                                 <Slider.Track className="relative h-[4px] grow rounded-full">
-                                    <Slider.Range className="absolute h-full rounded-full bg-gray-300" />
+                                    <Slider.Range className="absolute h-full rounded-full bg-gray-300 light:bg-gray-700" />
                                 </Slider.Track>
                                 <Slider.Thumb
                                     className="
-                                        block size-3 rounded-[10px] bg-gray-200 focus:shadow-[0_0_0_5px]
+                                        block size-3 rounded-[10px] bg-gray-200 light:bg-gray-800 focus:shadow-[0_0_0_5px]
                                         focus:shadow-blackA5 focus:outline-none cursor-pointer
                                     "
                                 />
@@ -130,8 +133,8 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
             return (
                 <button
                     className={`
-                        flex gap-1 w-40 px-2 py-1 items-center justify-between rounded truncate cursor-pointer hover:bg-gray-600
-                        ${modelName === model ? "bg-gray-600/90" : "bg-gray-700"}
+                        flex gap-1 w-40 px-2 py-1 items-center justify-between rounded truncate cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400/50
+                        ${modelName === model ? "bg-gray-600/90 light:bg-gray-400/40" : "bg-gray-700 light:bg-gray-300"}
                     `}
                     onClick={_ => setModel(modelName)}
                 >
@@ -141,18 +144,22 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
             )
         }
 
-        const buttonClassNames = "flex w-full px-1 gap-2 justify-between items-center cursor-pointer rounded hover:bg-gray-700"
-        const dropdownClassNames = "absolute flex flex-col gap-1 p-2 rounded-xl bg-gray-800"
+        const buttonClassNames = "flex w-full px-1 gap-2 justify-between items-center cursor-pointer rounded hover:bg-gray-700 light:hover:bg-gray-300"
+        const dropdownClassNames = "absolute flex flex-col gap-1 p-2 rounded-xl bg-gray-800 light:bg-gray-200"
 
         return (
             <div className="relative flex flex-col" onClick={e => e.stopPropagation()}>
-                <button className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-600 z-2" tabIndex={2} onClick={_ => setIsDropdownOpen(!isDropdownOpen)}>
+                <button
+                    className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400 z-2"
+                    tabIndex={2}
+                    onClick={_ => setIsDropdownOpen(!isDropdownOpen)}
+                >
                     <PlusIcon className="size-6" />
                 </button>
                 {isDropdownOpen && (
                     <>
                         <div className="fixed inset-0 z-1 cursor-auto" onClick={_ => setIsDropdownOpen(false)}></div>
-                        <div className="absolute flex flex-col gap-1 p-2 self-center items-center cursor-auto bottom-12 left-0 rounded-xl bg-gray-800 z-2">
+                        <div className="absolute flex flex-col gap-1 p-2 self-center items-center cursor-auto bottom-12 left-0 rounded-xl bg-gray-800 light:bg-gray-200 z-2">
                             <button
                                 className={buttonClassNames}
                                 onClick={_ => {
