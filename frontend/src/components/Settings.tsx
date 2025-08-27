@@ -4,10 +4,11 @@ import { type ReactNode } from "react"
 
 import ConfirmDialog from "./ConfirmDialog"
 import { deleteAccount, deleteChats } from "../utils/api"
-import { logout } from "../utils/auth"
+import { logout, useAuth } from "../utils/auth"
 import { useTheme } from "../context/ThemeProvider"
 
 export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) {
+    const { user } = useAuth()
     const { theme, setTheme } = useTheme()
 
     const entryClasses = "px-2 py-1 rounded-lg border border-gray-200 hover:bg-gray-600 light:border-gray-800 light:hover:bg-gray-400"
@@ -129,6 +130,8 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                         <Cross1Icon className="size-5" />
                     </Dialog.Close>
                 </div>
+
+                {user && <div className="font-semibold">Email: {user.email}</div>}
 
                 <div className="flex flex-col border-t-2">
                     <Entry name="Theme" item={ThemeSelect()} />
