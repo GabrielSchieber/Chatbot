@@ -11,7 +11,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
     const { user } = useAuth()
     const { theme, setTheme } = useTheme()
 
-    const entryClasses = "px-2 py-1 rounded-lg border border-gray-200 hover:bg-gray-600 light:border-gray-800 light:hover:bg-gray-400"
+    const entryClasses = "px-2 py-1 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-600 light:border-gray-800 light:hover:bg-gray-400"
     const destructiveEntryClasses = entryClasses + " text-red-500"
 
     function Entry({ name, item }: { name: string, item: ReactNode }) {
@@ -126,7 +126,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
             >
                 <div className="flex justify-between items-center">
                     <Dialog.Title className="text-lg font-semibold">Settings</Dialog.Title>
-                    <Dialog.Close className="p-2 rounded-3xl hover:bg-gray-700 light:hover:bg-gray-200">
+                    <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-200">
                         <Cross1Icon className="size-5" />
                     </Dialog.Close>
                 </div>

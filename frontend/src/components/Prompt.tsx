@@ -113,7 +113,12 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                                 <Slider.Track className="relative h-[4px] grow rounded-full">
                                     <Slider.Range className="absolute h-full rounded-full bg-gray-300" />
                                 </Slider.Track>
-                                <Slider.Thumb className="block size-3 rounded-[10px] bg-gray-200 focus:shadow-[0_0_0_5px] focus:shadow-blackA5 focus:outline-none" />
+                                <Slider.Thumb
+                                    className="
+                                        block size-3 rounded-[10px] bg-gray-200 focus:shadow-[0_0_0_5px]
+                                        focus:shadow-blackA5 focus:outline-none cursor-pointer
+                                    "
+                                />
                             </Slider.Root>
                         )}
                     </div>
@@ -141,12 +146,12 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
 
         return (
             <div className="relative flex flex-col" onClick={e => e.stopPropagation()}>
-                <button className="p-1.5 rounded-3xl hover:bg-gray-600" tabIndex={2} onClick={_ => setIsDropdownOpen(!isDropdownOpen)}>
+                <button className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-600 z-2" tabIndex={2} onClick={_ => setIsDropdownOpen(!isDropdownOpen)}>
                     <PlusIcon className="size-6" />
                 </button>
                 {isDropdownOpen && (
                     <>
-                        <div className="fixed inset-0 z-1" onClick={_ => setIsDropdownOpen(false)}></div>
+                        <div className="fixed inset-0 z-1 cursor-auto" onClick={_ => setIsDropdownOpen(false)}></div>
                         <div className="absolute flex flex-col gap-1 p-2 self-center items-center cursor-auto bottom-12 left-0 rounded-xl bg-gray-800 z-2">
                             <button
                                 className={buttonClassNames}
@@ -445,7 +450,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
 
                 {prompt.trim() && !isAnyChatIncomplete &&
                     <button
-                        className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end"
+                        className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer"
                         tabIndex={3}
                         onClick={sendMessage}
                     >
@@ -455,7 +460,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
 
                 {isAnyChatIncomplete &&
                     <button
-                        className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end"
+                        className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer"
                         tabIndex={3}
                         onClick={handleStop}
                     >
