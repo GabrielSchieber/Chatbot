@@ -1,0 +1,47 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Backend (Django)",
+            "type": "shell",
+            "command": "${workspaceFolder}/backend/.venv/bin/python",
+            "args": [
+                "manage.py",
+                "runserver"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Frontend (React/Vite)",
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "run",
+                "dev",
+                "--",
+                "--host"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/frontend"
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Fullstack (Backend + Frontend)",
+            "dependsOn": [
+                "Run Backend (Django)",
+                "Run Frontend (React/Vite)"
+            ],
+            "dependsOrder": "parallel",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
