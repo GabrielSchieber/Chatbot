@@ -31,19 +31,19 @@ export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolea
                 className="
                     fixed z-50 flex flex-col w-150 items-center
                     top-[20vh] left-1/2 -translate-x-1/2
-                    rounded-xl bg-gray-800
+                    rounded-xl bg-gray-800 light:bg-gray-200
                 "
             >
                 <Dialog.Title hidden>Search</Dialog.Title>
-                <div className="flex w-full px-5 py-5 gap-5 border-b border-gray-600">
+                <div className="flex w-full px-5 py-5 gap-5 border-b border-gray-600 light:border-gray-400">
                     <input
-                        className="flex-1 outline-none placeholder-gray-400"
+                        className="flex-1 outline-none placeholder-gray-400 light:placeholder-gray-600"
                         type="text"
                         placeholder="Search chats..."
                         onInput={e => search(e.currentTarget.value)}
                         autoFocus
                     />
-                    <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700">
+                    <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
                         <Cross1Icon className="size-4" />
                     </Dialog.Close>
                 </div>
@@ -58,10 +58,10 @@ export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolea
                             results.map(entry => (
                                 <a
                                     key={entry.uuid}
-                                    className="flex px-2 py-1 items-center gap-3 rounded-lg hover:bg-gray-600"
+                                    className="flex gap-5 px-2 py-1 items-center rounded-lg hover:bg-gray-600 light:hover:bg-gray-300"
                                     href={`/chat/${entry.uuid}`}
                                 >
-                                    <ChatBubbleIcon className="size-6" />
+                                    <ChatBubbleIcon className="size-10" />
                                     <div className="flex flex-col">
                                         <p>{entry.title}</p>
                                         {entry.matches.length > 0 && (
