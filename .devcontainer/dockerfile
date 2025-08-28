@@ -1,0 +1,32 @@
+FROM python:3.13-slim
+
+ENV NVM_DIR="/root/.nvm"
+ENV NODE_VERSION="22.17.1"
+RUN apt-get update && apt-get install -y curl git build-essential && \
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && \
+    /bin/bash -c ". $NVM_DIR/nvm.sh && nvm install $NODE_VERSION && nvm alias default $NODE_VERSION"
+ENV PATH="$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH"
+
+WORKDIR /app
+
+COPY backend/requirements.txt backend/requirements.txt
+
+RUN python -m venv backend/.venv && . backend/.venv/bin/activate && pip install --upgrade pip && pip install -r backend/requirements.txt
+
+COPY backend backend
+
+COPY frontend/package.json frontend/package.json
+COPY frontend/package-lock.json frontend/package-lock.json
+
+RUN cd frontend && npm install
+
+COPY frontend frontend
+
+ENV PATH="/app/backend/.venv/bin:$PATH"
+ENV DJANGO_DEBUG="True"
+ENV OLLAMA_HOST="http://host.docker.internal:11434"
+ENV POSTGRES_DB="chatbot"
+ENV POSTGRES_USER="chatbot"
+ENV POSTGRES_PASSWORD="chatbot"
+ENV POSTGRES_HOST="postgres"
+ENV POSTGRES_PORT="5432"
