@@ -20,6 +20,7 @@
         11434
     ],
     "remoteEnv": {
+        "DJANGO_DEBUG": "True",
         "OLLAMA_HOST": "http://host.docker.internal:11434"
     }
 }

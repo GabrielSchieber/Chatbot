@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import timedelta
 from pathlib import Path
@@ -6,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = "django-insecure-(jp4ova=q9sy+95_&fiors44ak38$dmofrp0a1^4(x8f6_yob_"
 
-DEBUG = False
+DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
