@@ -1,0 +1,35 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    volumes:
+      - frontend_dist:/app/dist:ro
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: dockerfile
+    volumes:
+      - frontend_dist:/app/dist:ro
+
+  nginx:
+    image: nginx:1.29-alpine-slim
+    ports:
+      - 80:80
+    volumes:
+      - ./backend/nginx.conf:/etc/nginx/nginx.conf
+      - frontend_dist:/app/dist:ro
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - 11434:11434
+    volumes:
+      - ollama:/root/.ollama
+
+volumes:
+  frontend_dist:
+  ollama:

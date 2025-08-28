@@ -38,7 +38,7 @@ ROOT_URLCONF = "backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [] if DEBUG else ["dist"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -97,7 +97,7 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours = 1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days = 7),
     "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": True,              
+    "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_COOKIE": "access_token",
     "AUTH_COOKIE_REFRESH": "refresh_token",
     "AUTH_COOKIE_HTTP_ONLY": True,
@@ -114,7 +114,3 @@ if sys.argv[:2] == ["manage.py", "test"]:
                 "TEST": {"NAME": BASE_DIR / "test_db.sqlite3"}
             }
             break
-
-if not DEBUG:
-    TEMPLATES[0]["DIRS"] = ["../frontend/dist"]
-    STATICFILES_DIRS = ["../frontend/dist", "../frontend/dist/assets"]

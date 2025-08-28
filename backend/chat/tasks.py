@@ -1,14 +1,18 @@
 import asyncio
 import logging
+import os
 from typing import Literal, get_args
 
 logger = logging.getLogger(__name__)
 
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
-from ollama import AsyncClient
+from django.conf import settings
+import ollama
 
 from .models import Chat, Message, MessageFile, User
+
+async_client_host = None if settings.DEBUG else os.environ["OLLAMA_HOST"]
 
 ModelName = Literal["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B"]
 MessageAction = Literal["new_message", "edit_message", "regenerate_message"]
@@ -19,6 +23,9 @@ async def generate_message(chat: Chat, user_message: Message, bot_message: Messa
     if model_name not in get_args(ModelName):
         raise ValueError(f"Invalid model name: \"{model_name}\"")
     model_name = model_name.lower().replace("-", ":")
+
+    if not model_name in str(ollama.list()):
+        ollama.pull(model_name)
 
     channel_layer = get_channel_layer()
 
@@ -37,7 +44,7 @@ async def sample_model(chat: Chat, user_message: Message, bot_message: Message, 
     message_index = len(messages) - 1
 
     try:
-        async for part in await AsyncClient().chat(model_name, messages, stream = True, options = options):
+        async for part in await ollama.AsyncClient(async_client_host).chat(model_name, messages, stream = True, options = options):
             token = part["message"]["content"]
             bot_message.text += token
             await database_sync_to_async(bot_message.save)()
