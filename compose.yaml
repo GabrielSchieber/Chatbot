@@ -13,6 +13,18 @@ services:
     volumes:
       - dist:/app/dist:ro
 
+  postgres:
+    image: postgres:17.6
+    restart: always
+    environment:
+      POSTGRES_USER: chatbot
+      POSTGRES_PASSWORD: chatbot
+      POSTGRES_DB: chatbot
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   nginx:
     image: nginx:1.29-alpine-slim
     ports:
@@ -31,3 +43,4 @@ services:
 volumes:
   dist:
   ollama:
+  postgres_data:

@@ -10,5 +10,10 @@ COPY . .
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV OLLAMA_HOST="http://ollama:11434"
+ENV POSTGRES_DB="chatbot"
+ENV POSTGRES_USER="chatbot"
+ENV POSTGRES_PASSWORD="chatbot"
+ENV POSTGRES_HOST="postgres"
+ENV POSTGRES_PORT="5432"
 
 CMD ["python", "-m", "daphne", "-b", "0.0.0.0", "-p", "8000", "backend.asgi:application"]
