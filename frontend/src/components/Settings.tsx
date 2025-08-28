@@ -99,8 +99,8 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
         })
     }
 
-    function handleLogout() {
-        logout()
+    async function handleLogout() {
+        await logout()
         location.reload()
     }
 
