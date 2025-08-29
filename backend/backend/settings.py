@@ -5,7 +5,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-(jp4ova=q9sy+95_&fiors44ak38$dmofrp0a1^4(x8f6_yob_"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
 
@@ -57,11 +57,11 @@ ASGI_APPLICATION = "backend.asgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "chatbot"),
-        "USER": os.getenv("POSTGRES_USER", "chatbot"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "chatbot"),
-        "HOST": os.getenv("POSTGRES_HOST", "postgres"),
-        "PORT": os.getenv("POSTGRES_PORT", "5432")
+        "NAME": os.getenv("POSTGRES_DB"),
+        "USER": os.getenv("POSTGRES_USER"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+        "HOST": "postgres",
+        "PORT": "5432"
     }
 }
 
@@ -95,9 +95,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CHANNEL_LAYERS = {
   "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [os.getenv("REDIS_URL", "redis://redis:6379/0")]
-        }
+        "CONFIG": {"hosts": [["redis","6379"]]}
     }
 }
 

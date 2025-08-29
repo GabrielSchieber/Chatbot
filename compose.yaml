@@ -3,6 +3,7 @@ services:
     build:
       context: ./backend
       dockerfile: dockerfile
+    env_file: .env
     volumes:
       - dist:/app/dist:ro
 
@@ -14,16 +15,13 @@ services:
       - dist:/app/dist:ro
 
   postgres:
-    image: postgres:17.6
+    image: postgres:17.6-alpine
     restart: always
-    environment:
-      POSTGRES_USER: chatbot
-      POSTGRES_PASSWORD: chatbot
-      POSTGRES_DB: chatbot
+    env_file: .env
     ports:
       - 5432:5432
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres:/var/lib/postgresql/data
 
   redis:
     image: redis:8.2-alpine
@@ -48,4 +46,4 @@ services:
 volumes:
   dist:
   ollama:
-  postgres_data:
+  postgres:

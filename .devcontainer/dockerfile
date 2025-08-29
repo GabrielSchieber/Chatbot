@@ -25,8 +25,3 @@ COPY frontend frontend
 ENV PATH="/app/backend/.venv/bin:$PATH"
 ENV DJANGO_DEBUG="True"
 ENV OLLAMA_HOST="http://host.docker.internal:11434"
-ENV POSTGRES_DB="chatbot"
-ENV POSTGRES_USER="chatbot"
-ENV POSTGRES_PASSWORD="chatbot"
-ENV POSTGRES_HOST="postgres"
-ENV POSTGRES_PORT="5432"
