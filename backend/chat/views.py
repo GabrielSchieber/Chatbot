@@ -114,7 +114,7 @@ class GetMessage(APIView):
             chat_uuid = request.data["chat_uuid"]
             message_index = int(request.data["message_index"])
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            message = Message.objects.filter(chat = chat)[message_index]
+            message = Message.objects.filter(chat = chat).order_by("date_time")[message_index]
             return Response({"text": message.text})
         except Exception:
             return Response(status = 400)
@@ -132,7 +132,7 @@ class GetMessages(APIView):
         except Chat.DoesNotExist:
             return Response({"error": "Chat not found"}, status = 404)
 
-        messages = Message.objects.filter(chat = chat).prefetch_related("files")
+        messages = Message.objects.filter(chat = chat).order_by("date_time").prefetch_related("files")
         serializer = MessageSerializer(messages, many = True)
         return Response({"messages": serializer.data})
 
@@ -178,7 +178,7 @@ class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        chats = Chat.objects.filter(user = request.user)
+        chats = Chat.objects.filter(user = request.user).order_by("date_time")
         serializer = ChatSerializer(chats, many = True)
         return Response({"chats": serializer.data})
 
@@ -189,7 +189,7 @@ class GetChats(APIView):
 
         reset_stopped_incomplete_chats(request.user)
 
-        chats = Chat.objects.filter(user = request.user, is_complete = False)
+        chats = Chat.objects.filter(user = request.user, is_complete = False).order_by("date_time")
         serializer = ChatSerializer(chats, many = True)
         return Response({"chats": serializer.data})
 
@@ -199,10 +199,10 @@ class SearchChats(APIView):
     def post(self, request):
         try:
             search = request.data["search"]
-            matched_messages = Message.objects.filter(text__icontains = search)
-            chats = Chat.objects.filter(user = request.user).filter(
+            matched_messages = Message.objects.filter(text__icontains = search).order_by("date_time")
+            chats = Chat.objects.filter(user = request.user).order_by("date_time").filter(
                 Q(title__icontains = search) | Q(messages__text__icontains = search)
-            ).distinct().prefetch_related(
+            ).order_by("date_time").distinct().prefetch_related(
                 Prefetch("messages", queryset = matched_messages, to_attr = "matched_messages")
             )
             chats = [{
