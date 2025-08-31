@@ -356,7 +356,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
 
     function getFileType(name: string) {
         const fileTypes = new Map(
-            [[".txt", "Text"], [".md", "Markdown"], [".py", "Python"], [".js", "JavaScript"]]
+            [[".txt", "Text"], [".md", "Markdown"], [".py", "Python"], [".js", "JavaScript"], [".png", "Image"]],
         )
         for (const fileType of fileTypes) {
             if (name.endsWith(fileType[0])) {
@@ -364,6 +364,16 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
             }
         }
         return "File"
+    }
+
+    function getFileSize(size: number): string {
+        if (size < 1_000) {
+            return size + " B"
+        } else if (size < 1_000_000) {
+            return (size / 1_000).toFixed(2) + " KB"
+        } else {
+            return (size / 1_000_000).toFixed(2) + " MB"
+        }
     }
 
     function handleStop() {
@@ -435,8 +445,11 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                                 >
                                     <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
                                     <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
-                                        <p className="px-2 py-1 rounded-lg bg-gray-800">{file.file.name}</p>
-                                        <p className="px-2 py-1 rounded-lg bg-gray-800">{getFileType(file.file.name)}</p>
+                                        <p className="px-2 py-1 rounded-lg bg-gray-800">
+                                            Type: {getFileType(file.file.name)}<br />
+                                            Name: {file.file.name}<br />
+                                            Size: {getFileSize(file.file.size)}
+                                        </p>
                                     </div>
                                     <button
                                         className="absolute top-0 right-0 translate-x-2 -translate-y-2 cursor-pointer text-red-400 hover:text-red-500"
