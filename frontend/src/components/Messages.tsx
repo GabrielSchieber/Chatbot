@@ -8,7 +8,7 @@ import rehypeHighlight from "rehype-highlight"
 
 import { getChats, getMessage, getMessages } from "../utils/api"
 import type { Message } from "../types"
-import { getFileType } from "../utils/file"
+import { getFileSize, getFileType } from "../utils/file"
 
 export default function Messages({ webSocket, messages, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete }: {
     webSocket: React.RefObject<WebSocket | null>
@@ -155,21 +155,24 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                     className={`flex flex-col w-[50vw] justify-self-center ${message.is_user_message ? "items-end" : "items-start"} gap-2`}
                 >
                     {message.is_user_message ? (
-                        <div className="flex flex-col gap-1 max-w-[80%]">
+                        <div className="flex flex-col gap-1 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
                             {message.files.length > 0 && (
                                 <div className="flex flex-col gap-1">
                                     {message.files.map((file, index) => (
-                                        <div key={index} className="flex items-center gap-1 px-2 py-1 border border-gray-500 bg-gray-800 rounded-xl">
-                                            <FileIcon className="size-9 p-1 rounded-md bg-gray-900" />
-                                            <div>
-                                                <p className="text-sm rounded-xl">{file.name}</p>
-                                                <p className="text-sm rounded-xl">{getFileType(file.name)}</p>
+                                        <div key={index} className="relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl">
+                                            <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
+                                            <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
+                                                <p className="px-2 py-1 rounded-lg bg-gray-800">
+                                                    Type: {getFileType(file.name)}<br />
+                                                    Name: {file.name}<br />
+                                                    Size: {getFileSize(file.size)}
+                                                </p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             )}
-                            <div className="px-3 py-2 rounded-2xl whitespace-pre-wrap bg-gray-700 light:bg-gray-300">
+                            <div className="whitespace-pre-wrap">
                                 {message.text}
                             </div>
                         </div>

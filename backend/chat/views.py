@@ -30,9 +30,14 @@ class ChatSerializer(serializers.ModelSerializer):
         fields = ["title", "is_complete", "uuid"]
 
 class MessageFileSerializer(serializers.ModelSerializer):
+    size = serializers.SerializerMethodField()
+
     class Meta:
         model = MessageFile
-        fields = ["name"]
+        fields = ["name", "size"]
+
+    def get_size(self, obj: MessageFile):
+        return obj.file.size
 
 class MessageSerializer(serializers.ModelSerializer):
     files = MessageFileSerializer(many = True, read_only = True)
