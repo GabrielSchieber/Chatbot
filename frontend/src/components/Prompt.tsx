@@ -423,7 +423,15 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                                         transition-all duration-300 ${file.isRemoving ? "opacity-0 translate-x-10" : "opacity-100"}
                                     `}
                                 >
-                                    <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
+                                    {getFileType(file.file.name) === "Image" ? (
+                                        <img
+                                            src={URL.createObjectURL(file.file)}
+                                            alt={file.file.name}
+                                            className="size-14 object-cover rounded-lg"
+                                        />
+                                    ) : (
+                                        <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
+                                    )}
                                     <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
                                         <p className="px-2 py-1 rounded-lg bg-gray-800">
                                             Type: {getFileType(file.file.name)}<br />
