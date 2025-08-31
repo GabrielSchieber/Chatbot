@@ -25,6 +25,8 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     const [isDropdownOptionsOpen, setIsDropdownOptionsOpen] = useState(false)
     const [isDropdownModelOpen, setIsDropdownModelOpen] = useState(false)
 
+    const [isRemovingFiles, setIsRemovingFiles] = useState(false)
+
     function getStoredOptions() {
         const storedOptions = localStorage.getItem("options")
         if (storedOptions) {
@@ -148,7 +150,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
         const dropdownClassNames = "absolute flex flex-col gap-1 p-2 rounded-xl bg-gray-800 light:bg-gray-200"
 
         return (
-            <div className="relative flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="relative flex flex-col self-end" onClick={e => e.stopPropagation()}>
                 <button
                     className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400 z-2"
                     tabIndex={2}
@@ -218,7 +220,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
         const textArea = textAreaRef.current
         if (textArea) {
             textArea.style.height = "auto"
-            textArea.style.height = Math.min(textArea.scrollHeight, 300) + "px"
+            textArea.style.height = textArea.scrollHeight + "px"
         }
     }
 
@@ -344,13 +346,11 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     }
 
     function removeFiles() {
-        setVisibleFiles(previous =>
-            previous.map(f => { return { ...f, isRemoving: true } })
-        )
-
+        setIsRemovingFiles(true)
         setTimeout(() => {
             setVisibleFiles([])
             setCurrentFiles([])
+            setIsRemovingFiles(false)
         }, 300)
     }
 
@@ -392,35 +392,6 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
             {inProgressChat && <GeneratingMessageNotification title={inProgressChat.title} uuid={inProgressChat.uuid} />}
 
             <div
-                className={`
-                    flex flex-col gap-1 p-2 rounded-xl bg-gray-800 shadow-xl transform transition-all duration-300 origin-bottom
-                    ${visibleFiles.length > 0 ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none h-0 p-0"}
-                `}
-            >
-                <button className="self-end text-red-400 hover:text-red-500" onClick={removeFiles}>
-                    <Cross2Icon />
-                </button>
-                {visibleFiles.map(file => (
-                    <div
-                        key={file.id}
-                        className={`
-                            flex gap-1 px-2 items-center border rounded-xl border-gray-500 bg-gray-700
-                            transition-all duration-300 ${file.isRemoving ? "opacity-0 translate-x-4" : "opacity-100 translate-x-0"}
-                        `}
-                    >
-                        <FileIcon className="size-8 p-1 rounded-md bg-gray-900" />
-                        <div className="w-full text-sm">
-                            <div>{file.file.name}</div>
-                            <div>{getFileType(file.file.name)}</div>
-                        </div>
-                        <button className="text-red-400 hover:text-red-500" onClick={_ => removeFile(file.id)}>
-                            <Cross2Icon />
-                        </button>
-                    </div>
-                ))}
-            </div>
-
-            <div
                 className="
                     flex gap-2 w-full px-4 py-3 items-center rounded-[30px] cursor-text shadow-xl/50
                     border-t-4 border-gray-600 light:border-gray-400 bg-gray-700 light:bg-gray-300
@@ -442,18 +413,61 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                     multiple
                 />
 
-                <textarea
-                    className="flex-1 resize-none outline-none px-2"
-                    value={prompt}
-                    placeholder="Ask me anything..."
-                    rows={1}
-                    tabIndex={1}
-                    ref={textAreaRef}
-                    onChange={handleChange}
-                    onKeyDown={sendMessageWithEvent}
-                    style={{ maxHeight: "300px", overflowY: "auto" }}
-                    autoFocus
-                />
+                <div className="flex flex-1 flex-col gap-3 max-h-100 overflow-y-auto" >
+                    {visibleFiles.length > 0 && (
+                        <div
+                            className={`
+                                relative flex flex-col gap-1 p-2 border border-gray-500 top-0 rounded-xl
+                                transition-all duration-300 ${isRemovingFiles ? "opacity-0 overflow-y-hidden" : "opacity-100"}
+                            `}
+                            style={{
+                                maxHeight: isRemovingFiles ? 0 : visibleFiles.length * 100
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {visibleFiles.map(file => (
+                                <div
+                                    key={file.id}
+                                    className={`
+                                        relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl
+                                        transition-all duration-300 ${file.isRemoving ? "opacity-0 translate-x-10" : "opacity-100"}
+                                    `}
+                                >
+                                    <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
+                                    <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
+                                        <p className="px-2 py-1 rounded-lg bg-gray-800">{file.file.name}</p>
+                                        <p className="px-2 py-1 rounded-lg bg-gray-800">{getFileType(file.file.name)}</p>
+                                    </div>
+                                    <button
+                                        className="absolute top-0 right-0 translate-x-2 -translate-y-2 cursor-pointer text-red-400 hover:text-red-500"
+                                        onClick={_ => removeFile(file.id)}
+                                    >
+                                        <Cross2Icon className="size-4" />
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                className="absolute right-0 -translate-x-2 cursor-pointer text-red-400 hover:text-red-500"
+                                onClick={removeFiles}
+                            >
+                                <Cross2Icon />
+                            </button>
+                        </div>
+                    )}
+                    <div className="flex">
+                        <textarea
+                            className="resize-none outline-none px-2"
+                            value={prompt}
+                            placeholder="Ask me anything..."
+                            rows={1}
+                            tabIndex={1}
+                            ref={textAreaRef}
+                            onChange={handleChange}
+                            onKeyDown={sendMessageWithEvent}
+                            autoFocus
+                        />
+                    </div>
+                </div>
 
                 {prompt.trim() && !isAnyChatIncomplete &&
                     <button
