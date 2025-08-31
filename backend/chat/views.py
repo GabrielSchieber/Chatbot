@@ -129,7 +129,7 @@ class GetMessages(APIView):
 
         try:
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-        except Chat.DoesNotExist:
+        except:
             return Response({"error": "Chat not found"}, status = 404)
 
         messages = Message.objects.filter(chat = chat).order_by("date_time").prefetch_related("files")
