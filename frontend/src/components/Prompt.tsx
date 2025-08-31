@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react"
 import { useParams } from "react-router"
 import { createChat, getChats, uploadFiles } from "../utils/api"
 import type { Model, Message, UIAttachment, Chat } from "../types"
+import { getFileSize, getFileType } from "../utils/file"
 
 export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete }: {
     webSocket: React.RefObject<WebSocket | null>,
@@ -353,28 +354,6 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
             setCurrentFiles([])
             setIsRemovingFiles(false)
         }, 300)
-    }
-
-    function getFileType(name: string) {
-        const fileTypes = new Map(
-            [[".txt", "Text"], [".md", "Markdown"], [".py", "Python"], [".js", "JavaScript"], [".png", "Image"]],
-        )
-        for (const fileType of fileTypes) {
-            if (name.endsWith(fileType[0])) {
-                return fileType[1]
-            }
-        }
-        return "File"
-    }
-
-    function getFileSize(size: number): string {
-        if (size < 1_000) {
-            return size + " B"
-        } else if (size < 1_000_000) {
-            return (size / 1_000).toFixed(2) + " KB"
-        } else {
-            return (size / 1_000_000).toFixed(2) + " MB"
-        }
     }
 
     function handleStop() {

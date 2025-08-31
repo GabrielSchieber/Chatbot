@@ -8,6 +8,7 @@ import rehypeHighlight from "rehype-highlight"
 
 import { getChats, getMessage, getMessages } from "../utils/api"
 import type { Message } from "../types"
+import { getFileType } from "../utils/file"
 
 export default function Messages({ webSocket, messages, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete }: {
     webSocket: React.RefObject<WebSocket | null>
@@ -138,18 +139,6 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                 return messages
             })
         }
-    }
-
-    function getFileType(name: string) {
-        const fileTypes = new Map(
-            [[".txt", "Text"], [".md", "Markdown"], [".py", "Python"], [".js", "JavaScript"]]
-        )
-        for (const fileType of fileTypes) {
-            if (name.endsWith(fileType[0])) {
-                return fileType[1]
-            }
-        }
-        return "File"
     }
 
     useEffect(() => {
