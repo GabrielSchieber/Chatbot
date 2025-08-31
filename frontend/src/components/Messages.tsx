@@ -1,4 +1,4 @@
-import { CheckIcon, CopyIcon, FileIcon, UpdateIcon } from "@radix-ui/react-icons"
+import { CheckIcon, CopyIcon, FileIcon, Pencil1Icon, UpdateIcon } from "@radix-ui/react-icons"
 import { Tooltip } from "radix-ui"
 import React, { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
@@ -20,6 +20,8 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
     const { chatUUID } = useParams()
     const shouldLoadMessages = useRef(true)
     const [copiedMessageIndex, setCopiedMessageIndex] = useState(-1)
+    const [editingMessageIndex, setEditingMessageIndex] = useState(-1)
+    const [editingMessageText, setEditingMessageText] = useState("")
 
     function MessageButton({ children, onClick, tooltip, isDisabled = false }: { children: ReactNode, onClick: () => void, tooltip: string, isDisabled?: boolean }) {
         return (
@@ -50,6 +52,20 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                 }
                 tooltip="Copy"
                 onClick={() => copyMessage(message, index)}
+            />
+        )
+    }
+
+    function EditButton({ message, index }: { message: Message, index: number }) {
+        return (
+            <MessageButton
+                children={<Pencil1Icon />}
+                tooltip="Edit"
+                onClick={() => {
+                    setEditingMessageIndex(index)
+                    setEditingMessageText(message.text)
+                }}
+                isDisabled={isAnyChatIncomplete}
             />
         )
     }
@@ -148,106 +164,164 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
     }, [])
 
     return (
-        <div className="flex-1 overflow-y-auto w-full pt-10 pb-25">
+        <div className="flex flex-col gap-2 pt-10 pb-25 items-center overflow-y-auto">
             {messages.map((message, index) => (
                 <div
                     key={index}
-                    className={`flex flex-col w-[50vw] justify-self-center ${message.is_user_message ? "items-end" : "items-start"} gap-2`}
+                    className={`flex flex-col gap-0.5 w-[50vw] justify-self-center ${message.is_user_message ? "items-end" : "items-start"}`}
                 >
-                    {message.is_user_message ? (
-                        <div className="flex flex-col gap-1 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
-                            {message.files.length > 0 && (
-                                <div className="flex flex-col gap-1">
-                                    {message.files.map((file, index) => (
-                                        <div key={index} className="relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl">
-                                            <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
-                                            <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
-                                                <p className="px-2 py-1 rounded-lg bg-gray-800">
-                                                    Type: {getFileType(file.name)}<br />
-                                                    Name: {file.name}<br />
-                                                    Size: {getFileSize(file.size)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                            <div className="whitespace-pre-wrap">
-                                {message.text}
+                    {editingMessageIndex === index ? (
+                        <div className="flex flex-col gap-1 w-[80%] max-h-70 px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
+                            <textarea
+                                className="px-3 py-2 resize-none outline-none"
+                                value={editingMessageText}
+                                onChange={e => {
+                                    setEditingMessageText(e.target.value)
+                                    e.currentTarget.style.height = "auto"
+                                    e.currentTarget.style.height = e.currentTarget.scrollHeight + "px"
+                                }}
+                            />
+                            <div className="flex gap-1 justify-end">
+                                <button
+                                    className="
+                                        px-3 py-1 rounded-lg cursor-pointer bg-gray-800
+                                        hover:bg-gray-800/60 light:bg-gray-200 light:hover:bg-gray-200/60
+                                    "
+                                    onClick={_ => {
+                                        setEditingMessageIndex(-1)
+                                        setEditingMessageText("")
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="
+                                        px-3 py-1 rounded-lg cursor-pointer text-black light:text-white bg-gray-100 hover:bg-gray-200
+                                        light:bg-gray-900 light:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed
+                                    "
+                                    onClick={_ => {
+                                        if (webSocket.current) {
+                                            webSocket.current.send(JSON.stringify({ action: "edit_message", message: editingMessageText, message_index: index }))
+
+                                            setMessages(previous => {
+                                                const messages = [...previous]
+                                                messages[index].text = editingMessageText
+                                                messages[index + 1].text = ""
+                                                return messages
+                                            })
+
+                                            setEditingMessageIndex(-1)
+                                            setEditingMessageText("")
+                                            setIsAnyChatIncomplete(true)
+                                        }
+                                    }}
+                                    disabled={editingMessageText.trim() === ""}
+                                >
+                                    Send
+                                </button>
                             </div>
                         </div>
                     ) : (
-                        <div className="w-full whitespace-pre-wrap">
-                            <ReactMarkdown
-                                children={message.text}
-                                remarkPlugins={[remarkGfm]}
-                                rehypePlugins={[rehypeHighlight]}
-                                components={{
-                                    code({ node, className, children, ...props }) {
-                                        const isInline = !className
-                                        if (isInline) {
+                        message.is_user_message ? (
+                            <div className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
+                                {message.files.length > 0 && (
+                                    <div className="flex flex-col gap-1">
+                                        {message.files.map((file, index) => (
+                                            <div key={index} className="relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl">
+                                                <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
+                                                <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
+                                                    <p className="px-2 py-1 rounded-lg bg-gray-800">
+                                                        Type: {getFileType(file.name)}<br />
+                                                        Name: {file.name}<br />
+                                                        Size: {getFileSize(file.size)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="whitespace-pre-wrap">
+                                    {message.text}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="w-full whitespace-pre-wrap">
+                                <ReactMarkdown
+                                    children={message.text}
+                                    remarkPlugins={[remarkGfm]}
+                                    rehypePlugins={[rehypeHighlight]}
+                                    components={{
+                                        code({ node, className, children, ...props }) {
+                                            const isInline = !className
+                                            if (isInline) {
+                                                return (
+                                                    <code className="px-1 bg-gray-700 light:bg-gray-300 rounded" {...props}>
+                                                        {children}
+                                                    </code>
+                                                )
+                                            }
+                                            return <code className={className} {...props}>{children}</code>
+                                        },
+
+                                        pre({ node, children, ...props }) {
+                                            const [copied, setCopied] = useState(false)
+
+                                            function copyCodeBlock(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+                                                const codeBlock = e.currentTarget?.parentElement?.parentElement?.querySelector("pre")
+                                                navigator.clipboard.writeText(codeBlock?.textContent || "")
+                                                setCopied(true)
+                                                setTimeout(() => setCopied(false), 2000)
+                                            }
+
+                                            const childArray = React.Children.toArray(children)
+                                            const codeNode = childArray[0] as ReactElement<{ className?: string, children?: React.ReactNode }>
+
+                                            const className = codeNode?.props.className || ""
+                                            const languageMatch = /language-(\w+)/.exec(className)
+                                            const language = languageMatch ? languageMatch[1] : "code"
+
                                             return (
-                                                <code className="px-1 bg-gray-700 light:bg-gray-300 rounded" {...props}>
-                                                    {children}
-                                                </code>
-                                            )
-                                        }
-                                        return <code className={className} {...props}>{children}</code>
-                                    },
-
-                                    pre({ node, children, ...props }) {
-                                        const [copied, setCopied] = useState(false)
-
-                                        function copyCodeBlock(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-                                            const codeBlock = e.currentTarget?.parentElement?.parentElement?.querySelector("pre")
-                                            navigator.clipboard.writeText(codeBlock?.textContent || "")
-                                            setCopied(true)
-                                            setTimeout(() => setCopied(false), 2000)
-                                        }
-
-                                        const childArray = React.Children.toArray(children)
-                                        const codeNode = childArray[0] as ReactElement<{ className?: string, children?: React.ReactNode }>
-
-                                        const className = codeNode?.props.className || ""
-                                        const languageMatch = /language-(\w+)/.exec(className)
-                                        const language = languageMatch ? languageMatch[1] : "code"
-
-                                        return (
-                                            <div className="rounded-lg overflow-hidden my-2">
-                                                <div className="flex items-center justify-between bg-gray-700 light:bg-gray-300 px-4 py-1">
-                                                    <p className="text-sm m-0">{language}</p>
-                                                    <button
-                                                        className="
+                                                <div className="rounded-lg overflow-hidden my-2">
+                                                    <div className="flex items-center justify-between bg-gray-700 light:bg-gray-300 px-4 py-1">
+                                                        <p className="text-sm m-0">{language}</p>
+                                                        <button
+                                                            className="
                                                             flex items-center gap-1 px-2 py-[2px] text-xs cursor-pointer
                                                             rounded hover:bg-gray-800 light:hover:bg-gray-200
                                                         "
-                                                        onClick={copyCodeBlock}
-                                                    >
-                                                        {copied ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />}
-                                                        {copied ? "Copied" : "Copy"}
-                                                    </button>
+                                                            onClick={copyCodeBlock}
+                                                        >
+                                                            {copied ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />}
+                                                            {copied ? "Copied" : "Copy"}
+                                                        </button>
+                                                    </div>
+                                                    <pre className="overflow-x-auto m-0" {...props}>
+                                                        {children}
+                                                    </pre>
                                                 </div>
-                                                <pre className="overflow-x-auto m-0" {...props}>
-                                                    {children}
-                                                </pre>
-                                            </div>
-                                        )
-                                    }
-                                }}
-                            />
-                        </div>
+                                            )
+                                        }
+                                    }}
+                                />
+                            </div>
+                        )
                     )}
 
-                    <div className="flex gap-1">
-                        {message.is_user_message ? (
-                            <CopyButton message={message} index={index} />
-                        ) : (
-                            <>
-                                <CopyButton message={message} index={index} />
-                                <RegenerateButton index={index} />
-                            </>
-                        )}
-                    </div>
+                    {editingMessageIndex !== index && (
+                        <div className="flex gap-1">
+                            {message.is_user_message ? (
+                                <>
+                                    <EditButton message={message} index={index} />
+                                    <CopyButton message={message} index={index} />
+                                </>
+                            ) : (
+                                <>
+                                    <CopyButton message={message} index={index} />
+                                    <RegenerateButton index={index} />
+                                </>
+                            )}
+                        </div>
+                    )}
                 </div>
             ))}
         </div>
