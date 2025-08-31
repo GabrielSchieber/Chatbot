@@ -470,7 +470,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                     )}
                     <div className="flex">
                         <textarea
-                            className="resize-none outline-none px-2"
+                            className="flex-1 p-2 overflow-y-hidden resize-none outline-none"
                             value={prompt}
                             placeholder="Ask me anything..."
                             rows={1}
