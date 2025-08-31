@@ -7,8 +7,8 @@ import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 
 import { getChats, getMessage, getMessages } from "../utils/api"
-import type { Message } from "../types"
 import { getFileSize, getFileType } from "../utils/file"
+import type { Message, MessageFile } from "../types"
 
 export default function Messages({ webSocket, messages, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete }: {
     webSocket: React.RefObject<WebSocket | null>
@@ -80,6 +80,21 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                 onClick={() => regenerateMessage(index)}
                 isDisabled={isAnyChatIncomplete}
             />
+        )
+    }
+
+    function FileItem({ file }: { file: MessageFile }) {
+        return (
+            <div className="relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl">
+                <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
+                <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
+                    <p className="px-2 py-1 rounded-lg bg-gray-800">
+                        Type: {getFileType(file.name)}<br />
+                        Name: {file.name}<br />
+                        Size: {getFileSize(file.size)}
+                    </p>
+                </div>
+            </div>
         )
     }
 
@@ -171,16 +186,27 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                     className={`flex flex-col gap-0.5 w-[50vw] justify-self-center ${message.is_user_message ? "items-end" : "items-start"}`}
                 >
                     {editingMessageIndex === index ? (
-                        <div className="flex flex-col gap-1 w-[80%] max-h-70 px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
-                            <textarea
-                                className="px-3 py-2 resize-none outline-none"
-                                value={editingMessageText}
-                                onChange={e => {
-                                    setEditingMessageText(e.target.value)
-                                    e.currentTarget.style.height = "auto"
-                                    e.currentTarget.style.height = e.currentTarget.scrollHeight + "px"
-                                }}
-                            />
+                        <div className="flex flex-col gap-1 w-[80%] max-h-100 px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
+                            <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
+                                {message.files.length > 0 && (
+                                    <div className="flex flex-col gap-1 p-2 rounded-lg border border-gray-500">
+                                        {message.files.map((file, fileIndex) => (
+                                            <FileItem key={fileIndex} file={file} />
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="flex">
+                                    <textarea
+                                        className="flex-1 p-2 overflow-y-hidden resize-none outline-none"
+                                        value={editingMessageText}
+                                        onChange={e => {
+                                            setEditingMessageText(e.target.value)
+                                            e.currentTarget.style.height = "auto"
+                                            e.currentTarget.style.height = e.currentTarget.scrollHeight + "px"
+                                        }}
+                                    />
+                                </div>
+                            </div>
                             <div className="flex gap-1 justify-end">
                                 <button
                                     className="
@@ -227,16 +253,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                                 {message.files.length > 0 && (
                                     <div className="flex flex-col gap-1">
                                         {message.files.map((file, index) => (
-                                            <div key={index} className="relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl">
-                                                <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
-                                                <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
-                                                    <p className="px-2 py-1 rounded-lg bg-gray-800">
-                                                        Type: {getFileType(file.name)}<br />
-                                                        Name: {file.name}<br />
-                                                        Size: {getFileSize(file.size)}
-                                                    </p>
-                                                </div>
-                                            </div>
+                                            <FileItem key={index} file={file} />
                                         ))}
                                     </div>
                                 )}
