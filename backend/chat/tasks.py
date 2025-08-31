@@ -10,7 +10,7 @@ from channels.layers import get_channel_layer
 
 from .models import Chat, Message, MessageFile, User
 
-ModelName = Literal["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B"]
+ModelName = Literal["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]
 MessageAction = Literal["new_message", "edit_message", "regenerate_message"]
 
 global_chat_tasks: dict[str, asyncio.Task[None]] = {}
@@ -19,7 +19,10 @@ async def generate_message(chat: Chat, user_message: Message, bot_message: Messa
     if model_name not in get_args(ModelName):
         raise ValueError(f"Invalid model name: \"{model_name}\"")
 
-    model_name = model_name.lower().replace("-", ":")
+    if model_name == "Moondream":
+        model_name = "moondream:1.8b-v2-q2_K"
+    else:
+        model_name = model_name.lower().replace("-", ":")
 
     if not model_name in str(ollama.list()):
         raise ValueError(f"Model {model_name} not installed")
@@ -74,26 +77,34 @@ def get_messages(chat: Chat, stop_user_message: Message) -> list[dict[str, str]]
     user_files = []
     for m in user_messages:
         message_files = MessageFile.objects.filter(message = m)
-        user_files.append([{"file": file.file.path, "name": file.name} for file in message_files])
+        user_files.append([{"name": file.name, "path": file.file.path} for file in message_files])
 
     messages = []
     for user_message, user_message_files, bot_message in zip(user_messages, user_files, bot_messages):
         messages.extend([
-            {"role": "user", "content": get_message_with_files(user_message.text, user_message_files)},
+            get_user_message(user_message.text, user_message_files),
             {"role": "assistant", "content": bot_message.text}
         ])
     return messages
 
-def get_message_with_files(message: str, files: list[dict[str, str]]) -> str:
+def get_user_message(message: str, files: list[dict[str, str]]) -> dict[str, str]:
     if len(files) == 0:
-        return message
+        return {"role": "user", "content": message, "images": []}
+
+    images = []
+    for file in files:
+        if file["name"].endswith(".png"):
+            images.append(file["path"])
 
     file_contents = []
     for file in files:
-        with open(file["file"], encoding = "utf-8") as file_reader:
-            file_contents.append(f"=== File: {file["name"]} ===\n{file_reader.read()}")
+        if not file["name"].endswith(".png"):
+            with open(file["path"], encoding = "utf-8") as file_reader:
+                file_contents.append(f"=== File: {file["name"]} ===\n{file_reader.read()}")
 
-    return f"{message}\n\nFiles:\n{"\n\n".join(file_contents)}"
+    content = f"{message}\n\nFiles:\n{"\n\n".join(file_contents)}" if len(file_contents) > 0 else message
+
+    return {"role": "user", "content": content, "images": images}
 
 def get_incomplete_chats(user: User) -> list[Chat]:
     return list(Chat.objects.filter(user = user, is_complete = False))

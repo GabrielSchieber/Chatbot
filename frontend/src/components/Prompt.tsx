@@ -131,7 +131,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
             )
         }
 
-        function ModelItem({ modelName }: { modelName: "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" }) {
+        function ModelItem({ modelName }: { modelName: "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondream" }) {
             return (
                 <button
                     className={`
@@ -195,6 +195,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                                     <ModelItem modelName="SmolLM2-135M" />
                                     <ModelItem modelName="SmolLM2-360M" />
                                     <ModelItem modelName="SmolLM2-1.7B" />
+                                    <ModelItem modelName="Moondream" />
                                 </div>
                             )}
 
@@ -311,8 +312,8 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
         for (const file of event.target.files) {
             totalSize += file.size
         }
-        if (totalSize > 1_000_000) {
-            alert("Total file size exceeds 1 MB limit. Please select smaller files.")
+        if (totalSize > 5_000_000) {
+            alert("Total file size exceeds 5 MB limit. Please select smaller files.")
             event.target.value = ""
             return
         }

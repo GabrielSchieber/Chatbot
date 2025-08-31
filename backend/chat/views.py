@@ -148,8 +148,8 @@ class UploadFiles(APIView):
             total_size = 0
             for file in request.FILES.getlist("files"):
                 total_size += file.size
-            if total_size > 1_000_000:
-                return Response({"error": "Total file size exceeds limit of 1 MB"}, 400)
+            if total_size > 5_000_000:
+                return Response({"error": "Total file size exceeds limit of 5 MB"}, 400)
 
             uploaded_metadata = []
 
