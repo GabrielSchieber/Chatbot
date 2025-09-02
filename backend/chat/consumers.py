@@ -46,7 +46,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         chat_uuid = content.get("chat_uuid")
         if chat_uuid:
-            self.chat = await database_sync_to_async(Chat.objects.get)(user = self.user, uuid = chat_uuid)
+            if type(chat_uuid) == str:
+                self.chat = await database_sync_to_async(Chat.objects.get)(user = self.user, uuid = chat_uuid)
+            else:
+                await self.close()
+                return
 
         await self.reset_stopped_incomplete_chats()
         incomplete_chats = await self.get_incomplete_chats()
@@ -59,36 +63,28 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             model = "SmolLM2-135M"
 
         message = content.get("message")
+        if type(message) != str:
+            message = ""
 
-        options = content.get("options")
+        message_index = content.get("message_index")
+        if type(message_index) != int:
+            message_index = -1
+
+        files = content.get("files", [])
+        if type(files) != list:
+            files = []
+
+        options = content.get("options", {})
+        if type(options) != dict:
+            options = {}
         options = parse_options(options)
 
         match action:
             case "new_message":
-                if not message:
-                    await self.close()
-                    return
-
-                files = content.get("files", [])
-
                 await self.handle_new_message(model, message, files, options)
             case "edit_message":
-                if not message:
-                    await self.close()
-                    return
-
-                message_index = content.get("message_index")
-                if message_index is None:
-                    await self.close()
-                    return
-
                 await self.handle_edit_message(model, message, message_index, options)
             case "regenerate_message":
-                message_index = content.get("message_index")
-                if message_index is None:
-                    await self.close()
-                    return
-
                 await self.handle_regenerate_message(model, message_index, options)
             case _:
                 await self.close()
@@ -173,24 +169,13 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def send_message(self, event):
         await self.send_json({"message": event["message"], "message_index": event["message_index"]})
 
-def parse_options(options: dict[str, int | float] | None):
+def parse_options(options: dict[str, int | float]):
     def clamp(number: int | float, minimum: int | float, maximum: int | float):
         return max(min(number, maximum), minimum)
 
-    new_options = {"num_predict": 256, "temperature": 0.2, "top_p": 0.9, "seed": 0}
-
-    if options:
-        if "max_tokens" in options:
-            max_tokens = int(options["max_tokens"])
-            new_options["num_predict"] = clamp(max_tokens, 32, 4096)
-        if "temperature" in options:
-            temperature = float(options["temperature"])
-            new_options["temperature"] = clamp(temperature, 0.01, 10)
-        if "top_p" in options:
-            top_p = float(options["top_p"])
-            new_options["top_p"] = clamp(top_p, 0.01, 10)
-        if "seed" in options:
-            seed = int(options["seed"])
-            new_options["seed"] = seed
-
-    return new_options
+    return {
+        "num_predict": clamp(options.get("max_tokens", 256), 32, 4096),
+        "temperature": clamp(options.get("temperature", 0.2), 0.01, 10),
+        "top_p": clamp(options.get("top_p", 0.9), 0.01, 10),
+        "seed": options.get("seed", 0)
+    }

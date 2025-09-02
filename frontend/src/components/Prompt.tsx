@@ -343,7 +343,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     }
 
     function sendMessageWithEvent(event: React.KeyboardEvent) {
-        if (webSocket.current && event.key === "Enter" && !event.shiftKey && prompt.trim()) {
+        if (webSocket.current && event.key === "Enter" && !event.shiftKey && (prompt.trim() || currentFiles.length > 0)) {
             event.preventDefault()
             sendMessage()
         }
@@ -459,7 +459,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                     </div>
                 </div>
 
-                {prompt.trim() && !isAnyChatIncomplete &&
+                {(prompt.trim() || currentFiles.length > 0) && !isAnyChatIncomplete &&
                     <button
                         className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer"
                         tabIndex={3}
