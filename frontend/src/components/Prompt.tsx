@@ -198,9 +198,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
         )
     }
 
-    function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-        setPrompt(e.target.value)
-
+    function updateTextAreaHeight() {
         const textArea = textAreaRef.current
         if (textArea) {
             textArea.style.height = "auto"
@@ -355,6 +353,8 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
         localStorage.setItem("options", JSON.stringify(options))
     }, [options])
 
+    useEffect(() => updateTextAreaHeight(), [visibleFiles.length])
+
     return (
         <div className="absolute bottom-0 flex flex-col w-[50vw] pb-4 self-center">
             {inProgressChat && <GeneratingMessageNotification title={inProgressChat.title} uuid={inProgressChat.uuid} />}
@@ -435,13 +435,16 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                     )}
                     <div className="flex">
                         <textarea
-                            className="flex-1 p-2 overflow-y-hidden resize-none outline-none"
+                            className={`flex-1 px-2 content-center overflow-y-hidden resize-none outline-none ${visibleFiles.length > 0 && "py-2"}`}
                             value={prompt}
                             placeholder="Ask me anything..."
                             rows={1}
                             tabIndex={1}
                             ref={textAreaRef}
-                            onChange={handleChange}
+                            onChange={e => {
+                                setPrompt(e.currentTarget.value)
+                                updateTextAreaHeight()
+                            }}
                             onKeyDown={sendMessageWithEvent}
                             autoFocus
                         />
