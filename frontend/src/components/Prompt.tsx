@@ -24,11 +24,6 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     const [currentFiles, setCurrentFiles] = useState<File[]>([])
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
     const [inProgressChat, setInProgressChat] = useState<Chat | null>(null)
-
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-    const [isDropdownOptionsOpen, setIsDropdownOptionsOpen] = useState(false)
-    const [isDropdownModelOpen, setIsDropdownModelOpen] = useState(false)
-
     const [isRemovingFiles, setIsRemovingFiles] = useState(false)
 
     function GeneratingMessageNotification({ title, uuid, }: { title: string, uuid: string }) {
@@ -129,6 +124,10 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
             )
         }
 
+        const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+        const [isDropdownOptionsOpen, setIsDropdownOptionsOpen] = useState(false)
+        const [isDropdownModelOpen, setIsDropdownModelOpen] = useState(false)
+
         const buttonClassNames = "flex w-full px-1 gap-2 justify-between items-center cursor-pointer rounded hover:bg-gray-700 light:hover:bg-gray-300"
         const dropdownClassNames = "absolute flex flex-col gap-1 p-2 rounded-xl bg-gray-800 light:bg-gray-200"
 
@@ -185,7 +184,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                             <button
                                 className={buttonClassNames + " justify-start"}
                                 onClick={_ => {
-                                    handleFileClick()
+                                    fileInputRef.current?.click()
                                     setIsDropdownOpen(false)
                                 }}>
                                 <UploadIcon /> Add files
@@ -199,6 +198,28 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     }
 
     function Attachments() {
+        function removeFile(id: string) {
+            setVisibleFiles(previous =>
+                previous.map(f => f.id === id ? { ...f, isRemoving: true } : f)
+            )
+
+            setTimeout(() => {
+                setVisibleFiles(previous => previous.filter(f => f.id !== id))
+                setCurrentFiles(previous =>
+                    previous.filter(f => !visibleFiles.some(v => v.id === id && v.file === f))
+                )
+            }, 300)
+        }
+
+        function removeFiles() {
+            setIsRemovingFiles(true)
+            setTimeout(() => {
+                setVisibleFiles([])
+                setCurrentFiles([])
+                setIsRemovingFiles(false)
+            }, 300)
+        }
+
         return (
             <div
                 className={`
@@ -321,12 +342,6 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
         }
     }
 
-    function handleFileClick() {
-        if (fileInputRef.current) {
-            fileInputRef.current.click()
-        }
-    }
-
     function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
         function getID() {
             return Math.random().toString(36).slice(2) + Date.now().toString(36)
@@ -366,28 +381,6 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
         ])
 
         event.target.value = ""
-    }
-
-    function removeFile(id: string) {
-        setVisibleFiles(previous =>
-            previous.map(f => f.id === id ? { ...f, isRemoving: true } : f)
-        )
-
-        setTimeout(() => {
-            setVisibleFiles(previous => previous.filter(f => f.id !== id))
-            setCurrentFiles(previous =>
-                previous.filter(f => !visibleFiles.some(v => v.id === id && v.file === f))
-            )
-        }, 300)
-    }
-
-    function removeFiles() {
-        setIsRemovingFiles(true)
-        setTimeout(() => {
-            setVisibleFiles([])
-            setCurrentFiles([])
-            setIsRemovingFiles(false)
-        }, 300)
     }
 
     function handleStop() {
