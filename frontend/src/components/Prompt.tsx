@@ -371,7 +371,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                     textAreaRef.current?.focus()
                 }}
             >
-                <AddDropdown />
+                {AddDropdown()}
 
                 <input
                     type="file"
