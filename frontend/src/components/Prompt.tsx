@@ -1,23 +1,26 @@
 import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Cross2Icon, FileIcon, MixIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
 import { Slider } from "radix-ui"
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import React, { useEffect, useRef, useState, type ReactNode } from "react"
 import { useParams } from "react-router"
 import { createChat, getChats, uploadFiles } from "../utils/api"
-import type { Model, Message, UIAttachment, Chat } from "../types"
+import type { Model, Message, UIAttachment, Chat, Options } from "../types"
 import { getFileSize, getFileType } from "../utils/file"
 
-export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete }: {
+export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete, model, setModel, options, setOptions }: {
     webSocket: React.RefObject<WebSocket | null>,
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
     isAnyChatIncomplete: boolean
     setIsAnyChatIncomplete: React.Dispatch<React.SetStateAction<boolean>>
+    model: Model
+    setModel: React.Dispatch<React.SetStateAction<Model>>
+    options: Options
+    setOptions: React.Dispatch<React.SetStateAction<Options>>
 }) {
     const { chatUUID } = useParams()
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
 
     const [prompt, setPrompt] = useState("")
-    const [model, setModel] = useState(() => localStorage.getItem("model") as Model || "SmolLM2-135M")
     const [currentFiles, setCurrentFiles] = useState<File[]>([])
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
     const [inProgressChat, setInProgressChat] = useState<Chat | null>(null)
@@ -27,27 +30,6 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     const [isDropdownModelOpen, setIsDropdownModelOpen] = useState(false)
 
     const [isRemovingFiles, setIsRemovingFiles] = useState(false)
-
-    function getStoredOptions() {
-        const storedOptions = localStorage.getItem("options")
-        if (storedOptions) {
-            return JSON.parse(storedOptions)
-        } else {
-            return {
-                max_tokens: 256,
-                temperature: 0.2,
-                top_p: 0.9,
-                seed: 0
-            }
-        }
-    }
-
-    const [options, setOptions] = useState<{
-        max_tokens: number
-        temperature: number
-        top_p: number
-        seed: number
-    }>(() => getStoredOptions())
 
     function GeneratingMessageNotification({ title, uuid, }: { title: string, uuid: string }) {
         return (
@@ -268,7 +250,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                             }
                         })
                     } else {
-                        webSocket.current.send(JSON.stringify({ message: prompt, options: options }))
+                        webSocket.current.send(JSON.stringify({ model: model, message: prompt, options: options }))
                         setPrompt("")
                         setIsAnyChatIncomplete(true)
                     }
@@ -370,10 +352,6 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     }
 
     useEffect(() => {
-        localStorage.setItem("model", model)
-    }, [model])
-
-    useEffect(() => {
         localStorage.setItem("options", JSON.stringify(options))
     }, [options])
 
@@ -403,7 +381,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                     multiple
                 />
 
-                <div className="flex flex-1 flex-col gap-3 max-h-100 overflow-y-auto" >
+                <div className="flex flex-1 flex-col gap-3 max-h-100 overflow-y-auto">
                     {visibleFiles.length > 0 && (
                         <div
                             className={`

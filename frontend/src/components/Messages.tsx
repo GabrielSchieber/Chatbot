@@ -8,14 +8,16 @@ import rehypeHighlight from "rehype-highlight"
 
 import { getChats, getMessage, getMessages } from "../utils/api"
 import { getFileSize, getFileType } from "../utils/file"
-import type { Message, MessageFile } from "../types"
+import type { Message, MessageFile, Model, Options } from "../types"
 
-export default function Messages({ webSocket, messages, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete }: {
+export default function Messages({ webSocket, messages, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete, model, options }: {
     webSocket: React.RefObject<WebSocket | null>
     messages: Message[]
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
     isAnyChatIncomplete: boolean
     setIsAnyChatIncomplete: React.Dispatch<React.SetStateAction<boolean>>
+    model: Model
+    options: Options
 }) {
     const { chatUUID } = useParams()
     const shouldLoadMessages = useRef(true)
@@ -162,7 +164,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
 
     function regenerateMessage(index: number) {
         if (webSocket.current) {
-            webSocket.current.send(JSON.stringify({ action: "regenerate_message", message_index: index }))
+            webSocket.current.send(JSON.stringify({ action: "regenerate_message", model: model, message_index: index, options: options }))
             setIsAnyChatIncomplete(true)
             setMessages(previous => {
                 const messages = [...previous]
@@ -227,7 +229,9 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                                     "
                                     onClick={_ => {
                                         if (webSocket.current) {
-                                            webSocket.current.send(JSON.stringify({ action: "edit_message", message: editingMessageText, message_index: index }))
+                                            webSocket.current.send(
+                                                JSON.stringify({ action: "edit_message", model: model, message: editingMessageText, message_index: index, options: options })
+                                            )
 
                                             setMessages(previous => {
                                                 const messages = [...previous]
