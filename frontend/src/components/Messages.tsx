@@ -174,6 +174,25 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
         }
     }
 
+    function editMessage(index: number) {
+        if (webSocket.current) {
+            webSocket.current.send(
+                JSON.stringify({ action: "edit_message", model: model, message: editingMessageText, message_index: index, options: options })
+            )
+
+            setMessages(previous => {
+                const messages = [...previous]
+                messages[index].text = editingMessageText
+                messages[index + 1].text = ""
+                return messages
+            })
+
+            setEditingMessageIndex(-1)
+            setEditingMessageText("")
+            setIsAnyChatIncomplete(true)
+        }
+    }
+
     useEffect(() => {
         loadMessages()
         receiveMessage()
@@ -227,24 +246,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                                         px-3 py-1 rounded-lg cursor-pointer text-black light:text-white bg-gray-100 hover:bg-gray-200
                                         light:bg-gray-900 light:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed
                                     "
-                                    onClick={_ => {
-                                        if (webSocket.current) {
-                                            webSocket.current.send(
-                                                JSON.stringify({ action: "edit_message", model: model, message: editingMessageText, message_index: index, options: options })
-                                            )
-
-                                            setMessages(previous => {
-                                                const messages = [...previous]
-                                                messages[index].text = editingMessageText
-                                                messages[index + 1].text = ""
-                                                return messages
-                                            })
-
-                                            setEditingMessageIndex(-1)
-                                            setEditingMessageText("")
-                                            setIsAnyChatIncomplete(true)
-                                        }
-                                    }}
+                                    onClick={_ => editMessage(index)}
                                     disabled={editingMessageText.trim() === ""}
                                 >
                                     Send
