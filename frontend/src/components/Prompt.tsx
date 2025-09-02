@@ -198,6 +198,60 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
         )
     }
 
+    function Attachments() {
+        return (
+            <div
+                className={`
+                    relative flex flex-col gap-1 p-2 border border-gray-500 top-0 rounded-xl
+                    transition-all duration-300 ${isRemovingFiles ? "opacity-0 overflow-y-hidden" : "opacity-100"}
+                `}
+                style={{
+                    maxHeight: isRemovingFiles ? 0 : visibleFiles.length * 100
+                }}
+                onClick={e => e.stopPropagation()}
+            >
+                {visibleFiles.map(file => (
+                    <div
+                        key={file.id}
+                        className={`
+                            relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl
+                            transition-all duration-300 ${file.isRemoving ? "opacity-0 translate-x-10" : "opacity-100"}
+                        `}
+                    >
+                        {getFileType(file.file.name) === "Image" ? (
+                            <img
+                                src={URL.createObjectURL(file.file)}
+                                alt={file.file.name}
+                                className="size-14 object-cover rounded-lg"
+                            />
+                        ) : (
+                            <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
+                        )}
+                        <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
+                            <p className="px-2 py-1 rounded-lg bg-gray-800">
+                                Type: {getFileType(file.file.name)}<br />
+                                Name: {file.file.name}<br />
+                                Size: {getFileSize(file.file.size)}
+                            </p>
+                        </div>
+                        <button
+                            className="absolute top-0 right-0 translate-x-2 -translate-y-2 cursor-pointer text-red-400 hover:text-red-500"
+                            onClick={_ => removeFile(file.id)}
+                        >
+                            <Cross2Icon className="size-4" />
+                        </button>
+                    </div>
+                ))}
+                <button
+                    className="absolute right-0 -translate-x-2 cursor-pointer text-red-400 hover:text-red-500"
+                    onClick={removeFiles}
+                >
+                    <Cross2Icon />
+                </button>
+            </div>
+        )
+    }
+
     function updateTextAreaHeight() {
         const textArea = textAreaRef.current
         if (textArea) {
@@ -382,57 +436,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                 />
 
                 <div className="flex flex-1 flex-col gap-3 max-h-100 overflow-y-auto">
-                    {visibleFiles.length > 0 && (
-                        <div
-                            className={`
-                                relative flex flex-col gap-1 p-2 border border-gray-500 top-0 rounded-xl
-                                transition-all duration-300 ${isRemovingFiles ? "opacity-0 overflow-y-hidden" : "opacity-100"}
-                            `}
-                            style={{
-                                maxHeight: isRemovingFiles ? 0 : visibleFiles.length * 100
-                            }}
-                            onClick={e => e.stopPropagation()}
-                        >
-                            {visibleFiles.map(file => (
-                                <div
-                                    key={file.id}
-                                    className={`
-                                        relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl
-                                        transition-all duration-300 ${file.isRemoving ? "opacity-0 translate-x-10" : "opacity-100"}
-                                    `}
-                                >
-                                    {getFileType(file.file.name) === "Image" ? (
-                                        <img
-                                            src={URL.createObjectURL(file.file)}
-                                            alt={file.file.name}
-                                            className="size-14 object-cover rounded-lg"
-                                        />
-                                    ) : (
-                                        <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
-                                    )}
-                                    <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
-                                        <p className="px-2 py-1 rounded-lg bg-gray-800">
-                                            Type: {getFileType(file.file.name)}<br />
-                                            Name: {file.file.name}<br />
-                                            Size: {getFileSize(file.file.size)}
-                                        </p>
-                                    </div>
-                                    <button
-                                        className="absolute top-0 right-0 translate-x-2 -translate-y-2 cursor-pointer text-red-400 hover:text-red-500"
-                                        onClick={_ => removeFile(file.id)}
-                                    >
-                                        <Cross2Icon className="size-4" />
-                                    </button>
-                                </div>
-                            ))}
-                            <button
-                                className="absolute right-0 -translate-x-2 cursor-pointer text-red-400 hover:text-red-500"
-                                onClick={removeFiles}
-                            >
-                                <Cross2Icon />
-                            </button>
-                        </div>
-                    )}
+                    {visibleFiles.length > 0 && Attachments()}
                     <div className="flex">
                         <textarea
                             className={`flex-1 px-2 content-center overflow-y-hidden resize-none outline-none ${visibleFiles.length > 0 && "py-2"}`}
