@@ -35,11 +35,13 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     }
 
     function AddDropdown() {
-        function OptionItem({ label, optionKey, slider }: {
+        type OptionKey = "max_tokens" | "temperature" | "top_p" | "seed"
+
+        function OptionItem(
             label: ReactNode,
-            optionKey: "max_tokens" | "temperature" | "top_p" | "seed"
+            optionKey: OptionKey,
             slider?: { min: number, max: number, step: number }
-        }) {
+        ) {
             const optionsClassNames = "flex items-center justify-between text-sm gap-1 px-1 rounded bg-gray-700 light:bg-gray-300"
             const optionsPClassNames = "flex-1 truncate"
             const optionsInputClassNames = `
@@ -47,51 +49,26 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                 hover:bg-gray-500 light:hover:bg-gray-400/70 focus:bg-gray-500 light:focus:bg-gray-400/70
             `
 
-            const [sliderValue, setSliderValue] = useState<number | null>(null)
-
-            function handleSetOptions(value: string) {
-                if (optionKey === "max_tokens" || optionKey === "seed") {
-                    setOptions(previous => {
-                        const previousOptions = { ...previous }
-                        previousOptions[optionKey] = optionKey === "max_tokens" ? clamp(parseInt(value), 32, 4096) : parseInt(value)
-                        return previousOptions
-                    })
-                } else {
-                    setOptions(previous => {
-                        const previousOptions = { ...previous }
-                        previousOptions[optionKey] = clamp(parseFloat(value), 0.01, 10)
-                        return previousOptions
-                    })
-                }
-            }
-
             return (
                 <div className={optionsClassNames}>
                     <p className={optionsPClassNames}>{label}</p>
                     <div className="flex flex-col gap-1">
                         <input
                             className={optionsInputClassNames}
-                            defaultValue={options[optionKey]}
-                            onBlur={e => handleSetOptions(e.currentTarget.value)}
-                            onKeyDown={e => {
-                                if (e.key === "Enter") {
-                                    handleSetOptions(e.currentTarget.value)
-                                }
-                            }}
+                            value={optionValue?.key === optionKey ? optionValue.value : options[optionKey] ?? ""}
+                            onChange={e => setOptionValue({ key: optionKey, value: e.currentTarget.value })}
+                            onBlur={_ => setOptionValue(null)}
+                            onKeyDown={e => e.key === "Enter" && setOptionValue(null)}
                         />
                         {slider && (
                             <Slider.Root
                                 className="relative flex pb-2 items-center touch-none select-none"
-                                defaultValue={[options[optionKey]]}
+                                value={[options[optionKey] as number]}
                                 min={slider.min}
                                 max={slider.max}
                                 step={slider.step}
-                                onValueChange={([v]) => setSliderValue(v)}
-                                onPointerUp={_ => {
-                                    if (sliderValue) {
-                                        handleSetOptions(sliderValue.toString())
-                                    }
-                                }}
+                                onValueChange={([v]) => setOptionValue({ key: optionKey, value: v.toString() })}
+                                onBlur={_ => setOptionValue(null)}
                             >
                                 <Slider.Track className="relative h-[4px] grow rounded-full">
                                     <Slider.Range className="absolute h-full rounded-full bg-gray-300 light:bg-gray-700" />
@@ -109,7 +86,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
             )
         }
 
-        function ModelItem({ modelName }: { modelName: "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondream" }) {
+        function ModelItem(modelName: "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondream") {
             return (
                 <button
                     className={`
@@ -124,12 +101,42 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
             )
         }
 
+        function handleSetOptions(optionKey: OptionKey, value: string) {
+            if (optionKey === "max_tokens" || optionKey === "seed") {
+                const intValue = parseInt(value)
+                if (isFinite(intValue)) {
+                    setOptions(previous => {
+                        const previousOptions = { ...previous }
+                        previousOptions[optionKey] = optionKey === "max_tokens" ? clamp(intValue, 32, 4096) : intValue
+                        return previousOptions
+                    })
+                }
+            } else {
+                const floatValue = parseFloat(value)
+                if (isFinite(floatValue)) {
+                    setOptions(previous => {
+                        const previousOptions = { ...previous }
+                        previousOptions[optionKey] = clamp(floatValue, 0.1, 2)
+                        return previousOptions
+                    })
+                }
+            }
+        }
+
         const [isDropdownOpen, setIsDropdownOpen] = useState(false)
         const [isDropdownOptionsOpen, setIsDropdownOptionsOpen] = useState(false)
         const [isDropdownModelOpen, setIsDropdownModelOpen] = useState(false)
 
+        const [optionValue, setOptionValue] = useState<{ key: OptionKey, value: string } | null>(null)
+
         const buttonClassNames = "flex w-full px-1 gap-2 justify-between items-center cursor-pointer rounded hover:bg-gray-700 light:hover:bg-gray-300"
         const dropdownClassNames = "absolute flex flex-col gap-1 p-2 rounded-xl bg-gray-800 light:bg-gray-200"
+
+        useEffect(() => {
+            if (optionValue !== null) {
+                handleSetOptions(optionValue.key, optionValue.value)
+            }
+        }, [optionValue])
 
         return (
             <div className="relative flex flex-col self-end" onClick={e => e.stopPropagation()}>
@@ -155,10 +162,10 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                             </button>
                             {isDropdownOptionsOpen && (
                                 <div className={dropdownClassNames + " bottom-15 left-32"}>
-                                    <OptionItem label="🔣 Max. Tokens" optionKey="max_tokens" slider={{ min: 32, max: 4096, step: 32 }} />
-                                    <OptionItem label="🌡 Temperature" optionKey="temperature" slider={{ min: 0.1, max: 2, step: 0.1 }} />
-                                    <OptionItem label={"⬆ Top P"} optionKey="top_p" slider={{ min: 0.1, max: 2, step: 0.1 }} />
-                                    <OptionItem label="🌱 Seed" optionKey="seed" />
+                                    {OptionItem("🔣 Max. Tokens", "max_tokens", { min: 32, max: 4096, step: 32 })}
+                                    {OptionItem("🌡 Temperature", "temperature", { min: 0.1, max: 2, step: 0.1 })}
+                                    {OptionItem("⬆ Top P", "top_p", { min: 0.1, max: 2, step: 0.1 })}
+                                    {OptionItem("🌱 Seed", "seed")}
                                 </div>
                             )}
 
@@ -174,10 +181,10 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
 
                             {isDropdownModelOpen && (
                                 <div className={dropdownClassNames + " bottom-0 left-32"}>
-                                    <ModelItem modelName="SmolLM2-135M" />
-                                    <ModelItem modelName="SmolLM2-360M" />
-                                    <ModelItem modelName="SmolLM2-1.7B" />
-                                    <ModelItem modelName="Moondream" />
+                                    {ModelItem("SmolLM2-135M")}
+                                    {ModelItem("SmolLM2-360M")}
+                                    {ModelItem("SmolLM2-1.7B")}
+                                    {ModelItem("Moondream")}
                                 </div>
                             )}
 
@@ -395,6 +402,10 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     function clamp(number: number, min: number, max: number) {
         return Math.max(Math.min(number, max), min)
     }
+
+    useEffect(() => {
+        localStorage.setItem("model", model)
+    }, [model])
 
     useEffect(() => {
         localStorage.setItem("options", JSON.stringify(options))

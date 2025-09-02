@@ -1,7 +1,7 @@
 import Messages from "./Messages"
 import Prompt from "./Prompt"
 import type { Message, Model, Options } from "../types"
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 
 export default function Chat() {
     const webSocket = useRef<WebSocket>(null)
@@ -25,10 +25,6 @@ export default function Chat() {
     }
 
     const [options, setOptions] = useState<Options>(() => getStoredOptions())
-
-    useEffect(() => {
-        localStorage.setItem("model", model)
-    }, [model])
 
     return (
         <div className="flex flex-1 items-center justify-center">
