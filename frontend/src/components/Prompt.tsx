@@ -1,7 +1,7 @@
 import { ArrowUpIcon, Cross2Icon, FileIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
 import React, { useRef, useState } from "react"
 import { useParams } from "react-router"
-import { sendMessage as sendMessageAPI } from "../utils/api.ts"
+import { newMessage } from "../utils/api.ts"
 import type { Message, Chat, UIAttachment, Model, Options } from "../types"
 import { getFileSize, getFileType } from "../utils/file"
 
@@ -151,12 +151,12 @@ export default function Prompt({ setMessages, isAnyChatIncomplete, setIsAnyChatI
 
     function sendMessage() {
         if (!chatUUID) {
-            sendMessageAPI(chatUUID, "new_message", "Moondream", prompt, currentFiles)
+            newMessage("", "SmolLM2-135M", prompt, currentFiles)
                 .then(([chat]) => chat.then(chat => {
                     location.href = `chat/${chat.uuid}`
                 }))
         } else {
-            sendMessageAPI(chatUUID, "new_message", "SmolLM2-135M", prompt, currentFiles)
+            newMessage(chatUUID, "SmolLM2-135M", prompt, currentFiles)
                 .then(([_, status]) => {
                     if (status === 200) {
                         setPrompt("")

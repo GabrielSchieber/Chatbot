@@ -129,119 +129,15 @@ class SetTheme(APIView):
         request.user.save()
         return Response(status = 200)
 
-class GetMessage(APIView):
+class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def get(self, request):
         try:
-            chat_uuid = request.data["chat_uuid"]
-            message_index = int(request.data["message_index"])
-            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            message = Message.objects.filter(chat = chat).order_by("created_at")[message_index]
-            return Response({"text": message.text})
+            request.user.delete()
+            return Response(status = 200)
         except Exception:
             return Response(status = 400)
-
-class GetMessages(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        chat_uuid = request.data.get("chat_uuid")
-        if not chat_uuid:
-            return Response({"error": "chat_uuid required"}, status = 400)
-
-        try:
-            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-        except:
-            return Response({"error": "Chat not found"}, status = 404)
-
-        messages = Message.objects.filter(chat = chat).order_by("created_at").prefetch_related("files")
-        serializer = MessageSerializer(messages, many = True)
-        return Response({"messages": serializer.data})
-
-class SendMessage(APIView):
-    permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser]
-
-    def post(self, request):
-        print(f"\nrequest:\n{request.data}\n")
-
-        action = request.data.get("action", "new_message")
-        if type(action) != str or action not in ["new_message", "edit_message", "regenerate_message"]:
-            return Response({"error": "Invalid data type for action"}, 400)
-
-        model = request.data.get("model", "SmolLM2-135M")
-        if type(model) != str:
-            return Response({"error": "Invalid data type for model"}, 400)
-
-        message = request.data.get("message", "")
-        if type(message) != str:
-            return Response({"error": "Invalid data type for message"}, 400)
-
-        match action:
-            case "new_message":
-                chat_uuid = request.data.get("chat_uuid")
-                if chat_uuid:
-                    if type(chat_uuid) == str:
-                        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
-                        if not chat:
-                            return Response({"error": "Invalid chat UUID"}, 400)
-                    else:
-                        return Response({"error": "Invalid data type for chat UUID"}, 400)
-                else:
-                    chat = Chat.objects.create(user = request.user, title = f"Chat {Chat.objects.filter(user = request.user).count() + 1}")
-
-                files = request.FILES.getlist("files")
-                if type(files) != list:
-                    return Response({"error": "Invalid data type for files"}, 400)
-
-                total_size = 0
-                for file in files:
-                    total_size += file.size
-                if total_size > 5_000_000:
-                    return Response({"error": "Total file size exceeds limit of 5 MB"}, 400)
-
-                user_message = Message.objects.create(chat = chat, text = message, role = "User")
-                if len(files) > 0:
-                    MessageFile.objects.bulk_create(
-                        [MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type) for file in files]
-                    )
-                bot_message = Message.objects.create(chat = chat, text = "", role = "Bot")
-            case "edit_message":
-                chat_uuid = request.data.get("chat_uuid")
-                if chat_uuid:
-                    if type(chat_uuid) == str:
-                        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
-                        if not chat:
-                            return Response({"error": "Invalid chat UUID"}, 400)
-                    else:
-                        return Response({"error": "Invalid data type for chat UUID"}, 400)
-                else:
-                    return Response({"error": "Edit message action requires a chat UUID"}, 400)
-
-                edit_message_index = request.data.get("edit_message_index")
-                if not edit_message_index:
-                    return Response({"error": "Edit message index is required"}, 400)
-                edit_message_index = int(edit_message_index)
-
-                messages = list(Message.objects.filter(chat = chat).order_by("created_at"))
-                user_message = messages[edit_message_index]
-                assert user_message.role == "User"
-                bot_message = messages[edit_message_index + 1]
-                assert bot_message.role == "Bot"
-
-                user_message.text = message
-                user_message.save()
-                bot_message.text = ""
-                bot_message.save()
-
-            case "regenerate_message":
-                raise ValueError("regenerate_message action not implemented")
-
-        threading.Thread(target = asyncio.run, args = [generate_message(chat, user_message, bot_message, model)]).start()
-
-        serializer = ChatSerializer(chat, many = False)
-        return Response(serializer.data, 200)
 
 class GetChats(APIView):
     permission_classes = [IsAuthenticated]
@@ -317,15 +213,175 @@ class DeleteChats(APIView):
         except Exception:
             return Response(status = 400)
 
-class DeleteAccount(APIView):
+class GetMessage(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def post(self, request):
         try:
-            request.user.delete()
-            return Response(status = 200)
+            chat_uuid = request.data["chat_uuid"]
+            message_index = int(request.data["message_index"])
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            message = Message.objects.filter(chat = chat).order_by("created_at")[message_index]
+            return Response({"text": message.text})
         except Exception:
             return Response(status = 400)
+
+class GetMessages(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        chat_uuid = request.data.get("chat_uuid")
+        if not chat_uuid:
+            return Response({"error": "chat_uuid required"}, status = 400)
+
+        try:
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+        except:
+            return Response({"error": "Chat not found"}, status = 404)
+
+        messages = Message.objects.filter(chat = chat).order_by("created_at").prefetch_related("files")
+        serializer = MessageSerializer(messages, many = True)
+        return Response({"messages": serializer.data})
+
+class NewMessage(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        print(f"\nNewMessage request:\n{request.data}\n")
+
+        chat_uuid = request.data.get("chat_uuid", "")
+        if type(chat_uuid) == str:
+            if chat_uuid=="":
+                chat = Chat.objects.create(user = request.user, title = f"Chat {Chat.objects.filter(user = request.user).count() + 1}")
+            else:
+                chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
+                if not chat:
+                    return Response({"error": "Invalid chat UUID"}, 400)
+        else:
+            return Response({"error": "Invalid data type for chat UUID"}, 400)
+
+        model = request.data.get("model", "SmolLM2-135M")
+        if type(model) != str:
+            return Response({"error": "Invalid data type for model"}, 400)
+
+        message = request.data.get("message", "")
+        if type(message) != str:
+            return Response({"error": "Invalid data type for message"}, 400)
+
+        files = request.FILES.getlist("files")
+        if type(files) != list:
+            return Response({"error": "Invalid data type for files"}, 400)
+
+        total_size = 0
+        for file in files:
+            total_size += file.size
+        if total_size > 5_000_000:
+            return Response({"error": "Total file size exceeds limit of 5 MB"}, 400)
+
+        user_message = Message.objects.create(chat = chat, text = message, role = "User")
+        if len(files) > 0:
+            MessageFile.objects.bulk_create(
+                [MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type) for file in files]
+            )
+        bot_message = Message.objects.create(chat = chat, text = "", role = "Bot")
+
+        threading.Thread(target = asyncio.run, args = [generate_message(chat, user_message, bot_message, model)]).start()
+
+        serializer = ChatSerializer(chat, many = False)
+        return Response(serializer.data, 200)
+
+class EditMessage(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        print(f"\nEditMessage request:\n{request.data}\n")
+
+        chat_uuid = request.data.get("chat_uuid")
+        if chat_uuid:
+            if type(chat_uuid) == str:
+                chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
+                if not chat:
+                    return Response({"error": "Invalid chat UUID"}, 400)
+            else:
+                return Response({"error": "Invalid data type for chat UUID"}, 400)
+        else:
+            return Response({"error": "A vald chat UUID is required"}, 400)
+
+        model = request.data.get("model", "SmolLM2-135M")
+        if type(model) != str:
+            return Response({"error": "Invalid data type for model"}, 400)
+
+        message = request.data.get("message", "")
+        if type(message) != str:
+            return Response({"error": "Invalid data type for message"}, 400)
+
+        message_index = request.data.get("message_index")
+        if not message_index:
+            return Response({"error": "Index is required"}, 400)
+        message_index = int(message_index)
+
+        messages = Message.objects.filter(chat = chat).order_by("created_at")
+        user_message = messages[message_index]
+        assert user_message.role == "User"
+        bot_message = messages[message_index + 1]
+        assert bot_message.role == "Bot"
+
+        user_message.text = message
+        user_message.save()
+        bot_message.text = ""
+        bot_message.save()
+
+        threading.Thread(target = asyncio.run, args = [generate_message(chat, user_message, bot_message, model)]).start()
+
+        serializer = ChatSerializer(chat, many = False)
+        return Response(serializer.data, 200)
+
+class RegenerateMessage(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        print(f"\nRegenerateMessage request:\n{request.data}\n")
+
+        chat_uuid = request.data.get("chat_uuid")
+        if chat_uuid:
+            if type(chat_uuid) == str:
+                chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
+                if not chat:
+                    return Response({"error": "Invalid chat UUID"}, 400)
+            else:
+                return Response({"error": "Invalid data type for chat UUID"}, 400)
+        else:
+            return Response({"error": "A valid chat UUID is required"}, 400)
+
+        model = request.data.get("model", "SmolLM2-135M")
+        if type(model) != str:
+            return Response({"error": "Invalid data type for model"}, 400)
+
+        message = request.data.get("message", "")
+        if type(message) != str:
+            return Response({"error": "Invalid data type for message"}, 400)
+
+        message_index = request.data.get("message_index")
+        if not message_index:
+            return Response({"error": "Index is required"}, 400)
+        message_index = int(message_index)
+
+        messages = Message.objects.filter(chat = chat).order_by("created_at")
+        user_message = messages[message_index - 1]
+        assert user_message.role == "User"
+        bot_message = messages[message_index]
+        assert bot_message.role == "Bot"
+
+        bot_message.text = ""
+        bot_message.save()
+
+        threading.Thread(target = asyncio.run, args = [generate_message(chat, user_message, bot_message, model)]).start()
+
+        serializer = ChatSerializer(chat, many = False)
+        return Response(serializer.data, 200)
 
 def index(request):
     return render(request, "index.html")

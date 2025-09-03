@@ -6,7 +6,7 @@ import { useParams } from "react-router"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 
-import { getChats, getMessage, getMessages, sendMessage } from "../utils/api"
+import { getChats, getMessage, getMessages, editMessage as editMessageAPI, renegerateMessage as regenerateMessageAPI } from "../utils/api"
 import { getFileSize, getFileType } from "../utils/file"
 import type { Message, MessageFile } from "../types"
 
@@ -70,14 +70,14 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
         )
     }
 
-    function RegenerateButton() {
+    function RegenerateButton({ index }: { index: number }) {
         return (
             <MessageButton
                 children={
                     <UpdateIcon className="size-4.5" />
                 }
                 tooltip="Regenerate"
-                onClick={() => { }}
+                onClick={() => regenerateMessage(index)}
                 isDisabled={isAnyChatIncomplete}
             />
         )
@@ -162,7 +162,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
 
     function editMessage(index: number) {
         if (chatUUID) {
-            sendMessage(chatUUID, "edit_message", "SmolLM2-135M", editingMessageText, [], index).then(([_, status]) => {
+            editMessageAPI(chatUUID, "SmolLM2-135M", editingMessageText, index).then(([_, status]) => {
                 if (status === 200) {
                     setMessages(previous => {
                         const messages = [...previous]
@@ -173,6 +173,23 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
 
                     setEditingMessageIndex(-1)
                     setEditingMessageText("")
+                    setIsAnyChatIncomplete(true)
+                }
+            })
+        } else {
+            alert("Edition of message was not possible")
+        }
+    }
+
+    function regenerateMessage(index: number) {
+        if (chatUUID) {
+            regenerateMessageAPI(chatUUID, "SmolLM2-135M", index).then(([_, status]) => {
+                if (status === 200) {
+                    setMessages(previous => {
+                        const messages = [...previous]
+                        messages[index].text = ""
+                        return messages
+                    })
                     setIsAnyChatIncomplete(true)
                 }
             })
@@ -328,7 +345,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                             ) : (
                                 <>
                                     <CopyButton message={message} index={index} />
-                                    <RegenerateButton />
+                                    <RegenerateButton index={index} />
                                 </>
                             )}
                         </div>
