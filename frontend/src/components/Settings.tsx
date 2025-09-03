@@ -44,19 +44,19 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                             <ChevronUpIcon />
                         </Select.ScrollUpButton>
                         <Select.Viewport className="p-1">
-                            <Select.Item value="system" className={itemClasses}>
+                            <Select.Item value="System" className={itemClasses}>
                                 <Select.ItemText>System</Select.ItemText>
                                 <Select.ItemIndicator className="ml-auto">
                                     <CheckIcon />
                                 </Select.ItemIndicator>
                             </Select.Item>
-                            <Select.Item value="light" className={itemClasses}>
+                            <Select.Item value="Light" className={itemClasses}>
                                 <Select.ItemText>Light</Select.ItemText>
                                 <Select.ItemIndicator className="ml-auto">
                                     <CheckIcon />
                                 </Select.ItemIndicator>
                             </Select.Item>
-                            <Select.Item value="dark" className={itemClasses}>
+                            <Select.Item value="Dark" className={itemClasses}>
                                 <Select.ItemText>Dark</Select.ItemText>
                                 <Select.ItemIndicator className="ml-auto">
                                     <CheckIcon />

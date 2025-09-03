@@ -6,18 +6,16 @@ import { useParams } from "react-router"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 
-import { getChats, getMessage, getMessages } from "../utils/api"
+import { getChats, getMessage, getMessages, sendMessage } from "../utils/api"
 import { getFileSize, getFileType } from "../utils/file"
-import type { Message, MessageFile, Model, Options } from "../types"
+import type { Message, MessageFile } from "../types"
 
-export default function Messages({ webSocket, messages, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete, model, options }: {
+export default function Messages({ webSocket, messages, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete }: {
     webSocket: React.RefObject<WebSocket | null>
     messages: Message[]
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
     isAnyChatIncomplete: boolean
     setIsAnyChatIncomplete: React.Dispatch<React.SetStateAction<boolean>>
-    model: Model
-    options: Options
 }) {
     const { chatUUID } = useParams()
     const shouldLoadMessages = useRef(true)
@@ -72,14 +70,14 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
         )
     }
 
-    function RegenerateButton({ index }: { index: number }) {
+    function RegenerateButton() {
         return (
             <MessageButton
                 children={
                     <UpdateIcon className="size-4.5" />
                 }
                 tooltip="Regenerate"
-                onClick={() => regenerateMessage(index)}
+                onClick={() => { }}
                 isDisabled={isAnyChatIncomplete}
             />
         )
@@ -93,7 +91,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                     <p className="px-2 py-1 rounded-lg bg-gray-800">
                         Type: {getFileType(file.name)}<br />
                         Name: {file.name}<br />
-                        Size: {getFileSize(file.size)}
+                        Size: {getFileSize(file.content_size)}
                     </p>
                 </div>
             </div>
@@ -124,7 +122,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                     setMessages(previous => {
                         let previousMessages = [...previous]
                         if (previousMessages[message_index]) {
-                            previousMessages[message_index] = { text: previousMessages[message_index].text + data.token, files: [], is_user_message: false }
+                            previousMessages[message_index] = { text: previousMessages[message_index].text + data.token, files: [], role: "Bot" }
                         }
                         return previousMessages
                     })
@@ -132,7 +130,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                     setMessages(previous => {
                         let previousMessages = [...previous]
                         if (previousMessages[message_index]) {
-                            previousMessages[message_index] = { text: data.message, files: [], is_user_message: false }
+                            previousMessages[message_index] = { text: data.message, files: [], role: "Bot" }
                         }
                         return previousMessages
                     })
@@ -149,7 +147,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
     }
 
     function copyMessage(message: Message, index: number) {
-        if (message.is_user_message) {
+        if (message.role === "User") {
             navigator.clipboard.writeText(message.text)
         } else {
             if (chatUUID) {
@@ -162,34 +160,24 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
         setTimeout(() => setCopiedMessageIndex(-1), 2000)
     }
 
-    function regenerateMessage(index: number) {
-        if (webSocket.current) {
-            webSocket.current.send(JSON.stringify({ action: "regenerate_message", model: model, message_index: index, options: options }))
-            setIsAnyChatIncomplete(true)
-            setMessages(previous => {
-                const messages = [...previous]
-                messages[index].text = ""
-                return messages
-            })
-        }
-    }
-
     function editMessage(index: number) {
-        if (webSocket.current) {
-            webSocket.current.send(
-                JSON.stringify({ action: "edit_message", model: model, message: editingMessageText, message_index: index, options: options })
-            )
+        if (chatUUID) {
+            sendMessage(chatUUID, "edit_message", "SmolLM2-135M", editingMessageText, [], index).then(([_, status]) => {
+                if (status === 200) {
+                    setMessages(previous => {
+                        const messages = [...previous]
+                        messages[index].text = editingMessageText
+                        messages[index + 1].text = ""
+                        return messages
+                    })
 
-            setMessages(previous => {
-                const messages = [...previous]
-                messages[index].text = editingMessageText
-                messages[index + 1].text = ""
-                return messages
+                    setEditingMessageIndex(-1)
+                    setEditingMessageText("")
+                    setIsAnyChatIncomplete(true)
+                }
             })
-
-            setEditingMessageIndex(-1)
-            setEditingMessageText("")
-            setIsAnyChatIncomplete(true)
+        } else {
+            alert("Edition of message was not possible")
         }
     }
 
@@ -204,7 +192,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
             {messages.map((message, index) => (
                 <div
                     key={index}
-                    className={`flex flex-col gap-0.5 w-[50vw] justify-self-center ${message.is_user_message ? "items-end" : "items-start"}`}
+                    className={`flex flex-col gap-0.5 w-[50vw] justify-self-center ${message.role === "User" ? "items-end" : "items-start"}`}
                 >
                     {editingMessageIndex === index ? (
                         <div className="flex flex-col gap-1 w-[80%] max-h-100 px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
@@ -254,7 +242,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                             </div>
                         </div>
                     ) : (
-                        message.is_user_message ? (
+                        message.role === "User" ? (
                             <div className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
                                 {message.files.length > 0 && (
                                     <div className="flex flex-col gap-1">
@@ -332,7 +320,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
 
                     {editingMessageIndex !== index && (
                         <div className="flex gap-1">
-                            {message.is_user_message ? (
+                            {message.role === "User" ? (
                                 <>
                                     <EditButton message={message} index={index} />
                                     <CopyButton message={message} index={index} />
@@ -340,7 +328,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                             ) : (
                                 <>
                                     <CopyButton message={message} index={index} />
-                                    <RegenerateButton index={index} />
+                                    <RegenerateButton />
                                 </>
                             )}
                         </div>

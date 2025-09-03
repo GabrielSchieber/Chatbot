@@ -1,6 +1,7 @@
+import asyncio
+import threading
+
 from django.contrib.auth import authenticate
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 from django.db.models import Prefetch, Q
 from django.shortcuts import render
 from rest_framework import generics, serializers, status
@@ -12,7 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .models import Chat, Message, MessageFile, User
-from .tasks import reset_stopped_incomplete_chats
+from .tasks import generate_message
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only = True)
@@ -27,17 +28,17 @@ class RegisterSerializer(serializers.ModelSerializer):
 class ChatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chat
-        fields = ["title", "is_complete", "uuid"]
+        fields = ["title", "is_pending", "uuid"]
 
 class MessageFileSerializer(serializers.ModelSerializer):
-    size = serializers.SerializerMethodField()
+    content_size = serializers.SerializerMethodField()
 
     class Meta:
         model = MessageFile
-        fields = ["name", "size"]
+        fields = ["name", "content_size", "content_type"]
 
-    def get_size(self, obj: MessageFile):
-        return obj.file.size
+    def get_content_size(self, message_file: MessageFile):
+        return len(message_file.content)
 
 class MessageSerializer(serializers.ModelSerializer):
     files = MessageFileSerializer(many = True, read_only = True)
@@ -45,7 +46,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ["text", "files", "is_user_message"]
+        fields = ["text", "files", "role"]
 
     def get_text(self, obj):
         return obj.text
@@ -111,6 +112,23 @@ class CookieTokenRefreshView(TokenRefreshView):
             response.set_cookie("refresh_token", new_refresh, httponly = True, samesite = "Lax")
         return response
 
+class GetTheme(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(request.user.theme, 200)
+
+class SetTheme(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        theme = request.data.get("theme")
+        if not theme or theme not in ["System", "Light", "Dark"]:
+            return Response("Invalid theme", 400)
+        request.user.theme = theme
+        request.user.save()
+        return Response(status = 200)
+
 class GetMessage(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -119,7 +137,7 @@ class GetMessage(APIView):
             chat_uuid = request.data["chat_uuid"]
             message_index = int(request.data["message_index"])
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            message = Message.objects.filter(chat = chat).order_by("date_time")[message_index]
+            message = Message.objects.filter(chat = chat).order_by("created_at")[message_index]
             return Response({"text": message.text})
         except Exception:
             return Response(status = 400)
@@ -137,64 +155,108 @@ class GetMessages(APIView):
         except:
             return Response({"error": "Chat not found"}, status = 404)
 
-        messages = Message.objects.filter(chat = chat).order_by("date_time").prefetch_related("files")
+        messages = Message.objects.filter(chat = chat).order_by("created_at").prefetch_related("files")
         serializer = MessageSerializer(messages, many = True)
         return Response({"messages": serializer.data})
 
-class UploadFiles(APIView):
+class SendMessage(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
 
     def post(self, request):
-        try:
-            if len(request.FILES.getlist("files")) > 10:
-                return Response({"error": "You can only upload up to 10 files at a time"}, 400)
+        print(f"\nrequest:\n{request.data}\n")
 
-            total_size = 0
-            for file in request.FILES.getlist("files"):
-                total_size += file.size
-            if total_size > 5_000_000:
-                return Response({"error": "Total file size exceeds limit of 5 MB"}, 400)
+        action = request.data.get("action", "new_message")
+        if type(action) != str or action not in ["new_message", "edit_message", "regenerate_message"]:
+            return Response({"error": "Invalid data type for action"}, 400)
 
-            uploaded_metadata = []
+        model = request.data.get("model", "SmolLM2-135M")
+        if type(model) != str:
+            return Response({"error": "Invalid data type for model"}, 400)
 
-            for file in request.FILES.getlist("files"):
-                path = default_storage.save(f"chat_temp/{file.name}", ContentFile(file.read()))
-                uploaded_metadata.append({
-                    "name": file.name,
-                    "content_type": file.content_type,
-                    "file": path,
-                    "url": default_storage.url(path)
-                })
+        message = request.data.get("message", "")
+        if type(message) != str:
+            return Response({"error": "Invalid data type for message"}, 400)
 
-            return Response(uploaded_metadata)
-        except Exception:
-            return Response(status = 400)
+        match action:
+            case "new_message":
+                chat_uuid = request.data.get("chat_uuid")
+                if chat_uuid:
+                    if type(chat_uuid) == str:
+                        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
+                        if not chat:
+                            return Response({"error": "Invalid chat UUID"}, 400)
+                    else:
+                        return Response({"error": "Invalid data type for chat UUID"}, 400)
+                else:
+                    chat = Chat.objects.create(user = request.user, title = f"Chat {Chat.objects.filter(user = request.user).count() + 1}")
 
-class CreateChat(APIView):
-    permission_classes = [IsAuthenticated]
+                files = request.FILES.getlist("files")
+                if type(files) != list:
+                    return Response({"error": "Invalid data type for files"}, 400)
 
-    def post(self, request):
-        chat = Chat.objects.create(user = request.user, title = f"Chat {Chat.objects.filter(user = request.user).count() + 1}")
+                total_size = 0
+                for file in files:
+                    total_size += file.size
+                if total_size > 5_000_000:
+                    return Response({"error": "Total file size exceeds limit of 5 MB"}, 400)
+
+                user_message = Message.objects.create(chat = chat, text = message, role = "User")
+                if len(files) > 0:
+                    MessageFile.objects.bulk_create(
+                        [MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type) for file in files]
+                    )
+                bot_message = Message.objects.create(chat = chat, text = "", role = "Bot")
+            case "edit_message":
+                chat_uuid = request.data.get("chat_uuid")
+                if chat_uuid:
+                    if type(chat_uuid) == str:
+                        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
+                        if not chat:
+                            return Response({"error": "Invalid chat UUID"}, 400)
+                    else:
+                        return Response({"error": "Invalid data type for chat UUID"}, 400)
+                else:
+                    return Response({"error": "Edit message action requires a chat UUID"}, 400)
+
+                edit_message_index = request.data.get("edit_message_index")
+                if not edit_message_index:
+                    return Response({"error": "Edit message index is required"}, 400)
+                edit_message_index = int(edit_message_index)
+
+                messages = list(Message.objects.filter(chat = chat).order_by("created_at"))
+                user_message = messages[edit_message_index]
+                assert user_message.role == "User"
+                bot_message = messages[edit_message_index + 1]
+                assert bot_message.role == "Bot"
+
+                user_message.text = message
+                user_message.save()
+                bot_message.text = ""
+                bot_message.save()
+
+            case "regenerate_message":
+                raise ValueError("regenerate_message action not implemented")
+
+        threading.Thread(target = asyncio.run, args = [generate_message(chat, user_message, bot_message, model)]).start()
+
         serializer = ChatSerializer(chat, many = False)
-        return Response(serializer.data)
+        return Response(serializer.data, 200)
 
 class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        chats = Chat.objects.filter(user = request.user).order_by("date_time")
+        chats = Chat.objects.filter(user = request.user).order_by("created_at")
         serializer = ChatSerializer(chats, many = True)
         return Response({"chats": serializer.data})
 
     def post(self, request):
-        incomplete_flag = request.data.get("incomplete", None)
-        if incomplete_flag is None:
-            return Response({"error": "'incomplete' field required"}, status = 400)
+        pending_flag = request.data.get("pending", None)
+        if pending_flag is None:
+            return Response({"error": "'pending' field required"}, status = 400)
 
-        reset_stopped_incomplete_chats(request.user)
-
-        chats = Chat.objects.filter(user = request.user, is_complete = False).order_by("date_time")
+        chats = Chat.objects.filter(user = request.user, is_pending = True).order_by("created_at")
         serializer = ChatSerializer(chats, many = True)
         return Response({"chats": serializer.data})
 
@@ -204,10 +266,10 @@ class SearchChats(APIView):
     def post(self, request):
         try:
             search = request.data["search"]
-            matched_messages = Message.objects.filter(text__icontains = search).order_by("date_time")
-            chats = Chat.objects.filter(user = request.user).order_by("date_time").filter(
+            matched_messages = Message.objects.filter(text__icontains = search).order_by("created_at")
+            chats = Chat.objects.filter(user = request.user).order_by("created_at").filter(
                 Q(title__icontains = search) | Q(messages__text__icontains = search)
-            ).order_by("date_time").distinct().prefetch_related(
+            ).order_by("created_at").distinct().prefetch_related(
                 Prefetch("messages", queryset = matched_messages, to_attr = "matched_messages")
             )
             chats = [{

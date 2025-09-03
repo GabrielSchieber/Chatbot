@@ -1,13 +1,11 @@
-import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Cross2Icon, FileIcon, MixIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
-import { Slider } from "radix-ui"
-import React, { useEffect, useRef, useState, type ReactNode } from "react"
+import { ArrowUpIcon, Cross2Icon, FileIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
+import React, { useRef, useState } from "react"
 import { useParams } from "react-router"
-import { createChat, getChats, uploadFiles } from "../utils/api"
-import type { Model, Message, UIAttachment, Chat, Options } from "../types"
+import { sendMessage as sendMessageAPI } from "../utils/api.ts"
+import type { Message, Chat, UIAttachment, Model, Options } from "../types"
 import { getFileSize, getFileType } from "../utils/file"
 
-export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete, model, setModel, options, setOptions }: {
-    webSocket: React.RefObject<WebSocket | null>,
+export default function Prompt({ setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete, model, setModel, options, setOptions }: {
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
     isAnyChatIncomplete: boolean
     setIsAnyChatIncomplete: React.Dispatch<React.SetStateAction<boolean>>
@@ -35,108 +33,8 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     }
 
     function AddDropdown() {
-        type OptionKey = "max_tokens" | "temperature" | "top_p" | "seed"
-
-        function OptionItem(
-            label: ReactNode,
-            optionKey: OptionKey,
-            slider?: { min: number, max: number, step: number }
-        ) {
-            const optionsClassNames = "flex items-center justify-between text-sm gap-1 px-1 rounded bg-gray-700 light:bg-gray-300"
-            const optionsPClassNames = "flex-1 truncate"
-            const optionsInputClassNames = `
-                flex-1 px-1.5 m-1 outline-none rounded bg-gray-600 light:bg-gray-400/30
-                hover:bg-gray-500 light:hover:bg-gray-400/70 focus:bg-gray-500 light:focus:bg-gray-400/70
-            `
-
-            return (
-                <div className={optionsClassNames}>
-                    <p className={optionsPClassNames}>{label}</p>
-                    <div className="flex flex-col gap-1">
-                        <input
-                            className={optionsInputClassNames}
-                            value={optionValue?.key === optionKey ? optionValue.value : options[optionKey] ?? ""}
-                            onChange={e => setOptionValue({ key: optionKey, value: e.currentTarget.value })}
-                            onBlur={_ => setOptionValue(null)}
-                            onKeyDown={e => e.key === "Enter" && setOptionValue(null)}
-                        />
-                        {slider && (
-                            <Slider.Root
-                                className="relative flex pb-2 items-center touch-none select-none"
-                                value={[options[optionKey] as number]}
-                                min={slider.min}
-                                max={slider.max}
-                                step={slider.step}
-                                onValueChange={([v]) => setOptionValue({ key: optionKey, value: v.toString() })}
-                                onBlur={_ => setOptionValue(null)}
-                            >
-                                <Slider.Track className="relative h-[4px] grow rounded-full">
-                                    <Slider.Range className="absolute h-full rounded-full bg-gray-300 light:bg-gray-700" />
-                                </Slider.Track>
-                                <Slider.Thumb
-                                    className="
-                                        block size-3 rounded-[10px] bg-gray-200 light:bg-gray-800 focus:shadow-[0_0_0_5px]
-                                        focus:shadow-blackA5 focus:outline-none cursor-pointer
-                                    "
-                                />
-                            </Slider.Root>
-                        )}
-                    </div>
-                </div>
-            )
-        }
-
-        function ModelItem(modelName: "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondream") {
-            return (
-                <button
-                    className={`
-                        flex gap-1 w-40 px-2 py-1 items-center justify-between rounded truncate cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400/50
-                        ${modelName === model ? "bg-gray-600/90 light:bg-gray-400/40" : "bg-gray-700 light:bg-gray-300"}
-                    `}
-                    onClick={_ => setModel(modelName)}
-                >
-                    {modelName}
-                    {modelName == model && <CheckIcon className="size-5" />}
-                </button>
-            )
-        }
-
-        function handleSetOptions(optionKey: OptionKey, value: string) {
-            if (optionKey === "max_tokens" || optionKey === "seed") {
-                const intValue = parseInt(value)
-                if (isFinite(intValue)) {
-                    setOptions(previous => {
-                        const previousOptions = { ...previous }
-                        previousOptions[optionKey] = optionKey === "max_tokens" ? clamp(intValue, 32, 4096) : intValue
-                        return previousOptions
-                    })
-                }
-            } else {
-                const floatValue = parseFloat(value)
-                if (isFinite(floatValue)) {
-                    setOptions(previous => {
-                        const previousOptions = { ...previous }
-                        previousOptions[optionKey] = clamp(floatValue, 0.1, 2)
-                        return previousOptions
-                    })
-                }
-            }
-        }
-
         const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-        const [isDropdownOptionsOpen, setIsDropdownOptionsOpen] = useState(false)
-        const [isDropdownModelOpen, setIsDropdownModelOpen] = useState(false)
-
-        const [optionValue, setOptionValue] = useState<{ key: OptionKey, value: string } | null>(null)
-
         const buttonClassNames = "flex w-full px-1 gap-2 justify-between items-center cursor-pointer rounded hover:bg-gray-700 light:hover:bg-gray-300"
-        const dropdownClassNames = "absolute flex flex-col gap-1 p-2 rounded-xl bg-gray-800 light:bg-gray-200"
-
-        useEffect(() => {
-            if (optionValue !== null) {
-                handleSetOptions(optionValue.key, optionValue.value)
-            }
-        }, [optionValue])
 
         return (
             <div className="relative flex flex-col self-end" onClick={e => e.stopPropagation()}>
@@ -151,43 +49,6 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                     <>
                         <div className="fixed inset-0 z-1 cursor-auto" onClick={_ => setIsDropdownOpen(false)}></div>
                         <div className="absolute flex flex-col gap-1 p-2 self-center items-center cursor-auto bottom-12 left-0 rounded-xl bg-gray-800 light:bg-gray-200 z-2">
-                            <button
-                                className={buttonClassNames}
-                                onClick={_ => {
-                                    setIsDropdownOptionsOpen(!isDropdownOptionsOpen)
-                                    setIsDropdownModelOpen(false)
-                                }}
-                            >
-                                <MixIcon /> Options {isDropdownOptionsOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
-                            </button>
-                            {isDropdownOptionsOpen && (
-                                <div className={dropdownClassNames + " bottom-15 left-32"}>
-                                    {OptionItem("🔣 Max. Tokens", "max_tokens", { min: 32, max: 4096, step: 32 })}
-                                    {OptionItem("🌡 Temperature", "temperature", { min: 0.1, max: 2, step: 0.1 })}
-                                    {OptionItem("⬆ Top P", "top_p", { min: 0.1, max: 2, step: 0.1 })}
-                                    {OptionItem("🌱 Seed", "seed")}
-                                </div>
-                            )}
-
-                            <button
-                                className={buttonClassNames}
-                                onClick={_ => {
-                                    setIsDropdownModelOpen(!isDropdownModelOpen)
-                                    setIsDropdownOptionsOpen(false)
-                                }}
-                            >
-                                <BoxModelIcon /> Model {isDropdownModelOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
-                            </button>
-
-                            {isDropdownModelOpen && (
-                                <div className={dropdownClassNames + " bottom-0 left-32"}>
-                                    {ModelItem("SmolLM2-135M")}
-                                    {ModelItem("SmolLM2-360M")}
-                                    {ModelItem("SmolLM2-1.7B")}
-                                    {ModelItem("Moondream")}
-                                </div>
-                            )}
-
                             <button
                                 className={buttonClassNames + " justify-start"}
                                 onClick={_ => {
@@ -289,61 +150,37 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     }
 
     function sendMessage() {
-        getChats(true).then(async chats => {
-            if (chats.length === 0) {
-                if (!chatUUID) {
-                    createChat().then(chat => {
-                        if (webSocket.current) {
-                            if (currentFiles.length > 0) {
-                                uploadFiles(currentFiles).then(files => {
-                                    if (!files.error && webSocket.current) {
-                                        webSocket.current.send(JSON.stringify({ model: model, message: prompt, files: files, chat_uuid: chat.uuid, options: options }))
-                                        setPrompt("")
-                                        setCurrentFiles([])
-                                        setVisibleFiles([])
-                                        setIsAnyChatIncomplete(true)
-                                        location.href = `/chat/${chat.uuid}`
-                                    }
-                                })
-                            } else {
-                                webSocket.current.send(JSON.stringify({ model: model, message: prompt, chat_uuid: chat.uuid, options: options }))
-                                location.href = `/chat/${chat.uuid}`
-                            }
-                        }
-                    })
-                } else if (webSocket.current) {
-                    setMessages(previous => {
-                        const previousMessages = [...previous]
-                        previousMessages.push({ "text": prompt, "files": [], "is_user_message": true })
-                        previousMessages.push({ "text": "", "files": [], "is_user_message": false })
-                        return previousMessages
-                    })
-
-                    if (currentFiles.length > 0) {
-                        uploadFiles(currentFiles).then(files => {
-                            if (!files.error && webSocket.current) {
-                                webSocket.current.send(JSON.stringify({ model: model, message: prompt, files: files, options: options }))
-                                setPrompt("")
-                                setCurrentFiles([])
-                                setVisibleFiles([])
-                                setIsAnyChatIncomplete(true)
-                            }
-                        })
-                    } else {
-                        webSocket.current.send(JSON.stringify({ model: model, message: prompt, options: options }))
+        if (!chatUUID) {
+            sendMessageAPI(chatUUID, "new_message", "Moondream", prompt, currentFiles)
+                .then(([chat]) => chat.then(chat => {
+                    location.href = `chat/${chat.uuid}`
+                }))
+        } else {
+            sendMessageAPI(chatUUID, "new_message", "SmolLM2-135M", prompt, currentFiles)
+                .then(([_, status]) => {
+                    if (status === 200) {
                         setPrompt("")
+                        setCurrentFiles([])
+                        setVisibleFiles([])
                         setIsAnyChatIncomplete(true)
+
+                        setMessages(previous => {
+                            const previousMessages = [...previous]
+                            previousMessages.push({
+                                text: prompt,
+                                files: currentFiles.map(f => { return { name: f.name, content_size: f.size, content_type: f.type } }),
+                                role: "User"
+                            })
+                            previousMessages.push({ text: "", files: [], role: "Bot" })
+                            return previousMessages
+                        })
                     }
-                }
-            } else {
-                setInProgressChat(chats[0])
-                setTimeout(() => setInProgressChat(null), 2000)
-            }
-        })
+                })
+        }
     }
 
     function sendMessageWithEvent(event: React.KeyboardEvent) {
-        if (webSocket.current && event.key === "Enter" && !event.shiftKey && (prompt.trim() || currentFiles.length > 0)) {
+        if (event.key === "Enter" && !event.shiftKey && (prompt.trim() || currentFiles.length > 0)) {
             event.preventDefault()
             sendMessage()
         }
@@ -389,29 +226,6 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
 
         event.target.value = ""
     }
-
-    function handleStop() {
-        getChats(true).then(chats => {
-            if (chats.length > 0 && webSocket.current) {
-                webSocket.current.send(JSON.stringify({ action: "stop_message" }))
-                setIsAnyChatIncomplete(false)
-            }
-        })
-    }
-
-    function clamp(number: number, min: number, max: number) {
-        return Math.max(Math.min(number, max), min)
-    }
-
-    useEffect(() => {
-        localStorage.setItem("model", model)
-    }, [model])
-
-    useEffect(() => {
-        localStorage.setItem("options", JSON.stringify(options))
-    }, [options])
-
-    useEffect(() => updateTextAreaHeight(), [visibleFiles.length])
 
     return (
         <div className="absolute bottom-0 flex flex-col w-[50vw] pb-4 self-center">
@@ -466,16 +280,6 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                         onClick={sendMessage}
                     >
                         <ArrowUpIcon className="size-6 text-white" />
-                    </button>
-                }
-
-                {isAnyChatIncomplete &&
-                    <button
-                        className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer"
-                        tabIndex={3}
-                        onClick={handleStop}
-                    >
-                        <PauseIcon className="size-6 text-white" />
                     </button>
                 }
             </div>

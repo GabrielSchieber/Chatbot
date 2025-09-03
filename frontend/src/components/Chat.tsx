@@ -35,11 +35,8 @@ export default function Chat() {
                     setMessages={setMessages}
                     isAnyChatIncomplete={isAnyChatIncomplete}
                     setIsAnyChatIncomplete={setIsAnyChatIncomplete}
-                    model={model}
-                    options={options}
                 />
                 <Prompt
-                    webSocket={webSocket}
                     setMessages={setMessages}
                     isAnyChatIncomplete={isAnyChatIncomplete}
                     setIsAnyChatIncomplete={setIsAnyChatIncomplete}

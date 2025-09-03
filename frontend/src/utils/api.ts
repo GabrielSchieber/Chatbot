@@ -1,18 +1,33 @@
-import type { Chat, Message, SearchEntry } from "../types"
+import type { Chat, Message, SearchEntry, Theme } from "../types"
 import { apiFetch } from "./auth"
 
-export async function createChat(): Promise<Chat> {
-    const response = await apiFetch("/api/create-chat/", {
+export async function sendMessage(
+    chatUUID: string | undefined,
+    action: "new_message" | "edit_message" | "renegerate_message",
+    model: "SmolLM2-135M" | "Moondream",
+    message: string,
+    files: File[],
+    edit_message_index: number | undefined = undefined
+): Promise<[Promise<Chat>, number]> {
+    const formData = new FormData()
+    if (chatUUID !== undefined) formData.append("chat_uuid", chatUUID)
+    formData.append("action", action)
+    formData.append("model", model)
+    formData.append("message", message)
+    if (edit_message_index !== undefined) formData.append("edit_message_index", edit_message_index.toString())
+    files.forEach(file => formData.append("files", file))
+
+    const response = await apiFetch("/api/send-message/", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" }
+        body: formData
     })
-    return await response.json()
+    return [response.json(), response.status]
 }
 
-export async function getChats(incomplete: boolean = false): Promise<Chat[]> {
-    const method = incomplete ? "POST" : "GET"
-    const body = incomplete ? JSON.stringify({ incomplete: true }) : undefined
+export async function getChats(pending: boolean = false): Promise<Chat[]> {
+    const method = pending ? "POST" : "GET"
+    const body = pending ? JSON.stringify({ pending: true }) : undefined
     const response = await apiFetch("/api/get-chats/", {
         method,
         credentials: "include",
@@ -84,11 +99,16 @@ export async function searchChats(search: string): Promise<SearchEntry[] | undef
     return data.chats
 }
 
-export async function uploadFiles(files: File[]): Promise<any> {
-    const formData = new FormData()
-    files.forEach(file => formData.append("files", file))
+export async function getTheme(): Promise<Theme> {
+    return (await apiFetch("/api/get-theme/", { credentials: "include" })).json()
+}
 
-    const response = await apiFetch("/api/upload-files/", { method: "POST", credentials: "include", body: formData })
-
-    return await response.json()
+export async function setTheme(theme: Theme): Promise<number> {
+    const response = await apiFetch("/api/set-theme/", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ theme: theme })
+    })
+    return response.status
 }

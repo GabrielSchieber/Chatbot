@@ -14,7 +14,7 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ["email"]
 
     fieldsets = (
-        (None, {"fields": ["email", "password"]}),
+        (None, {"fields": ["email", "password", "theme", "sidebar_state"]}),
         (
             "Permissions",
             {
@@ -37,7 +37,7 @@ class MessageInline(admin.StackedInline):
     extra = 0
     can_delete = False
     readonly_fields = ["message_files_summary"]
-    fields = ["text", "is_user_message", "message_files_summary"]
+    fields = ["text", "role", "message_files_summary", "model", "created_at"]
 
     def has_add_permission(self, request, obj):
         return False
@@ -64,7 +64,7 @@ class MessageInline(admin.StackedInline):
 
 class ChatAdmin(admin.ModelAdmin):
     inlines = [MessageInline]
-    list_display = ["user", "title", "is_complete", "date_time", "uuid"]
+    list_display = ["user", "uuid", "title", "created_at"]
 
     def get_readonly_fields(self, request, obj = None):
         return [f.name for f in self.model._meta.fields]

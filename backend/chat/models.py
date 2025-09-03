@@ -29,7 +29,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique = True)
     is_active = models.BooleanField(default = True)
     is_staff = models.BooleanField(default = False)
-    date_joined = models.DateTimeField(default = timezone.now)
+    theme = models.CharField(max_length = 6, choices = [["System", "System"], ["Light", "Light"], ["Dark", "Dark"]], default = "Light")
+    sidebar_state = models.CharField(max_length = 6, choices = [["Open", "Open"], ["Closed", "Closed"]], default = "Open")
+    created_at = models.DateTimeField(default = timezone.now)
 
     objects = UserManager()
 
@@ -40,31 +42,43 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 class Chat(models.Model):
-    user = models.ForeignKey(User, on_delete = models.CASCADE)
-    title = models.TextField()
-    is_complete = models.BooleanField(default = True)
-    date_time = models.DateTimeField(auto_now_add = True)
+    user = models.ForeignKey(User, models.CASCADE, related_name = "chats")
     uuid = models.UUIDField(primary_key = True, default = uuid.uuid4, editable = False)
+    title = models.CharField(max_length = 200)
+    is_pending = models.BooleanField(default = False)
+    created_at = models.DateTimeField(auto_now_add = True)
 
     def __str__(self):
         title = self.title if len(self.title) <= 20 else f"{self.title[:20]}..."
-        return f"Chat of {self.user} titled {title} at {self.date_time}"
+        return f"Chat of {self.user} titled {title} created at {self.created_at}"
 
 class Message(models.Model):
-    chat = models.ForeignKey(Chat, related_name = "messages", on_delete = models.CASCADE)
+    chat = models.ForeignKey(Chat, models.CASCADE, related_name = "messages")
     text = models.TextField()
-    is_user_message = models.BooleanField()
-    date_time = models.DateTimeField(auto_now_add = True)
+    role = models.CharField(max_length = 4, choices = [["User", "User"], ["Bot", "Bot"]])
+    model = models.CharField(
+        max_length = 12,
+        choices = [
+            ["SmolLM2-135M", "SmolLM2-135M"],
+            ["SmolLM2-360M", "SmolLM2-360M"],
+            ["SmolLM2-1.7B", "SmolLM2-1.7B"],
+            ["Moondream", "Moondream"]
+        ],
+        blank = True,
+        null = True
+    )
+    created_at = models.DateTimeField(auto_now_add = True)
 
     def __str__(self):
-        owner = "user" if self.is_user_message else "bot"
         text = self.text if len(self.text) <= 20 else f"{self.text[:20]}..."
-        return f"Message of {owner} about {text} at {self.date_time}"
+        return f"Message of {self.role.lower()} about {text} created at {self.created_at}"
 
 class MessageFile(models.Model):
-    message = models.ForeignKey(Message, related_name = "files", on_delete = models.CASCADE)
-    file = models.FileField(upload_to = "chat_files/")
-    name = models.TextField()
+    message = models.ForeignKey(Message, models.CASCADE, related_name = "files")
+    name = models.CharField(max_length = 200)
+    content = models.BinaryField()
+    content_type = models.TextField(max_length = 100)
+    created_at = models.DateTimeField(auto_now_add = True)
 
     def __str__(self):
-        return f"File {self.name} for message {self.message.id} at {self.message.date_time}"
+        return f"File {self.name} for message {self.message.id} in {self.message.chat.title} created at {self.message.created_at}"

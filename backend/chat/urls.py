@@ -2,20 +2,21 @@ from django.conf import settings
 from django.urls import path, re_path
 
 from .views import (
-    CreateChat,
     DeleteAccount,
     DeleteChat,
     DeleteChats,
     GetChats,
     GetMessage,
     GetMessages,
+    GetTheme,
     LoginView,
     LogoutView,
     MeView,
     RegisterView,
     RenameChat,
     SearchChats,
-    UploadFiles,
+    SendMessage,
+    SetTheme,
     CookieTokenRefreshView,
     index
 )
@@ -25,10 +26,11 @@ urlpatterns = [
     path("api/login/", LoginView.as_view()),
     path("api/logout/", LogoutView.as_view()),
     path("api/me/", MeView.as_view()),
+    path("api/get-theme/", GetTheme.as_view()),
+    path("api/set-theme/", SetTheme.as_view()),
     path("api/get-message/", GetMessage.as_view()),
     path("api/get-messages/", GetMessages.as_view()),
-    path("api/upload-files/", UploadFiles.as_view()),
-    path("api/create-chat/", CreateChat.as_view()),
+    path("api/send-message/", SendMessage.as_view()),
     path("api/get-chats/", GetChats.as_view()),
     path("api/search-chats/", SearchChats.as_view()),
     path("api/rename-chat/", RenameChat.as_view()),

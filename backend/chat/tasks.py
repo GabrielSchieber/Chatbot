@@ -8,14 +8,11 @@ import ollama
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 
-from .models import Chat, Message, MessageFile, User
+from .models import Chat, Message, MessageFile
 
 ModelName = Literal["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]
-MessageAction = Literal["new_message", "edit_message", "regenerate_message"]
 
-global_chat_tasks: dict[str, asyncio.Task[None]] = {}
-
-async def generate_message(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName, options: dict[str, int | float]):
+async def generate_message(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName):
     if model_name not in get_args(ModelName):
         raise ValueError(f"Invalid model name: \"{model_name}\"")
 
@@ -24,106 +21,67 @@ async def generate_message(chat: Chat, user_message: Message, bot_message: Messa
     else:
         model_name = model_name.lower().replace("-", ":")
 
-    if not model_name in str(ollama.list()):
-        raise ValueError(f"Model {model_name} not installed")
-
     channel_layer = get_channel_layer()
 
-    task = asyncio.create_task(sample_model(chat, user_message, bot_message, model_name, channel_layer, options))
-    task.add_done_callback(lambda t: task_done_callback(t, str(chat.uuid)))
-
-    global global_chat_tasks
-    global_chat_tasks[str(chat.uuid)] = task
-
-async def sample_model(chat: Chat, user_message: Message, bot_message: Message, model_name: str, channel_layer, options):
-    chat.is_complete = False
+    chat.is_pending = True
     await database_sync_to_async(chat.save)()
 
     messages: list[dict[str, str]] = await database_sync_to_async(get_messages)(chat, user_message)
-    messages.pop()
     message_index = len(messages) - 1
 
     try:
-        async for part in await ollama.AsyncClient().chat(model_name, messages, stream = True, options = options):
+        async for part in await ollama.AsyncClient().chat(model_name, messages, stream = True, options = {"num_predict": 128}):
             token = part["message"]["content"]
             bot_message.text += token
             await database_sync_to_async(bot_message.save)()
             await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_token", "token": token, "message_index": message_index})
     except asyncio.CancelledError:
-        chat.is_complete = True
+        chat.is_pending = False
         await database_sync_to_async(chat.save)()
         return
 
     await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": bot_message.text, "message_index": message_index})
 
-    chat.is_complete = True
+    chat.is_pending = False
     await database_sync_to_async(chat.save)()
 
-def task_done_callback(task: asyncio.Task[None], chat_uuid: str):
-    global global_chat_tasks
-    global_chat_tasks.pop(chat_uuid)
-    exception = task.exception()
-    return exception and logger.exception("Task failed", exc_info = task.exception())
-
 def get_messages(chat: Chat, stop_user_message: Message) -> list[dict[str, str]]:
-    user_messages = list(Message.objects.filter(chat = chat, is_user_message = True).order_by("date_time"))
-    bot_messages = list(Message.objects.filter(chat = chat, is_user_message = False).order_by("date_time"))
+    user_messages = list(Message.objects.filter(chat = chat, role = "User").order_by("created_at"))
+    bot_messages = list(Message.objects.filter(chat = chat, role = "Bot").order_by("created_at"))
 
     for i, m in enumerate(user_messages):
         if m == stop_user_message:
             user_messages = user_messages[:i + 1]
             bot_messages = bot_messages[:i + 1]
 
-    user_files = []
-    for m in user_messages:
-        message_files = MessageFile.objects.filter(message = m)
-        user_files.append([{"name": file.name, "path": file.file.path} for file in message_files])
-
     messages = []
-    for user_message, user_message_files, bot_message in zip(user_messages, user_files, bot_messages):
+    for user_message, bot_message in zip(user_messages, bot_messages):
         messages.extend([
-            get_user_message(user_message.text, user_message_files),
+            get_user_message(user_message),
             {"role": "assistant", "content": bot_message.text}
         ])
+    messages.pop()
+    print(f"\nmessages:\n{messages}\n")
     return messages
 
-def get_user_message(message: str, files: list[dict[str, str]]) -> dict[str, str]:
+def get_user_message(message: Message) -> dict[str, str]:
+    files: list[MessageFile] = list(message.files.all())
+
     if len(files) == 0:
-        return {"role": "user", "content": message, "images": []}
+        return {"role": "user", "content": message.text, "images": []}
 
     images = []
     for file in files:
-        if file["name"].endswith(".png"):
-            images.append(file["path"])
+        if "image" in file.content_type:
+            with open(f"chat_temp/{file.name}", "wb+") as writer:
+                writer.write(file.content)
+            images.append(f"chat_temp/{file.name}")
 
     file_contents = []
     for file in files:
-        if not file["name"].endswith(".png"):
-            with open(file["path"], encoding = "utf-8") as file_reader:
-                file_contents.append(f"=== File: {file["name"]} ===\n{file_reader.read()}")
+        if "image" not in file.content_type:
+            file_contents.append(f"=== File: {file.name} ===\n{file.content.decode()}")
 
-    content = f"{message}\n\nFiles:\n{"\n\n".join(file_contents)}" if len(file_contents) > 0 else message
+    content = f"{message.text}\n\nFiles:\n{"\n\n".join(file_contents)}" if len(file_contents) > 0 else message.text
 
     return {"role": "user", "content": content, "images": images}
-
-def get_incomplete_chats(user: User) -> list[Chat]:
-    return list(Chat.objects.filter(user = user, is_complete = False))
-
-def reset_stopped_incomplete_chats(user: User):
-    non_complete_chats = get_incomplete_chats(user)
-    chat_uuids_in_tasks = [task for task in global_chat_tasks]
-    for chat in non_complete_chats:
-        if str(chat.uuid) not in chat_uuids_in_tasks:
-            chat.is_complete = True
-            chat.save()
-
-def cancel_chat_task(chat_uuid: str):
-    task = global_chat_tasks.get(chat_uuid)
-    if task and not task.done():
-        task.cancel()
-    try:
-        chat = Chat.objects.get(uuid = chat_uuid)
-        chat.is_complete = True
-        chat.save()
-    except Exception:
-        pass
