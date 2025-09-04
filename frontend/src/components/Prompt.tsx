@@ -9,7 +9,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
     pendingChat: Chat | undefined
     setPendingChat: React.Dispatch<React.SetStateAction<Chat | undefined>>
-    model: Model | undefined
+    model: Model
     setModel: React.Dispatch<React.SetStateAction<Model>>
 }) {
     const { chatUUID } = useParams()
@@ -20,15 +20,15 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
     const [currentFiles, setCurrentFiles] = useState<File[]>([])
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
     const [isRemovingFiles, setIsRemovingFiles] = useState(false)
-    const [shouldShowGeneratingNotification, setShouldShowGeneratingNotification] = useState(false)
+    const [messageNotificationID, setMessageNotificationID] = useState(-1)
 
     function GeneratingMessageNotification({ title, uuid, }: { title: string, uuid: string }) {
         return (
-            <div className="flex items-center justify-between px-4 py-2 rounded-xl bg-gray-700 light:bg-gray-300">
+            <div className="flex items-center justify-between px-4 py-2 rounded-xl bg-gray-700 light:bg-gray-300 z-10">
                 <div>
                     A message is already being generated in <a className="underline" href={`/chat/${uuid}`}>{title}</a>
                 </div>
-                <button className="p-1 rounded-3xl cursor-pointer hover:bg-gray-800" onClick={_ => setShouldShowGeneratingNotification(false)}>
+                <button className="p-1 rounded-3xl cursor-pointer hover:bg-gray-800" onClick={_ => setMessageNotificationID(-1)}>
                     <Cross2Icon />
                 </button>
             </div>
@@ -188,19 +188,20 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
 
     function sendMessage() {
         if (!chatUUID) {
-            newMessage("", "SmolLM2-135M", prompt, currentFiles)
+            newMessage("", model, prompt, currentFiles)
                 .then(([chat, status]) => {
                     if (status === 200) {
                         chat.then(chat => {
                             location.href = `chat/${chat.uuid}`
                         })
-                    } else if (!shouldShowGeneratingNotification) {
-                        setShouldShowGeneratingNotification(true)
-                        setTimeout(() => setShouldShowGeneratingNotification(false), 2000)
+                    } else {
+                        if (messageNotificationID < 0) {
+                            setMessageNotificationID(setTimeout(() => setMessageNotificationID(-1), 2000))
+                        }
                     }
                 })
         } else {
-            newMessage(chatUUID, "SmolLM2-135M", prompt, currentFiles)
+            newMessage(chatUUID, model, prompt, currentFiles)
                 .then(([chat, status]) => {
                     if (status === 200) {
                         setPrompt("")
@@ -217,9 +218,9 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                         chat.then(chat => {
                             setPendingChat(chat)
                         })
-                    } else if (!shouldShowGeneratingNotification) {
-                        setShouldShowGeneratingNotification(true)
-                        setTimeout(() => setShouldShowGeneratingNotification(false), 2000)
+                    } else {
+                        clearTimeout(messageNotificationID)
+                        setMessageNotificationID(setTimeout(() => setMessageNotificationID(-1), 2000))
                     }
                 })
         }
@@ -283,7 +284,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
 
     return (
         <div className="absolute bottom-0 flex flex-col w-[50vw] pb-4 self-center">
-            {shouldShowGeneratingNotification && pendingChat && <GeneratingMessageNotification title={pendingChat.title} uuid={pendingChat.uuid} />}
+            {messageNotificationID >= 0 && pendingChat && <GeneratingMessageNotification title={pendingChat.title} uuid={pendingChat.uuid} />}
 
             <div
                 className="

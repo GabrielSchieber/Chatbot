@@ -15,7 +15,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
     pendingChat: Chat | undefined
     setPendingChat: React.Dispatch<React.SetStateAction<Chat | undefined>>
-    model: Model | undefined
+    model: Model
     setModel: React.Dispatch<React.SetStateAction<Model>>
 }) {
     const { chatUUID } = useParams()
@@ -226,6 +226,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                         }
                         return previousMessages
                     })
+                    setPendingChat(undefined)
                 }
             })
 

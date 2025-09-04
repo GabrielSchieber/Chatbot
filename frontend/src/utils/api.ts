@@ -1,4 +1,4 @@
-import type { Chat, Message, MessageFile, SearchEntry } from "../types"
+import type { Chat, Message, MessageFile, Model, SearchEntry } from "../types"
 import { apiFetch } from "./auth"
 
 export async function deleteAccount() {
@@ -77,7 +77,7 @@ export async function getMessage(chatUUID: string, message_index: number): Promi
 
 export async function newMessage(
     chatUUID: string,
-    model: "SmolLM2-135M" | "Moondream",
+    model: Model,
     message: string,
     files: File[],
 ): Promise<[Promise<Chat>, number]> {
@@ -97,7 +97,7 @@ export async function newMessage(
 
 export async function editMessage(
     chatUUID: string,
-    model: "SmolLM2-135M" | "Moondream",
+    model: Model,
     message: string,
     message_index: number,
     added_files: File[],
@@ -121,7 +121,7 @@ export async function editMessage(
 
 export async function renegerateMessage(
     chatUUID: string,
-    model: "SmolLM2-135M" | "Moondream",
+    model: Model,
     message_index: number
 ): Promise<[Promise<Chat>, number]> {
     const formData = new FormData()
