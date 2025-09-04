@@ -1,9 +1,6 @@
 import asyncio
-import logging
 import threading
 from typing import Literal, get_args
-
-logger = logging.getLogger(__name__)
 
 import ollama
 from channels.db import database_sync_to_async
@@ -13,24 +10,18 @@ from .models import Chat, Message, MessageFile, User
 
 ModelName = Literal["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]
 
-global_chat_threads: dict[str, threading.Thread] = {}
+def start_background_loop(loop: asyncio.AbstractEventLoop):
+    asyncio.set_event_loop(loop)
+    loop.run_forever()
+
+global_loop = asyncio.new_event_loop()
+threading.Thread(target = start_background_loop, args = [global_loop], daemon = True).start()
+
+global_futures: dict[str, asyncio.Future[None]] = {}
 
 def generate_message(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName):
-    global global_chat_threads
-
-    def runner():
-        asyncio.run(sample_model(chat, user_message, bot_message, model_name))
-        global_chat_threads.pop(str(chat.uuid), None)
-        chat.is_pending = False
-        chat.save()
-
-    if str(chat.uuid) in global_chat_threads:
-        global_chat_threads[str(chat.uuid)].join(0.1)
-        global_chat_threads.pop(str(chat.uuid))
-
-    thread = threading.Thread(target = runner)
-    thread.start()
-    global_chat_threads[str(chat.uuid)] = thread
+    future = asyncio.run_coroutine_threadsafe(sample_model(chat, user_message, bot_message, model_name), global_loop)
+    global_futures[str(chat.uuid)] = future
 
 async def sample_model(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName):
     if model_name not in get_args(ModelName):
@@ -55,7 +46,6 @@ async def sample_model(chat: Chat, user_message: Message, bot_message: Message, 
             bot_message.text += token
             await database_sync_to_async(bot_message.save)()
             await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_token", "token": token, "message_index": message_index})
-            await asyncio.sleep(0.1)
     except asyncio.CancelledError:
         chat.is_pending = False
         await database_sync_to_async(chat.save)()
@@ -107,28 +97,24 @@ def get_user_message(message: Message) -> dict[str, str]:
     return {"role": "user", "content": content, "images": images}
 
 def stop_pending_chats(user: User):
-    global global_chat_threads
-
     pending_chats = Chat.objects.filter(user = user, is_pending = True)
     if pending_chats.count() > 0:
         for pending_chat in pending_chats:
-            chat_thread = global_chat_threads.pop(str(pending_chat.uuid), None)
-            if chat_thread:
-                chat_thread.join(0.01)
+            if str(pending_chat.uuid) in global_futures:
+                global_futures[str(pending_chat.uuid)].cancel()
+
             pending_chat.is_pending = False
             pending_chat.save()
 
 def reset_stopped_pending_chats(user: User):
-    global global_chat_threads
-
     pending_chats = Chat.objects.filter(user = user, is_pending = True)
     if pending_chats.count() > 0:
         for pending_chat in pending_chats:
-            if str(pending_chat.uuid) in global_chat_threads:
-                if not global_chat_threads[str(pending_chat.uuid)].is_alive():
+            if str(pending_chat.uuid) in global_futures:
+                if global_futures[str(pending_chat.uuid)].done():
                     pending_chat.is_pending = False
                     pending_chat.save()
-                    global_chat_threads.pop(str(pending_chat.uuid))
+                    global_futures.pop(str(pending_chat.uuid))
             else:
                 pending_chat.is_pending = False
                 pending_chat.save()
