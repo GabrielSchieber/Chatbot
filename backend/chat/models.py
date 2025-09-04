@@ -29,7 +29,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique = True)
     is_active = models.BooleanField(default = True)
     is_staff = models.BooleanField(default = False)
-    theme = models.CharField(max_length = 6, choices = [["System", "System"], ["Light", "Light"], ["Dark", "Dark"]], default = "Light")
+    theme = models.CharField(max_length = 6, choices = [["System", "System"], ["Light", "Light"], ["Dark", "Dark"]], default = "System")
     has_sidebar_open = models.BooleanField(default = True)
     created_at = models.DateTimeField(default = timezone.now)
 
@@ -55,7 +55,7 @@ class Chat(models.Model):
 class Message(models.Model):
     chat = models.ForeignKey(Chat, models.CASCADE, related_name = "messages")
     text = models.TextField()
-    role = models.CharField(max_length = 4, choices = [["User", "User"], ["Bot", "Bot"]])
+    is_from_user = models.BooleanField()
     model = models.CharField(
         max_length = 12,
         choices = [
@@ -71,7 +71,7 @@ class Message(models.Model):
 
     def __str__(self):
         text = self.text if len(self.text) <= 20 else f"{self.text[:20]}..."
-        return f"Message of {self.role.lower()} about {text} created at {self.created_at}"
+        return f"Message of {"user" if self.is_from_user else "bot"} about {text} created at {self.created_at}"
 
 class MessageFile(models.Model):
     message = models.ForeignKey(Message, models.CASCADE, related_name = "files")

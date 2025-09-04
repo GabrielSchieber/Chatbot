@@ -214,7 +214,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                     setMessages(previous => {
                         let previousMessages = [...previous]
                         if (previousMessages[message_index]) {
-                            previousMessages[message_index] = { text: previousMessages[message_index].text + data.token, files: [], role: "Bot", model: model }
+                            previousMessages[message_index] = { text: previousMessages[message_index].text + data.token, files: [], is_from_user: false, model: model }
                         }
                         return previousMessages
                     })
@@ -222,7 +222,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                     setMessages(previous => {
                         let previousMessages = [...previous]
                         if (previousMessages[message_index]) {
-                            previousMessages[message_index] = { text: data.message, files: [], role: "Bot", model: model }
+                            previousMessages[message_index] = { text: data.message, files: [], is_from_user: false, model: model }
                         }
                         return previousMessages
                     })
@@ -239,7 +239,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     }
 
     function copyMessage(message: Message, index: number) {
-        if (message.role === "User") {
+        if (message.is_from_user) {
             navigator.clipboard.writeText(message.text)
         } else {
             if (chatUUID) {
@@ -374,7 +374,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
             {messages.map((message, index) => (
                 <div
                     key={index}
-                    className={`flex flex-col gap-0.5 w-[50vw] justify-self-center ${message.role === "User" ? "items-end" : "items-start"}`}
+                    className={`flex flex-col gap-0.5 w-[50vw] justify-self-center ${message.is_from_user ? "items-end" : "items-start"}`}
                 >
                     {editingMessageIndex === index ? (
                         <div className="flex flex-col gap-1 w-[80%] max-h-100 px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
@@ -437,7 +437,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                             </div>
                         </div>
                     ) : (
-                        message.role === "User" ? (
+                        message.is_from_user ? (
                             <div className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
                                 {message.files.length > 0 && (
                                     <div className="flex flex-col gap-1">
@@ -514,7 +514,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                     )}
 
                     <div className="flex gap-1">
-                        {message.role === "User" ? (
+                        {message.is_from_user ? (
                             <>
                                 <EditButton message={message} index={index} />
                                 <CopyButton message={message} index={index} />

@@ -57,8 +57,8 @@ async def sample_model(chat: Chat, user_message: Message, bot_message: Message, 
     await database_sync_to_async(chat.save)()
 
 def get_messages(chat: Chat, stop_user_message: Message) -> list[dict[str, str]]:
-    user_messages = list(Message.objects.filter(chat = chat, role = "User").order_by("created_at"))
-    bot_messages = list(Message.objects.filter(chat = chat, role = "Bot").order_by("created_at"))
+    user_messages = list(Message.objects.filter(chat = chat, is_from_user = True).order_by("created_at"))
+    bot_messages = list(Message.objects.filter(chat = chat, is_from_user = False).order_by("created_at"))
 
     for i, m in enumerate(user_messages):
         if m == stop_user_message:

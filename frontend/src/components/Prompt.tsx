@@ -210,8 +210,8 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                         setMessages(previous => {
                             const previousMessages = [...previous]
                             const files = currentFiles.map(f => { return { id: Date.now(), name: f.name, content_size: f.size, content_type: f.type } })
-                            previousMessages.push({ text: prompt, files: files, role: 'User', model: undefined })
-                            previousMessages.push({ text: "", files: [], role: "Bot", model: model })
+                            previousMessages.push({ text: prompt, files: files, is_from_user: true, model: undefined })
+                            previousMessages.push({ text: "", files: [], is_from_user: false, model: model })
                             return previousMessages
                         })
 

@@ -42,7 +42,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ["text", "files", "role", "model"]
+        fields = ["text", "is_from_user", "files", "model"]
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -283,12 +283,12 @@ class NewMessage(APIView):
         if total_size > 5_000_000:
             return Response({"error": "Total file size exceeds limit of 5 MB"}, 400)
 
-        user_message = Message.objects.create(chat = chat, text = message, role = "User")
+        user_message = Message.objects.create(chat = chat, text = message, is_from_user = True)
         if len(files) > 0:
             MessageFile.objects.bulk_create(
                 [MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type) for file in files]
             )
-        bot_message = Message.objects.create(chat = chat, text = "", role = "Bot")
+        bot_message = Message.objects.create(chat = chat, text = "", is_from_user = False)
 
         generate_message(chat, user_message, bot_message, model)
 
@@ -340,7 +340,6 @@ class EditMessage(APIView):
 
         messages = Message.objects.filter(chat = chat).order_by("created_at")
         user_message = messages[message_index]
-        assert user_message.role == "User"
 
         removed_files: list[MessageFile] = []
         for removed_file_id in removed_file_ids:
@@ -357,7 +356,6 @@ class EditMessage(APIView):
             return Response({"error": "Total file size exceeds limit of 5 MB"}, 400)
 
         bot_message = messages[message_index + 1]
-        assert bot_message.role == "Bot"
 
         user_message.text = message
         user_message.save()
@@ -412,9 +410,7 @@ class RegenerateMessage(APIView):
 
         messages = Message.objects.filter(chat = chat).order_by("created_at")
         user_message = messages[message_index - 1]
-        assert user_message.role == "User"
         bot_message = messages[message_index]
-        assert bot_message.role == "Bot"
 
         bot_message.text = ""
         bot_message.save()
