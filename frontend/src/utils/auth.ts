@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import type { User } from "../types"
 
 export async function login(email: string, password: string) {
     const response = await fetch("/api/login/", {
@@ -35,7 +36,7 @@ export async function signup(email: string, password: string) {
 }
 
 export function useAuth() {
-    const [user, setUser] = useState<null | { id: number, email: string }>(null)
+    const [user, setUser] = useState<User | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -48,7 +49,7 @@ export function useAuth() {
     return { user, loading, isLoggedIn: !!user }
 }
 
-async function getCurrentUser(): Promise<{ id: number; email: string } | null> {
+async function getCurrentUser(): Promise<User | null> {
     const response = await apiFetch("/api/me/", { credentials: "include" })
     if (!response.ok) {
         return null

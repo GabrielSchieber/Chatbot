@@ -1,9 +1,5 @@
-import type { Chat, Message, SearchEntry, Theme } from "../types"
+import type { Chat, Message, MessageFile, SearchEntry, Theme } from "../types"
 import { apiFetch } from "./auth"
-
-export async function getTheme(): Promise<Theme> {
-    return (await apiFetch("/api/get-theme/", { credentials: "include" })).json()
-}
 
 export async function setTheme(theme: Theme): Promise<number> {
     const response = await apiFetch("/api/set-theme/", {
@@ -113,13 +109,17 @@ export async function editMessage(
     chatUUID: string,
     model: "SmolLM2-135M" | "Moondream",
     message: string,
-    message_index: number
+    message_index: number,
+    added_files: File[],
+    removed_file: MessageFile[]
 ): Promise<[Promise<Chat>, number]> {
     const formData = new FormData()
     formData.append("chat_uuid", chatUUID)
     formData.append("model", model)
     formData.append("message", message)
     formData.append("message_index", message_index.toString())
+    added_files.forEach(added_file => formData.append("added_files", added_file))
+    removed_file.forEach(removed_file => formData.append("removed_file_ids", removed_file.id.toString()))
 
     const response = await apiFetch("/api/edit-message/", {
         method: "POST",
@@ -145,4 +145,8 @@ export async function renegerateMessage(
         body: formData
     })
     return [response.json(), response.status]
+}
+
+export async function stopPendingChats() {
+    await apiFetch("/api/stop-pending-chats/", { credentials: "include" })
 }

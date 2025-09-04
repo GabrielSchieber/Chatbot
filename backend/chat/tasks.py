@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 from typing import Literal, get_args
 
 logger = logging.getLogger(__name__)
@@ -8,11 +9,30 @@ import ollama
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 
-from .models import Chat, Message, MessageFile
+from .models import Chat, Message, MessageFile, User
 
 ModelName = Literal["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]
 
-async def generate_message(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName):
+global_chat_threads: dict[str, threading.Thread] = {}
+
+def generate_message(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName):
+    global global_chat_threads
+
+    def runner():
+        asyncio.run(sample_model(chat, user_message, bot_message, model_name))
+        global_chat_threads.pop(str(chat.uuid), None)
+        chat.is_pending = False
+        chat.save()
+
+    if str(chat.uuid) in global_chat_threads:
+        global_chat_threads[str(chat.uuid)].join(0.1)
+        global_chat_threads.pop(str(chat.uuid))
+
+    thread = threading.Thread(target = runner)
+    thread.start()
+    global_chat_threads[str(chat.uuid)] = thread
+
+async def sample_model(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName):
     if model_name not in get_args(ModelName):
         raise ValueError(f"Invalid model name: \"{model_name}\"")
 
@@ -30,11 +50,12 @@ async def generate_message(chat: Chat, user_message: Message, bot_message: Messa
     message_index = len(messages) - 1
 
     try:
-        async for part in await ollama.AsyncClient().chat(model_name, messages, stream = True, options = {"num_predict": 128}):
+        async for part in await ollama.AsyncClient().chat(model_name, messages, stream = True, options = {"num_predict": 256}):
             token = part["message"]["content"]
             bot_message.text += token
             await database_sync_to_async(bot_message.save)()
             await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_token", "token": token, "message_index": message_index})
+            await asyncio.sleep(0.1)
     except asyncio.CancelledError:
         chat.is_pending = False
         await database_sync_to_async(chat.save)()
@@ -85,3 +106,35 @@ def get_user_message(message: Message) -> dict[str, str]:
     content = f"{message.text}\n\nFiles:\n{"\n\n".join(file_contents)}" if len(file_contents) > 0 else message.text
 
     return {"role": "user", "content": content, "images": images}
+
+def stop_pending_chats(user: User):
+    global global_chat_threads
+
+    pending_chats = Chat.objects.filter(user = user, is_pending = True)
+    if pending_chats.count() > 0:
+        for pending_chat in pending_chats:
+            chat_thread = global_chat_threads.pop(str(pending_chat.uuid), None)
+            if chat_thread:
+                chat_thread.join(0.01)
+            pending_chat.is_pending = False
+            pending_chat.save()
+
+def reset_stopped_pending_chats(user: User):
+    global global_chat_threads
+
+    pending_chats = Chat.objects.filter(user = user, is_pending = True)
+    if pending_chats.count() > 0:
+        for pending_chat in pending_chats:
+            if str(pending_chat.uuid) in global_chat_threads:
+                if not global_chat_threads[str(pending_chat.uuid)].is_alive():
+                    pending_chat.is_pending = False
+                    pending_chat.save()
+                    global_chat_threads.pop(str(pending_chat.uuid))
+            else:
+                pending_chat.is_pending = False
+                pending_chat.save()
+
+def is_any_user_chat_pending(user: User) -> bool:
+    reset_stopped_pending_chats(user)
+    pending_chats = Chat.objects.filter(user = user, is_pending = True)
+    return True if pending_chats.count() > 0 else False

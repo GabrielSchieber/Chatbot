@@ -1,6 +1,3 @@
-import asyncio
-import threading
-
 from django.contrib.auth import authenticate
 from django.db.models import Prefetch, Q
 from django.shortcuts import render
@@ -13,7 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .models import Chat, Message, MessageFile, User
-from .tasks import generate_message
+from .tasks import generate_message, is_any_user_chat_pending, stop_pending_chats
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only = True)
@@ -35,21 +32,17 @@ class MessageFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MessageFile
-        fields = ["name", "content_size", "content_type"]
+        fields = ["id", "name", "content_size", "content_type"]
 
     def get_content_size(self, message_file: MessageFile):
         return len(message_file.content)
 
 class MessageSerializer(serializers.ModelSerializer):
     files = MessageFileSerializer(many = True, read_only = True)
-    text = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
-        fields = ["text", "files", "role"]
-
-    def get_text(self, obj):
-        return obj.text
+        fields = ["text", "files", "role", "model"]
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -111,12 +104,6 @@ class CookieTokenRefreshView(TokenRefreshView):
         if new_refresh:
             response.set_cookie("refresh_token", new_refresh, httponly = True, samesite = "Lax")
         return response
-
-class GetTheme(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        return Response(request.user.theme, 200)
 
 class SetTheme(APIView):
     permission_classes = [IsAuthenticated]
@@ -213,6 +200,13 @@ class DeleteChats(APIView):
         except Exception:
             return Response(status = 400)
 
+class StopPendingChats(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        stop_pending_chats(request.user)
+        return Response(status = 200)
+
 class GetMessage(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -250,14 +244,19 @@ class NewMessage(APIView):
     def post(self, request):
         print(f"\nNewMessage request:\n{request.data}\n")
 
+        if is_any_user_chat_pending(request.user):
+            return Response({"error": "A chat is already pending"}, 400)
+
         chat_uuid = request.data.get("chat_uuid", "")
         if type(chat_uuid) == str:
             if chat_uuid=="":
-                chat = Chat.objects.create(user = request.user, title = f"Chat {Chat.objects.filter(user = request.user).count() + 1}")
+                chat = Chat.objects.create(user = request.user, title = f"Chat {Chat.objects.filter(user = request.user).count() + 1}", is_pending = True)
             else:
                 chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
                 if not chat:
                     return Response({"error": "Invalid chat UUID"}, 400)
+                chat.is_pending = True
+                chat.save()
         else:
             return Response({"error": "Invalid data type for chat UUID"}, 400)
 
@@ -286,7 +285,7 @@ class NewMessage(APIView):
             )
         bot_message = Message.objects.create(chat = chat, text = "", role = "Bot")
 
-        threading.Thread(target = asyncio.run, args = [generate_message(chat, user_message, bot_message, model)]).start()
+        generate_message(chat, user_message, bot_message, model)
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, 200)
@@ -298,12 +297,17 @@ class EditMessage(APIView):
     def post(self, request):
         print(f"\nEditMessage request:\n{request.data}\n")
 
+        if is_any_user_chat_pending(request.user):
+            return Response({"error": "A chat is already pending"}, 400)
+
         chat_uuid = request.data.get("chat_uuid")
         if chat_uuid:
             if type(chat_uuid) == str:
                 chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
                 if not chat:
                     return Response({"error": "Invalid chat UUID"}, 400)
+                chat.is_pending = True
+                chat.save()
             else:
                 return Response({"error": "Invalid data type for chat UUID"}, 400)
         else:
@@ -322,9 +326,33 @@ class EditMessage(APIView):
             return Response({"error": "Index is required"}, 400)
         message_index = int(message_index)
 
+        added_files = request.FILES.getlist("added_files")
+        if type(added_files) != list:
+            return Response({"error": "Invalid data type for added files"}, 400)
+
+        removed_file_ids = request.data.get("removed_file_ids", [])
+        if type(removed_file_ids) == str:
+            removed_file_ids = [removed_file_ids]
+        removed_file_ids = [int(removed_file_id) for removed_file_id in removed_file_ids]
+
         messages = Message.objects.filter(chat = chat).order_by("created_at")
         user_message = messages[message_index]
         assert user_message.role == "User"
+
+        removed_files: list[MessageFile] = []
+        for removed_file_id in removed_file_ids:
+            removed_message_file = MessageFile.objects.filter(message = user_message, id = removed_file_id).first()
+            if removed_message_file:
+                removed_files.append(removed_message_file)
+
+        total_size = 0
+        for file in added_files:
+            total_size += file.size
+        for file in removed_files:
+            total_size += len(file.content)
+        if total_size > 5_000_000:
+            return Response({"error": "Total file size exceeds limit of 5 MB"}, 400)
+
         bot_message = messages[message_index + 1]
         assert bot_message.role == "Bot"
 
@@ -333,7 +361,14 @@ class EditMessage(APIView):
         bot_message.text = ""
         bot_message.save()
 
-        threading.Thread(target = asyncio.run, args = [generate_message(chat, user_message, bot_message, model)]).start()
+        for removed_file in removed_files:
+            removed_file.delete()
+
+        MessageFile.objects.bulk_create(
+            [MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type) for file in added_files]
+        )
+
+        generate_message(chat, user_message, bot_message, model)
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, 200)
@@ -345,12 +380,17 @@ class RegenerateMessage(APIView):
     def post(self, request):
         print(f"\nRegenerateMessage request:\n{request.data}\n")
 
+        if is_any_user_chat_pending(request.user):
+            return Response({"error": "A chat is already pending"}, 400)
+
         chat_uuid = request.data.get("chat_uuid")
         if chat_uuid:
             if type(chat_uuid) == str:
                 chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
                 if not chat:
                     return Response({"error": "Invalid chat UUID"}, 400)
+                chat.is_pending = True
+                chat.save()
             else:
                 return Response({"error": "Invalid data type for chat UUID"}, 400)
         else:
@@ -378,7 +418,7 @@ class RegenerateMessage(APIView):
         bot_message.text = ""
         bot_message.save()
 
-        threading.Thread(target = asyncio.run, args = [generate_message(chat, user_message, bot_message, model)]).start()
+        generate_message(chat, user_message, bot_message, model)
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, 200)

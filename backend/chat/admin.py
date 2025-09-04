@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
 
-from .models import Chat, Message, User
+from .models import Chat, Message, MessageFile, User
 
 admin.site.unregister(Group)
 
@@ -52,13 +52,13 @@ class MessageInline(admin.StackedInline):
         base_fields = [f.name for f in self.model._meta.fields]
         return base_fields + ["message_files_summary"]
 
-    def message_files_summary(self, obj):
-        if not obj.pk:
+    def message_files_summary(self, messages: Message):
+        if not messages.pk:
             return "-"
-        files = obj.files.all()
+        files: list[MessageFile] = messages.files.all()
         if not files:
             return "No files"
-        return "\n".join(f.name for f in files)
+        return "\n\n\n".join(f"{f.name}\n{f.content.decode(errors = "ignore")}" for f in files)
 
     message_files_summary.short_description = "Files"
 
