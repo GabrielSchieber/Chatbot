@@ -82,7 +82,6 @@ def get_messages(chat: Chat, stop_user_message: Message) -> list[dict[str, str]]
             {"role": "assistant", "content": bot_message.text}
         ])
     messages.pop()
-    print(f"\nmessages:\n{messages}\n")
     return messages
 
 def get_user_message(message: Message) -> dict[str, str]:

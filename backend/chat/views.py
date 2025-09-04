@@ -81,8 +81,26 @@ class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
-        return Response({"id": user.id, "email": user.email})
+        user: User = request.user
+        return Response({"id": user.id, "email": user.email, "theme": user.theme, "has_sidebar_open": user.has_sidebar_open})
+
+    def post(self, request):
+        user: User = request.user
+
+        theme = request.data.get("theme")
+        if theme != None: 
+            if theme not in ["System", "Light", "Dark"]:
+                return Response({"error": "Invalid theme"}, 400)
+            user.theme = theme
+
+        has_sidebar_open = request.data.get("has_sidebar_open")
+        if has_sidebar_open != None:
+            if type(has_sidebar_open) != bool:
+                return Response({"error": "Invalid data type for has_sidebar_open"}, 400)
+            user.has_sidebar_open = has_sidebar_open
+
+        user.save()
+        return Response(status = 200)
 
 class CookieTokenRefreshView(TokenRefreshView):
     def post(self, request):
@@ -104,17 +122,6 @@ class CookieTokenRefreshView(TokenRefreshView):
         if new_refresh:
             response.set_cookie("refresh_token", new_refresh, httponly = True, samesite = "Lax")
         return response
-
-class SetTheme(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        theme = request.data.get("theme")
-        if not theme or theme not in ["System", "Light", "Dark"]:
-            return Response("Invalid theme", 400)
-        request.user.theme = theme
-        request.user.save()
-        return Response(status = 200)
 
 class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]
@@ -242,8 +249,6 @@ class NewMessage(APIView):
     parser_classes = [MultiPartParser]
 
     def post(self, request):
-        print(f"\nNewMessage request:\n{request.data}\n")
-
         if is_any_user_chat_pending(request.user):
             return Response({"error": "A chat is already pending"}, 400)
 
@@ -295,8 +300,6 @@ class EditMessage(APIView):
     parser_classes = [MultiPartParser]
 
     def post(self, request):
-        print(f"\nEditMessage request:\n{request.data}\n")
-
         if is_any_user_chat_pending(request.user):
             return Response({"error": "A chat is already pending"}, 400)
 
@@ -378,8 +381,6 @@ class RegenerateMessage(APIView):
     parser_classes = [MultiPartParser]
 
     def post(self, request):
-        print(f"\nRegenerateMessage request:\n{request.data}\n")
-
         if is_any_user_chat_pending(request.user):
             return Response({"error": "A chat is already pending"}, 400)
 

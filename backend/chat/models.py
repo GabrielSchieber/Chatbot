@@ -30,7 +30,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default = True)
     is_staff = models.BooleanField(default = False)
     theme = models.CharField(max_length = 6, choices = [["System", "System"], ["Light", "Light"], ["Dark", "Dark"]], default = "Light")
-    sidebar_state = models.CharField(max_length = 6, choices = [["Open", "Open"], ["Closed", "Closed"]], default = "Open")
+    has_sidebar_open = models.BooleanField(default = True)
     created_at = models.DateTimeField(default = timezone.now)
 
     objects = UserManager()

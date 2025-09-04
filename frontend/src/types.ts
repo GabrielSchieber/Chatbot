@@ -3,7 +3,7 @@ export type Theme = "System" | "Light" | "Dark"
 export type SidebarState = "Open" | "Closed"
 export type Role = "User" | "Bot"
 
-export type User = { id: number, email: string, theme: Theme, sidebar_state: SidebarState }
+export type User = { id: number, email: string, theme: Theme, has_sidebar_open: boolean }
 
 export type Chat = { title: string, is_pending: boolean, uuid: string }
 

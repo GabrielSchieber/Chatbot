@@ -18,7 +18,6 @@ from .views import (
     RegisterView,
     RenameChat,
     SearchChats,
-    SetTheme,
     StopPendingChats,
     index
 )
@@ -36,7 +35,6 @@ urlpatterns = [
     path("api/delete-chat/", DeleteChat.as_view()),
     path("api/delete-chats/", DeleteChats.as_view()),
     path("api/stop-pending-chats/", StopPendingChats.as_view()),
-    path("api/set-theme/", SetTheme.as_view()),
     path("api/get-message/", GetMessage.as_view()),
     path("api/get-messages/", GetMessages.as_view()),
     path("api/new-message/", NewMessage.as_view()),

@@ -1,15 +1,17 @@
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon, Cross1Icon, GearIcon } from "@radix-ui/react-icons"
 import { Dialog, Select } from "radix-ui"
-import { type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 
 import ConfirmDialog from "./ConfirmDialog"
 import { deleteAccount, deleteChats } from "../utils/api"
-import { logout, useAuth } from "../utils/auth"
-import { useTheme } from "../context/ThemeProvider"
+import { logout, setCurrentUser } from "../utils/auth"
+import { useAuth } from "../context/AuthProvider"
+import type { Theme } from "../types"
+import { applyTheme } from "../utils/theme"
 
 export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) {
     const { user } = useAuth()
-    const { theme, setTheme } = useTheme()
+    const [theme, setTheme] = useState(user?.theme || "System")
 
     const entryClasses = "px-2 py-1 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-600 light:border-gray-800 light:hover:bg-gray-400"
     const destructiveEntryClasses = entryClasses + " text-red-500"
@@ -27,7 +29,12 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
         const itemClasses = "flex items-center px-2 py-1 rounded cursor-pointer hover:bg-gray-500 light:hover:bg-gray-300"
 
         return (
-            <Select.Root value={theme} onValueChange={setTheme}>
+            <Select.Root value={theme} onValueChange={v => {
+                const themeToSelect = v as Theme || "System"
+                setCurrentUser(themeToSelect)
+                setTheme(themeToSelect)
+                applyTheme(themeToSelect)
+            }}>
                 <Select.Trigger
                     className={entryClasses + " inline-flex items-center justify-between w-30"}
                     aria-label="Theme"

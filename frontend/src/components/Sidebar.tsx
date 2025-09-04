@@ -6,10 +6,14 @@ import Search from "./Search"
 import Settings from "./Settings"
 import { getChats } from "../utils/api"
 import type { Chat } from "../types"
+import { setCurrentUser } from "../utils/auth"
+import { useAuth } from "../context/AuthProvider"
 
 export default function Sidebar() {
+    const { user } = useAuth()
+
     const [chats, setChats] = useState<Chat[]>([])
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(user ? user.has_sidebar_open : true)
     const shouldLoadChats = useRef(true)
 
     function TopButtons() {
@@ -20,7 +24,10 @@ export default function Sidebar() {
 
         return (
             <div className={`flex flex-col gap-2 p-2 ${!isSidebarOpen && "items-center"}`}>
-                <button className={itemClassNames} onClick={_ => setIsSidebarOpen(!isSidebarOpen)}>
+                <button className={itemClassNames} onClick={_ => {
+                    setCurrentUser(undefined, !isSidebarOpen)
+                    setIsSidebarOpen(!isSidebarOpen)
+                }}>
                     {isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
                     {isSidebarOpen && <span>Toggle Sidebar</span>}
                 </button>

@@ -1,15 +1,5 @@
-import type { Chat, Message, MessageFile, SearchEntry, Theme } from "../types"
+import type { Chat, Message, MessageFile, SearchEntry } from "../types"
 import { apiFetch } from "./auth"
-
-export async function setTheme(theme: Theme): Promise<number> {
-    const response = await apiFetch("/api/set-theme/", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ theme: theme })
-    })
-    return response.status
-}
 
 export async function deleteAccount() {
     return (await apiFetch("/api/delete-account/", { credentials: "include" })).status
