@@ -94,6 +94,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                 }
                 tooltip="Regenerate"
                 onClick={() => regenerateMessage(index)}
+                isDisabled={pendingChat !== undefined}
             />
         )
     }
