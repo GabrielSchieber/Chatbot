@@ -6,7 +6,7 @@ import { useParams } from "react-router"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 
-import { getChats, getMessage, getMessages, editMessage as editMessageAPI, renegerateMessage as regenerateMessageAPI } from "../utils/api"
+import { getMessage, getMessages, editMessage as editMessageAPI, renegerateMessage as regenerateMessageAPI, getPendingChats } from "../utils/api"
 import { getFileSize, getFileType } from "../utils/file"
 import type { Chat, Message, MessageFile, Model, UIAttachment } from "../types"
 
@@ -366,7 +366,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     useEffect(() => {
         loadMessages()
         receiveMessage()
-        getChats(true).then(chats => chats.length > 0 ? setPendingChat(chats[0]) : setPendingChat(undefined))
+        getPendingChats().then(chats => chats.length > 0 ? setPendingChat(chats[0]) : setPendingChat(undefined))
     }, [])
 
     return (

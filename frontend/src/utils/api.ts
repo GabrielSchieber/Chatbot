@@ -5,17 +5,12 @@ export async function deleteAccount() {
     return (await apiFetch("/api/delete-account/", { credentials: "include" })).status
 }
 
-export async function getChats(pending: boolean = false): Promise<Chat[]> {
-    const method = pending ? "POST" : "GET"
-    const body = pending ? JSON.stringify({ pending: true }) : undefined
-    const response = await apiFetch("/api/get-chats/", {
-        method,
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body
-    })
-    const data = await response.json()
-    return data.chats
+export async function getChats(offset = 0, limit = 20): Promise<{ chats: Chat[], has_more: boolean }> {
+    return (await apiFetch(`/api/get-chats/?offset=${offset}&limit=${limit}`, { credentials: "include" })).json()
+}
+
+export async function getPendingChats(): Promise<Chat[]> {
+    return (await (await apiFetch(`/api/get-chats/?pending=${true}`, { credentials: "include" })).json()).chats
 }
 
 export async function searchChats(search: string): Promise<SearchEntry[] | undefined> {

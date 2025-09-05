@@ -137,18 +137,21 @@ class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        chats = Chat.objects.filter(user = request.user).order_by("created_at")
-        serializer = ChatSerializer(chats, many = True)
-        return Response({"chats": serializer.data})
+        pending = request.GET.get("pending", False)
+        if pending:
+            chats = Chat.objects.filter(user = request.user, is_pending = True).order_by("created_at")
+            serializer = ChatSerializer(chats, many = True)
+            return Response({"chats": serializer.data})
 
-    def post(self, request):
-        pending_flag = request.data.get("pending", None)
-        if pending_flag is None:
-            return Response({"error": "'pending' field required"}, status = 400)
+        limit = int(request.GET.get("limit", 20))
+        offset = int(request.GET.get("offset", 0))
 
-        chats = Chat.objects.filter(user = request.user, is_pending = True).order_by("created_at")
+        chats = Chat.objects.filter(user = request.user).order_by("-created_at")
+        total = chats.count()
+        chats = chats[offset:offset + limit]
+
         serializer = ChatSerializer(chats, many = True)
-        return Response({"chats": serializer.data})
+        return Response({"chats": serializer.data, "has_more": offset + limit < total})
 
 class SearchChats(APIView):
     permission_classes = [IsAuthenticated]

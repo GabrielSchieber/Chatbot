@@ -43,7 +43,7 @@ export default function Sidebar() {
     function loadChats() {
         if (shouldLoadChats.current) {
             shouldLoadChats.current = false
-            getChats().then(setChats)
+            getChats().then(response => setChats(response.chats))
         }
     }
 
