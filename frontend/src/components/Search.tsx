@@ -13,13 +13,13 @@ export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolea
     const loaderRef = useRef<HTMLDivElement | null>(null)
 
     function fetchResults(reset = false) {
-        searchChats(searchTerm, reset ? 0 : offset).then(data => {
+        searchChats(searchTerm, reset ? 0 : offset, 10).then(data => {
             if (reset) {
                 setResults(data.chats)
-                setOffset(20)
+                setOffset(10)
             } else {
                 setResults(prev => [...prev, ...data.chats])
-                setOffset(prev => prev + 20)
+                setOffset(prev => prev + 10)
             }
             setHasMore(data.has_more)
         })

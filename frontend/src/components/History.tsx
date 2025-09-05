@@ -25,7 +25,7 @@ export default function History({ chats, setChats }: {
         if (loading || !hasMore) return
         setLoading(true)
 
-        const response = await getChats(offset, 20)
+        const response = await getChats(offset, 25)
         const newChats = response.chats
         if (newChats.length > 0) {
             setChats(prev => {
