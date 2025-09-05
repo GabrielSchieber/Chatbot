@@ -13,15 +13,14 @@ export async function getPendingChats(): Promise<Chat[]> {
     return (await (await apiFetch(`/api/get-chats/?pending=${true}`, { credentials: "include" })).json()).chats
 }
 
-export async function searchChats(search: string): Promise<SearchEntry[] | undefined> {
-    const response = await apiFetch("/api/search-chats/", {
+export async function searchChats(search: string, offset = 0, limit = 20): Promise<{ chats: SearchEntry[], has_more: boolean }> {
+    const response = await apiFetch(`/api/search-chats/?offset=${offset}&limit=${limit}`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ search: search })
+        body: JSON.stringify({ search })
     })
-    const data = await response.json()
-    return data.chats
+    return response.json()
 }
 
 export async function renameChat(chatUUID: string, newTitle: string) {

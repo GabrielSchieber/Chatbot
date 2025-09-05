@@ -158,21 +158,33 @@ class SearchChats(APIView):
 
     def post(self, request):
         try:
-            search = request.data["search"]
+            search = request.data.get("search", "")
+            limit = int(request.GET.get("limit", 20))
+            offset = int(request.GET.get("offset", 0))
+
             matched_messages = Message.objects.filter(text__icontains = search).order_by("created_at")
-            chats = Chat.objects.filter(user = request.user).order_by("created_at").filter(
-                Q(title__icontains = search) | Q(messages__text__icontains = search)
-            ).order_by("created_at").distinct().prefetch_related(
-                Prefetch("messages", queryset = matched_messages, to_attr = "matched_messages")
-            )
+
+            chats_qs = Chat.objects.filter(user = request.user).filter(
+                Q(title__icontains=search) | Q(messages__text__icontains = search)
+            ).distinct().order_by("-created_at")
+
+            total = chats_qs.count()
+            chats_qs = chats_qs[offset:offset + limit]
+
+            chats_qs = chats_qs.prefetch_related(Prefetch("messages", queryset = matched_messages, to_attr = "matched_messages"))
+
             chats = [{
                 "title": chat.title,
                 "uuid": chat.uuid,
-                "matches": [message.text for message in chat.matched_messages] if hasattr(chat, "matched_messages") else []
-            } for chat in chats]
-            return Response({"chats": chats})
-        except Exception:
-            return Response(status = 400)
+                "matches": [m.text for m in getattr(chat, "matched_messages", [])]
+            } for chat in chats_qs]
+
+            return Response({
+                "chats": chats,
+                "has_more": offset + limit < total
+            })
+        except Exception as e:
+            return Response({"error": str(e)}, status = 400)
 
 class RenameChat(APIView):
     permission_classes = [IsAuthenticated]
