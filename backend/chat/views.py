@@ -157,34 +157,31 @@ class SearchChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            search = request.GET.get("search", "")
-            limit = int(request.GET.get("limit", 20))
-            offset = int(request.GET.get("offset", 0))
+        search = request.GET.get("search", "")
+        limit = int(request.GET.get("limit", 20))
+        offset = int(request.GET.get("offset", 0))
 
-            matched_messages = Message.objects.filter(text__icontains = search).order_by("created_at")
+        matched_messages = Message.objects.filter(text__icontains = search).order_by("created_at")
 
-            chats_qs = Chat.objects.filter(user = request.user).filter(
-                Q(title__icontains=search) | Q(messages__text__icontains = search)
-            ).distinct().order_by("-created_at")
+        chats_qs = Chat.objects.filter(user = request.user).filter(
+            Q(title__icontains=search) | Q(messages__text__icontains = search)
+        ).distinct().order_by("-created_at")
 
-            total = chats_qs.count()
-            chats_qs = chats_qs[offset:offset + limit]
+        total = chats_qs.count()
+        chats_qs = chats_qs[offset:offset + limit]
 
-            chats_qs = chats_qs.prefetch_related(Prefetch("messages", queryset = matched_messages, to_attr = "matched_messages"))
+        chats_qs = chats_qs.prefetch_related(Prefetch("messages", queryset = matched_messages, to_attr = "matched_messages"))
 
-            chats = [{
-                "title": chat.title,
-                "uuid": chat.uuid,
-                "matches": [m.text for m in getattr(chat, "matched_messages", [])]
-            } for chat in chats_qs]
+        chats = [{
+            "title": chat.title,
+            "uuid": chat.uuid,
+            "matches": [m.text for m in getattr(chat, "matched_messages", [])]
+        } for chat in chats_qs]
 
-            return Response({
-                "chats": chats,
-                "has_more": offset + limit < total
-            })
-        except Exception as e:
-            return Response({"error": str(e)}, status = 400)
+        return Response({
+            "chats": chats,
+            "has_more": offset + limit < total
+        })
 
 class RenameChat(APIView):
     permission_classes = [IsAuthenticated]
