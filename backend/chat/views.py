@@ -156,9 +156,9 @@ class GetChats(APIView):
 class SearchChats(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def get(self, request):
         try:
-            search = request.data.get("search", "")
+            search = request.GET.get("search", "")
             limit = int(request.GET.get("limit", 20))
             offset = int(request.GET.get("offset", 0))
 

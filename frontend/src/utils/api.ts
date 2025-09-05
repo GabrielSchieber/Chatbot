@@ -14,13 +14,7 @@ export async function getPendingChats(): Promise<Chat[]> {
 }
 
 export async function searchChats(search: string, offset = 0, limit = 20): Promise<{ chats: SearchEntry[], has_more: boolean }> {
-    const response = await apiFetch(`/api/search-chats/?offset=${offset}&limit=${limit}`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ search })
-    })
-    return response.json()
+    return (await apiFetch(`/api/search-chats/?search=${search}&offset=${offset}&limit=${limit}`, { credentials: "include" })).json()
 }
 
 export async function renameChat(chatUUID: string, newTitle: string) {
