@@ -35,20 +35,20 @@ class ChatTests(TestCase):
         chat = Chat.objects.create(user = user, title = "Test chat")
         self.assertEqual(chat.user, user)
         self.assertEqual(chat.title, "Test chat")
-        self.assertTrue(chat.is_complete)
+        self.assertFalse(chat.is_pending)
 
 class MessageTests(TestCase):
     def test_creation(self):
         user = create_user()
         chat = Chat.objects.create(user = user, title = "Test chat")
-        user_message = Message.objects.create(chat = chat, text = "Hello!", is_user_message = True)
-        bot_message = Message.objects.create(chat = chat, text = "Hi!", is_user_message = False)
+        user_message = Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
+        bot_message = Message.objects.create(chat = chat, text = "Hi!", is_from_user = False)
         self.assertEqual(user_message.chat, chat)
         self.assertEqual(bot_message.chat, chat)
         self.assertEqual(user_message.text, "Hello!")
         self.assertEqual(bot_message.text, "Hi!")
-        self.assertTrue(user_message.is_user_message)
-        self.assertFalse(bot_message.is_user_message)
+        self.assertTrue(user_message.is_from_user)
+        self.assertFalse(bot_message.is_from_user)
 
 class ViewTests(TestCase):
     def test_signup(self):
@@ -120,8 +120,8 @@ class ViewTests(TestCase):
         response = self.client.post("/api/get-message/", {"chat_uuid": chat.uuid, "message_index": 0})
         self.assertEqual(response.status_code, 400)
 
-        Message.objects.create(chat = chat, text = "Hello!", is_user_message = True)
-        Message.objects.create(chat = chat, text = "Hi!", is_user_message = False)
+        Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
+        Message.objects.create(chat = chat, text = "Hi!", is_from_user = False)
 
         response = self.client.post("/api/get-message/", {"chat_uuid": chat.uuid, "message_index": 0})
         self.assertEqual(response.status_code, 200)
@@ -140,30 +140,42 @@ class ViewTests(TestCase):
 
         user, _ = self.create_and_login_user()
         response = self.client.post("/api/get-messages/", {"chat_uuid": "849087f8-4b3f-47f1-980d-5a5a3d325912"})
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 404)
 
         chat = Chat.objects.create(user = user, title = "Test chat")
         response = self.client.post("/api/get-messages/", {"chat_uuid": "invalid-uuid"})
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 404)
 
         chat = Chat.objects.create(user = user, title = "Test chat")
         response = self.client.post("/api/get-messages/", {"chat_uuid": chat.uuid})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["messages"], [])
 
-        Message.objects.create(chat = chat, text = "Hello!", is_user_message = True)
-        Message.objects.create(chat = chat, text = "Hi!", is_user_message = False)
+        Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
+        Message.objects.create(chat = chat, text = "Hi!", is_from_user = False)
 
         response = self.client.post("/api/get-messages/", {"chat_uuid": chat.uuid})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["messages"], ["Hello!", "<p>Hi!</p>"])
 
-        Message.objects.create(chat = chat, text = "Hello again!", is_user_message = True)
-        Message.objects.create(chat = chat, text = "Hi again!", is_user_message = False)
+        expected_messages = [
+            {"text": "Hello!", "is_from_user": True, "files": [], "model": None},
+            {"text": "Hi!", "is_from_user": False, "files": [], "model": None}
+        ]
+        self.assertEqual(response.json()["messages"], expected_messages)
+
+        Message.objects.create(chat = chat, text = "Hello again!", is_from_user = True)
+        Message.objects.create(chat = chat, text = "Hi again!", is_from_user = False)
 
         response = self.client.post("/api/get-messages/", {"chat_uuid": chat.uuid})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["messages"], ["Hello!", "<p>Hi!</p>", "Hello again!", "<p>Hi again!</p>"])
+
+        expected_messages = [
+            {"text": "Hello!", "is_from_user": True, "files": [], "model": None},
+            {"text": "Hi!", "is_from_user": False, "files": [], "model": None},
+            {"text": "Hello again!", "is_from_user": True, "files": [], "model": None},
+            {"text": "Hi again!", "is_from_user": False, "files": [], "model": None}
+        ]
+        self.assertEqual(response.json()["messages"], expected_messages)
 
     def test_get_chats(self):
         response = self.client.get("/api/get-chats/")
@@ -181,12 +193,19 @@ class ViewTests(TestCase):
         chat1 = Chat.objects.create(user = user1, title = "Test chat 1")
         response = self.client.get("/api/get-chats/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["chats"], [{"title": chat1.title, "uuid": str(chat1.uuid)}])
+
+        expected_chats = [{"title": chat1.title, "is_pending": False, "uuid": str(chat1.uuid)}]
+        self.assertEqual(response.json()["chats"], expected_chats)
 
         chat2 = Chat.objects.create(user = user1, title = "Test chat 2")
         response = self.client.get("/api/get-chats/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["chats"], [{"title": chat1.title, "uuid": str(chat1.uuid)}, {"title": chat2.title, "uuid": str(chat2.uuid)}])
+
+        expected_chats = [
+            {"title": chat2.title, "is_pending": False, "uuid": str(chat2.uuid)},
+            {"title": chat1.title, "is_pending": False, "uuid": str(chat1.uuid)}
+        ]
+        self.assertEqual(response.json()["chats"], expected_chats)
 
         self.logout_user()
         user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
@@ -197,71 +216,78 @@ class ViewTests(TestCase):
         chat3 = Chat.objects.create(user = user2, title = "Test chat 3")
         response = self.client.get("/api/get-chats/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["chats"], [{"title": chat3.title, "uuid": str(chat3.uuid)}])
+
+        expected_chats = [{"title": chat3.title, "is_pending": False, "uuid": str(chat3.uuid)}]
+        self.assertEqual(response.json()["chats"], expected_chats)
 
         chat4 = Chat.objects.create(user = user2, title = "Test chat 4")
         response = self.client.get("/api/get-chats/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["chats"], [{"title": chat3.title, "uuid": str(chat3.uuid)}, {"title": chat4.title, "uuid": str(chat4.uuid)}])
+
+        expected_chats = [
+            {"title": chat4.title, "is_pending": False, "uuid": str(chat4.uuid)},
+            {"title": chat3.title, "is_pending": False, "uuid": str(chat3.uuid)}
+        ]
+        self.assertEqual(response.json()["chats"], expected_chats)
 
     def test_search_chats(self):
-        response = self.client.post("/api/search-chats/")
+        response = self.client.get("/api/search-chats/")
         self.assertEqual(response.status_code, 401)
 
-        response = self.client.post("/api/search-chats/", {"search": "What is math?"})
+        response = self.client.get("/api/search-chats/?search=What is math")
         self.assertEqual(response.status_code, 401)
 
         user, _ = self.create_and_login_user()
-        response = self.client.post("/api/search-chats/")
-        self.assertEqual(response.status_code, 400)
+        response = self.client.get("/api/search-chats/")
+        self.assertEqual(response.status_code, 200)
 
-        response = self.client.post("/api/search-chats/", {"search": "What is math?"})
+        response = self.client.get("/api/search-chats/?search=What is math?")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["chats"], [])
 
         chat = Chat.objects.create(user = user, title = "A question about math")
 
-        response = self.client.post("/api/search-chats/", {"search": "What is math?"})
+        response = self.client.get("/api/search-chats/?search=What is math?")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["chats"], [])
 
-        response = self.client.post("/api/search-chats/", {"search": "A question about math"})
+        response = self.client.get("/api/search-chats/?search=A question about math")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["chats"], [{"title": "A question about math", "uuid": str(chat.uuid), "matches": []}])
 
-        Message.objects.create(chat = chat, text = "What is math?", is_user_message = True)
-        Message.objects.create(chat = chat, text = "Math is...", is_user_message = False)
+        Message.objects.create(chat = chat, text = "What is math?", is_from_user = True)
+        Message.objects.create(chat = chat, text = "Math is...", is_from_user = False)
 
-        response = self.client.post("/api/search-chats/", {"search": "What is math?"})
+        response = self.client.get("/api/search-chats/?search=What is math?")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["chats"], [{"title": "A question about math", "uuid": str(chat.uuid), "matches": ["What is math?"]}])
 
-        response = self.client.post("/api/search-chats/", {"search": "math"})
+        response = self.client.get("/api/search-chats/?search=math")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["chats"], [{"title": "A question about math", "uuid": str(chat.uuid), "matches": ["What is math?", "Math is..."]}])
 
-        response = self.client.post("/api/search-chats/", {"search": "What is geometry?"})
+        response = self.client.get("/api/search-chats/?search=What is geometry?")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["chats"], [])
 
         chat = Chat.objects.create(user = user, title = "Geometry question")
 
-        response = self.client.post("/api/search-chats/", {"search": "Question about geometry"})
+        response = self.client.get("/api/search-chats/?search=Question about geometry")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["chats"], [])
 
-        response = self.client.post("/api/search-chats/", {"search": "Geometry question"})
+        response = self.client.get("/api/search-chats/?search=Geometry question")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["chats"], [{"title": "Geometry question", "uuid": str(chat.uuid), "matches": []}])
 
-        Message.objects.create(chat = chat, text = "What is geometry?", is_user_message = True)
-        Message.objects.create(chat = chat, text = "Geometry is...", is_user_message = False)
+        Message.objects.create(chat = chat, text = "What is geometry?", is_from_user = True)
+        Message.objects.create(chat = chat, text = "Geometry is...", is_from_user = False)
 
-        response = self.client.post("/api/search-chats/", {"search": "What is geometry?"})
+        response = self.client.get("/api/search-chats/?search=What is geometry?")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["chats"], [{"title": "Geometry question", "uuid": str(chat.uuid), "matches": ["What is geometry?"]}])
 
-        response = self.client.post("/api/search-chats/", {"search": "geometry"})
+        response = self.client.get("/api/search-chats/?search=geometry")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["chats"], [{"title": "Geometry question", "uuid": str(chat.uuid), "matches": ["What is geometry?", "Geometry is..."]}])
 
@@ -293,8 +319,8 @@ class ViewTests(TestCase):
         chat2 = Chat.objects.create(user = user2, title = "Some chat")
         response = self.client.post("/api/rename-chat/", {"chat_uuid": chat2.uuid, "new_title": "Some other chat"})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(Chat.objects.first().title, "Some title")
-        self.assertEqual(Chat.objects.last().title, "Some other chat")
+        self.assertIn("Some title", [Chat.objects.first().title, Chat.objects.last().title])
+        self.assertIn("Some other chat", [Chat.objects.first().title, Chat.objects.last().title])
 
     def test_delete_chat(self):
         response = self.client.post("/api/delete-chat/")
