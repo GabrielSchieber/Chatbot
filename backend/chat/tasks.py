@@ -1,6 +1,9 @@
 import asyncio
+import logging
 import threading
 from typing import Literal, get_args
+
+logger = logging.getLogger(__name__)
 
 import ollama
 from channels.db import database_sync_to_async
@@ -21,7 +24,14 @@ global_futures: dict[str, asyncio.Future[None]] = {}
 
 def generate_message(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName):
     future = asyncio.run_coroutine_threadsafe(sample_model(chat, user_message, bot_message, model_name), global_loop)
+    future.add_done_callback(lambda f: task_done_callback(f, str(chat.uuid)))
     global_futures[str(chat.uuid)] = future
+
+def task_done_callback(future: asyncio.Future[None], chat_uuid: str):
+    global global_futures
+    global_futures.pop(chat_uuid)
+    exception = future.exception()
+    return exception and logger.exception("Task failed", exc_info = future.exception())
 
 async def sample_model(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName):
     if model_name not in get_args(ModelName):
@@ -31,6 +41,9 @@ async def sample_model(chat: Chat, user_message: Message, bot_message: Message, 
         model_name = "moondream:1.8b-v2-q2_K"
     else:
         model_name = model_name.lower().replace("-", ":")
+
+    if not model_name in str(ollama.list()):
+        raise ValueError(f"Model {model_name} not installed")
 
     channel_layer = get_channel_layer()
 
