@@ -51,3 +51,26 @@ test("user can login", async ({ page }) => {
     await page.click("button")
     await page.waitForURL("/")
 })
+
+test("user can log out", async ({ page }) => {
+    const response = await apiFetch("/api/signup/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    })
+
+    expect(response.status).toBe(201)
+
+    await page.goto("/")
+    await page.waitForURL("/login")
+
+    await page.fill("input[type='email']", email)
+    await page.fill("input[type='password']", password)
+
+    await page.click("button")
+    await page.waitForURL("/")
+
+    await page.getByText("Settings").click()
+    await page.getByRole("button", { name: "Log out" }).click()
+    await page.waitForURL("/")
+})
