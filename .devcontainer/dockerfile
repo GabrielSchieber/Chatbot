@@ -1,27 +1,29 @@
 FROM python:3.13-slim
 
-ENV NVM_DIR="/root/.nvm"
-ENV NODE_VERSION="22.17.1"
-RUN apt-get update && apt-get install -y curl git build-essential && \
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && \
-    /bin/bash -c ". $NVM_DIR/nvm.sh && nvm install $NODE_VERSION && nvm alias default $NODE_VERSION"
-ENV PATH="$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH"
+WORKDIR /app/backend
 
-WORKDIR /app
+COPY /backend/requirements.txt .
 
-COPY backend/requirements.txt backend/requirements.txt
+RUN python -m venv .venv && . .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
 
-RUN python -m venv backend/.venv && . backend/.venv/bin/activate && pip install --upgrade pip && pip install -r backend/requirements.txt
-
-COPY backend backend
-
-COPY frontend/package.json frontend/package.json
-COPY frontend/package-lock.json frontend/package-lock.json
-
-RUN cd frontend && npm install
-
-COPY frontend frontend
+COPY /backend .
 
 ENV PATH="/app/backend/.venv/bin:$PATH"
 ENV DJANGO_DEBUG="True"
 ENV OLLAMA_HOST="http://host.docker.internal:11434"
+
+WORKDIR /app/frontend
+
+RUN apt-get update && apt-get install -y wget xz-utils && rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /app_deps
+RUN wget -O /app_deps/node-v22.19.0-linux-x64.tar.xz https://nodejs.org/dist/v22.19.0/node-v22.19.0-linux-x64.tar.xz
+RUN tar -xf /app_deps/node-v22.19.0-linux-x64.tar.xz -C /app_deps
+RUN rm /app_deps/node-v22.19.0-linux-x64.tar.xz
+ENV PATH="/app_deps/node-v22.19.0-linux-x64/bin:$PATH"
+
+COPY /frontend/package.json .
+COPY /frontend/package-lock.json .
+
+RUN npm install
+
+COPY /frontend .

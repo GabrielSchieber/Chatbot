@@ -7,6 +7,8 @@ services:
     env_file: .env
     volumes:
       - ..:/app:cached
+      - venv:/app/backend/.venv:cached
+      - node_modules:/app/frontend/node_modules:cached
 
   postgres:
     image: postgres:17.6-alpine
@@ -24,3 +26,5 @@ services:
 
 volumes:
   postgres:
+  venv:
+  node_modules:
