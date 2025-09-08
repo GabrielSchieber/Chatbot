@@ -1,8 +1,8 @@
 import { DotsVerticalIcon } from "@radix-ui/react-icons"
 import { DropdownMenu } from "radix-ui"
 import type { Chat } from "../types"
-import { useState } from "react"
-import { deleteChat, renameChat } from "../utils/api"
+import { useEffect, useRef, useState } from "react"
+import { deleteChat, getChats, renameChat } from "../utils/api"
 import { useParams } from "react-router"
 import ConfirmDialog from "./ConfirmDialog"
 
@@ -14,6 +14,50 @@ export default function History({ chats, setChats }: {
     const [renameChatUUID, setRenameChatUUID] = useState<string | null>(null)
     const [renameTitle, setRenameTitle] = useState("")
     const [selectedDropdownIndex, setSelectedDropdownIndex] = useState(-1)
+
+    const [offset, setOffset] = useState(0)
+    const [loading, setLoading] = useState(false)
+    const [hasMore, setHasMore] = useState(true)
+    const historyRef = useRef<HTMLDivElement>(null)
+    const shouldSetChats = useRef(true)
+
+    async function loadMoreChats() {
+        if (loading || !hasMore) return
+        setLoading(true)
+
+        const response = await getChats(offset, 25)
+        const newChats = response.chats
+        if (newChats.length > 0) {
+            setChats(prev => {
+                const seen = new Set(prev.map(c => c.uuid))
+                return [...prev, ...newChats.filter(c => !seen.has(c.uuid))]
+            })
+            setOffset(prev => prev + newChats.length)
+        }
+
+        setHasMore(response.has_more)
+        setLoading(false)
+    }
+
+    useEffect(() => {
+        if (!shouldSetChats.current) return
+        shouldSetChats.current = false
+        loadMoreChats()
+    }, [])
+
+    useEffect(() => {
+        const div = historyRef.current
+        if (!div) return
+
+        function onScroll() {
+            if (div !== null && div.scrollTop + div.clientHeight >= div.scrollHeight - 50) {
+                shouldSetChats.current = true
+                loadMoreChats()
+            }
+        }
+        div.addEventListener("scroll", onScroll)
+        return () => div.removeEventListener("scroll", onScroll)
+    }, [offset, loading])
 
     function startRename(chat: Chat) {
         setRenameChatUUID(chat.uuid)
@@ -52,7 +96,10 @@ export default function History({ chats, setChats }: {
     }
 
     return (
-        <div className="flex flex-col gap-1 p-2 w-full h-full p-1 overflow-x-hidden overflow-y-auto">
+        <div
+            ref={historyRef}
+            className="flex flex-col gap-1 p-2 w-full h-full p-1 overflow-x-hidden overflow-y-auto"
+        >
             <p className="pl-2 text-sm text-gray-400">Chats</p>
             {chats.map((chat, index) => (
                 <div
@@ -125,6 +172,8 @@ export default function History({ chats, setChats }: {
                     </DropdownMenu.Root>
                 </div>
             ))}
+            {loading && <p className="text-center text-gray-400">Loading ...</p>}
+            {!hasMore && <p className="text-center text-gray-400">No more chats</p>}
         </div>
     )
 }

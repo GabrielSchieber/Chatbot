@@ -8,12 +8,12 @@
     scrollbar-color: var(--scrollbar-color) transparent;
 }
 
-@custom-variant light (&:where(.light, .light *));
+@custom-variant light (&:where(.Light, .Light *));
 
-.light {
+.Light {
     @import "highlight.js/styles/a11y-light.css";
 }
 
-.dark {
+.Dark {
     @import "highlight.js/styles/a11y-dark.css";
 }

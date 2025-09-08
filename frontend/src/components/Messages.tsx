@@ -1,4 +1,4 @@
-import { CheckIcon, CopyIcon, FileIcon, Pencil1Icon, UpdateIcon } from "@radix-ui/react-icons"
+import { CheckIcon, CopyIcon, Cross2Icon, FileIcon, Pencil1Icon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
 import { Tooltip } from "radix-ui"
 import React, { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
@@ -6,24 +6,32 @@ import { useParams } from "react-router"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 
-import { getChats, getMessage, getMessages } from "../utils/api"
+import { getMessage, getMessages, editMessage as editMessageAPI, renegerateMessage as regenerateMessageAPI, getPendingChats } from "../utils/api"
 import { getFileSize, getFileType } from "../utils/file"
-import type { Message, MessageFile, Model, Options } from "../types"
+import type { Chat, Message, MessageFile, Model, UIAttachment } from "../types"
 
-export default function Messages({ webSocket, messages, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete, model, options }: {
-    webSocket: React.RefObject<WebSocket | null>
+export default function Messages({ messages, setMessages, pendingChat, setPendingChat, model, setModel }: {
     messages: Message[]
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
-    isAnyChatIncomplete: boolean
-    setIsAnyChatIncomplete: React.Dispatch<React.SetStateAction<boolean>>
+    pendingChat: Chat | undefined
+    setPendingChat: React.Dispatch<React.SetStateAction<Chat | undefined>>
     model: Model
-    options: Options
+    setModel: React.Dispatch<React.SetStateAction<Model>>
 }) {
     const { chatUUID } = useParams()
+
+    const webSocket = useRef<WebSocket>(null)
+    const fileInputRef = useRef<HTMLInputElement | null>(null)
     const shouldLoadMessages = useRef(true)
+
     const [copiedMessageIndex, setCopiedMessageIndex] = useState(-1)
     const [editingMessageIndex, setEditingMessageIndex] = useState(-1)
     const [editingMessageText, setEditingMessageText] = useState("")
+
+    const [addedFiles, setAddedFiles] = useState<File[]>([])
+    const [removedFiles, setRemovedFiles] = useState<MessageFile[]>([])
+    const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
+    const [isRemovingFiles, setIsRemovingFiles] = useState(false)
 
     function MessageButton({ children, onClick, tooltip, isDisabled = false }: { children: ReactNode, onClick: () => void, tooltip: string, isDisabled?: boolean }) {
         return (
@@ -66,8 +74,14 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                 onClick={() => {
                     setEditingMessageIndex(index)
                     setEditingMessageText(message.text)
+                    setVisibleFiles(message.files.map(f => {
+                        return {
+                            message_file: { id: f.id, name: f.name, content_size: f.content_size, content_type: f.content_type },
+                            isRemoving: false
+                        }
+                    }))
                 }}
-                isDisabled={isAnyChatIncomplete}
+                isDisabled={pendingChat !== undefined}
             />
         )
     }
@@ -80,7 +94,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                 }
                 tooltip="Regenerate"
                 onClick={() => regenerateMessage(index)}
-                isDisabled={isAnyChatIncomplete}
+                isDisabled={pendingChat !== undefined}
             />
         )
     }
@@ -93,9 +107,79 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                     <p className="px-2 py-1 rounded-lg bg-gray-800">
                         Type: {getFileType(file.name)}<br />
                         Name: {file.name}<br />
-                        Size: {getFileSize(file.size)}
+                        Size: {getFileSize(file.content_size)}
                     </p>
                 </div>
+            </div>
+        )
+    }
+
+    function Attachments(message_index: number) {
+        function removeFile(file: MessageFile) {
+            setVisibleFiles(previous =>
+                previous.map(f => f.message_file.id === file.id ? { ...f, isRemoving: true } : f)
+            )
+            setRemovedFiles(previous => [...previous, file])
+
+            setTimeout(() => {
+                setVisibleFiles(previous => previous.filter(f => f.message_file.id !== file.id))
+                setMessages(previous => {
+                    let messages = [...previous]
+                    messages[message_index].files = previous[message_index].files.filter(f => f.id !== file.id)
+                    return messages
+                })
+            }, 300)
+        }
+
+        function removeFiles() {
+            setIsRemovingFiles(true)
+            setTimeout(() => {
+                setVisibleFiles([])
+                setIsRemovingFiles(false)
+            }, 300)
+        }
+
+        return (
+            <div
+                className={`
+                    relative flex flex-col gap-1 p-2 border border-gray-500 top-0 rounded-xl
+                    transition-all duration-300 ${isRemovingFiles ? "opacity-0 overflow-y-hidden" : "opacity-100"}
+                `}
+                style={{
+                    maxHeight: isRemovingFiles ? 0 : visibleFiles.length * 100
+                }}
+                onClick={e => e.stopPropagation()}
+            >
+                {visibleFiles.map(file => (
+                    <div
+                        key={file.message_file.name}
+                        className={`
+                            relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl
+                            transition-all duration-300 ${file.isRemoving ? "opacity-0 translate-x-10" : "opacity-100"}
+                        `}
+                    >
+                        <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
+                        <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
+                            <p className="px-2 py-1 rounded-lg bg-gray-800">
+                                Type: {getFileType(file.message_file.name)}<br />
+                                Name: {file.message_file.name}<br />
+                                Size: {getFileSize(file.message_file.content_size)}
+                            </p>
+                        </div>
+                        <button
+                            className="absolute top-0 right-0 translate-x-2 -translate-y-2 cursor-pointer text-red-400 hover:text-red-500"
+                            onClick={_ => removeFile(file.message_file)}
+                        >
+                            <Cross2Icon className="size-4" />
+                        </button>
+                    </div>
+                ))}
+                <button
+                    className="absolute right-0 -translate-x-2 cursor-pointer text-red-400 hover:text-red-500"
+                    onClick={removeFiles}
+                >
+                    <Cross2Icon />
+                </button>
             </div>
         )
     }
@@ -106,6 +190,12 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
             getMessages(chatUUID).then(messages => {
                 if (messages) {
                     setMessages(messages)
+                    if (messages.length > 0) {
+                        const lastMessage = messages[messages.length - 1]
+                        if (lastMessage.model) {
+                            setModel(lastMessage.model)
+                        }
+                    }
                 } else {
                     location.href = "/"
                 }
@@ -124,7 +214,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                     setMessages(previous => {
                         let previousMessages = [...previous]
                         if (previousMessages[message_index]) {
-                            previousMessages[message_index] = { text: previousMessages[message_index].text + data.token, files: [], is_user_message: false }
+                            previousMessages[message_index] = { text: previousMessages[message_index].text + data.token, files: [], is_from_user: false, model: model }
                         }
                         return previousMessages
                     })
@@ -132,11 +222,11 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                     setMessages(previous => {
                         let previousMessages = [...previous]
                         if (previousMessages[message_index]) {
-                            previousMessages[message_index] = { text: data.message, files: [], is_user_message: false }
+                            previousMessages[message_index] = { text: data.message, files: [], is_from_user: false, model: model }
                         }
                         return previousMessages
                     })
-                    setIsAnyChatIncomplete(false)
+                    setPendingChat(undefined)
                 }
             })
 
@@ -149,7 +239,7 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
     }
 
     function copyMessage(message: Message, index: number) {
-        if (message.is_user_message) {
+        if (message.is_from_user) {
             navigator.clipboard.writeText(message.text)
         } else {
             if (chatUUID) {
@@ -162,41 +252,121 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
         setTimeout(() => setCopiedMessageIndex(-1), 2000)
     }
 
-    function regenerateMessage(index: number) {
-        if (webSocket.current) {
-            webSocket.current.send(JSON.stringify({ action: "regenerate_message", model: model, message_index: index, options: options }))
-            setIsAnyChatIncomplete(true)
-            setMessages(previous => {
-                const messages = [...previous]
-                messages[index].text = ""
-                return messages
+    function editMessage(index: number) {
+        if (chatUUID) {
+            editMessageAPI(chatUUID, "SmolLM2-135M", editingMessageText, index, addedFiles, removedFiles).then(([chat, status]) => {
+                if (status === 200) {
+                    let shouldSetMessages = true
+                    setMessages(previous => {
+                        if (shouldSetMessages) {
+                            const previousMessages = [...previous]
+
+                            previousMessages[index].text = editingMessageText
+                            previousMessages[index].files = [
+                                ...previousMessages[index].files,
+                                ...addedFiles.map(f => {
+                                    return {
+                                        id: Date.now(),
+                                        name: f.name,
+                                        content_size: f.size,
+                                        content_type: f.type
+                                    }
+                                })]
+
+                            previousMessages[index + 1].text = ""
+
+                            shouldSetMessages = false
+                            return previousMessages
+                        } else {
+                            return previous
+                        }
+                    })
+
+                    setEditingMessageIndex(-1)
+                    setEditingMessageText("")
+                    setAddedFiles([])
+                    setRemovedFiles([])
+                    setVisibleFiles([])
+
+                    chat.then(chat => setPendingChat(chat))
+                }
             })
+        } else {
+            alert("Edition of message was not possible")
         }
     }
 
-    function editMessage(index: number) {
-        if (webSocket.current) {
-            webSocket.current.send(
-                JSON.stringify({ action: "edit_message", model: model, message: editingMessageText, message_index: index, options: options })
-            )
-
-            setMessages(previous => {
-                const messages = [...previous]
-                messages[index].text = editingMessageText
-                messages[index + 1].text = ""
-                return messages
+    function regenerateMessage(index: number) {
+        if (chatUUID) {
+            regenerateMessageAPI(chatUUID, "SmolLM2-135M", index).then(([chat, status]) => {
+                if (status === 200) {
+                    setMessages(previous => {
+                        const messages = [...previous]
+                        messages[index].text = ""
+                        return messages
+                    })
+                    chat.then(chat => setPendingChat(chat))
+                }
             })
-
-            setEditingMessageIndex(-1)
-            setEditingMessageText("")
-            setIsAnyChatIncomplete(true)
+        } else {
+            alert("Edition of message was not possible")
         }
+    }
+
+    function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+        if (!event.target.files) return
+
+        if (event.target.files.length + addedFiles.length - removedFiles.length > 10) {
+            alert("You can only attach up to 10 files at a time.")
+            event.target.value = ""
+            return
+        }
+
+        let totalSize = 0
+        for (const addedFile of addedFiles) {
+            totalSize += addedFile.size
+        }
+        for (const removedFile of removedFiles) {
+            totalSize -= removedFile.content_size
+        }
+        for (const file of event.target.files) {
+            totalSize += file.size
+        }
+        if (totalSize > 5_000_000) {
+            alert("Total file size exceeds 5 MB limit. Please select smaller files.")
+            event.target.value = ""
+            return
+        }
+
+        const newFiles = Array.from(event.target.files)
+
+        const existingKeys = new Set(addedFiles.map(f => f.name + "|" + f.size))
+        const uniqueNew = newFiles.filter(f => !existingKeys.has(f.name + "|" + f.size))
+
+        setAddedFiles(previous => [...previous, ...uniqueNew])
+
+        setVisibleFiles(previous => [
+            ...previous,
+            ...uniqueNew.map(f => {
+                return {
+                    message_file: {
+                        id: Date.now(),
+                        name: f.name,
+                        content_size: f.size,
+                        content_type: f.type
+                    },
+                    isRemoving: false
+                }
+            })
+        ])
+
+        event.target.value = ""
     }
 
     useEffect(() => {
         loadMessages()
         receiveMessage()
-        getChats(true).then(chats => chats.length > 0 ? setIsAnyChatIncomplete(true) : setIsAnyChatIncomplete(false))
+        getPendingChats().then(chats => chats.length > 0 ? setPendingChat(chats[0]) : setPendingChat(undefined))
     }, [])
 
     return (
@@ -204,18 +374,12 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
             {messages.map((message, index) => (
                 <div
                     key={index}
-                    className={`flex flex-col gap-0.5 w-[50vw] justify-self-center ${message.is_user_message ? "items-end" : "items-start"}`}
+                    className={`flex flex-col gap-0.5 w-[50vw] justify-self-center ${message.is_from_user ? "items-end" : "items-start"}`}
                 >
                     {editingMessageIndex === index ? (
                         <div className="flex flex-col gap-1 w-[80%] max-h-100 px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
                             <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
-                                {message.files.length > 0 && (
-                                    <div className="flex flex-col gap-1 p-2 rounded-lg border border-gray-500">
-                                        {message.files.map((file, fileIndex) => (
-                                            <FileItem key={fileIndex} file={file} />
-                                        ))}
-                                    </div>
-                                )}
+                                {visibleFiles.length > 0 && Attachments(index)}
                                 <div className="flex">
                                     <textarea
                                         className="flex-1 p-2 overflow-y-hidden resize-none outline-none"
@@ -228,33 +392,52 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                                     />
                                 </div>
                             </div>
-                            <div className="flex gap-1 justify-end">
+                            <div className="flex justify-between">
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    style={{ display: "none" }}
+                                    multiple
+                                />
+
                                 <button
                                     className="
-                                        px-3 py-1 rounded-lg cursor-pointer bg-gray-800
+                                        flex items-center gap-1 px-3 py-1 rounded-lg cursor-pointer bg-gray-800
                                         hover:bg-gray-800/60 light:bg-gray-200 light:hover:bg-gray-200/60
                                     "
-                                    onClick={_ => {
-                                        setEditingMessageIndex(-1)
-                                        setEditingMessageText("")
-                                    }}
+                                    onClick={_ => fileInputRef.current?.click()}
                                 >
-                                    Cancel
+                                    <UploadIcon /> Add files
                                 </button>
-                                <button
-                                    className="
-                                        px-3 py-1 rounded-lg cursor-pointer text-black light:text-white bg-gray-100 hover:bg-gray-200
-                                        light:bg-gray-900 light:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed
-                                    "
-                                    onClick={_ => editMessage(index)}
-                                    disabled={editingMessageText.trim() === ""}
-                                >
-                                    Send
-                                </button>
+                                <div className="flex gap-1 justify-end">
+                                    <button
+                                        className="
+                                            px-3 py-1 rounded-lg cursor-pointer bg-gray-800
+                                            hover:bg-gray-800/60 light:bg-gray-200 light:hover:bg-gray-200/60
+                                        "
+                                        onClick={_ => {
+                                            setEditingMessageIndex(-1)
+                                            setEditingMessageText("")
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        className="
+                                            px-3 py-1 rounded-lg cursor-pointer text-black light:text-white bg-gray-100 hover:bg-gray-200
+                                            light:bg-gray-900 light:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed
+                                        "
+                                        onClick={_ => editMessage(index)}
+                                        disabled={editingMessageText.trim() === ""}
+                                    >
+                                        Send
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ) : (
-                        message.is_user_message ? (
+                        message.is_from_user ? (
                             <div className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
                                 {message.files.length > 0 && (
                                     <div className="flex flex-col gap-1">
@@ -330,21 +513,19 @@ export default function Messages({ webSocket, messages, setMessages, isAnyChatIn
                         )
                     )}
 
-                    {editingMessageIndex !== index && (
-                        <div className="flex gap-1">
-                            {message.is_user_message ? (
-                                <>
-                                    <EditButton message={message} index={index} />
-                                    <CopyButton message={message} index={index} />
-                                </>
-                            ) : (
-                                <>
-                                    <CopyButton message={message} index={index} />
-                                    <RegenerateButton index={index} />
-                                </>
-                            )}
-                        </div>
-                    )}
+                    <div className="flex gap-1">
+                        {message.is_from_user ? (
+                            <>
+                                <EditButton message={message} index={index} />
+                                <CopyButton message={message} index={index} />
+                            </>
+                        ) : (
+                            <>
+                                <CopyButton message={message} index={index} />
+                                <RegenerateButton index={index} />
+                            </>
+                        )}
+                    </div>
                 </div>
             ))}
         </div>

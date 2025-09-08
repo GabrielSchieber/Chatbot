@@ -1,48 +1,20 @@
-import type { Chat, Message, SearchEntry } from "../types"
+import type { Chat, Message, MessageFile, Model, SearchEntry } from "../types"
 import { apiFetch } from "./auth"
 
-export async function createChat(): Promise<Chat> {
-    const response = await apiFetch("/api/create-chat/", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" }
-    })
-    return await response.json()
+export async function deleteAccount() {
+    return (await apiFetch("/api/delete-account/", { credentials: "include" })).status
 }
 
-export async function getChats(incomplete: boolean = false): Promise<Chat[]> {
-    const method = incomplete ? "POST" : "GET"
-    const body = incomplete ? JSON.stringify({ incomplete: true }) : undefined
-    const response = await apiFetch("/api/get-chats/", {
-        method,
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body
-    })
-    const data = await response.json()
-    return data.chats
+export async function getChats(offset = 0, limit = 20): Promise<{ chats: Chat[], has_more: boolean }> {
+    return (await apiFetch(`/api/get-chats/?offset=${offset}&limit=${limit}`, { credentials: "include" })).json()
 }
 
-export async function getMessages(chatUUID: string): Promise<Message[] | undefined> {
-    const response = await apiFetch("/api/get-messages/", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_uuid: chatUUID })
-    })
-    const data = await response.json()
-    return data.messages
+export async function getPendingChats(): Promise<Chat[]> {
+    return (await (await apiFetch(`/api/get-chats/?pending=${true}`, { credentials: "include" })).json()).chats
 }
 
-export async function getMessage(chatUUID: string, message_index: number): Promise<string | undefined> {
-    const response = await apiFetch("/api/get-message/", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_uuid: chatUUID, message_index: message_index })
-    })
-    const data = await response.json()
-    return data.text
+export async function searchChats(search: string, offset = 0, limit = 20): Promise<{ chats: SearchEntry[], has_more: boolean }> {
+    return (await apiFetch(`/api/search-chats/?search=${search}&offset=${offset}&limit=${limit}`, { credentials: "include" })).json()
 }
 
 export async function renameChat(chatUUID: string, newTitle: string) {
@@ -69,26 +41,90 @@ export async function deleteChats() {
     return (await apiFetch("/api/delete-chats/", { credentials: "include" })).status
 }
 
-export async function deleteAccount() {
-    return (await apiFetch("/api/delete-account/", { credentials: "include" })).status
-}
-
-export async function searchChats(search: string): Promise<SearchEntry[] | undefined> {
-    const response = await apiFetch("/api/search-chats/", {
+export async function getMessages(chatUUID: string): Promise<Message[] | undefined> {
+    const response = await apiFetch("/api/get-messages/", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ search: search })
+        body: JSON.stringify({ chat_uuid: chatUUID })
     })
     const data = await response.json()
-    return data.chats
+    return data.messages
 }
 
-export async function uploadFiles(files: File[]): Promise<any> {
+export async function getMessage(chatUUID: string, message_index: number): Promise<string | undefined> {
+    const response = await apiFetch("/api/get-message/", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_uuid: chatUUID, message_index: message_index })
+    })
+    const data = await response.json()
+    return data.text
+}
+
+export async function newMessage(
+    chatUUID: string,
+    model: Model,
+    message: string,
+    files: File[],
+): Promise<[Promise<Chat>, number]> {
     const formData = new FormData()
+    formData.append("chat_uuid", chatUUID)
+    formData.append("model", model)
+    formData.append("message", message)
     files.forEach(file => formData.append("files", file))
 
-    const response = await apiFetch("/api/upload-files/", { method: "POST", credentials: "include", body: formData })
+    const response = await apiFetch("/api/new-message/", {
+        method: "POST",
+        credentials: "include",
+        body: formData
+    })
+    return [response.json(), response.status]
+}
 
-    return await response.json()
+export async function editMessage(
+    chatUUID: string,
+    model: Model,
+    message: string,
+    message_index: number,
+    added_files: File[],
+    removed_file: MessageFile[]
+): Promise<[Promise<Chat>, number]> {
+    const formData = new FormData()
+    formData.append("chat_uuid", chatUUID)
+    formData.append("model", model)
+    formData.append("message", message)
+    formData.append("message_index", message_index.toString())
+    added_files.forEach(added_file => formData.append("added_files", added_file))
+    removed_file.forEach(removed_file => formData.append("removed_file_ids", removed_file.id.toString()))
+
+    const response = await apiFetch("/api/edit-message/", {
+        method: "POST",
+        credentials: "include",
+        body: formData
+    })
+    return [response.json(), response.status]
+}
+
+export async function renegerateMessage(
+    chatUUID: string,
+    model: Model,
+    message_index: number
+): Promise<[Promise<Chat>, number]> {
+    const formData = new FormData()
+    formData.append("chat_uuid", chatUUID)
+    formData.append("model", model)
+    formData.append("message_index", message_index.toString())
+
+    const response = await apiFetch("/api/regenerate-message/", {
+        method: "POST",
+        credentials: "include",
+        body: formData
+    })
+    return [response.json(), response.status]
+}
+
+export async function stopPendingChats() {
+    await apiFetch("/api/stop-pending-chats/", { credentials: "include" })
 }

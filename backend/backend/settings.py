@@ -1,5 +1,4 @@
 import os
-import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -114,13 +113,3 @@ SIMPLE_JWT = {
     "AUTH_COOKIE_SECURE": False,
     "AUTH_COOKIE_SAMESITE": "Lax"
 }
-
-if sys.argv[:2] == ["manage.py", "test"]:
-    for arg in sys.argv:
-        if "Channels" in arg:
-            DATABASES["default"] = {
-                "ENGINE": "django.db.backends.sqlite3",
-                "NAME": BASE_DIR / "test_db.sqlite3",
-                "TEST": {"NAME": BASE_DIR / "test_db.sqlite3"}
-            }
-            break

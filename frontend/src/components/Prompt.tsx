@@ -1,91 +1,41 @@
-import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Cross2Icon, FileIcon, MixIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
-import { Slider } from "radix-ui"
-import React, { useEffect, useRef, useState, type ReactNode } from "react"
+import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Cross2Icon, FileIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
+import React, { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
-import { createChat, getChats, uploadFiles } from "../utils/api"
-import type { Model, Message, UIAttachment, Chat, Options } from "../types"
+import { newMessage, stopPendingChats } from "../utils/api.ts"
+import type { Chat, Message, Model, UIAttachment } from "../types"
 import { getFileSize, getFileType } from "../utils/file"
 
-export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, setIsAnyChatIncomplete, model, setModel, options, setOptions }: {
-    webSocket: React.RefObject<WebSocket | null>,
+export default function Prompt({ setMessages, pendingChat, setPendingChat, model, setModel }: {
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
-    isAnyChatIncomplete: boolean
-    setIsAnyChatIncomplete: React.Dispatch<React.SetStateAction<boolean>>
+    pendingChat: Chat | undefined
+    setPendingChat: React.Dispatch<React.SetStateAction<Chat | undefined>>
     model: Model
     setModel: React.Dispatch<React.SetStateAction<Model>>
-    options: Options
-    setOptions: React.Dispatch<React.SetStateAction<Options>>
 }) {
     const { chatUUID } = useParams()
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-    const [prompt, setPrompt] = useState("")
+    const [prompt, setPrompt] = useState<string>("")
     const [currentFiles, setCurrentFiles] = useState<File[]>([])
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
-    const [inProgressChat, setInProgressChat] = useState<Chat | null>(null)
     const [isRemovingFiles, setIsRemovingFiles] = useState(false)
+    const [messageNotificationID, setMessageNotificationID] = useState(-1)
 
     function GeneratingMessageNotification({ title, uuid, }: { title: string, uuid: string }) {
         return (
-            <div className="px-4 py-2 rounded-xl bg-gray-700 light:bg-gray-300">
-                A message is already being generated in <a className="underline" href={`/chat/${uuid}`}>{title}</a>
+            <div className="flex items-center justify-between px-4 py-2 rounded-xl bg-gray-700 light:bg-gray-300 z-10">
+                <div>
+                    A message is already being generated in <a className="underline" href={`/chat/${uuid}`}>{title}</a>
+                </div>
+                <button className="p-1 rounded-3xl cursor-pointer hover:bg-gray-800" onClick={_ => setMessageNotificationID(-1)}>
+                    <Cross2Icon />
+                </button>
             </div>
         )
     }
 
     function AddDropdown() {
-        type OptionKey = "max_tokens" | "temperature" | "top_p" | "seed"
-
-        function OptionItem(
-            label: ReactNode,
-            optionKey: OptionKey,
-            slider?: { min: number, max: number, step: number }
-        ) {
-            const optionsClassNames = "flex items-center justify-between text-sm gap-1 px-1 rounded bg-gray-700 light:bg-gray-300"
-            const optionsPClassNames = "flex-1 truncate"
-            const optionsInputClassNames = `
-                flex-1 px-1.5 m-1 outline-none rounded bg-gray-600 light:bg-gray-400/30
-                hover:bg-gray-500 light:hover:bg-gray-400/70 focus:bg-gray-500 light:focus:bg-gray-400/70
-            `
-
-            return (
-                <div className={optionsClassNames}>
-                    <p className={optionsPClassNames}>{label}</p>
-                    <div className="flex flex-col gap-1">
-                        <input
-                            className={optionsInputClassNames}
-                            value={optionValue?.key === optionKey ? optionValue.value : options[optionKey] ?? ""}
-                            onChange={e => setOptionValue({ key: optionKey, value: e.currentTarget.value })}
-                            onBlur={_ => setOptionValue(null)}
-                            onKeyDown={e => e.key === "Enter" && setOptionValue(null)}
-                        />
-                        {slider && (
-                            <Slider.Root
-                                className="relative flex pb-2 items-center touch-none select-none"
-                                value={[options[optionKey] as number]}
-                                min={slider.min}
-                                max={slider.max}
-                                step={slider.step}
-                                onValueChange={([v]) => setOptionValue({ key: optionKey, value: v.toString() })}
-                                onBlur={_ => setOptionValue(null)}
-                            >
-                                <Slider.Track className="relative h-[4px] grow rounded-full">
-                                    <Slider.Range className="absolute h-full rounded-full bg-gray-300 light:bg-gray-700" />
-                                </Slider.Track>
-                                <Slider.Thumb
-                                    className="
-                                        block size-3 rounded-[10px] bg-gray-200 light:bg-gray-800 focus:shadow-[0_0_0_5px]
-                                        focus:shadow-blackA5 focus:outline-none cursor-pointer
-                                    "
-                                />
-                            </Slider.Root>
-                        )}
-                    </div>
-                </div>
-            )
-        }
-
         function ModelItem(modelName: "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondream") {
             return (
                 <button
@@ -96,47 +46,16 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                     onClick={_ => setModel(modelName)}
                 >
                     {modelName}
-                    {modelName == model && <CheckIcon className="size-5" />}
+                    {modelName === model && <CheckIcon className="size-5" />}
                 </button>
             )
         }
 
-        function handleSetOptions(optionKey: OptionKey, value: string) {
-            if (optionKey === "max_tokens" || optionKey === "seed") {
-                const intValue = parseInt(value)
-                if (isFinite(intValue)) {
-                    setOptions(previous => {
-                        const previousOptions = { ...previous }
-                        previousOptions[optionKey] = optionKey === "max_tokens" ? clamp(intValue, 32, 4096) : intValue
-                        return previousOptions
-                    })
-                }
-            } else {
-                const floatValue = parseFloat(value)
-                if (isFinite(floatValue)) {
-                    setOptions(previous => {
-                        const previousOptions = { ...previous }
-                        previousOptions[optionKey] = clamp(floatValue, 0.1, 2)
-                        return previousOptions
-                    })
-                }
-            }
-        }
-
         const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-        const [isDropdownOptionsOpen, setIsDropdownOptionsOpen] = useState(false)
         const [isDropdownModelOpen, setIsDropdownModelOpen] = useState(false)
-
-        const [optionValue, setOptionValue] = useState<{ key: OptionKey, value: string } | null>(null)
 
         const buttonClassNames = "flex w-full px-1 gap-2 justify-between items-center cursor-pointer rounded hover:bg-gray-700 light:hover:bg-gray-300"
         const dropdownClassNames = "absolute flex flex-col gap-1 p-2 rounded-xl bg-gray-800 light:bg-gray-200"
-
-        useEffect(() => {
-            if (optionValue !== null) {
-                handleSetOptions(optionValue.key, optionValue.value)
-            }
-        }, [optionValue])
 
         return (
             <div className="relative flex flex-col self-end" onClick={e => e.stopPropagation()}>
@@ -153,28 +72,7 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                         <div className="absolute flex flex-col gap-1 p-2 self-center items-center cursor-auto bottom-12 left-0 rounded-xl bg-gray-800 light:bg-gray-200 z-2">
                             <button
                                 className={buttonClassNames}
-                                onClick={_ => {
-                                    setIsDropdownOptionsOpen(!isDropdownOptionsOpen)
-                                    setIsDropdownModelOpen(false)
-                                }}
-                            >
-                                <MixIcon /> Options {isDropdownOptionsOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
-                            </button>
-                            {isDropdownOptionsOpen && (
-                                <div className={dropdownClassNames + " bottom-15 left-32"}>
-                                    {OptionItem("🔣 Max. Tokens", "max_tokens", { min: 32, max: 4096, step: 32 })}
-                                    {OptionItem("🌡 Temperature", "temperature", { min: 0.1, max: 2, step: 0.1 })}
-                                    {OptionItem("⬆ Top P", "top_p", { min: 0.1, max: 2, step: 0.1 })}
-                                    {OptionItem("🌱 Seed", "seed")}
-                                </div>
-                            )}
-
-                            <button
-                                className={buttonClassNames}
-                                onClick={_ => {
-                                    setIsDropdownModelOpen(!isDropdownModelOpen)
-                                    setIsDropdownOptionsOpen(false)
-                                }}
+                                onClick={_ => setIsDropdownModelOpen(!isDropdownModelOpen)}
                             >
                                 <BoxModelIcon /> Model {isDropdownModelOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
                             </button>
@@ -205,15 +103,15 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     }
 
     function Attachments() {
-        function removeFile(id: string) {
+        function removeFile(id: number) {
             setVisibleFiles(previous =>
-                previous.map(f => f.id === id ? { ...f, isRemoving: true } : f)
+                previous.map(f => f.message_file.id === id ? { ...f, isRemoving: true } : f)
             )
 
             setTimeout(() => {
-                setVisibleFiles(previous => previous.filter(f => f.id !== id))
+                setVisibleFiles(previous => previous.filter(f => f.message_file.id !== id))
                 setCurrentFiles(previous =>
-                    previous.filter(f => !visibleFiles.some(v => v.id === id && v.file === f))
+                    previous.filter(f => !visibleFiles.some(v => v.message_file.id === id && v.message_file.name === f.name))
                 )
             }, 300)
         }
@@ -240,16 +138,16 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
             >
                 {visibleFiles.map(file => (
                     <div
-                        key={file.id}
+                        key={file.message_file.name}
                         className={`
                             relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl
                             transition-all duration-300 ${file.isRemoving ? "opacity-0 translate-x-10" : "opacity-100"}
                         `}
                     >
-                        {getFileType(file.file.name) === "Image" ? (
+                        {getFileType(file.message_file.name) === "Image" ? (
                             <img
-                                src={URL.createObjectURL(file.file)}
-                                alt={file.file.name}
+                                src={URL.createObjectURL(currentFiles.filter(f => f.name === file.message_file.name)[0])}
+                                alt={file.message_file.name}
                                 className="size-14 object-cover rounded-lg"
                             />
                         ) : (
@@ -257,14 +155,14 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                         )}
                         <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
                             <p className="px-2 py-1 rounded-lg bg-gray-800">
-                                Type: {getFileType(file.file.name)}<br />
-                                Name: {file.file.name}<br />
-                                Size: {getFileSize(file.file.size)}
+                                Type: {getFileType(file.message_file.name)}<br />
+                                Name: {file.message_file.name}<br />
+                                Size: {getFileSize(file.message_file.content_size)}
                             </p>
                         </div>
                         <button
                             className="absolute top-0 right-0 translate-x-2 -translate-y-2 cursor-pointer text-red-400 hover:text-red-500"
-                            onClick={_ => removeFile(file.id)}
+                            onClick={_ => removeFile(file.message_file.id)}
                         >
                             <Cross2Icon className="size-4" />
                         </button>
@@ -289,71 +187,53 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
     }
 
     function sendMessage() {
-        getChats(true).then(async chats => {
-            if (chats.length === 0) {
-                if (!chatUUID) {
-                    createChat().then(chat => {
-                        if (webSocket.current) {
-                            if (currentFiles.length > 0) {
-                                uploadFiles(currentFiles).then(files => {
-                                    if (!files.error && webSocket.current) {
-                                        webSocket.current.send(JSON.stringify({ model: model, message: prompt, files: files, chat_uuid: chat.uuid, options: options }))
-                                        setPrompt("")
-                                        setCurrentFiles([])
-                                        setVisibleFiles([])
-                                        setIsAnyChatIncomplete(true)
-                                        location.href = `/chat/${chat.uuid}`
-                                    }
-                                })
-                            } else {
-                                webSocket.current.send(JSON.stringify({ model: model, message: prompt, chat_uuid: chat.uuid, options: options }))
-                                location.href = `/chat/${chat.uuid}`
-                            }
-                        }
-                    })
-                } else if (webSocket.current) {
-                    setMessages(previous => {
-                        const previousMessages = [...previous]
-                        previousMessages.push({ "text": prompt, "files": [], "is_user_message": true })
-                        previousMessages.push({ "text": "", "files": [], "is_user_message": false })
-                        return previousMessages
-                    })
-
-                    if (currentFiles.length > 0) {
-                        uploadFiles(currentFiles).then(files => {
-                            if (!files.error && webSocket.current) {
-                                webSocket.current.send(JSON.stringify({ model: model, message: prompt, files: files, options: options }))
-                                setPrompt("")
-                                setCurrentFiles([])
-                                setVisibleFiles([])
-                                setIsAnyChatIncomplete(true)
-                            }
+        if (!chatUUID) {
+            newMessage("", model, prompt, currentFiles)
+                .then(([chat, status]) => {
+                    if (status === 200) {
+                        chat.then(chat => {
+                            location.href = `chat/${chat.uuid}`
                         })
                     } else {
-                        webSocket.current.send(JSON.stringify({ model: model, message: prompt, options: options }))
-                        setPrompt("")
-                        setIsAnyChatIncomplete(true)
+                        if (messageNotificationID < 0) {
+                            setMessageNotificationID(setTimeout(() => setMessageNotificationID(-1), 2000))
+                        }
                     }
-                }
-            } else {
-                setInProgressChat(chats[0])
-                setTimeout(() => setInProgressChat(null), 2000)
-            }
-        })
+                })
+        } else {
+            newMessage(chatUUID, model, prompt, currentFiles)
+                .then(([chat, status]) => {
+                    if (status === 200) {
+                        setPrompt("")
+                        setCurrentFiles([])
+
+                        setMessages(previous => {
+                            const previousMessages = [...previous]
+                            const files = currentFiles.map(f => { return { id: Date.now(), name: f.name, content_size: f.size, content_type: f.type } })
+                            previousMessages.push({ text: prompt, files: files, is_from_user: true, model: undefined })
+                            previousMessages.push({ text: "", files: [], is_from_user: false, model: model })
+                            return previousMessages
+                        })
+
+                        chat.then(chat => {
+                            setPendingChat(chat)
+                        })
+                    } else {
+                        clearTimeout(messageNotificationID)
+                        setMessageNotificationID(setTimeout(() => setMessageNotificationID(-1), 2000))
+                    }
+                })
+        }
     }
 
     function sendMessageWithEvent(event: React.KeyboardEvent) {
-        if (webSocket.current && event.key === "Enter" && !event.shiftKey && (prompt.trim() || currentFiles.length > 0)) {
+        if (event.key === "Enter" && !event.shiftKey && (prompt.trim() || currentFiles.length > 0)) {
             event.preventDefault()
             sendMessage()
         }
     }
 
     function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-        function getID() {
-            return Math.random().toString(36).slice(2) + Date.now().toString(36)
-        }
-
         if (!event.target.files) return
 
         if (event.target.files.length + currentFiles.length > 10) {
@@ -384,38 +264,27 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
 
         setVisibleFiles(previous => [
             ...previous,
-            ...uniqueNew.map(f => ({ id: getID(), file: f, isRemoving: false }))
+            ...uniqueNew.map(f => {
+                return {
+                    message_file: {
+                        id: Date.now(),
+                        name: f.name,
+                        content_size: f.size,
+                        content_type: f.type
+                    },
+                    isRemoving: false
+                }
+            })
         ])
 
         event.target.value = ""
     }
 
-    function handleStop() {
-        getChats(true).then(chats => {
-            if (chats.length > 0 && webSocket.current) {
-                webSocket.current.send(JSON.stringify({ action: "stop_message" }))
-                setIsAnyChatIncomplete(false)
-            }
-        })
-    }
-
-    function clamp(number: number, min: number, max: number) {
-        return Math.max(Math.min(number, max), min)
-    }
-
-    useEffect(() => {
-        localStorage.setItem("model", model)
-    }, [model])
-
-    useEffect(() => {
-        localStorage.setItem("options", JSON.stringify(options))
-    }, [options])
-
-    useEffect(() => updateTextAreaHeight(), [visibleFiles.length])
+    useEffect(() => updateTextAreaHeight(), [prompt, visibleFiles])
 
     return (
         <div className="absolute bottom-0 flex flex-col w-[50vw] pb-4 self-center">
-            {inProgressChat && <GeneratingMessageNotification title={inProgressChat.title} uuid={inProgressChat.uuid} />}
+            {messageNotificationID >= 0 && pendingChat && <GeneratingMessageNotification title={pendingChat.title} uuid={pendingChat.uuid} />}
 
             <div
                 className="
@@ -449,17 +318,14 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                             rows={1}
                             tabIndex={1}
                             ref={textAreaRef}
-                            onChange={e => {
-                                setPrompt(e.currentTarget.value)
-                                updateTextAreaHeight()
-                            }}
+                            onChange={e => setPrompt(e.currentTarget.value)}
                             onKeyDown={sendMessageWithEvent}
                             autoFocus
                         />
                     </div>
                 </div>
 
-                {(prompt.trim() || currentFiles.length > 0) && !isAnyChatIncomplete &&
+                {(prompt.trim() || currentFiles.length > 0) && pendingChat === undefined &&
                     <button
                         className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer"
                         tabIndex={3}
@@ -469,11 +335,14 @@ export default function Prompt({ webSocket, setMessages, isAnyChatIncomplete, se
                     </button>
                 }
 
-                {isAnyChatIncomplete &&
+                {pendingChat !== undefined &&
                     <button
                         className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer"
                         tabIndex={3}
-                        onClick={handleStop}
+                        onClick={_ => {
+                            stopPendingChats()
+                            setPendingChat(undefined)
+                        }}
                     >
                         <PauseIcon className="size-6 text-white" />
                     </button>

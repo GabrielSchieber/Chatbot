@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import type { Theme, User } from "../types"
 
 export async function login(email: string, password: string) {
     const response = await fetch("/api/login/", {
@@ -34,26 +34,22 @@ export async function signup(email: string, password: string) {
     }
 }
 
-export function useAuth() {
-    const [user, setUser] = useState<null | { id: number, email: string }>(null)
-    const [loading, setLoading] = useState(true)
-
-    useEffect(() => {
-        getCurrentUser().then(user => {
-            setUser(user)
-            setLoading(false)
-        })
-    }, [])
-
-    return { user, loading, isLoggedIn: !!user }
-}
-
-async function getCurrentUser(): Promise<{ id: number; email: string } | null> {
+export async function getCurrentUser(): Promise<User | null> {
     const response = await apiFetch("/api/me/", { credentials: "include" })
     if (!response.ok) {
         return null
     }
     return await response.json()
+}
+
+export async function setCurrentUser(theme?: Theme, hasSidebarOpen?: boolean): Promise<number> {
+    const response = await apiFetch("/api/me/", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ theme, has_sidebar_open: hasSidebarOpen })
+    })
+    return response.status
 }
 
 export async function apiFetch(input: RequestInfo, init?: RequestInit): Promise<Response> {

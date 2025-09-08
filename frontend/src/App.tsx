@@ -3,11 +3,13 @@ import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router"
 import "./App.css"
 import AuthPage from "./pages/AuthPage"
 import ChatPage from "./pages/ChatPage"
-import { useAuth } from "./utils/auth"
+import { useAuth } from "./context/AuthProvider"
+import { applyTheme } from "./utils/theme"
 
 export default function App() {
-  const { loading, isLoggedIn } = useAuth()
+  const { user, loading, isLoggedIn } = useAuth()
   if (loading) return <></>
+  if (user) applyTheme(user?.theme)
 
   return (
     <Router>
