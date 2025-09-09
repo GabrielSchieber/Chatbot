@@ -18,7 +18,7 @@ export default defineConfig({
     webServer: [
         {
             name: "Backend",
-            command: "cd ../backend && python manage.py flush --no-input && python manage.py runserver",
+            command: "cd ../backend && python manage.py runserver",
             port: 8000,
             env: {
                 "DJANGO_TEST": "True",
