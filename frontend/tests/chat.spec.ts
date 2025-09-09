@@ -3,6 +3,13 @@ import { getRandomEmail } from "./utils"
 
 const password = "testpassword"
 
+const messages = [
+    {
+        "User": "Hello!",
+        "Bot": "Hello! What's up? How can I help you today?"
+    }
+]
+
 async function signupAndLogin(page: Page) {
     await page.goto("/")
     await page.waitForURL("/login")
@@ -27,7 +34,7 @@ async function sendMessage(page: Page, message: string, expectedResponse: string
 
 test("user can chat with bot", async ({ page }) => {
     await signupAndLogin(page)
-    await sendMessage(page, "Hello!", "Hello! What's up? How can I help you today?")
+    await sendMessage(page, messages[0]["User"], messages[0]["Bot"])
     await expect(page.getByRole("link", { name: "Chat 1" })).toBeVisible()
 })
 
@@ -49,10 +56,20 @@ test("user can copy their own message", async ({ page }) => {
     await page.context().grantPermissions(["clipboard-read", "clipboard-write"])
 
     await signupAndLogin(page)
-    await sendMessage(page, "Hello!", "Hello! What's up? How can I help you today?")
+    await sendMessage(page, messages[0]["User"], messages[0]["Bot"])
 
     await page.locator(".flex.gap-1 > button:nth-child(2)").first().click()
-    await expectClipboard(page, "Hello!")
+    await expectClipboard(page, messages[0]["User"])
+})
+
+test("user can copy bot messages", async ({ page }) => {
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"])
+
+    await signupAndLogin(page)
+    await sendMessage(page, messages[0]["User"], messages[0]["Bot"])
+
+    await page.locator('.flex.flex-col.gap-0\\.5.w-\\[50vw\\].justify-self-center.items-start > .flex > button').first().click();
+    await expectClipboard(page, messages[0]["Bot"])
 })
 
 async function expectClipboard(page: Page, expected: string) {
