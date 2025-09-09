@@ -16,6 +16,29 @@ test("user can sign up", async ({ page }) => {
     await page.waitForURL("/")
 })
 
+test("user cannot sign up with existing email", async ({ page }) => {
+    const email = getRandomEmail()
+
+    const response = await apiFetch("/api/signup/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    })
+
+    expect(response.status).toBe(201)
+
+    await page.goto("/")
+    await page.waitForURL("/login")
+
+    await page.click("text=Sign up!")
+
+    await page.fill("input[type='email']", email)
+    await page.fill("input[type='password']", password)
+
+    await page.click("button")
+    await expect(page.getByRole("paragraph"), { message: "Email is already registered. Please choose another one." }).toBeVisible()
+})
+
 test("user can login", async ({ page }) => {
     const email = getRandomEmail()
 
