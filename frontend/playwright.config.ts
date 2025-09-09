@@ -20,9 +20,6 @@ export default defineConfig({
             name: "Backend",
             command: "cd ../backend && python manage.py runserver",
             port: 8000,
-            env: {
-                "DJANGO_TEST": "True",
-            },
             reuseExistingServer: true
         },
         {
