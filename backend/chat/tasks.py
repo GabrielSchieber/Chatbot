@@ -55,7 +55,7 @@ async def sample_model(chat: Chat, user_message: Message, bot_message: Message, 
     message_index = len(messages) - 1
 
     options = {"num_predict": 256}
-    if "playwright" in str(os.environ):
+    if os.environ.get("DJANGO_TEST") == "True":
         options["seed"] = 0
 
     try:
