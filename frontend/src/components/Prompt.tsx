@@ -1,16 +1,18 @@
-import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Cross2Icon, FileIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
-import React, { useEffect, useRef, useState } from "react"
+import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Cross2Icon, FileIcon, GearIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
 import { useParams } from "react-router"
+import React, { useEffect, useRef, useState } from "react"
 import { newMessage, stopPendingChats } from "../utils/api.ts"
-import type { Chat, Message, Model, UIAttachment } from "../types"
 import { getFileSize, getFileType } from "../utils/file"
+import type { Chat, Message, Model, Options, UIAttachment } from "../types"
 
-export default function Prompt({ setMessages, pendingChat, setPendingChat, model, setModel }: {
+export default function Prompt({ setMessages, pendingChat, setPendingChat, model, setModel, options, setOptions }: {
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
     pendingChat: Chat | undefined
     setPendingChat: React.Dispatch<React.SetStateAction<Chat | undefined>>
     model: Model
     setModel: React.Dispatch<React.SetStateAction<Model>>
+    options: Options
+    setOptions: React.Dispatch<React.SetStateAction<Options>>
 }) {
     const { chatUUID } = useParams()
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -36,6 +38,80 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
     }
 
     function AddDropdown() {
+        type OptionKey = "num_predict" | "temperature" | "top_p" | "seed"
+
+        function OptionItem(optionKey: OptionKey) {
+            function clamp(value: number, minimum: number, maximum: number) {
+                return Math.max(Math.min(value, maximum), minimum)
+            }
+
+            function getOptionName() {
+                switch (optionKey) {
+                    case "num_predict": return "🔣 Max. Tokens"
+                    case "temperature": return "🌡 Temperature"
+                    case "top_p": return "⬆ Top P"
+                    case "seed": return "🌱 Seed"
+                }
+            }
+
+            function getOptionValue() {
+                if (optionKey === currentOption?.key) {
+                    return currentOption.value
+                }
+
+                switch (optionKey) {
+                    case "num_predict":
+                        return options[optionKey] || 256
+                    case "temperature":
+                        return options[optionKey] || 0.2
+                    case "top_p":
+                        return options[optionKey] || 0.9
+                    case "seed":
+                        if (options[optionKey] === undefined || options[optionKey] === "Random") {
+                            return "Random"
+                        } else {
+                            return options[optionKey]
+                        }
+                }
+            }
+
+            function handleSetOptions(value: string) {
+                setCurrentOption(null)
+                setOptions(previous => {
+                    const newOptions = { ...previous }
+                    if (optionKey === "num_predict" || optionKey === "seed") {
+                        if (optionKey === "seed" && value === "Random") {
+                            newOptions[optionKey] = value
+                        } else {
+                            const parsedValue = parseInt(value)
+                            if (isFinite(parsedValue)) {
+                                newOptions[optionKey] = optionKey === "num_predict" ? clamp(parsedValue, 32, 4096) : parsedValue
+                            }
+                        }
+                    } else {
+                        const parsedValue = parseInt(value)
+                        if (isFinite(parsedValue)) {
+                            newOptions[optionKey] = clamp(parseFloat(value), 0.1, 2)
+                        }
+                    }
+                    return newOptions
+                })
+            }
+
+            return (
+                <div className="flex gap-3 px-2 py-1 items-center rounded bg-gray-700">
+                    <p className="flex-1 text-center truncate">{getOptionName()}</p>
+                    <input
+                        className="px-2 py-1 rounded outline-none bg-gray-600 light:bg-gray-300 hover:bg-gray-500 select:bg-gray-500"
+                        value={getOptionValue()}
+                        onChange={e => setCurrentOption({ key: optionKey, value: e.target.value })}
+                        onBlur={_ => currentOption && handleSetOptions(currentOption.value)}
+                        onKeyDown={e => e.key === "Enter" && currentOption && handleSetOptions(currentOption.value)}
+                    />
+                </div>
+            )
+        }
+
         function ModelItem(modelName: "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondream") {
             return (
                 <button
@@ -52,7 +128,9 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
         }
 
         const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+        const [isDropdownOptionsOpen, setIsDropdownOptionsOpen] = useState(false)
         const [isDropdownModelOpen, setIsDropdownModelOpen] = useState(false)
+        const [currentOption, setCurrentOption] = useState<{ key: OptionKey, value: string } | null>(null)
 
         const buttonClassNames = "flex w-full px-1 gap-2 justify-between items-center cursor-pointer rounded hover:bg-gray-700 light:hover:bg-gray-300"
         const dropdownClassNames = "absolute flex flex-col gap-1 p-2 rounded-xl bg-gray-800 light:bg-gray-200"
@@ -72,7 +150,29 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                         <div className="absolute flex flex-col gap-1 p-2 self-center items-center cursor-auto bottom-12 left-0 rounded-xl bg-gray-800 light:bg-gray-200 z-2">
                             <button
                                 className={buttonClassNames}
-                                onClick={_ => setIsDropdownModelOpen(!isDropdownModelOpen)}
+                                onClick={_ => {
+                                    setIsDropdownOptionsOpen(!isDropdownOptionsOpen)
+                                    setIsDropdownModelOpen(false)
+                                }}
+                            >
+                                <GearIcon /> Options {isDropdownOptionsOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
+                            </button>
+
+                            {isDropdownOptionsOpen && (
+                                <div className={dropdownClassNames + " bottom-15 left-32"}>
+                                    {OptionItem("num_predict")}
+                                    {OptionItem("temperature")}
+                                    {OptionItem("top_p")}
+                                    {OptionItem("seed")}
+                                </div>
+                            )}
+
+                            <button
+                                className={buttonClassNames}
+                                onClick={_ => {
+                                    setIsDropdownModelOpen(!isDropdownModelOpen)
+                                    setIsDropdownOptionsOpen(false)
+                                }}
                             >
                                 <BoxModelIcon /> Model {isDropdownModelOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
                             </button>
@@ -188,7 +288,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
 
     function sendMessage() {
         if (!chatUUID) {
-            newMessage("", model, prompt, currentFiles)
+            newMessage("", model, options, prompt, currentFiles)
                 .then(([chat, status]) => {
                     if (status === 200) {
                         chat.then(chat => {
@@ -196,12 +296,12 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                         })
                     } else {
                         if (messageNotificationID < 0) {
-                            setMessageNotificationID(setTimeout(() => setMessageNotificationID(-1), 2000))
+                            setMessageNotificationID(window.setTimeout(() => setMessageNotificationID(-1), 2000))
                         }
                     }
                 })
         } else {
-            newMessage(chatUUID, model, prompt, currentFiles)
+            newMessage(chatUUID, model, options, prompt, currentFiles)
                 .then(([chat, status]) => {
                     if (status === 200) {
                         setPrompt("")
@@ -220,7 +320,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                         })
                     } else {
                         clearTimeout(messageNotificationID)
-                        setMessageNotificationID(setTimeout(() => setMessageNotificationID(-1), 2000))
+                        setMessageNotificationID(window.setTimeout(() => setMessageNotificationID(-1), 2000))
                     }
                 })
         }

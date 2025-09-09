@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import authenticate
 from django.db.models import Prefetch, Q
 from django.shortcuts import render
@@ -281,6 +283,10 @@ class NewMessage(APIView):
         if type(model) != str:
             return Response({"error": "Invalid data type for model"}, 400)
 
+        options = json.loads(request.data.get("options", "{}"))
+        if type(model) != dict and type(model) == set:
+            return Response({"error": "Invalid data type for options"}, 400)
+
         message = request.data.get("message", "")
         if type(message) != str:
             return Response({"error": "Invalid data type for message"}, 400)
@@ -302,7 +308,7 @@ class NewMessage(APIView):
             )
         bot_message = Message.objects.create(chat = chat, text = "", is_from_user = False)
 
-        generate_message(chat, user_message, bot_message, model)
+        generate_message(chat, user_message, bot_message, model, options)
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, 200)
@@ -331,6 +337,10 @@ class EditMessage(APIView):
         model = request.data.get("model", "SmolLM2-135M")
         if type(model) != str:
             return Response({"error": "Invalid data type for model"}, 400)
+
+        options = json.loads(request.data.get("options", "{}"))
+        if type(model) != dict and type(model) == set:
+            return Response({"error": "Invalid data type for options"}, 400)
 
         message = request.data.get("message", "")
         if type(message) != str:
@@ -381,7 +391,7 @@ class EditMessage(APIView):
             [MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type) for file in added_files]
         )
 
-        generate_message(chat, user_message, bot_message, model)
+        generate_message(chat, user_message, bot_message, model, options)
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, 200)
@@ -411,6 +421,10 @@ class RegenerateMessage(APIView):
         if type(model) != str:
             return Response({"error": "Invalid data type for model"}, 400)
 
+        options = json.loads(request.data.get("options", "{}"))
+        if type(model) != dict and type(model) == set:
+            return Response({"error": "Invalid data type for options"}, 400)
+
         message = request.data.get("message", "")
         if type(message) != str:
             return Response({"error": "Invalid data type for message"}, 400)
@@ -427,7 +441,7 @@ class RegenerateMessage(APIView):
         bot_message.text = ""
         bot_message.save()
 
-        generate_message(chat, user_message, bot_message, model)
+        generate_message(chat, user_message, bot_message, model, options)
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, 200)

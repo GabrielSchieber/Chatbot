@@ -1,4 +1,4 @@
-import type { Chat, Message, MessageFile, Model, SearchEntry } from "../types"
+import type { Chat, Message, MessageFile, Model, Options, SearchEntry } from "../types"
 import { apiFetch } from "./auth"
 
 export async function deleteAccount() {
@@ -66,12 +66,14 @@ export async function getMessage(chatUUID: string, message_index: number): Promi
 export async function newMessage(
     chatUUID: string,
     model: Model,
+    options: Options,
     message: string,
     files: File[],
 ): Promise<[Promise<Chat>, number]> {
     const formData = new FormData()
     formData.append("chat_uuid", chatUUID)
     formData.append("model", model)
+    formData.append("options", JSON.stringify(options))
     formData.append("message", message)
     files.forEach(file => formData.append("files", file))
 
@@ -86,6 +88,7 @@ export async function newMessage(
 export async function editMessage(
     chatUUID: string,
     model: Model,
+    options: Options,
     message: string,
     message_index: number,
     added_files: File[],
@@ -94,6 +97,7 @@ export async function editMessage(
     const formData = new FormData()
     formData.append("chat_uuid", chatUUID)
     formData.append("model", model)
+    formData.append("options", JSON.stringify(options))
     formData.append("message", message)
     formData.append("message_index", message_index.toString())
     added_files.forEach(added_file => formData.append("added_files", added_file))
@@ -107,14 +111,16 @@ export async function editMessage(
     return [response.json(), response.status]
 }
 
-export async function renegerateMessage(
+export async function regenerateMessage(
     chatUUID: string,
     model: Model,
+    options: Options,
     message_index: number
 ): Promise<[Promise<Chat>, number]> {
     const formData = new FormData()
     formData.append("chat_uuid", chatUUID)
     formData.append("model", model)
+    formData.append("options", JSON.stringify(options))
     formData.append("message_index", message_index.toString())
 
     const response = await apiFetch("/api/regenerate-message/", {

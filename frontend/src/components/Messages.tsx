@@ -6,17 +6,18 @@ import { useParams } from "react-router"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 
-import { getMessage, getMessages, editMessage as editMessageAPI, renegerateMessage as regenerateMessageAPI, getPendingChats } from "../utils/api"
+import { getMessage, getMessages, editMessage as editMessageAPI, regenerateMessage as regenerateMessageAPI, getPendingChats } from "../utils/api"
 import { getFileSize, getFileType } from "../utils/file"
-import type { Chat, Message, MessageFile, Model, UIAttachment } from "../types"
+import type { Chat, Message, MessageFile, Model, Options, UIAttachment } from "../types"
 
-export default function Messages({ messages, setMessages, pendingChat, setPendingChat, model, setModel }: {
+export default function Messages({ messages, setMessages, pendingChat, setPendingChat, model, setModel, options }: {
     messages: Message[]
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
     pendingChat: Chat | undefined
     setPendingChat: React.Dispatch<React.SetStateAction<Chat | undefined>>
     model: Model
     setModel: React.Dispatch<React.SetStateAction<Model>>
+    options: Options
 }) {
     const { chatUUID } = useParams()
 
@@ -254,7 +255,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
 
     function editMessage(index: number) {
         if (chatUUID) {
-            editMessageAPI(chatUUID, model, editingMessageText, index, addedFiles, removedFiles).then(([chat, status]) => {
+            editMessageAPI(chatUUID, model, options, editingMessageText, index, addedFiles, removedFiles).then(([chat, status]) => {
                 if (status === 200) {
                     let shouldSetMessages = true
                     setMessages(previous => {
@@ -298,7 +299,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
 
     function regenerateMessage(index: number) {
         if (chatUUID) {
-            regenerateMessageAPI(chatUUID, model, index).then(([chat, status]) => {
+            regenerateMessageAPI(chatUUID, model, options, index).then(([chat, status]) => {
                 if (status === 200) {
                     setMessages(previous => {
                         const messages = [...previous]

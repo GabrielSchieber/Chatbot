@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 import threading
 from typing import Literal, get_args
 
@@ -22,8 +23,8 @@ threading.Thread(target = start_background_loop, args = [global_loop], daemon = 
 
 global_futures: dict[str, asyncio.Future[None]] = {}
 
-def generate_message(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName):
-    future = asyncio.run_coroutine_threadsafe(sample_model(chat, user_message, bot_message, model_name), global_loop)
+def generate_message(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName, options: dict[str, int | float]):
+    future = asyncio.run_coroutine_threadsafe(sample_model(chat, user_message, bot_message, model_name, options), global_loop)
     future.add_done_callback(lambda f: task_done_callback(f, str(chat.uuid)))
     global_futures[str(chat.uuid)] = future
 
@@ -33,7 +34,7 @@ def task_done_callback(future: asyncio.Future[None], chat_uuid: str):
     exception = future.exception()
     return exception and logger.exception("Task failed", exc_info = future.exception())
 
-async def sample_model(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName):
+async def sample_model(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName, options: dict[str, int | float]):
     if model_name not in get_args(ModelName):
         raise ValueError(f"Invalid model name: \"{model_name}\"")
 
@@ -54,7 +55,7 @@ async def sample_model(chat: Chat, user_message: Message, bot_message: Message, 
     message_index = len(messages) - 1
 
     try:
-        async for part in await ollama.AsyncClient().chat(model_name, messages, stream = True, options = {"num_predict": 256}):
+        async for part in await ollama.AsyncClient().chat(model_name, messages, stream = True, options = parse_options(options)):
             token = part["message"]["content"]
             bot_message.text += token
             await database_sync_to_async(bot_message.save)()
@@ -136,3 +137,14 @@ def is_any_user_chat_pending(user: User) -> bool:
     reset_stopped_pending_chats(user)
     pending_chats = Chat.objects.filter(user = user, is_pending = True)
     return True if pending_chats.count() > 0 else False
+
+def parse_options(options: dict[str, int | float]) -> dict[str, int | float]:
+    def clamp(value: int | float, minimum: int | float, maximum: int | float) -> int | float:
+        return max(min(value, maximum), minimum)
+
+    return  {
+        "num_predict": clamp(int(options.get("num_predict", 256)), 32, 4096),
+        "temperature": clamp(float(options.get("temperature", 0.2)), 0.1, 2.0),
+        "top_p": clamp(float(options.get("top_p", 0.9)), 0.1, 2.0),
+        "seed": int(options.get("seed", random.randint(-(10 ** 10), 10 ** 10)))
+    }

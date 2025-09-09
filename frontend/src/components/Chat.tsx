@@ -1,11 +1,12 @@
 import Messages from "./Messages"
 import Prompt from "./Prompt"
-import type { Chat as ChatType, Message, Model } from "../types"
+import type { Chat as ChatType, Message, Model, Options } from "../types"
 import { useState } from "react"
 
 export default function Chat() {
     const [messages, setMessages] = useState<Message[]>([])
     const [model, setModel] = useState<Model>("SmolLM2-135M")
+    const [options, setOptions] = useState<Options>({})
     const [pendingChat, setPendingChat] = useState<ChatType | undefined>()
 
     return (
@@ -18,6 +19,7 @@ export default function Chat() {
                     setPendingChat={setPendingChat}
                     model={model}
                     setModel={setModel}
+                    options={options}
                 />
                 <Prompt
                     setMessages={setMessages}
@@ -25,6 +27,8 @@ export default function Chat() {
                     setPendingChat={setPendingChat}
                     model={model}
                     setModel={setModel}
+                    options={options}
+                    setOptions={setOptions}
                 />
             </div>
         </div>
