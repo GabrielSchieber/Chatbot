@@ -3,7 +3,7 @@ import { spawnSync } from "child_process"
 
 test("Flush database", async ({ }) => {
     const result = spawnSync("python", ["manage.py", "flush", "--no-input"], {
-        cwd: "../backend",
+        cwd: "/app/backend",
         stdio: "inherit",
         env: { ...process.env }
     })
