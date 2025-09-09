@@ -73,8 +73,7 @@ test("user can copy bot messages", async ({ page }) => {
 })
 
 async function expectClipboard(page: Page, expected: string) {
-    const clipboardText = await page.evaluate(async () => {
-        return await navigator.clipboard.readText()
+    page.evaluate(async () => {
+        expect(await navigator.clipboard.readText()).toBe(expected)
     })
-    expect(clipboardText).toBe(expected)
 }
