@@ -1,9 +1,6 @@
 import { expect, test } from "@playwright/test"
-import { apiFetch, setUp } from "./utils"
+import { apiFetch, getRandomEmail } from "./utils"
 
-setUp()
-
-const email = "test@example.com"
 const password = "testpassword"
 
 test("user can sign up", async ({ page }) => {
@@ -12,7 +9,7 @@ test("user can sign up", async ({ page }) => {
 
     await page.click("text=Sign up!")
 
-    await page.fill("input[type='email']", email)
+    await page.fill("input[type='email']", getRandomEmail())
     await page.fill("input[type='password']", password)
 
     await page.click("button")
@@ -20,6 +17,8 @@ test("user can sign up", async ({ page }) => {
 })
 
 test("user can login", async ({ page }) => {
+    const email = getRandomEmail()
+
     const response = await apiFetch("/api/signup/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -39,6 +38,8 @@ test("user can login", async ({ page }) => {
 })
 
 test("user can log out", async ({ page }) => {
+    const email = getRandomEmail()
+
     const response = await apiFetch("/api/signup/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

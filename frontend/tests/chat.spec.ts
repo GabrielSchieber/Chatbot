@@ -1,12 +1,21 @@
 import { expect, test } from "@playwright/test"
-import { setUp, signupAndLogin } from "./utils"
+import { getRandomEmail } from "./utils"
 
-setUp()
+const password = "testpassword"
 
 test("user can chat with bot", async ({ page }) => {
-    await signupAndLogin(page)
+    await page.goto("/")
+    await page.waitForURL("/login")
+
+    await page.click("text=Sign up!")
+
+    await page.fill("input[type='email']", getRandomEmail())
+    await page.fill("input[type='password']", password)
+
+    await page.click("button")
+    await page.waitForURL("/")
+
     const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
-    await textarea.click()
     await textarea.fill("Hello!")
     await textarea.press("Enter")
     await expect(page.locator("#root")).toContainText("Hello! What's up? How can I help you today?")
