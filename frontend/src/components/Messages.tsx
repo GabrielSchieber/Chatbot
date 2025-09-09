@@ -254,7 +254,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
 
     function editMessage(index: number) {
         if (chatUUID) {
-            editMessageAPI(chatUUID, "SmolLM2-135M", editingMessageText, index, addedFiles, removedFiles).then(([chat, status]) => {
+            editMessageAPI(chatUUID, model, editingMessageText, index, addedFiles, removedFiles).then(([chat, status]) => {
                 if (status === 200) {
                     let shouldSetMessages = true
                     setMessages(previous => {
@@ -298,7 +298,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
 
     function regenerateMessage(index: number) {
         if (chatUUID) {
-            regenerateMessageAPI(chatUUID, "SmolLM2-135M", index).then(([chat, status]) => {
+            regenerateMessageAPI(chatUUID, model, index).then(([chat, status]) => {
                 if (status === 200) {
                     setMessages(previous => {
                         const messages = [...previous]
