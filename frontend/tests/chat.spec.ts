@@ -1,37 +1,6 @@
 import { expect, Page, test } from "@playwright/test"
 import { getRandomEmail } from "./utils"
 
-const password = "testpassword"
-
-const messages = [
-    {
-        "User": "Hello!",
-        "Bot": "Hello! What's up? How can I help you today?"
-    }
-]
-
-async function signupAndLogin(page: Page) {
-    await page.goto("/")
-    await page.waitForURL("/login")
-
-    await page.click("text=Sign up!")
-
-    await page.fill("input[type='email']", getRandomEmail())
-    await page.fill("input[type='password']", password)
-
-    await page.click("button")
-    await page.waitForURL("/")
-}
-
-async function sendMessage(page: Page, message: string, expectedResponse: string) {
-    const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
-    await textarea.fill(message)
-    await textarea.press("Enter")
-
-    await expect(page.locator("#root")).toContainText(message)
-    await expect(page.locator("#root")).toContainText(expectedResponse)
-}
-
 test("user can chat with bot", async ({ page }) => {
     await signupAndLogin(page)
     await sendMessage(page, messages[0]["User"], messages[0]["Bot"])
@@ -71,6 +40,37 @@ test("user can copy bot messages", async ({ page }) => {
     await page.locator('.flex.flex-col.gap-0\\.5.w-\\[50vw\\].justify-self-center.items-start > .flex > button').first().click();
     await expectClipboard(page, messages[0]["Bot"])
 })
+
+const password = "testpassword"
+
+const messages = [
+    {
+        "User": "Hello!",
+        "Bot": "Hello! What's up? How can I help you today?"
+    }
+]
+
+async function signupAndLogin(page: Page) {
+    await page.goto("/")
+    await page.waitForURL("/login")
+
+    await page.click("text=Sign up!")
+
+    await page.fill("input[type='email']", getRandomEmail())
+    await page.fill("input[type='password']", password)
+
+    await page.click("button")
+    await page.waitForURL("/")
+}
+
+async function sendMessage(page: Page, message: string, expectedResponse: string) {
+    const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
+    await textarea.fill(message)
+    await textarea.press("Enter")
+
+    await expect(page.locator("#root")).toContainText(message)
+    await expect(page.locator("#root")).toContainText(expectedResponse)
+}
 
 async function expectClipboard(page: Page, expected: string) {
     page.evaluate(async () => {
