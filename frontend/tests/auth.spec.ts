@@ -1,21 +1,7 @@
 import { expect, test } from "@playwright/test"
-import { spawnSync } from "child_process"
+import { apiFetch, setUp } from "./utils"
 
-test.beforeEach(async () => {
-    const result = spawnSync("python", ["manage.py", "flush", "--no-input"], {
-        cwd: "../backend",
-        stdio: "inherit",
-        env: { ...process.env }
-    })
-
-    if (result.status !== 0) {
-        throw new Error("Failed to set database before each test.")
-    }
-})
-
-function apiFetch(url: string, init: RequestInit) {
-    return fetch(`http://localhost:8000${url}`, init)
-}
+setUp()
 
 const email = "test@example.com"
 const password = "testpassword"

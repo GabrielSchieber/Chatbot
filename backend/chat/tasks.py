@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import threading
 from typing import Literal, get_args
 
@@ -53,8 +54,12 @@ async def sample_model(chat: Chat, user_message: Message, bot_message: Message, 
     messages: list[dict[str, str]] = await database_sync_to_async(get_messages)(chat, user_message)
     message_index = len(messages) - 1
 
+    options = {"num_predict": 256}
+    if "playwright" in str(os.environ):
+        options["seed"] = 0
+
     try:
-        async for part in await ollama.AsyncClient().chat(model_name, messages, stream = True, options = {"num_predict": 256}):
+        async for part in await ollama.AsyncClient().chat(model_name, messages, stream = True, options = options):
             token = part["message"]["content"]
             bot_message.text += token
             await database_sync_to_async(bot_message.save)()
