@@ -44,3 +44,20 @@ test("user can chat with bot multiple times", async ({ page }) => {
         "Geometry is a fundamental branch of mathematics that deals with the study of shape, size, position, orientation, and spatial relationships, often visualized through geometric figures such as triangles, squares, circles, and polygons. It provides insight into the properties of space and shapes, including their sizes and positions in relation to one another."
     )
 })
+
+test("user can copy their own message", async ({ page }) => {
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"])
+
+    await signupAndLogin(page)
+    await sendMessage(page, "Hello!", "Hello! What's up? How can I help you today?")
+
+    await page.locator(".flex.gap-1 > button:nth-child(2)").first().click()
+    await expectClipboard(page, "Hello!")
+})
+
+async function expectClipboard(page: Page, expected: string) {
+    const clipboardText = await page.evaluate(async () => {
+        return await navigator.clipboard.readText()
+    })
+    expect(clipboardText).toBe(expected)
+}
