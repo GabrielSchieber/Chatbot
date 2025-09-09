@@ -1,8 +1,6 @@
 import { expect, test } from "@playwright/test"
 import { apiFetch, getRandomEmail } from "./utils"
 
-const password = "testpassword"
-
 test("user can sign up", async ({ page }) => {
     await page.goto("/")
     await page.waitForURL("/login")
@@ -17,15 +15,7 @@ test("user can sign up", async ({ page }) => {
 })
 
 test("user cannot sign up with existing email", async ({ page }) => {
-    const email = getRandomEmail()
-
-    const response = await apiFetch("/api/signup/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-    })
-
-    expect(response.status).toBe(201)
+    const email = await signup()
 
     await page.goto("/")
     await page.waitForURL("/login")
@@ -40,15 +30,7 @@ test("user cannot sign up with existing email", async ({ page }) => {
 })
 
 test("user can login", async ({ page }) => {
-    const email = getRandomEmail()
-
-    const response = await apiFetch("/api/signup/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-    })
-
-    expect(response.status).toBe(201)
+    const email = await signup()
 
     await page.goto("/")
     await page.waitForURL("/login")
@@ -72,15 +54,7 @@ test("user cannot login with invalid email", async ({ page }) => {
 })
 
 test("user cannot login with invalid password", async ({ page }) => {
-    const email = getRandomEmail()
-
-    const response = await apiFetch("/api/signup/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-    })
-
-    expect(response.status).toBe(201)
+    const email = await signup()
 
     await page.goto("/")
     await page.waitForURL("/login")
@@ -93,15 +67,7 @@ test("user cannot login with invalid password", async ({ page }) => {
 })
 
 test("user can log out", async ({ page }) => {
-    const email = getRandomEmail()
-
-    const response = await apiFetch("/api/signup/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-    })
-
-    expect(response.status).toBe(201)
+    const email = await signup()
 
     await page.goto("/")
     await page.waitForURL("/login")
@@ -116,3 +82,19 @@ test("user can log out", async ({ page }) => {
     await page.getByRole("button", { name: "Log out" }).click()
     await page.waitForURL("/")
 })
+
+const password = "testpassword"
+
+async function signup() {
+    const email = getRandomEmail()
+
+    const response = await apiFetch("/api/signup/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    })
+
+    expect(response.status).toBe(201)
+
+    return email
+}
