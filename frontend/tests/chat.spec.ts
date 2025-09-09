@@ -37,8 +37,22 @@ test("user can copy bot messages", async ({ page }) => {
     await signupAndLogin(page)
     await sendMessage(page, messages[0]["User"], messages[0]["Bot"])
 
-    await page.locator('.flex.flex-col.gap-0\\.5.w-\\[50vw\\].justify-self-center.items-start > .flex > button').first().click();
+    await page.locator(".flex.flex-col.gap-0\\.5.w-\\[50vw\\].justify-self-center.items-start > .flex > button").first().click();
     await expectClipboard(page, messages[0]["Bot"])
+})
+
+test("user can edit their message", async ({ page }) => {
+    await signupAndLogin(page)
+    await sendMessage(page, messages[1]["User"], messages[1]["Bot"])
+
+    await page.locator(".p-2.rounded-lg").first().click()
+    await page.getByText(messages[1]["User"]).click()
+    await page.getByText(messages[1]["User"]).press("ArrowLeft")
+    await page.getByText(messages[1]["User"]).fill(messages[0]["User"])
+    await page.getByRole("button", { name: "Send" }).click()
+
+    await expect(page.locator("#root")).toContainText(messages[0]["User"])
+    await expect(page.locator("#root")).toContainText(messages[0]["Bot"])
 })
 
 const password = "testpassword"
@@ -47,6 +61,10 @@ const messages = [
     {
         "User": "Hello!",
         "Bot": "Hello! What's up? How can I help you today?"
+    },
+    {
+        "User": "Hi!",
+        "Bot": "Hello! I'm glad you're enjoying the new features on your tablet. Let's create some fun activities to keep you active and engaged while we chat."
     }
 ]
 
