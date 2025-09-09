@@ -60,6 +60,38 @@ test("user can login", async ({ page }) => {
     await page.waitForURL("/")
 })
 
+test("user cannot login with invalid email", async ({ page }) => {
+    await page.goto("/")
+    await page.waitForURL("/login")
+
+    await page.fill("input[type='email']", "invalid@example.com")
+    await page.fill("input[type='password']", password)
+
+    await page.click("button")
+    await expect(page.getByRole("paragraph"), { message: "Email and/or password are invalid." }).toBeVisible()
+})
+
+test("user cannot login with invalid password", async ({ page }) => {
+    const email = getRandomEmail()
+
+    const response = await apiFetch("/api/signup/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    })
+
+    expect(response.status).toBe(201)
+
+    await page.goto("/")
+    await page.waitForURL("/login")
+
+    await page.fill("input[type='email']", email)
+    await page.fill("input[type='password']", "invalidpassword")
+
+    await page.click("button")
+    await expect(page.getByRole("paragraph"), { message: "Email and/or password are invalid." }).toBeVisible()
+})
+
 test("user can log out", async ({ page }) => {
     const email = getRandomEmail()
 
