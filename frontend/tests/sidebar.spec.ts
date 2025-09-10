@@ -1,4 +1,4 @@
-import { expect, test as base, Page } from "@playwright/test"
+import { expect, test as base } from "@playwright/test"
 import { execSync } from "child_process"
 
 type Message = {
@@ -100,4 +100,20 @@ test("user can toggle sidebar", async ({ page }) => {
     await expect(newChat).toContainText(newChatText)
     await expect(search).toContainText(searchText)
     await expect(settings).toContainText(settingsText)
+})
+
+test("user can open search", async ({ page, user }) => {
+    await page.getByTestId("search").click()
+
+    const searchInput = page.getByPlaceholder("Search chats...")
+    await expect(searchInput).toBeVisible()
+
+    const searchEntry = page.getByRole("link", { "name": "Greetings!" })
+    await expect(searchEntry).toBeVisible()
+
+    const closeButton = page.getByRole("button")
+    await expect(closeButton).toBeVisible()
+
+    await expect(page.getByText(user.chats[0].messages[0].text + "...")).toBeVisible()
+    await expect(page.getByText(user.chats[0].messages[1].text + "...")).toBeVisible()
 })
