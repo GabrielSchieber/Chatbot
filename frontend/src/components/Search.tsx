@@ -49,6 +49,7 @@ export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolea
                     hover:bg-gray-700 light:hover:bg-gray-300 focus:bg-gray-700 light:focus:bg-gray-300
                 "
                 onClick={_ => fetchResults(true)}
+                data-testid="search"
             >
                 <MagnifyingGlassIcon />
                 {isSidebarOpen && <span>Search</span>}

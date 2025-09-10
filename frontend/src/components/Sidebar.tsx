@@ -24,14 +24,20 @@ export default function Sidebar() {
 
         return (
             <div className={`flex flex-col gap-2 p-2 ${!isSidebarOpen && "items-center"}`}>
-                <button className={itemClassNames} onClick={_ => {
-                    setCurrentUser(undefined, !isSidebarOpen)
-                    setIsSidebarOpen(!isSidebarOpen)
-                }}>
+                <button
+                    className={itemClassNames} onClick={_ => {
+                        setCurrentUser(undefined, !isSidebarOpen)
+                        setIsSidebarOpen(!isSidebarOpen)
+                    }}
+                    data-testid="toggle-sidebar"
+                >
                     {isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
                     {isSidebarOpen && <span>Toggle Sidebar</span>}
                 </button>
-                <a className={itemClassNames} href="/">
+                <a
+                    className={itemClassNames} href="/"
+                    data-testid="new-chat"
+                >
                     <PlusIcon />
                     {isSidebarOpen && <span>New Chat</span>}
                 </a>
