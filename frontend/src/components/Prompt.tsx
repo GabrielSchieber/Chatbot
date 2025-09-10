@@ -383,7 +383,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
     useEffect(() => updateTextAreaHeight(), [prompt, visibleFiles])
 
     return (
-        <div className="absolute bottom-0 flex flex-col w-[50vw] pb-4 self-center">
+        <div className="absolute bottom-0 flex flex-col w-[50vw] pb-4 self-center" data-testid="prompt-bar">
             {messageNotificationID >= 0 && pendingChat && <GeneratingMessageNotification title={pendingChat.title} uuid={pendingChat.uuid} />}
 
             <div

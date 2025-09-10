@@ -439,7 +439,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                         </div>
                     ) : (
                         message.is_from_user ? (
-                            <div className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
+                            <div className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300" data-testid={`message-${index}`}>
                                 {message.files.length > 0 && (
                                     <div className="flex flex-col gap-1">
                                         {message.files.map((file, index) => (
@@ -452,7 +452,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                                 </div>
                             </div>
                         ) : (
-                            <div className="w-full whitespace-pre-wrap">
+                            <div className="w-full whitespace-pre-wrap" data-testid={`message-${index}`}>
                                 <ReactMarkdown
                                     children={message.text}
                                     remarkPlugins={[remarkGfm]}
