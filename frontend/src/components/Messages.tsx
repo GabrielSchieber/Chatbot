@@ -34,7 +34,9 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
     const [isRemovingFiles, setIsRemovingFiles] = useState(false)
 
-    function MessageButton({ children, onClick, tooltip, isDisabled = false }: { children: ReactNode, onClick: () => void, tooltip: string, isDisabled?: boolean }) {
+    function MessageButton({ children, onClick, tooltip, isDisabled = false, testID }: {
+        children: ReactNode, onClick: () => void, tooltip: string, isDisabled?: boolean, testID?: string
+    }) {
         return (
             <Tooltip.Provider delayDuration={200}>
                 <Tooltip.Root>
@@ -42,6 +44,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                         className={`p-2 rounded-lg hover:bg-gray-700 light:hover:bg-gray-300 ${isDisabled ? "opacity-50" : "cursor-pointer"}`}
                         onClick={onClick}
                         disabled={isDisabled}
+                        data-testid={testID}
                     >
                         {children}
                     </Tooltip.Trigger>
@@ -96,6 +99,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                 tooltip="Regenerate"
                 onClick={() => regenerateMessage(index)}
                 isDisabled={pendingChat !== undefined}
+                testID="regenerate"
             />
         )
     }

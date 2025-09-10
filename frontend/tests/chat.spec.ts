@@ -48,6 +48,14 @@ test("user can edit their message", async ({ page }) => {
     await expect(page.getByTestId("message-1")).toHaveText(exampleMessages[0].bot)
 })
 
+test("user can regenerate messages", async ({ page }) => {
+    await signupAndLogin(page)
+    await sendExampleMessage(page, 0)
+    await page.getByTestId("regenerate").click()
+    await expect(page.getByTestId("message-1")).toHaveText("")
+    await expect(page.getByTestId("message-1")).not.toHaveText(exampleMessages[0].bot)
+})
+
 const password = "testpassword"
 
 const exampleMessages: { user: string, bot: string, seed: number }[] = [
