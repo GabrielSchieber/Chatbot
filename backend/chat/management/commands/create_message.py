@@ -11,7 +11,6 @@ class Command(BaseCommand):
         parser.add_argument("--message-is-from-user", required = True)
 
     def handle(self, *args, **options):
-        print(f"\nInside backend, Options:\n{options}\n")
         user_email = options["user_email"]
         chat_uuid = options["chat_uuid"]
         message_text = options["message_text"]
