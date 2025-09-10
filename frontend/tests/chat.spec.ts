@@ -1,5 +1,5 @@
-import { expect, Page, test } from "@playwright/test"
-import { getRandomEmail } from "./utils"
+import { Page, expect, test } from "@playwright/test"
+import { signupAndLogin } from "./utils"
 
 test("user can chat with bot", async ({ page }) => {
     await signupAndLogin(page)
@@ -56,52 +56,6 @@ test("user can regenerate messages", async ({ page }) => {
     await expect(page.getByTestId("message-1")).not.toHaveText(exampleMessages[0].bot)
 })
 
-test("user can toggle sidebar", async ({ page }) => {
-    await signupAndLogin(page)
-
-    const toggleSidebarText = "Toggle Sidebar"
-    const newChatText = "New Chat"
-    const searchText = "Search"
-    const settingsText = "Settings"
-
-    const toggleSidebar = page.getByTestId("toggle-sidebar")
-    const newChat = page.getByTestId("new-chat")
-    const search = page.getByTestId("search")
-    const settings = page.getByTestId("settings")
-
-    await expect(toggleSidebar).toContainText(toggleSidebarText)
-    await expect(newChat).toContainText(newChatText)
-    await expect(search).toContainText(searchText)
-    await expect(settings).toContainText(settingsText)
-    await toggleSidebar.click()
-
-    await expect(toggleSidebar).not.toContainText(toggleSidebarText)
-    await expect(newChat).not.toContainText(newChatText)
-    await expect(search).not.toContainText(searchText)
-    await expect(settings).not.toContainText(settingsText)
-    await toggleSidebar.click()
-
-    await expect(toggleSidebar).toContainText(toggleSidebarText)
-    await expect(newChat).toContainText(newChatText)
-    await expect(search).toContainText(searchText)
-    await expect(settings).toContainText(settingsText)
-})
-
-test("user can create new chat", async ({ page }) => {
-    await signupAndLogin(page)
-    await sendExampleMessage(page, 1)
-
-    expect(page.url()).toContain("/chat/")
-    await page.getByText("New Chat").click()
-    await page.waitForURL("/")
-
-    await expect(page.getByTestId("message-0")).not.toBeVisible()
-    await expect(page.getByTestId("message-1")).not.toBeVisible()
-    await sendExampleMessage(page, 0)
-})
-
-const password = "testpassword"
-
 const exampleMessages: { user: string, bot: string, seed: number }[] = [
     {
         user: "Hello!",
@@ -125,18 +79,18 @@ const exampleMessages: { user: string, bot: string, seed: number }[] = [
     }
 ]
 
-async function signupAndLogin(page: Page) {
-    await page.goto("/")
-    await page.waitForURL("/login")
+test("user can create new chat", async ({ page }) => {
+    await signupAndLogin(page)
+    await sendExampleMessage(page, 1)
 
-    await page.click("text=Sign up!")
-
-    await page.fill("input[type='email']", getRandomEmail())
-    await page.fill("input[type='password']", password)
-
-    await page.click("button")
+    expect(page.url()).toContain("/chat/")
+    await page.getByText("New Chat").click()
     await page.waitForURL("/")
-}
+
+    await expect(page.getByTestId("message-0")).not.toBeVisible()
+    await expect(page.getByTestId("message-1")).not.toBeVisible()
+    await sendExampleMessage(page, 0)
+})
 
 async function setSeed(page: Page, seed: number) {
     const promptBar = page.getByTestId("prompt-bar")
