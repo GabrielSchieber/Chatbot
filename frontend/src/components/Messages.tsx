@@ -66,6 +66,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                 }
                 tooltip="Copy"
                 onClick={() => copyMessage(message, index)}
+                testID="copy"
             />
         )
     }
@@ -86,6 +87,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                     }))
                 }}
                 isDisabled={pendingChat !== undefined}
+                testID="edit"
             />
         )
     }

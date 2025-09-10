@@ -19,7 +19,7 @@ test("user can copy their own message", async ({ page }) => {
     await signupAndLogin(page)
     await sendExampleMessage(page, 0)
 
-    await page.locator(".flex.gap-1 > button:nth-child(2)").first().click()
+    await page.getByTestId("copy").first().click()
     await expectClipboard(page, exampleMessages[0].user)
 })
 
@@ -29,7 +29,7 @@ test("user can copy bot messages", async ({ page }) => {
     await signupAndLogin(page)
     await sendExampleMessage(page, 0)
 
-    await page.locator(".flex.flex-col.gap-0\\.5.w-\\[50vw\\].justify-self-center.items-start > .flex > button").first().click();
+    await page.getByTestId("copy").last().click()
     await expectClipboard(page, exampleMessages[0].bot)
 })
 
@@ -38,7 +38,7 @@ test("user can edit their message", async ({ page }) => {
     await sendExampleMessage(page, 1)
 
     await setSeed(page, 0)
-    await page.locator(".p-2.rounded-lg").first().click()
+    await page.getByTestId("edit").click()
     await page.getByText(exampleMessages[1].user).click()
     await page.getByText(exampleMessages[1].user).press("ArrowLeft")
     await page.getByText(exampleMessages[1].user).fill(exampleMessages[0].user)
@@ -54,6 +54,19 @@ test("user can regenerate messages", async ({ page }) => {
     await page.getByTestId("regenerate").click()
     await expect(page.getByTestId("message-1")).toHaveText("")
     await expect(page.getByTestId("message-1")).not.toHaveText(exampleMessages[0].bot)
+})
+
+test("user can create new chat", async ({ page }) => {
+    await signupAndLogin(page)
+    await sendExampleMessage(page, 1)
+
+    expect(page.url()).toContain("/chat/")
+    await page.getByText("New Chat").click()
+    await page.waitForURL("/")
+
+    await expect(page.getByTestId("message-0")).not.toBeVisible()
+    await expect(page.getByTestId("message-1")).not.toBeVisible()
+    await sendExampleMessage(page, 0)
 })
 
 const password = "testpassword"
