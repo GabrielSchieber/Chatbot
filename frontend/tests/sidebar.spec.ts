@@ -89,6 +89,25 @@ test("user can search chats", async ({ page, users }) => {
     await expect(page.getByText(messages[1].text)).toBeVisible()
 })
 
+test("user without chats doesn't see any chats in search panel", async ({ page, users }) => {
+    const user = users[0]
+
+    await login(page, user)
+    await expect(page.getByText("No more chats")).toBeVisible()
+
+    const searchButton = page.getByTestId("search")
+    await expect(searchButton).toBeVisible()
+    await searchButton.click()
+
+    const searchEntry = page.getByRole("link")
+    await expect(searchEntry).not.toBeVisible()
+
+    const matches = searchEntry.getByRole("list")
+    await expect(matches.getByRole("listitem")).toHaveCount(0)
+
+    await expect(page.getByText("No chats found.")).toBeVisible()
+})
+
 async function login(page: Page, user: User) {
     await page.goto("/")
     await page.waitForURL("/login")
