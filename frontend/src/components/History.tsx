@@ -122,6 +122,7 @@ export default function History({ chats, setChats }: {
                                 if (e.key === "Escape") setRenameChatUUID(null)
                             }}
                             autoFocus
+                            data-testid={`history-dropdown-rename-input-${chat.uuid}`}
                         />
                     ) : (
                         <a className="flex-1 truncate" href={`/chat/${chat.uuid}`}>
@@ -135,6 +136,7 @@ export default function History({ chats, setChats }: {
                                 h-full py-1 self-center outline-none rounded hover:bg-gray-500 
                                 light:hover:bg-gray-400 focus:bg-gray-500 light:focus:bg-gray-400
                             "
+                            data-testid={`history-dropdown-${chat.uuid}`}
                         >
                             <DotsVerticalIcon />
                         </DropdownMenu.Trigger>
@@ -146,6 +148,7 @@ export default function History({ chats, setChats }: {
                                     hover:bg-gray-600 light:hover:bg-gray-300 focus:bg-gray-600 light:focus:bg-gray-300
                                 "
                                 onSelect={_ => startRename(chat)}
+                                data-testid={`history-dropdown-rename-${chat.uuid}`}
                             >
                                 Rename
                             </DropdownMenu.Item>

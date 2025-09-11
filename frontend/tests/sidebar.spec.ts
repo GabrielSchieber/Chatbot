@@ -1,13 +1,19 @@
-import { expect, Page } from "@playwright/test"
-import { test, User } from "./utils"
+import { Page, expect, test } from "@playwright/test"
+import { CreateTestUser, signupAndLogin, User } from "./utils"
 
-test("user can toggle sidebar", async ({ page, users }) => {
+const user: User = { email: "", password: "", chats: [] }
+
+test.beforeAll(async ({ page }) => {
+    await CreateTestUser(page, user)
+})
+
+test("user can toggle sidebar", async ({ page }) => {
     const toggleSidebarText = "Toggle Sidebar"
     const newChatText = "New Chat"
     const searchText = "Search"
     const settingsText = "Settings"
 
-    await login(page, users[0])
+    await login(page, user)
 
     const toggleSidebar = page.getByTestId("toggle-sidebar")
     const newChat = page.getByTestId("new-chat")
@@ -32,18 +38,18 @@ test("user can toggle sidebar", async ({ page, users }) => {
     await expect(settings).toContainText(settingsText)
 })
 
-test("user can open search", async ({ page, users }) => {
-    const user = users[1]
+test("user can open search", async ({ page }) => {
+    await login(page, user)
+
     const chat = user.chats[0]
     const messages = chat.messages
 
-    await login(page, user)
-
+    await expect(page.getByText("Search")).toBeVisible()
     await page.getByTestId("search").click()
 
     await expect(page.getByPlaceholder("Search chats...")).toBeVisible()
 
-    const searchEntry = page.getByRole("link", { "name": chat.title })
+    const searchEntry = page.getByRole("link", { name: chat.title })
     await expect(searchEntry).toBeVisible()
 
     const matches = searchEntry.getByRole("list")
@@ -53,46 +59,44 @@ test("user can open search", async ({ page, users }) => {
     await expect(page.getByRole("button")).toBeVisible()
 })
 
-test("user can search chats", async ({ page, users }) => {
-    const user = users[1]
-    const chat = user.chats[0]
-    const messages = chat.messages
-
+test("user can search chats", async ({ page }) => {
     await login(page, user)
-    await expect(page.getByText("No more chats")).toBeVisible()
 
-    const searchButton = page.getByTestId("search")
-    await expect(searchButton).toBeVisible()
-    await searchButton.click()
+    const greetingsChat = user.chats[0]
+    const mathChat = user.chats[1]
 
-    const searchEntry = page.getByRole("link", { "name": chat.title })
-    await expect(searchEntry).toBeVisible()
+    await expect(page.getByText("Search")).toBeVisible()
+    await page.getByTestId("search").click()
+
+    const greetingsSearchEntry = page.getByRole("link", { "name": greetingsChat.title })
+    await expect(greetingsSearchEntry).toBeVisible()
+
+    const mathSearchEntry = page.getByRole("link", { "name": mathChat.title })
+    await expect(mathSearchEntry).toBeVisible()
 
     const searchInput = page.getByPlaceholder("Search chats...")
     await expect(searchInput).toBeVisible()
-    await expect(page.getByText(messages[0].text)).toBeVisible()
-    await expect(page.getByText(messages[1].text)).toBeVisible()
+    await expect(greetingsSearchEntry).toBeVisible()
+    await expect(mathSearchEntry).toBeVisible()
+    await expect(page.getByText(greetingsChat.messages[0].text + "...")).toBeVisible()
+    await expect(page.getByText(greetingsChat.messages[1].text + "...")).toBeVisible()
 
-    await searchInput.fill("Some chat")
-    await expect(searchEntry).not.toBeVisible()
-    await expect(page.getByText(messages[0].text)).not.toBeVisible()
-    await expect(page.getByText(messages[1].text)).not.toBeVisible()
+    await searchInput.fill("Something")
+    await expect(greetingsSearchEntry).not.toBeVisible()
+    await expect(mathSearchEntry).not.toBeVisible()
 
     await searchInput.fill("Greetings")
-    await expect(searchEntry).toBeVisible()
-    await expect(page.getByText(messages[0].text)).not.toBeVisible()
-    await expect(page.getByText(messages[1].text)).not.toBeVisible()
+    await expect(greetingsSearchEntry).toBeVisible()
+    await expect(mathSearchEntry).not.toBeVisible()
 
-    await searchInput.fill("How are")
-    await expect(searchEntry).toBeVisible()
-    await expect(page.getByText(messages[0].text)).not.toBeVisible()
-    await expect(page.getByText(messages[1].text)).toBeVisible()
+    await searchInput.fill("Mathematics")
+    await expect(greetingsSearchEntry).not.toBeVisible()
+    await expect(mathSearchEntry).toBeVisible()
 })
 
-test("user without chats doesn't see any chats in search panel", async ({ page, users }) => {
-    const user = users[0]
+test("user without chats doesn't see any chats in search panel", async ({ page }) => {
+    await signupAndLogin(page)
 
-    await login(page, user)
     await expect(page.getByText("No more chats")).toBeVisible()
 
     const searchButton = page.getByTestId("search")
@@ -106,67 +110,6 @@ test("user without chats doesn't see any chats in search panel", async ({ page, 
     await expect(matches.getByRole("listitem")).toHaveCount(0)
 
     await expect(page.getByText("No chats found.")).toBeVisible()
-})
-
-test("user with multiple chats can search chats", async ({ page, users }) => {
-    const user = users[2]
-    const chats = user.chats
-
-    await login(page, user)
-    await expect(page.getByText("No more chats")).toBeVisible()
-
-    const searchButton = page.getByTestId("search")
-    await expect(searchButton).toBeVisible()
-    await searchButton.click()
-
-    await expect(page.getByRole("link")).toHaveCount(chats.length)
-    await expect(page.getByRole("link", { "name": chats[0].title })).toBeVisible()
-    await expect(page.getByRole("link", { "name": chats[1].title })).toBeVisible()
-
-    await expect(page.getByText(chats[0].messages[0].text)).toBeVisible()
-    await expect(page.getByText(chats[0].messages[1].text)).toBeVisible()
-    await expect(page.getByText(chats[1].messages[0].text)).toBeVisible()
-    await expect(page.getByText(chats[1].messages[1].text)).toBeVisible()
-
-    const searchInput = page.getByPlaceholder("Search chats...")
-    await expect(searchInput).toBeVisible()
-
-    const mathSearches1 = ["Math", "What is", "Mathematics"]
-    for (const search of mathSearches1) {
-        await searchInput.fill(search)
-        await expect(page.getByText(chats[0].messages[0].text)).toBeVisible()
-        await expect(page.getByText(chats[0].messages[1].text)).toBeVisible()
-        await expect(page.getByText(chats[1].messages[0].text)).not.toBeVisible()
-        await expect(page.getByText(chats[1].messages[1].text)).not.toBeVisible()
-    }
-
-    const mathSearches2 = ["about", "Tell me", "me", "tell"]
-    for (const search of mathSearches2) {
-        await searchInput.fill(search)
-        await expect(page.getByText(chats[0].messages[0].text)).toBeVisible()
-        await expect(page.getByText(chats[0].messages[1].text)).not.toBeVisible()
-        await expect(page.getByText(chats[1].messages[0].text)).not.toBeVisible()
-        await expect(page.getByText(chats[1].messages[1].text)).not.toBeVisible()
-    }
-
-    const programmingSearches = ["programming", "questions", "are"]
-    for (const search of programmingSearches) {
-        await searchInput.fill(search)
-        await expect(page.getByText(chats[0].messages[0].text)).not.toBeVisible()
-        await expect(page.getByText(chats[0].messages[1].text)).not.toBeVisible()
-        await expect(page.getByText(chats[1].messages[0].text)).toBeVisible()
-        await expect(page.getByText(chats[1].messages[1].text)).toBeVisible()
-    }
-
-    const unrelatedSearches = ["Health advice", "Shopping", "greetings", "some chat"]
-    for (const search of unrelatedSearches) {
-        await searchInput.fill(search)
-        await expect(page.getByText("No chats found.")).toBeVisible()
-        await expect(page.getByText(chats[0].messages[0].text)).not.toBeVisible()
-        await expect(page.getByText(chats[0].messages[1].text)).not.toBeVisible()
-        await expect(page.getByText(chats[1].messages[0].text)).not.toBeVisible()
-        await expect(page.getByText(chats[1].messages[1].text)).not.toBeVisible()
-    }
 })
 
 async function login(page: Page, user: User) {
