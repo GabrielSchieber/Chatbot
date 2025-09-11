@@ -306,7 +306,7 @@ class NewMessage(APIView):
             MessageFile.objects.bulk_create(
                 [MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type) for file in files]
             )
-        bot_message = Message.objects.create(chat = chat, text = "", is_from_user = False)
+        bot_message = Message.objects.create(chat = chat, text = "", is_from_user = False, model = model)
 
         generate_message(chat, user_message, bot_message, model, options)
 
@@ -382,6 +382,7 @@ class EditMessage(APIView):
         user_message.text = message
         user_message.save()
         bot_message.text = ""
+        bot_message.model = model
         bot_message.save()
 
         for removed_file in removed_files:
@@ -439,6 +440,7 @@ class RegenerateMessage(APIView):
         bot_message = messages[message_index]
 
         bot_message.text = ""
+        bot_message.model = model
         bot_message.save()
 
         generate_message(chat, user_message, bot_message, model, options)
