@@ -2,34 +2,40 @@ import { ChatBubbleIcon, Cross1Icon, MagnifyingGlassIcon } from "@radix-ui/react
 import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
 
-import { searchChats } from "../utils/api"
-import type { Chat, SearchEntry } from "../types"
+import { getChats, searchChats } from "../utils/api"
+import type { SearchEntry } from "../types"
 
-export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolean, chats: Chat[] }) {
+export default function Search({ isSidebarOpen }: { isSidebarOpen: boolean }) {
+    const [search, setSearch] = useState("")
     const [results, setResults] = useState<SearchEntry[]>([])
-    const [searchTerm, setSearchTerm] = useState("")
+    const [hasChats, setHasChats] = useState(false)
+
     const [offset, setOffset] = useState(0)
     const [hasMore, setHasMore] = useState(true)
     const loaderRef = useRef<HTMLDivElement | null>(null)
 
     function fetchResults(reset = false) {
-        searchChats(searchTerm, reset ? 0 : offset, 10).then(data => {
+        searchChats(search, reset ? 0 : offset, 10).then(data => {
             if (reset) {
                 setResults(data.chats)
                 setOffset(10)
             } else {
-                setResults(prev => [...prev, ...data.chats])
-                setOffset(prev => prev + 10)
+                setResults(previous => [...previous, ...data.chats])
+                setOffset(previous => previous + 10)
             }
             setHasMore(data.has_more)
         })
     }
 
     useEffect(() => {
-        if (searchTerm.trim().length === 0 && chats.length === 0) return
+        getChats(0, 1).then(response => setHasChats(response.chats.length > 0))
+    }, [])
+
+    useEffect(() => {
+        if (!hasChats) return
         setOffset(0)
         fetchResults(true)
-    }, [searchTerm])
+    }, [search])
 
     useEffect(() => {
         const observer = new IntersectionObserver(entries => {
@@ -70,8 +76,8 @@ export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolea
                         className="flex-1 outline-none placeholder-gray-400 light:placeholder-gray-600"
                         type="text"
                         placeholder="Search chats..."
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
                         autoFocus
                     />
                     <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
@@ -80,7 +86,7 @@ export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolea
                 </div>
 
                 <div className="flex flex-col w-full max-h-[50vh] overflow-y-auto gap-3 p-3">
-                    {chats.length === 0 ? (
+                    {!hasChats ? (
                         <p className="text-gray-400 light:text-gray-600 px-3 py-2">You have no chats to search.</p>
                     ) : (
                         results.length === 0 ? (
@@ -105,8 +111,7 @@ export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolea
                                     </div>
                                 </a>
                             ))
-                        )
-                    )}
+                        ))}
                     {hasMore && <div ref={loaderRef} className="h-6"></div>}
                 </div>
             </Dialog.Content>

@@ -165,25 +165,22 @@ class SearchChats(APIView):
 
         matched_messages = Message.objects.filter(text__icontains = search).order_by("created_at")
 
-        chats_qs = Chat.objects.filter(user = request.user).filter(
-            Q(title__icontains=search) | Q(messages__text__icontains = search)
+        chats = Chat.objects.filter(user = request.user).filter(
+            Q(title__icontains = search) | Q(messages__text__icontains = search)
         ).distinct().order_by("-created_at")
 
-        total = chats_qs.count()
-        chats_qs = chats_qs[offset:offset + limit]
+        total = chats.count()
+        chats = chats[offset:offset + limit]
 
-        chats_qs = chats_qs.prefetch_related(Prefetch("messages", queryset = matched_messages, to_attr = "matched_messages"))
+        chats = chats.prefetch_related(Prefetch("messages", queryset = matched_messages, to_attr = "matched_messages"))
 
         chats = [{
             "title": chat.title,
             "uuid": chat.uuid,
             "matches": [m.text for m in getattr(chat, "matched_messages", [])]
-        } for chat in chats_qs]
+        } for chat in chats]
 
-        return Response({
-            "chats": chats,
-            "has_more": offset + limit < total
-        })
+        return Response({"chats": chats, "has_more": offset + limit < total})
 
 class RenameChat(APIView):
     permission_classes = [IsAuthenticated]

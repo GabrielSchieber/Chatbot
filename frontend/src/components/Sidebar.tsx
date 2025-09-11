@@ -1,20 +1,16 @@
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "@radix-ui/react-icons"
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 
 import History from "./History"
 import Search from "./Search"
 import Settings from "./Settings"
-import { getChats } from "../utils/api"
-import type { Chat } from "../types"
-import { setCurrentUser } from "../utils/auth"
 import { useAuth } from "../context/AuthProvider"
+import { setCurrentUser } from "../utils/auth"
 
 export default function Sidebar() {
     const { user } = useAuth()
 
-    const [chats, setChats] = useState<Chat[]>([])
     const [isSidebarOpen, setIsSidebarOpen] = useState(user ? user.has_sidebar_open : true)
-    const shouldLoadChats = useRef(true)
 
     function TopButtons() {
         const itemClassNames = `
@@ -34,34 +30,24 @@ export default function Sidebar() {
                     {isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
                     {isSidebarOpen && <span>Toggle Sidebar</span>}
                 </button>
-                <a
-                    className={itemClassNames} href="/"
-                    data-testid="new-chat"
-                >
+                <a className={itemClassNames} href="/" data-testid="new-chat">
                     <PlusIcon />
                     {isSidebarOpen && <span>New Chat</span>}
                 </a>
-                <Search isSidebarOpen={isSidebarOpen} chats={chats} />
+                <Search isSidebarOpen={isSidebarOpen} />
             </div>
         )
     }
 
-    function loadChats() {
-        if (shouldLoadChats.current) {
-            shouldLoadChats.current = false
-            getChats().then(response => setChats(response.chats))
-        }
-    }
-
-    useEffect(() => loadChats(), [])
-
     return (
-        <div className={`
-            flex flex-col bg-gray-800 light:bg-gray-200 justify-between
-            divide-y-1 divide-gray-700 transition-all duration-300 ${isSidebarOpen ? "w-[250px]" : "w-[50px]"}
-        `}>
+        <div
+            className={`
+                flex flex-col bg-gray-800 light:bg-gray-200 justify-between
+                divide-y-1 divide-gray-700 transition-all duration-300 ${isSidebarOpen ? "w-[250px]" : "w-[50px]"}
+            `}
+        >
             <TopButtons />
-            {isSidebarOpen && <History chats={chats} setChats={setChats} />}
+            {isSidebarOpen && <History />}
             <Settings isSidebarOpen={isSidebarOpen} />
         </div>
     )

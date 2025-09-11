@@ -6,14 +6,13 @@ import { deleteChat, getChats, renameChat } from "../utils/api"
 import { useParams } from "react-router"
 import ConfirmDialog from "./ConfirmDialog"
 
-export default function History({ chats, setChats }: {
-    chats: Chat[]
-    setChats: React.Dispatch<React.SetStateAction<Chat[]>>
-}) {
+export default function History() {
     const { chatUUID } = useParams()
     const [renameChatUUID, setRenameChatUUID] = useState<string | null>(null)
     const [renameTitle, setRenameTitle] = useState("")
     const [selectedDropdownIndex, setSelectedDropdownIndex] = useState(-1)
+
+    const [chats, setChats] = useState<Chat[]>([])
 
     const [offset, setOffset] = useState(0)
     const [loading, setLoading] = useState(false)
@@ -28,11 +27,11 @@ export default function History({ chats, setChats }: {
         const response = await getChats(offset, 25)
         const newChats = response.chats
         if (newChats.length > 0) {
-            setChats(prev => {
-                const seen = new Set(prev.map(c => c.uuid))
-                return [...prev, ...newChats.filter(c => !seen.has(c.uuid))]
+            setChats(previous => {
+                const seen = new Set(previous.map(c => c.uuid))
+                return [...previous, ...newChats.filter(c => !seen.has(c.uuid))]
             })
-            setOffset(prev => prev + newChats.length)
+            setOffset(previous => previous + newChats.length)
         }
 
         setHasMore(response.has_more)
@@ -174,8 +173,14 @@ export default function History({ chats, setChats }: {
                     </div>
                 ))}
             </div>
-            {loading && <p className="text-center text-gray-400">Loading ...</p>}
-            {!hasMore && <p className="text-center text-gray-400">No more chats</p>}
+
+            {loading ? (
+                <p className="text-center text-gray-400">Loading ...</p>
+            ) : chats.length === 0 ? (
+                <p className="text-center text-gray-400">You don't have any chats</p>
+            ) : !hasMore && chats.length > 20 && (
+                <p className="text-center text-gray-400">No more chats</p>
+            )}
         </div>
     )
 }
