@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import random
 import threading
 from typing import Literal, get_args
@@ -97,6 +98,7 @@ def get_user_message(message: Message) -> dict[str, str]:
     images = []
     for file in files:
         if "image" in file.content_type:
+            os.makedirs("chat_temp", exist_ok = True)
             with open(f"chat_temp/{file.name}", "wb+") as writer:
                 writer.write(file.content)
             images.append(f"chat_temp/{file.name}")
