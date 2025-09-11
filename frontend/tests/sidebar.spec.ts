@@ -53,6 +53,42 @@ test("user can open search", async ({ page, users }) => {
     await expect(page.getByRole("button")).toBeVisible()
 })
 
+test("user can search chats", async ({ page, users }) => {
+    const user = users[1]
+    const chat = user.chats[0]
+    const messages = chat.messages
+
+    await login(page, user)
+    await expect(page.getByText("No more chats")).toBeVisible()
+
+    const searchButton = page.getByTestId("search")
+    await expect(searchButton).toBeVisible()
+    await searchButton.click()
+
+    const searchEntry = page.getByRole("link", { "name": chat.title })
+    await expect(searchEntry).toBeVisible()
+
+    const searchInput = page.getByPlaceholder("Search chats...")
+    await expect(searchInput).toBeVisible()
+    await expect(page.getByText(messages[0].text)).toBeVisible()
+    await expect(page.getByText(messages[1].text)).toBeVisible()
+
+    await searchInput.fill("Some chat")
+    await expect(searchEntry).not.toBeVisible()
+    await expect(page.getByText(messages[0].text)).not.toBeVisible()
+    await expect(page.getByText(messages[1].text)).not.toBeVisible()
+
+    await searchInput.fill("Greetings")
+    await expect(searchEntry).toBeVisible()
+    await expect(page.getByText(messages[0].text)).not.toBeVisible()
+    await expect(page.getByText(messages[1].text)).not.toBeVisible()
+
+    await searchInput.fill("How are")
+    await expect(searchEntry).toBeVisible()
+    await expect(page.getByText(messages[0].text)).not.toBeVisible()
+    await expect(page.getByText(messages[1].text)).toBeVisible()
+})
+
 async function login(page: Page, user: User) {
     await page.goto("/")
     await page.waitForURL("/login")

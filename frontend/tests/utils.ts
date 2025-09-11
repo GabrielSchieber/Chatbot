@@ -59,7 +59,7 @@ export const test = base.extend<TestFixtures>({
                             },
                             {
                                 "text": "Hello! How are you doing?",
-                                is_from_user: true
+                                is_from_user: false
                             }
                         ]
                     }
