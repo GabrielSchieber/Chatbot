@@ -58,7 +58,19 @@ class MessageInline(admin.StackedInline):
         files: list[MessageFile] = messages.files.all()
         if not files:
             return "No files"
-        return "\n\n\n".join(f"{f.name}\n{f.content.decode(errors = "ignore")}" for f in files)
+
+        entries = []
+        for file in files:
+            entry = f"Name: {file.name}\nType: {file.content_type}"
+            try:
+                content = file.content.decode()
+                content_summary = content if len(content) <= 250 else content[:250] + "..."
+                entry = f"{entry}\nSummary:\n{content_summary}"
+            except UnicodeDecodeError:
+                pass
+            entries.append(entry)
+
+        return "\n\n\n".join(entries) 
 
     message_files_summary.short_description = "Files"
 
