@@ -80,26 +80,32 @@ export default function Search({ isSidebarOpen, chats }: { isSidebarOpen: boolea
                 </div>
 
                 <div className="flex flex-col w-full max-h-[50vh] overflow-y-auto gap-3 p-3">
-                    {results.length === 0 ? (
-                        <p className="text-gray-400 light:text-gray-600 px-3 py-2">No chats found.</p>
+                    {chats.length === 0 ? (
+                        <p className="text-gray-400 light:text-gray-600 px-3 py-2">You have no chats to search.</p>
                     ) : (
-                        results.map(entry => (
-                            <a key={entry.uuid}
-                                className="flex gap-5 px-2 py-1 items-center rounded-lg hover:bg-gray-600 light:hover:bg-gray-300"
-                                href={`/chat/${entry.uuid}`}>
-                                <ChatBubbleIcon className="size-10" />
-                                <div className="flex flex-col">
-                                    <p>{entry.title}</p>
-                                    {entry.matches.length > 0 && (
-                                        <ul>
-                                            {entry.matches.map((m, i) => (
-                                                <li key={i}>{m.slice(0, 100)}...</li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </div>
-                            </a>
-                        ))
+                        results.length === 0 ? (
+                            <p className="text-gray-400 light:text-gray-600 px-3 py-2">No chats found.</p>
+                        ) : (
+                            results.map(entry => (
+                                <a
+                                    key={entry.uuid}
+                                    className="flex gap-5 px-2 py-1 items-center rounded-lg hover:bg-gray-600 light:hover:bg-gray-300"
+                                    href={`/chat/${entry.uuid}`}
+                                >
+                                    <ChatBubbleIcon className="size-10" />
+                                    <div className="flex flex-col">
+                                        <p>{entry.title}</p>
+                                        {entry.matches.length > 0 && (
+                                            <ul>
+                                                {entry.matches.map((m, i) => (
+                                                    <li key={i}>{m.slice(0, 100)}...</li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                </a>
+                            ))
+                        )
                     )}
                     {hasMore && <div ref={loaderRef} className="h-6"></div>}
                 </div>
