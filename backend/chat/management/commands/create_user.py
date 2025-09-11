@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from ...models import User
+from chat.models import User
 
 class Command(BaseCommand):
     help = "Create user with email and password"
