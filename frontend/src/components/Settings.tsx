@@ -35,10 +35,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                 setTheme(themeToSelect)
                 applyTheme(themeToSelect)
             }}>
-                <Select.Trigger
-                    className={entryClasses + " inline-flex items-center justify-between w-30"}
-                    aria-label="Theme"
-                >
+                <Select.Trigger className={entryClasses + " inline-flex items-center justify-between w-30"} aria-label="Theme">
                     <Select.Value placeholder="Select theme…" />
                     <Select.Icon>
                         <ChevronDownIcon />
@@ -85,9 +82,9 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                 if (location.pathname.includes("chat")) {
                     location.href = "/"
                 } else {
-                    const historyPanel = document.querySelector(".history")
-                    if (historyPanel) {
-                        historyPanel.innerHTML = ""
+                    const historyEntries = document.querySelector(".history-entries")
+                    if (historyEntries) {
+                        historyEntries.innerHTML = ""
                     }
                 }
             } else {
