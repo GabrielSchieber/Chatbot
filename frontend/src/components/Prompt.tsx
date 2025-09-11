@@ -99,10 +99,13 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
             }
 
             return (
-                <div className="flex gap-3 px-2 py-1 items-center rounded bg-gray-700">
+                <div className="flex gap-3 px-2 py-1 items-center rounded bg-gray-700 light:bg-gray-300">
                     <p className="flex-1 text-center truncate">{getOptionName()}</p>
                     <input
-                        className="px-2 py-1 rounded outline-none bg-gray-600 light:bg-gray-300 hover:bg-gray-500 select:bg-gray-500"
+                        className="
+                            px-2 py-1 rounded outline-none bg-gray-600 light:bg-gray-400/50 hover:bg-gray-500
+                            light:hover:bg-gray-400/75 select:bg-gray-500 light:select:bg-gray-400/75
+                        "
                         value={getOptionValue()}
                         onChange={e => setCurrentOption({ key: optionKey, value: e.target.value })}
                         onBlur={_ => currentOption && handleSetOptions(currentOption.value)}
