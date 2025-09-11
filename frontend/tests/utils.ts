@@ -48,24 +48,50 @@ export const test = base.extend<TestFixtures>({
             const user2 = createUser(
                 "test2@example.com",
                 "testpassword",
-                [
-                    {
-                        title: "Greetings",
-                        uuid: "",
-                        messages: [
-                            {
-                                "text": "Hi!",
-                                is_from_user: true
-                            },
-                            {
-                                "text": "Hello! How are you doing?",
-                                is_from_user: false
-                            }
-                        ]
-                    }
-                ]
+                [{
+                    title: "Greetings",
+                    uuid: "",
+                    messages: [{
+                        text: "Hi!",
+                        is_from_user: true
+                    }, {
+                        text: "Hello! How are you doing?",
+                        is_from_user: false
+                    }]
+                }]
             )
-            await use([user1, user2])
+            const user3 = createUser(
+                "test3@example.com",
+                "testpassword",
+                [{
+                    title: "What is Mathematics?",
+                    uuid: "",
+                    messages: [{
+                        text: "Tell me about Mathematics.",
+                        is_from_user: true
+                    }, {
+                        text: "Mathematics is...",
+                        is_from_user: false
+                    }]
+                }, {
+                    title: "Programming questions",
+                    uuid: "",
+                    messages: [{
+                        text: "What are functions in programming?",
+                        is_from_user: true
+                    }, {
+                        text: "In programming, functions are reusable pieces of code...",
+                        is_from_user: false
+                    }, {
+                        text: "And what are variables?",
+                        is_from_user: true
+                    }, {
+                        text: "Variables are used to store values...",
+                        is_from_user: false
+                    }]
+                }]
+            )
+            await use([user1, user2, user3])
         },
         { scope: "worker", auto: true }
     ]

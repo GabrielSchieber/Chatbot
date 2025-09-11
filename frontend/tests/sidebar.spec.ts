@@ -108,6 +108,67 @@ test("user without chats doesn't see any chats in search panel", async ({ page, 
     await expect(page.getByText("No chats found.")).toBeVisible()
 })
 
+test("user with multiple chats can search chats", async ({ page, users }) => {
+    const user = users[2]
+    const chats = user.chats
+
+    await login(page, user)
+    await expect(page.getByText("No more chats")).toBeVisible()
+
+    const searchButton = page.getByTestId("search")
+    await expect(searchButton).toBeVisible()
+    await searchButton.click()
+
+    await expect(page.getByRole("link")).toHaveCount(chats.length)
+    await expect(page.getByRole("link", { "name": chats[0].title })).toBeVisible()
+    await expect(page.getByRole("link", { "name": chats[1].title })).toBeVisible()
+
+    await expect(page.getByText(chats[0].messages[0].text)).toBeVisible()
+    await expect(page.getByText(chats[0].messages[1].text)).toBeVisible()
+    await expect(page.getByText(chats[1].messages[0].text)).toBeVisible()
+    await expect(page.getByText(chats[1].messages[1].text)).toBeVisible()
+
+    const searchInput = page.getByPlaceholder("Search chats...")
+    await expect(searchInput).toBeVisible()
+
+    const mathSearches1 = ["Math", "What is", "Mathematics"]
+    for (const search of mathSearches1) {
+        await searchInput.fill(search)
+        await expect(page.getByText(chats[0].messages[0].text)).toBeVisible()
+        await expect(page.getByText(chats[0].messages[1].text)).toBeVisible()
+        await expect(page.getByText(chats[1].messages[0].text)).not.toBeVisible()
+        await expect(page.getByText(chats[1].messages[1].text)).not.toBeVisible()
+    }
+
+    const mathSearches2 = ["about", "Tell me", "me", "tell"]
+    for (const search of mathSearches2) {
+        await searchInput.fill(search)
+        await expect(page.getByText(chats[0].messages[0].text)).toBeVisible()
+        await expect(page.getByText(chats[0].messages[1].text)).not.toBeVisible()
+        await expect(page.getByText(chats[1].messages[0].text)).not.toBeVisible()
+        await expect(page.getByText(chats[1].messages[1].text)).not.toBeVisible()
+    }
+
+    const programmingSearches = ["programming", "questions", "are"]
+    for (const search of programmingSearches) {
+        await searchInput.fill(search)
+        await expect(page.getByText(chats[0].messages[0].text)).not.toBeVisible()
+        await expect(page.getByText(chats[0].messages[1].text)).not.toBeVisible()
+        await expect(page.getByText(chats[1].messages[0].text)).toBeVisible()
+        await expect(page.getByText(chats[1].messages[1].text)).toBeVisible()
+    }
+
+    const unrelatedSearches = ["Health advice", "Shopping", "greetings", "some chat"]
+    for (const search of unrelatedSearches) {
+        await searchInput.fill(search)
+        await expect(page.getByText("No chats found.")).toBeVisible()
+        await expect(page.getByText(chats[0].messages[0].text)).not.toBeVisible()
+        await expect(page.getByText(chats[0].messages[1].text)).not.toBeVisible()
+        await expect(page.getByText(chats[1].messages[0].text)).not.toBeVisible()
+        await expect(page.getByText(chats[1].messages[1].text)).not.toBeVisible()
+    }
+})
+
 async function login(page: Page, user: User) {
     await page.goto("/")
     await page.waitForURL("/login")
