@@ -144,6 +144,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                     className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400 z-2"
                     tabIndex={2}
                     onClick={_ => setIsDropdownOpen(!isDropdownOpen)}
+                    data-testid="add-dropdown"
                 >
                     <PlusIcon className="size-6" />
                 </button>

@@ -94,7 +94,7 @@ test("user can create new chat", async ({ page }) => {
 
 async function setSeed(page: Page, seed: number) {
     const promptBar = page.getByTestId("prompt-bar")
-    const dropdown = promptBar.getByRole("button").filter({ hasText: /^$/ })
+    const dropdown = promptBar.getByTestId("add-dropdown")
     const optionsDropdown = promptBar.getByRole("button", { name: "Options" })
     const seedTextbox = promptBar.locator("div").filter({ hasText: /^🌱 Seed$/ }).getByRole("textbox")
 

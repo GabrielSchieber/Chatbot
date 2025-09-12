@@ -372,8 +372,10 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
 
     useEffect(() => {
         loadMessages()
-        receiveMessage()
-        getPendingChats().then(chats => chats.length > 0 ? setPendingChat(chats[0]) : setPendingChat(undefined))
+        getPendingChats().then(chats => {
+            chats.length > 0 ? setPendingChat(chats[0]) : setPendingChat(undefined)
+            receiveMessage()
+        })
     }, [])
 
     return (
