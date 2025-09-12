@@ -17,3 +17,69 @@ test("user can open settings", async ({ page }) => {
     await checkEntry("Delete account", "Delete")
     await checkEntry("Log out", "Log out")
 })
+
+test("user can change theme", async ({ page }) => {
+    await signupAndLogin(page)
+
+    async function waitForPageToLoad() {
+        await expect(page.getByText("You don't have any chats")).toBeVisible()
+    }
+
+    await waitForPageToLoad()
+
+    const html = page.locator("html")
+
+    expect(await html.getAttribute("class")).toEqual("Light")
+
+    const settingsButton = page.getByText("Settings")
+    await settingsButton.click()
+
+    await page.locator("button").getByText("System").click()
+
+    const systemOption = page.getByLabel("System").getByText("System")
+    const lightOption = page.getByLabel("Light").getByText("Light")
+    const darkOption = page.getByLabel("Dark").getByText("Dark")
+
+    await expect(systemOption).toBeVisible()
+    await expect(lightOption).toBeVisible()
+    await expect(darkOption).toBeVisible()
+
+    await darkOption.click()
+    await expect(page.locator("button").getByText("Dark")).toBeVisible()
+    expect(await html.getAttribute("class")).toEqual("Dark")
+
+    await page.reload()
+    await waitForPageToLoad()
+    await expect(page.locator("button").getByText("Dark")).not.toBeVisible()
+    expect(await html.getAttribute("class")).toEqual("Dark")
+
+    await settingsButton.click()
+
+    await page.locator("button").getByText("Dark").click()
+
+    await expect(systemOption).toBeVisible()
+    await expect(lightOption).toBeVisible()
+    await expect(darkOption).toBeVisible()
+
+    await lightOption.click()
+    await expect(page.locator("button").getByText("Light")).toBeVisible()
+    expect(await html.getAttribute("class")).toEqual("Light")
+
+    await page.reload()
+    await waitForPageToLoad()
+    await expect(page.locator("button").getByText("Light")).not.toBeVisible()
+    expect(await html.getAttribute("class")).toEqual("Light")
+
+    await settingsButton.click()
+
+    await page.locator("button").getByText("Light").click()
+
+    await systemOption.click()
+    await expect(page.locator("button").getByText("System")).toBeVisible()
+    expect(await html.getAttribute("class")).toEqual("Light")
+
+    await page.reload()
+    await waitForPageToLoad()
+    await expect(page.locator("button").getByText("System")).not.toBeVisible()
+    expect(await html.getAttribute("class")).toEqual("Light")
+})
