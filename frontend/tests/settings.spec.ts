@@ -1,5 +1,5 @@
 import test, { expect } from "@playwright/test"
-import { signupAndLogin } from "./utils"
+import { createTestUser, signupAndLogin } from "./utils"
 
 test("user can open settings", async ({ page }) => {
     const [email] = await signupAndLogin(page)
@@ -82,6 +82,44 @@ test("user can change theme", async ({ page }) => {
     await waitForPageToLoad()
     await expect(page.locator("button").getByText("System")).not.toBeVisible()
     expect(await html.getAttribute("class")).toEqual("Light")
+})
+
+test("user can delete chats", async ({ page }) => {
+    const user = await createTestUser(page)
+
+    await expect(page.getByRole("link")).toHaveCount(1 + user.chats.length)
+    for (const chat of user.chats) {
+        await expect(page.getByRole("link", { name: chat.title, exact: true })).toBeVisible()
+    }
+
+    await page.getByText("Settings").click()
+
+    const deleteChats = page.getByRole("button", { name: "Delete all", exact: true })
+    await expect(deleteChats).toBeVisible()
+
+    await deleteChats.click()
+
+    const confirmDialogTitle = page.getByRole("heading", { name: "Delete Chats", exact: true })
+    await expect(confirmDialogTitle).toBeVisible()
+
+    const confirmDialog = confirmDialogTitle.locator("..")
+    await expect(confirmDialog).toBeVisible()
+
+    await expect(confirmDialog.getByRole("button", { name: "Cancel", exact: true })).toBeVisible()
+    await confirmDialog.getByRole("button", { name: "Delete all", exact: true }).click()
+    await expect(confirmDialogTitle).not.toBeVisible()
+    await expect(confirmDialog).not.toBeVisible()
+
+    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible()
+    await expect(page.getByRole("button", { name: "Settings" })).not.toBeVisible()
+    await expect(deleteChats).toBeVisible()
+
+    await page.getByTestId("close-settings").click()
+
+    await expect(page.getByRole("link")).toHaveCount(1)
+    for (const chat of user.chats) {
+        await expect(page.getByRole("link", { name: chat.title, exact: true })).not.toBeVisible()
+    }
 })
 
 test("user can log out", async ({ page }) => {
