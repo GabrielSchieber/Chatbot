@@ -310,6 +310,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                     if (status === 200) {
                         setPrompt("")
                         setCurrentFiles([])
+                        setVisibleFiles([])
 
                         setMessages(previous => {
                             const previousMessages = [...previous]
