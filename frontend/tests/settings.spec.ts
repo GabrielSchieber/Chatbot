@@ -122,6 +122,32 @@ test("user can delete chats", async ({ page }) => {
     }
 })
 
+test("user can delete account", async ({ page }) => {
+    const user = await createTestUser(page)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+
+    const confirmDialogTitle = page.getByRole("heading", { name: "Delete Account", exact: true })
+    await expect(confirmDialogTitle).toBeVisible()
+
+    const confirmDialog = confirmDialogTitle.locator("..")
+    await expect(confirmDialog).toBeVisible()
+
+    await expect(confirmDialog.getByRole("button", { name: "Cancel", exact: true })).toBeVisible()
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+    await page.waitForURL("/login")
+
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+
+    await page.click("button")
+
+    await page.click("button")
+    await expect(page.getByRole("paragraph"), { message: "Email and/or password are invalid." }).toBeVisible()
+})
+
 test("user can log out", async ({ page }) => {
     await signupAndLogin(page)
     await page.getByText("Settings").click()
