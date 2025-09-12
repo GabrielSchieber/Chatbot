@@ -66,23 +66,6 @@ test("user cannot login with invalid password", async ({ page }) => {
     await expect(page.getByRole("paragraph"), { message: "Email and/or password are invalid." }).toBeVisible()
 })
 
-test("user can log out", async ({ page }) => {
-    const email = await signup()
-
-    await page.goto("/")
-    await page.waitForURL("/login")
-
-    await page.fill("input[type='email']", email)
-    await page.fill("input[type='password']", password)
-
-    await page.click("button")
-    await page.waitForURL("/")
-
-    await page.getByText("Settings").click()
-    await page.getByRole("button", { name: "Log out" }).click()
-    await page.waitForURL("/")
-})
-
 const password = "testpassword"
 
 async function signup() {

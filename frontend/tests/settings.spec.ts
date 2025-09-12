@@ -83,3 +83,12 @@ test("user can change theme", async ({ page }) => {
     await expect(page.locator("button").getByText("System")).not.toBeVisible()
     expect(await html.getAttribute("class")).toEqual("Light")
 })
+
+test("user can log out", async ({ page }) => {
+    await signupAndLogin(page)
+    await page.getByText("Settings").click()
+    await page.getByRole("button", { name: "Log out" }).click()
+    await page.waitForURL("/login")
+    await page.goto("/")
+    await page.waitForURL("/login")
+})
