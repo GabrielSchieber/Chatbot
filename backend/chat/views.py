@@ -352,10 +352,9 @@ class EditMessage(APIView):
         if type(added_files) != list:
             return Response({"error": "Invalid data type for added files"}, 400)
 
-        removed_file_ids = request.data.get("removed_file_ids", [])
-        if type(removed_file_ids) == str:
-            removed_file_ids = [removed_file_ids]
-        removed_file_ids = [int(removed_file_id) for removed_file_id in removed_file_ids]
+        removed_file_ids = json.loads(request.data.get("removed_file_ids", []))
+        if type(removed_file_ids) != list:
+            return Response({"error": "Invalid data type for removed files ids"}, 400)
 
         messages = Message.objects.filter(chat = chat).order_by("created_at")
         user_message = messages[message_index]
@@ -377,17 +376,16 @@ class EditMessage(APIView):
         bot_message = messages[message_index + 1]
 
         user_message.text = message
-        user_message.save()
-        bot_message.text = ""
-        bot_message.model = model
-        bot_message.save()
-
         for removed_file in removed_files:
             removed_file.delete()
-
         MessageFile.objects.bulk_create(
             [MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type) for file in added_files]
         )
+        user_message.save()
+
+        bot_message.text = ""
+        bot_message.model = model
+        bot_message.save()
 
         generate_message(chat, user_message, bot_message, model, options)
 

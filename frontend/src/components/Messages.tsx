@@ -121,24 +121,17 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
         )
     }
 
-    function Attachments(message_index: number) {
+    function Attachments() {
         function removeFile(file: MessageFile) {
             setVisibleFiles(previous =>
                 previous.map(f => f.message_file.id === file.id ? { ...f, isRemoving: true } : f)
             )
             setRemovedFiles(previous => [...previous, file])
-
-            setTimeout(() => {
-                setVisibleFiles(previous => previous.filter(f => f.message_file.id !== file.id))
-                setMessages(previous => {
-                    let messages = [...previous]
-                    messages[message_index].files = previous[message_index].files.filter(f => f.id !== file.id)
-                    return messages
-                })
-            }, 300)
+            setTimeout(() => setVisibleFiles(previous => previous.filter(f => f.message_file.id !== file.id)), 300)
         }
 
         function removeFiles() {
+            setRemovedFiles(visibleFiles.map(file => file.message_file))
             setIsRemovingFiles(true)
             setTimeout(() => {
                 setVisibleFiles([])
@@ -261,7 +254,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
 
     function editMessage(index: number) {
         if (chatUUID) {
-            editMessageAPI(chatUUID, model, options, editingMessageText, index, addedFiles, removedFiles).then(([chat, status]) => {
+            editMessageAPI(chatUUID, model, options, editingMessageText, index, addedFiles, removedFiles.map(file => file.id)).then(([chat, status]) => {
                 if (status === 200) {
                     let shouldSetMessages = true
                     setMessages(previous => {
@@ -269,16 +262,26 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                             const previousMessages = [...previous]
 
                             previousMessages[index].text = editingMessageText
+
+                            for (const removedFileID of removedFiles.map(file => file.id)) {
+                                previousMessages[index].files = previousMessages[index].files.filter(file => file.id !== removedFileID)
+                            }
+
+                            let highestID = 0
+                            for (const file of previousMessages[index].files) {
+                                if (file.id > highestID) {
+                                    highestID = file.id
+                                }
+                            }
+
                             previousMessages[index].files = [
                                 ...previousMessages[index].files,
-                                ...addedFiles.map(f => {
-                                    return {
-                                        id: Date.now(),
-                                        name: f.name,
-                                        content_size: f.size,
-                                        content_type: f.type
-                                    }
-                                })]
+                                ...addedFiles.map((file, index) => ({
+                                    id: highestID + index,
+                                    name: file.name,
+                                    content_size: file.size,
+                                    content_type: file.type
+                                }))]
 
                             previousMessages[index + 1].text = ""
 
@@ -352,19 +355,24 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
 
         setAddedFiles(previous => [...previous, ...uniqueNew])
 
+        let highestID = 0
+        for (const file of visibleFiles.map(file => file.message_file)) {
+            if (file.id > highestID) {
+                highestID = file.id
+            }
+        }
+
         setVisibleFiles(previous => [
             ...previous,
-            ...uniqueNew.map(f => {
-                return {
-                    message_file: {
-                        id: Date.now(),
-                        name: f.name,
-                        content_size: f.size,
-                        content_type: f.type
-                    },
-                    isRemoving: false
-                }
-            })
+            ...uniqueNew.map((file, index) => ({
+                message_file: {
+                    id: highestID + index,
+                    name: file.name,
+                    content_size: file.size,
+                    content_type: file.type
+                },
+                isRemoving: false
+            }))
         ])
 
         event.target.value = ""
@@ -381,14 +389,11 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     return (
         <div className="flex flex-col gap-2 pt-10 pb-25 items-center overflow-y-auto">
             {messages.map((message, index) => (
-                <div
-                    key={index}
-                    className={`flex flex-col gap-0.5 w-[50vw] justify-self-center ${message.is_from_user ? "items-end" : "items-start"}`}
-                >
+                <div key={index} className={`flex flex-col gap-0.5 w-[50vw] justify-self-center ${message.is_from_user ? "items-end" : "items-start"}`}>
                     {editingMessageIndex === index ? (
                         <div className="flex flex-col gap-1 w-[80%] max-h-100 px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
                             <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
-                                {visibleFiles.length > 0 && Attachments(index)}
+                                {visibleFiles.length > 0 && Attachments()}
                                 <div className="flex">
                                     <textarea
                                         className="flex-1 p-2 overflow-y-hidden resize-none outline-none"

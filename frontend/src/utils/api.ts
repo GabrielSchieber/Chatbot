@@ -1,4 +1,4 @@
-import type { Chat, Message, MessageFile, Model, Options, SearchEntry } from "../types"
+import type { Chat, Message, Model, Options, SearchEntry } from "../types"
 import { apiFetch } from "./auth"
 
 export async function deleteAccount() {
@@ -92,7 +92,7 @@ export async function editMessage(
     message: string,
     message_index: number,
     added_files: File[],
-    removed_file: MessageFile[]
+    removed_file_ids: number[]
 ): Promise<[Promise<Chat>, number]> {
     const formData = new FormData()
     formData.append("chat_uuid", chatUUID)
@@ -100,8 +100,8 @@ export async function editMessage(
     formData.append("options", JSON.stringify(options))
     formData.append("message", message)
     formData.append("message_index", message_index.toString())
+    formData.append("removed_file_ids", JSON.stringify(removed_file_ids))
     added_files.forEach(added_file => formData.append("added_files", added_file))
-    removed_file.forEach(removed_file => formData.append("removed_file_ids", removed_file.id.toString()))
 
     const response = await apiFetch("/api/edit-message/", {
         method: "POST",
