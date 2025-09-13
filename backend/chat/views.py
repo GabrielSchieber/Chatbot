@@ -370,7 +370,7 @@ class EditMessage(APIView):
         for file in added_files:
             total_size += file.size
         for file in removed_files:
-            total_size += len(file.content)
+            total_size -= len(file.content)
         if total_size > 5_000_000:
             return Response({"error": "Total file size exceeds limit of 5 MB"}, 400)
 
