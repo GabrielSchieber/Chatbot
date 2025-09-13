@@ -3,7 +3,7 @@ import { useParams } from "react-router"
 import React, { useEffect, useRef, useState } from "react"
 import { newMessage, stopPendingChats } from "../utils/api.ts"
 import { getFileSize, getFileType } from "../utils/file"
-import type { Chat, Message, Model, Options, UIAttachment } from "../types"
+import type { Chat, Message, MessageFile, Model, Options, UIAttachment } from "../types"
 
 export default function Prompt({ setMessages, pendingChat, setPendingChat, model, setModel, options, setOptions }: {
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
@@ -207,17 +207,10 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
     }
 
     function Attachments() {
-        function removeFile(id: number) {
-            setVisibleFiles(previous =>
-                previous.map(f => f.message_file.id === id ? { ...f, isRemoving: true } : f)
-            )
-
-            setTimeout(() => {
-                setVisibleFiles(previous => previous.filter(f => f.message_file.id !== id))
-                setCurrentFiles(previous =>
-                    previous.filter(f => !visibleFiles.some(v => v.message_file.id === id && v.message_file.name === f.name))
-                )
-            }, 300)
+        function removeFile(messageFile: MessageFile) {
+            setVisibleFiles(previous => previous.filter(file => file.messageFile.id !== messageFile.id))
+            setCurrentFiles(previous => previous.filter(file => file.name + "|" + file.size !== messageFile.name + "|" + messageFile.content_size))
+            setTimeout(() => setVisibleFiles(previous => previous.filter(file => file.messageFile.id !== messageFile.id)), 300)
         }
 
         function removeFiles() {
@@ -242,16 +235,16 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
             >
                 {visibleFiles.map(file => (
                     <div
-                        key={file.message_file.name}
+                        key={file.messageFile.id + "|" + file.messageFile.name + "|" + file.messageFile.content_size}
                         className={`
                             relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl
-                            transition-all duration-300 ${file.isRemoving ? "opacity-0 translate-x-10" : "opacity-100"}
+                            transition-all duration-300 ${file.isBeingRemoved ? "opacity-0 translate-x-10" : "opacity-100"}
                         `}
                     >
-                        {getFileType(file.message_file.name) === "Image" ? (
+                        {getFileType(file.messageFile.name) === "Image" ? (
                             <img
-                                src={URL.createObjectURL(currentFiles.filter(f => f.name === file.message_file.name)[0])}
-                                alt={file.message_file.name}
+                                src={URL.createObjectURL(currentFiles.filter(f => f.name === file.messageFile.name)[0])}
+                                alt={file.messageFile.name}
                                 className="size-14 object-cover rounded-lg"
                             />
                         ) : (
@@ -259,14 +252,14 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                         )}
                         <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
                             <p className="px-2 py-1 rounded-lg bg-gray-800">
-                                Type: {getFileType(file.message_file.name)}<br />
-                                Name: {file.message_file.name}<br />
-                                Size: {getFileSize(file.message_file.content_size)}
+                                Type: {getFileType(file.messageFile.name)}<br />
+                                Name: {file.messageFile.name}<br />
+                                Size: {getFileSize(file.messageFile.content_size)}
                             </p>
                         </div>
                         <button
                             className="absolute top-0 right-0 translate-x-2 -translate-y-2 cursor-pointer text-red-400 hover:text-red-500"
-                            onClick={_ => removeFile(file.message_file.id)}
+                            onClick={_ => removeFile(file.messageFile)}
                         >
                             <Cross2Icon className="size-4" />
                         </button>
@@ -314,7 +307,15 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
 
                         setMessages(previous => {
                             const previousMessages = [...previous]
-                            const files = currentFiles.map(f => { return { id: Date.now(), name: f.name, content_size: f.size, content_type: f.type } })
+                            let highestID = 0
+                            for (const message of previousMessages) {
+                                for (const file of message.files) {
+                                    if (file.id > highestID) {
+                                        highestID = file.id
+                                    }
+                                }
+                            }
+                            const files = currentFiles.map((file, index) => ({ id: highestID + index, name: file.name, content_size: file.size, content_type: file.type }))
                             previousMessages.push({ text: prompt, files: files, is_from_user: true, model: undefined })
                             previousMessages.push({ text: "", files: [], is_from_user: false, model: model })
                             return previousMessages
@@ -361,25 +362,29 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
         }
 
         const newFiles = Array.from(event.target.files)
-
-        const existingKeys = new Set(currentFiles.map(f => f.name + "|" + f.size))
-        const uniqueNew = newFiles.filter(f => !existingKeys.has(f.name + "|" + f.size))
+        const existingKeys = new Set(currentFiles.map(file => file.name + "|" + file.size))
+        const uniqueNew = newFiles.filter(file => !existingKeys.has(file.name + "|" + file.size))
 
         setCurrentFiles(previous => [...previous, ...uniqueNew])
 
+        let highestID = 0
+        for (const file of visibleFiles.map(file => file.messageFile)) {
+            if (file.id > highestID) {
+                highestID = file.id
+            }
+        }
+
         setVisibleFiles(previous => [
             ...previous,
-            ...uniqueNew.map(f => {
-                return {
-                    message_file: {
-                        id: Date.now(),
-                        name: f.name,
-                        content_size: f.size,
-                        content_type: f.type
-                    },
-                    isRemoving: false
-                }
-            })
+            ...uniqueNew.map((file, index) => ({
+                messageFile: {
+                    id: highestID + index,
+                    name: file.name,
+                    content_size: file.size,
+                    content_type: file.type
+                },
+                isBeingRemoved: false
+            }))
         ])
 
         event.target.value = ""

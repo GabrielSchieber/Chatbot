@@ -79,12 +79,10 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                 onClick={() => {
                     setEditingMessageIndex(index)
                     setEditingMessageText(message.text)
-                    setVisibleFiles(message.files.map(f => {
-                        return {
-                            message_file: { id: f.id, name: f.name, content_size: f.content_size, content_type: f.content_type },
-                            isRemoving: false
-                        }
-                    }))
+                    setVisibleFiles(message.files.map(file => ({
+                        messageFile: { id: file.id, name: file.name, content_size: file.content_size, content_type: file.content_type },
+                        isBeingRemoved: false
+                    })))
                 }}
                 isDisabled={pendingChat !== undefined}
                 testID="edit"
@@ -122,17 +120,15 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     }
 
     function Attachments() {
-        function removeFile(file: MessageFile) {
-            setVisibleFiles(previous =>
-                previous.map(f => f.message_file.id === file.id ? { ...f, isRemoving: true } : f)
-            )
-            setRemovedFiles(previous => [...previous, file])
-            setTimeout(() => setVisibleFiles(previous => previous.filter(f => f.message_file.id !== file.id)), 300)
+        function removeFile(messageFile: MessageFile) {
+            setVisibleFiles(previous => previous.map(file => file.messageFile.id === messageFile.id ? { messageFile: messageFile, isBeingRemoved: true } : file))
+            setRemovedFiles(previous => [...previous, messageFile])
+            setTimeout(() => setVisibleFiles(previous => previous.filter(file => file.messageFile.id !== messageFile.id)), 300)
         }
 
         function removeFiles() {
-            setRemovedFiles(visibleFiles.map(file => file.message_file))
             setIsRemovingFiles(true)
+            setRemovedFiles(visibleFiles.map(file => file.messageFile))
             setTimeout(() => {
                 setVisibleFiles([])
                 setIsRemovingFiles(false)
@@ -152,23 +148,23 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
             >
                 {visibleFiles.map(file => (
                     <div
-                        key={file.message_file.name}
+                        key={file.messageFile.id + "|" + file.messageFile.name + "|" + file.messageFile.content_size}
                         className={`
                             relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl
-                            transition-all duration-300 ${file.isRemoving ? "opacity-0 translate-x-10" : "opacity-100"}
+                            transition-all duration-300 ${file.isBeingRemoved ? "opacity-0 translate-x-10" : "opacity-100"}
                         `}
                     >
                         <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
                         <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
                             <p className="px-2 py-1 rounded-lg bg-gray-800">
-                                Type: {getFileType(file.message_file.name)}<br />
-                                Name: {file.message_file.name}<br />
-                                Size: {getFileSize(file.message_file.content_size)}
+                                Type: {getFileType(file.messageFile.name)}<br />
+                                Name: {file.messageFile.name}<br />
+                                Size: {getFileSize(file.messageFile.content_size)}
                             </p>
                         </div>
                         <button
                             className="absolute top-0 right-0 translate-x-2 -translate-y-2 cursor-pointer text-red-400 hover:text-red-500"
-                            onClick={_ => removeFile(file.message_file)}
+                            onClick={_ => removeFile(file.messageFile)}
                         >
                             <Cross2Icon className="size-4" />
                         </button>
@@ -349,14 +345,16 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
         }
 
         const newFiles = Array.from(event.target.files)
-
-        const existingKeys = new Set(addedFiles.map(f => f.name + "|" + f.size))
-        const uniqueNew = newFiles.filter(f => !existingKeys.has(f.name + "|" + f.size))
+        const existingKeys = new Set([
+            ...addedFiles.map(file => file.name + "|" + file.size),
+            ...messages[editingMessageIndex].files.map(file => file.name + "|" + file.content_size)
+        ])
+        const uniqueNew = newFiles.filter(file => !existingKeys.has(file.name + "|" + file.size))
 
         setAddedFiles(previous => [...previous, ...uniqueNew])
 
         let highestID = 0
-        for (const file of visibleFiles.map(file => file.message_file)) {
+        for (const file of visibleFiles.map(file => file.messageFile)) {
             if (file.id > highestID) {
                 highestID = file.id
             }
@@ -365,13 +363,13 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
         setVisibleFiles(previous => [
             ...previous,
             ...uniqueNew.map((file, index) => ({
-                message_file: {
+                messageFile: {
                     id: highestID + index,
                     name: file.name,
                     content_size: file.size,
                     content_type: file.type
                 },
-                isRemoving: false
+                isBeingRemoved: false
             }))
         ])
 
@@ -455,8 +453,8 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                             <div className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300" data-testid={`message-${index}`}>
                                 {message.files.length > 0 && (
                                     <div className="flex flex-col gap-1">
-                                        {message.files.map((file, index) => (
-                                            <FileItem key={index} file={file} />
+                                        {message.files.map(file => (
+                                            <FileItem key={file.id + "|" + file.name + "|" + file.content_size} file={file} />
                                         ))}
                                     </div>
                                 )}

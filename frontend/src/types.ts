@@ -11,4 +11,4 @@ export type MessageFile = { id: number, name: string, content_size: number, cont
 
 export type SearchEntry = { title: string, matches: string[], uuid: string }
 
-export type UIAttachment = { message_file: MessageFile, isRemoving: boolean }
+export type UIAttachment = { messageFile: MessageFile, isBeingRemoved: boolean }
