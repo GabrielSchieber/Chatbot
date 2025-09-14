@@ -6,7 +6,7 @@ import { useState } from "react"
 export default function Chat() {
     const [messages, setMessages] = useState<Message[]>([])
     const [model, setModel] = useState<Model>("SmolLM2-135M")
-    const [options, setOptions] = useState<Options>({})
+    const [options, setOptions] = useState<Options>({ num_predict: 256, temperature: 0.2, top_p: 0.9 })
     const [pendingChat, setPendingChat] = useState<ChatType | undefined>()
 
     return (

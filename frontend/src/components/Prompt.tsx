@@ -57,21 +57,10 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
             function getOptionValue() {
                 if (optionKey === currentOption?.key) {
                     return currentOption.value
-                }
-
-                switch (optionKey) {
-                    case "num_predict":
-                        return options[optionKey] || 256
-                    case "temperature":
-                        return options[optionKey] || 0.2
-                    case "top_p":
-                        return options[optionKey] || 0.9
-                    case "seed":
-                        if (options[optionKey] === undefined || options[optionKey] === "Random") {
-                            return "Random"
-                        } else {
-                            return options[optionKey]
-                        }
+                } else if (options[optionKey] !== undefined) {
+                    return options[optionKey]
+                } else {
+                    return "Random"
                 }
             }
 
@@ -81,7 +70,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                     const newOptions = { ...previous }
                     if (optionKey === "num_predict" || optionKey === "seed") {
                         if (optionKey === "seed" && value === "Random") {
-                            newOptions[optionKey] = value
+                            newOptions.seed = undefined
                         } else {
                             const parsedValue = parseInt(value)
                             if (isFinite(parsedValue)) {

@@ -1,5 +1,5 @@
 export type Model = "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondream"
-export type Options = { num_predict?: number, temperature?: number, top_p?: number, seed?: number | "Random" }
+export type Options = { num_predict: number, temperature: number, top_p: number, seed?: number }
 export type Theme = "System" | "Light" | "Dark"
 
 export type User = { id: number, email: string, theme: Theme, has_sidebar_open: boolean }
