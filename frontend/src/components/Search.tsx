@@ -16,15 +16,17 @@ export default function Search({ isSidebarOpen }: { isSidebarOpen: boolean }) {
     const loaderRef = useRef<HTMLDivElement | null>(null)
 
     function fetchResults(reset = false) {
+        if (loading) return
+
         setLoading(true)
+
         searchChats(search, reset ? 0 : offset, 10).then(data => {
-            if (reset) {
-                setResults(data.chats)
-                setOffset(10)
-            } else {
-                setResults(previous => [...previous, ...data.chats])
-                setOffset(previous => previous + 10)
-            }
+            setResults(previous => {
+                const combined = reset ? data.chats : [...previous, ...data.chats]
+                const unique = Array.from(new Map(combined.map(c => [c.uuid, c])).values())
+                return unique
+            })
+            setOffset(prev => (reset ? 10 : prev + 10))
             setHasMore(data.has_more)
         }).finally(() => setLoading(false))
     }
@@ -41,13 +43,14 @@ export default function Search({ isSidebarOpen }: { isSidebarOpen: boolean }) {
 
     useEffect(() => {
         const observer = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && hasMore) {
+            if (entries[0].isIntersecting && hasMore && !loading) {
                 fetchResults(false)
             }
         })
+
         if (loaderRef.current) observer.observe(loaderRef.current)
         return () => observer.disconnect()
-    }, [hasMore, offset])
+    }, [hasMore, loading])
 
     return (
         <Dialog.Root>
