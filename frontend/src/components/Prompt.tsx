@@ -348,13 +348,9 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
             return
         }
 
-        let totalSize = 0
-        for (const file of currentFiles.map(file => file)) {
-            totalSize += file.size
-        }
-        for (const file of event.target.files) {
-            totalSize += file.size
-        }
+        const totalSize =
+            visibleFiles.map(file => file.messageFile.content_size).reduce((total, size) => total + size, 0)
+            + Array(...event.target.files).map(file => file.size).reduce((total, size) => total + size, 0)
         if (totalSize > MAX_FILE_SIZE) {
             alert(`Total file size exceeds ${getFileSize(MAX_FILE_SIZE)} limit. Please select smaller files.`)
             event.target.value = ""

@@ -343,9 +343,10 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
             return
         }
 
-        let totalSize = visibleFiles.map(file => file.messageFile.content_size).reduce((total, size) => total + size, 0)
-        totalSize -= removedFiles.map(file => file.content_size).reduce((total, size) => total + size, 0)
-        totalSize += Array(...event.target.files).map(file => file.size).reduce((total, size) => total + size, 0)
+        const totalSize =
+            visibleFiles.map(file => file.messageFile.content_size).reduce((total, size) => total + size, 0)
+            - removedFiles.map(file => file.content_size).reduce((total, size) => total + size, 0)
+            + Array(...event.target.files).map(file => file.size).reduce((total, size) => total + size, 0)
         if (totalSize > MAX_FILE_SIZE) {
             alert(`Total file size exceeds ${getFileSize(MAX_FILE_SIZE)} limit. Please select smaller files.`)
             event.target.value = ""
