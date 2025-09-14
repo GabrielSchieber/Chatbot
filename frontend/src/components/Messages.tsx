@@ -134,7 +134,9 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
 
     function Attachments() {
         function removeFile(messageFile: MessageFile) {
+            messages[editingMessageIndex].files = messages[editingMessageIndex].files.filter(file => file.id !== messageFile.id)
             setVisibleFiles(previous => previous.map(file => file.messageFile.id === messageFile.id ? { messageFile: messageFile, isBeingRemoved: true } : file))
+            setAddedFiles(previous => previous.filter(file => file.name + "|" + file.size !== messageFile.name + "|" + messageFile.content_size))
             setRemovedFiles(previous => [...previous, messageFile])
             setTimeout(() => setVisibleFiles(previous => previous.filter(file => file.messageFile.id !== messageFile.id)), 300)
         }
@@ -334,22 +336,15 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
         if (!event.target.files) return
 
-        if (event.target.files.length + addedFiles.length - removedFiles.length > 10) {
+        if (visibleFiles.length + event.target.files.length > 10) {
             alert("You can only attach up to 10 files at a time.")
             event.target.value = ""
             return
         }
 
-        let totalSize = 0
-        for (const addedFile of addedFiles) {
-            totalSize += addedFile.size
-        }
-        for (const removedFile of removedFiles) {
-            totalSize -= removedFile.content_size
-        }
-        for (const file of event.target.files) {
-            totalSize += file.size
-        }
+        let totalSize = visibleFiles.map(file => file.messageFile.content_size).reduce((total, size) => total + size, 0)
+        totalSize -= removedFiles.map(file => file.content_size).reduce((total, size) => total + size, 0)
+        totalSize += Array(...event.target.files).map(file => file.size).reduce((total, size) => total + size, 0)
         if (totalSize > 5_000_000) {
             alert("Total file size exceeds 5 MB limit. Please select smaller files.")
             event.target.value = ""
@@ -365,18 +360,12 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
 
         setAddedFiles(previous => [...previous, ...uniqueNew])
 
-        let highestID = 0
-        for (const file of visibleFiles.map(file => file.messageFile)) {
-            if (file.id > highestID) {
-                highestID = file.id
-            }
-        }
-
+        const highestVisibleFileID = visibleFiles.map(file => file.messageFile.id).sort().at(-1) || 0
         setVisibleFiles(previous => [
             ...previous,
             ...uniqueNew.map((file, index) => ({
                 messageFile: {
-                    id: highestID + index,
+                    id: highestVisibleFileID + index + 1,
                     name: file.name,
                     content_size: file.size,
                     content_type: file.type
@@ -443,6 +432,11 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                                         onClick={_ => {
                                             setEditingMessageIndex(-1)
                                             setEditingMessageText("")
+                                            setAddedFiles([])
+                                            setRemovedFiles([])
+                                            for (const removedFile of removedFiles) {
+                                                setVisibleFiles(previous => previous.filter(file => file.messageFile.id !== removedFile.id))
+                                            }
                                         }}
                                     >
                                         Cancel
