@@ -228,9 +228,9 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
 
         function removeFiles() {
             setIsRemovingFiles(true)
+            setCurrentFiles([])
             setTimeout(() => {
                 setVisibleFiles([])
-                setCurrentFiles([])
                 setIsRemovingFiles(false)
             }, 300)
         }
@@ -254,7 +254,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                     >
                         {getFileType(file.messageFile.name) === "Image" ? (
                             <img
-                                src={URL.createObjectURL(currentFiles.filter(f => f.name === file.messageFile.name)[0])}
+                                src={URL.createObjectURL(currentFiles.find(currentFile => currentFile.name === file.messageFile.name) || new Blob())}
                                 alt={file.messageFile.name}
                                 className="size-14 object-cover rounded-lg"
                             />
@@ -319,15 +319,13 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
 
                         setMessages(previous => {
                             const previousMessages = [...previous]
-                            let highestID = 0
-                            for (const message of previousMessages) {
-                                for (const file of message.files) {
-                                    if (file.id > highestID) {
-                                        highestID = file.id
-                                    }
-                                }
-                            }
-                            const files = currentFiles.map((file, index) => ({ id: highestID + index, name: file.name, content_size: file.size, content_type: file.type }))
+                            const highestCurrentFileID = previousMessages.flatMap(message => message.files).map(file => file.id).sort().at(-1) || 0
+                            const files = currentFiles.map((file, index) => ({
+                                id: highestCurrentFileID + index + 1,
+                                name: file.name,
+                                content_size: file.size,
+                                content_type: file.type
+                            }))
                             previousMessages.push({ text: prompt, files: files, is_from_user: true, model: undefined })
                             previousMessages.push({ text: "", files: [], is_from_user: false, model: model })
                             return previousMessages
@@ -361,7 +359,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
         }
 
         let totalSize = 0
-        for (const file of currentFiles) {
+        for (const file of currentFiles.map(file => file)) {
             totalSize += file.size
         }
         for (const file of event.target.files) {
@@ -379,18 +377,12 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
 
         setCurrentFiles(previous => [...previous, ...uniqueNew])
 
-        let highestID = 0
-        for (const file of visibleFiles.map(file => file.messageFile)) {
-            if (file.id > highestID) {
-                highestID = file.id
-            }
-        }
-
+        const highestVisibleFileID = visibleFiles.map(file => file.messageFile.id).sort().at(-1) || 0
         setVisibleFiles(previous => [
             ...previous,
             ...uniqueNew.map((file, index) => ({
                 messageFile: {
-                    id: highestID + index,
+                    id: highestVisibleFileID + index + 1,
                     name: file.name,
                     content_size: file.size,
                     content_type: file.type
