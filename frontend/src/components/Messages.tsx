@@ -36,7 +36,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     const [isRemovingFiles, setIsRemovingFiles] = useState(false)
 
     function MessageButton({ children, onClick, tooltip, isDisabled = false, testID }: {
-        children: ReactNode, onClick: () => void, tooltip: string, isDisabled?: boolean, testID?: string
+        children: ReactNode, onClick: () => void, tooltip: ReactNode, isDisabled?: boolean, testID?: string
     }) {
         return (
             <Tooltip.Provider delayDuration={200}>
@@ -91,13 +91,18 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
         )
     }
 
-    function RegenerateButton({ index }: { index: number }) {
+    function RegenerateButton({ message, index }: { message: Message, index: number }) {
         return (
             <MessageButton
                 children={
                     <UpdateIcon className="size-4.5" />
                 }
-                tooltip="Regenerate"
+                tooltip={
+                    <div className="flex flex-col items-center">
+                        <p>Regenerate</p>
+                        {message.model && <p className="text-xs text-gray-400">Used {message.model}</p>}
+                    </div>
+                }
                 onClick={() => regenerateMessage(index)}
                 isDisabled={pendingChat !== undefined}
                 testID="regenerate"
@@ -543,7 +548,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                         ) : (
                             <>
                                 <CopyButton message={message} index={index} />
-                                <RegenerateButton index={index} />
+                                <RegenerateButton message={message} index={index} />
                             </>
                         )}
                     </div>
