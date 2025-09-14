@@ -119,6 +119,19 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
         )
     }
 
+    function AttachmentsInfo(files: MessageFile[]) {
+        function getTotalSize(messageFiles: MessageFile[]): number {
+            return messageFiles.map(file => file.content_size).reduce((total, size) => total + size)
+        }
+
+        return (
+            <div className="flex gap-1">
+                <p className="text-sm px-2 rounded bg-gray-600">Files: {files.length}/{10}</p>
+                <p className="text-sm px-2 rounded bg-gray-600">Size: {getFileSize(getTotalSize(files))}</p>
+            </div>
+        )
+    }
+
     function Attachments() {
         function removeFile(messageFile: MessageFile) {
             setVisibleFiles(previous => previous.map(file => file.messageFile.id === messageFile.id ? { messageFile: messageFile, isBeingRemoved: true } : file))
@@ -141,9 +154,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                     relative flex flex-col gap-1 p-2 border border-gray-500 top-0 rounded-xl
                     transition-all duration-300 ${isRemovingFiles ? "opacity-0 overflow-y-hidden" : "opacity-100"}
                 `}
-                style={{
-                    maxHeight: isRemovingFiles ? 0 : visibleFiles.length * 100
-                }}
+                style={{ maxHeight: isRemovingFiles ? 0 : visibleFiles.length * 120 }}
                 onClick={e => e.stopPropagation()}
             >
                 {visibleFiles.map(file => (
@@ -170,6 +181,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                         </button>
                     </div>
                 ))}
+                {AttachmentsInfo(visibleFiles.map(file => file.messageFile))}
                 <button
                     className="absolute right-0 -translate-x-2 cursor-pointer text-red-400 hover:text-red-500"
                     onClick={removeFiles}
@@ -452,10 +464,11 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                         message.is_from_user ? (
                             <div className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300" data-testid={`message-${index}`}>
                                 {message.files.length > 0 && (
-                                    <div className="flex flex-col gap-1">
+                                    <div className="flex flex-col gap-1 p-2 rounded-xl border border-gray-500">
                                         {message.files.map(file => (
                                             <FileItem key={file.id + "|" + file.name + "|" + file.content_size} file={file} />
                                         ))}
+                                        {AttachmentsInfo(message.files)}
                                     </div>
                                 )}
                                 <div className="whitespace-pre-wrap">
