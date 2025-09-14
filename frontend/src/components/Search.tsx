@@ -12,9 +12,11 @@ export default function Search({ isSidebarOpen }: { isSidebarOpen: boolean }) {
 
     const [offset, setOffset] = useState(0)
     const [hasMore, setHasMore] = useState(true)
+    const [loading, setLoading] = useState(false)
     const loaderRef = useRef<HTMLDivElement | null>(null)
 
     function fetchResults(reset = false) {
+        setLoading(true)
         searchChats(search, reset ? 0 : offset, 10).then(data => {
             if (reset) {
                 setResults(data.chats)
@@ -24,7 +26,7 @@ export default function Search({ isSidebarOpen }: { isSidebarOpen: boolean }) {
                 setOffset(previous => previous + 10)
             }
             setHasMore(data.has_more)
-        })
+        }).finally(() => setLoading(false))
     }
 
     useEffect(() => {
@@ -88,30 +90,35 @@ export default function Search({ isSidebarOpen }: { isSidebarOpen: boolean }) {
                 <div className="flex flex-col w-full max-h-[50vh] overflow-y-auto gap-3 p-3">
                     {!hasChats ? (
                         <p className="text-gray-400 light:text-gray-600 px-3 py-2">You have no chats to search.</p>
+                    ) : loading && results.length === 0 ? (
+                        <p className="text-gray-400 light:text-gray-600 px-3 py-2">Loading...</p>
+                    ) : results.length === 0 ? (
+                        <p className="text-gray-400 light:text-gray-600 px-3 py-2">No chats found.</p>
                     ) : (
-                        results.length === 0 ? (
-                            <p className="text-gray-400 light:text-gray-600 px-3 py-2">No chats found.</p>
-                        ) : (
-                            results.map(entry => (
-                                <a
-                                    key={entry.uuid}
-                                    className="flex gap-5 px-2 py-1 items-center rounded-lg hover:bg-gray-600 light:hover:bg-gray-300"
-                                    href={`/chat/${entry.uuid}`}
-                                >
-                                    <ChatBubbleIcon className="size-10" />
-                                    <div className="flex flex-col">
-                                        <p>{entry.title}</p>
-                                        {entry.matches.length > 0 && (
-                                            <ul>
-                                                {entry.matches.map((m, i) => (
-                                                    <li key={i}>{m.slice(0, 100)}...</li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                    </div>
-                                </a>
-                            ))
-                        ))}
+                        results.map(entry => (
+                            <a
+                                key={entry.uuid}
+                                className="flex gap-5 px-2 py-1 items-center rounded-lg hover:bg-gray-600 light:hover:bg-gray-300"
+                                href={`/chat/${entry.uuid}`}
+                            >
+                                <ChatBubbleIcon className="size-10" />
+                                <div className="flex flex-col">
+                                    <p>{entry.title}</p>
+                                    {entry.matches.length > 0 && (
+                                        <ul>
+                                            {entry.matches.map((m, i) => (
+                                                <li key={i}>{m.slice(0, 100)}...</li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            </a>
+                        ))
+                    )}
+
+                    {loading && results.length > 0 && (
+                        <p className="text-gray-400 light:text-gray-600 px-3 py-2">Loading...</p>
+                    )}
                     {hasMore && <div ref={loaderRef} className="h-6"></div>}
                 </div>
             </Dialog.Content>
