@@ -3,6 +3,9 @@ import Prompt from "./Prompt"
 import type { Chat as ChatType, Message, Model, Options } from "../types"
 import { useState } from "react"
 
+export const MAX_FILES = 10
+export const MAX_FILE_SIZE = 5_000_000
+
 export default function Chat() {
     const [messages, setMessages] = useState<Message[]>([])
     const [model, setModel] = useState<Model>("SmolLM2-135M")

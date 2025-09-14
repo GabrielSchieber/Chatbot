@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react"
 import { newMessage, stopPendingChats } from "../utils/api.ts"
 import { getFileSize, getFileType } from "../utils/file"
 import type { Chat, Message, MessageFile, Model, Options, UIAttachment } from "../types"
+import { MAX_FILE_SIZE, MAX_FILES } from "./Chat.tsx"
 
 export default function Prompt({ setMessages, pendingChat, setPendingChat, model, setModel, options, setOptions }: {
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
@@ -202,8 +203,8 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
 
         return (
             <div className="flex gap-1">
-                <p className="text-sm px-2 rounded bg-gray-600">Files: {files.length}/{10}</p>
-                <p className="text-sm px-2 rounded bg-gray-600">Size: {getFileSize(getTotalSize(files))}</p>
+                <p className="text-sm px-2 rounded bg-gray-600">Files: {files.length}/{MAX_FILES}</p>
+                <p className="text-sm px-2 rounded bg-gray-600">Size: {getFileSize(getTotalSize(files))} / {getFileSize(MAX_FILE_SIZE)}</p>
             </div>
         )
     }
@@ -341,8 +342,8 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
     function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
         if (!event.target.files) return
 
-        if (event.target.files.length + currentFiles.length > 10) {
-            alert("You can only attach up to 10 files at a time.")
+        if (event.target.files.length + currentFiles.length > MAX_FILES) {
+            alert(`You can only attach up to ${MAX_FILES} files at a time.`)
             event.target.value = ""
             return
         }
@@ -354,8 +355,8 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
         for (const file of event.target.files) {
             totalSize += file.size
         }
-        if (totalSize > 5_000_000) {
-            alert("Total file size exceeds 5 MB limit. Please select smaller files.")
+        if (totalSize > MAX_FILE_SIZE) {
+            alert(`Total file size exceeds ${getFileSize(MAX_FILE_SIZE)} limit. Please select smaller files.`)
             event.target.value = ""
             return
         }
