@@ -41,17 +41,6 @@ export async function deleteChats() {
     return (await apiFetch("/api/delete-chats/", { credentials: "include" })).status
 }
 
-export async function getMessages(chatUUID: string): Promise<Message[] | undefined> {
-    const response = await apiFetch("/api/get-messages/", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_uuid: chatUUID })
-    })
-    const data = await response.json()
-    return data.messages
-}
-
 export async function getMessage(chatUUID: string, message_index: number): Promise<string | undefined> {
     const response = await apiFetch("/api/get-message/", {
         method: "POST",
@@ -61,6 +50,21 @@ export async function getMessage(chatUUID: string, message_index: number): Promi
     })
     const data = await response.json()
     return data.text
+}
+
+export async function getMessageFileContent(chat_uuid: string, id: number) {
+    return await apiFetch(`/api/get-message-file-content/?chat_uuid=${chat_uuid}&message_file_id=${id}`, { credentials: "include" })
+}
+
+export async function getMessages(chatUUID: string): Promise<Message[] | undefined> {
+    const response = await apiFetch("/api/get-messages/", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_uuid: chatUUID })
+    })
+    const data = await response.json()
+    return data.messages
 }
 
 export async function newMessage(

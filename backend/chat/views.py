@@ -6,6 +6,7 @@ from django.shortcuts import render
 from rest_framework import generics, serializers, status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -237,6 +238,45 @@ class GetMessage(APIView):
             return Response({"text": message.text})
         except Exception:
             return Response(status = 400)
+
+class BinaryFileRenderer(BaseRenderer):
+    media_type = "application/octet-stream"
+    format = None
+    charset = None
+    render_style = "binary"
+
+    def render(self, data, media_type = None, renderer_context = None):
+        return data
+
+class GetMessageFileContent(APIView):
+    permission_classes = [IsAuthenticated]
+    renderer_classes = [BinaryFileRenderer]
+
+    def get(self, request):
+        chat_uuid = request.GET.get("chat_uuid")
+        if not chat_uuid:
+            return Response({"error": "chat_uuid required"}, status = 404)
+
+        message_file_id = request.GET.get("message_file_id")
+        if not message_file_id:
+            return Response({"error": "message_file_id required"}, status = 404)
+        message_file_id = int(message_file_id)
+
+        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
+        if not chat:
+            return Response({"error": "Chat not found"}, status = 404)
+
+        message_file = None
+        for message in chat.messages.all():
+            for file in message.files.all():
+                if file.id == message_file_id:
+                    message_file = file
+                    break
+
+        if message_file:
+            return Response(message_file.content)
+        else:
+            return Response({"error": "MessageFile not found"}, status = 404)
 
 class GetMessages(APIView):
     permission_classes = [IsAuthenticated]

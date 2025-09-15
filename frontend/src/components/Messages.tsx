@@ -6,7 +6,7 @@ import { useParams } from "react-router"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 
-import { getMessage, getMessages, editMessage as editMessageAPI, regenerateMessage as regenerateMessageAPI, getPendingChats } from "../utils/api"
+import { getMessage, getMessages, editMessage as editMessageAPI, regenerateMessage as regenerateMessageAPI, getPendingChats, getMessageFileContent } from "../utils/api"
 import { getFileSize, getFileType } from "../utils/file"
 import type { Chat, Message, MessageFile, Model, Options, UIAttachment } from "../types"
 import { MAX_FILE_SIZE, MAX_FILES } from "./Chat"
@@ -35,6 +35,8 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     const [removedFiles, setRemovedFiles] = useState<MessageFile[]>([])
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
     const [isRemovingFiles, setIsRemovingFiles] = useState(false)
+
+    const [messagesFileContents, setMessagesFileContents] = useState<{ [key: number]: Blob | undefined }>({})
 
     function MessageButton({ children, onClick, tooltip, isDisabled = false, testID }: {
         children: ReactNode, onClick: () => void, tooltip: ReactNode, isDisabled?: boolean, testID?: string
@@ -151,17 +153,61 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
         )
     }
 
+    function fetchFileContent(id: number) {
+        if (messagesFileContents[id] === undefined && chatUUID) {
+            getMessageFileContent(chatUUID, id).then(response => {
+                if (response.ok) {
+                    response.blob().then(data => {
+                        setMessagesFileContents(previous => {
+                            const previousContents = { ...previous }
+                            previousContents[id] = data
+                            return previousContents
+                        })
+                    })
+                }
+            })
+        }
+    }
+
+    function getFileContent(id: number) {
+        if (messagesFileContents[id] !== undefined) {
+            return messagesFileContents[id]
+        }
+        fetchFileContent(id)
+    }
+
+    function FileItemIcon({ file }: { file: MessageFile }) {
+        if (getFileType(file.name) === "Image") {
+            const content = getFileContent(file.id)
+            if (content) {
+                return <img src={URL.createObjectURL(content)} alt={file.name} className="size-14 object-cover rounded-lg" />
+            } else {
+                return (
+                    <div className="flex p-2 rounded-lg bg-gray-800">
+                        <svg className="size-12 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                        </svg>
+                    </div>
+                )
+            }
+        }
+        return <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
+    }
+
     function FileItem({ file }: { file: MessageFile }) {
         return (
             <div className="relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl">
-                <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
-                <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
-                    <p className="px-2 py-1 rounded-lg bg-gray-800">
-                        Type: {getFileType(file.name)}<br />
-                        Name: {file.name}<br />
-                        Size: {getFileSize(file.content_size)}
-                    </p>
-                </div>
+                {<FileItemIcon file={file} />}
+                <p className="h-full content-center px-2 py-1 text-[12px] font-semibold rounded-lg bg-gray-800">
+                    Type: {getFileType(file.name)}<br />
+                    Name: {file.name}<br />
+                    Size: {getFileSize(file.content_size)}
+                </p>
             </div>
         )
     }
@@ -214,7 +260,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                             transition-all duration-300 ${file.isBeingRemoved ? "opacity-0 translate-x-10" : "opacity-100"}
                         `}
                     >
-                        <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
+                        {<FileItemIcon file={file.messageFile} />}
                         <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
                             <p className="px-2 py-1 rounded-lg bg-gray-800">
                                 Type: {getFileType(file.messageFile.name)}<br />
