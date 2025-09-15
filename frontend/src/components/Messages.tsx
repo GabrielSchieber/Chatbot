@@ -36,7 +36,8 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
     const [isRemovingFiles, setIsRemovingFiles] = useState(false)
 
-    const [messagesFileContents, setMessagesFileContents] = useState<{ [key: number]: Blob | undefined }>({})
+    const isFetchingFileContents = useRef(false)
+    const [messagesFileContents, setMessagesFileContents] = useState<{ [key: number]: Blob }>({})
 
     function MessageButton({ children, onClick, tooltip, isDisabled = false, testID }: {
         children: ReactNode, onClick: () => void, tooltip: ReactNode, isDisabled?: boolean, testID?: string
@@ -163,6 +164,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                             previousContents[id] = data
                             return previousContents
                         })
+                        isFetchingFileContents.current = false
                     })
                 }
             })
@@ -172,8 +174,10 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     function getFileContent(id: number) {
         if (messagesFileContents[id] !== undefined) {
             return messagesFileContents[id]
+        } else if (isFetchingFileContents.current === false) {
+            fetchFileContent(id)
+            isFetchingFileContents.current = true
         }
-        fetchFileContent(id)
     }
 
     function FileItemIcon({ file }: { file: MessageFile }) {
