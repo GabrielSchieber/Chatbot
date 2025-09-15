@@ -1,5 +1,5 @@
 import { CheckIcon, CopyIcon, Cross2Icon, FileIcon, Pencil1Icon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
-import { Tooltip } from "radix-ui"
+import { DropdownMenu, Tooltip } from "radix-ui"
 import React, { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import { useParams } from "react-router"
@@ -24,6 +24,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
 
     const webSocket = useRef<WebSocket>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
+    const regenerateModel = useRef<Model | null>(null)
     const shouldLoadMessages = useRef(true)
 
     const [copiedMessageIndex, setCopiedMessageIndex] = useState(-1)
@@ -92,21 +93,61 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     }
 
     function RegenerateButton({ message, index }: { message: Message, index: number }) {
+        const models: Model[] = ["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]
+        const isDisabled = pendingChat !== undefined
+
         return (
-            <MessageButton
-                children={
-                    <UpdateIcon className="size-4.5" />
-                }
-                tooltip={
-                    <div className="flex flex-col items-center">
-                        <p>Regenerate</p>
-                        {message.model && <p className="text-xs text-gray-400">Used {message.model}</p>}
-                    </div>
-                }
-                onClick={() => regenerateMessage(index)}
-                isDisabled={pendingChat !== undefined}
-                testID="regenerate"
-            />
+            <Tooltip.Provider delayDuration={200}>
+                <DropdownMenu.Root>
+                    <Tooltip.Root>
+                        <Tooltip.Trigger asChild>
+                            <DropdownMenu.Trigger
+                                className={`p-2 rounded-lg hover:bg-gray-700 light:hover:bg-gray-300 ${isDisabled ? "opacity-50" : "cursor-pointer"}`}
+                                disabled={isDisabled}
+                                data-testid="regenerate"
+                            >
+                                <UpdateIcon className="size-4.5" />
+                            </DropdownMenu.Trigger>
+                        </Tooltip.Trigger>
+
+                        <Tooltip.Portal>
+                            <Tooltip.Content
+                                className="text-white text-sm bg-black px-2 py-1 rounded-xl"
+                                side="bottom"
+                                sideOffset={3}
+                            >
+                                <div className="flex flex-col items-center">
+                                    <p>Regenerate</p>
+                                    {message.model && (
+                                        <p className="text-xs text-gray-400">Used {message.model}</p>
+                                    )}
+                                </div>
+                            </Tooltip.Content>
+                        </Tooltip.Portal>
+                    </Tooltip.Root>
+
+                    <DropdownMenu.Portal>
+                        <DropdownMenu.Content className="flex flex-col gap-1 p-2 rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200" sideOffset={5}>
+                            {models.map(m => (
+                                <DropdownMenu.Item
+                                    key={m}
+                                    className={`
+                                        flex gap-1 w-40 px-2 py-1 items-center justify-between rounded truncate cursor-pointer hover:bg-gray-600
+                                        light:hover:bg-gray-400/50 ${m === message.model ? "bg-gray-600/90 light:bg-gray-400/40" : "bg-gray-700 light:bg-gray-300"}
+                                    `}
+                                    onSelect={_ => {
+                                        regenerateModel.current = m
+                                        regenerateMessage(index)
+                                    }}
+                                >
+                                    {m}
+                                    {m === message.model && <CheckIcon className="size-5" />}
+                                </DropdownMenu.Item>
+                            ))}
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+            </Tooltip.Provider>
         )
     }
 
@@ -230,7 +271,9 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                     setMessages(previous => {
                         let previousMessages = [...previous]
                         if (previousMessages[message_index]) {
-                            previousMessages[message_index] = { text: previousMessages[message_index].text + data.token, files: [], is_from_user: false, model: model }
+                            previousMessages[message_index] = {
+                                text: previousMessages[message_index].text + data.token, files: [], is_from_user: false, model: regenerateModel.current || model
+                            }
                         }
                         return previousMessages
                     })
@@ -238,7 +281,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                     setMessages(previous => {
                         let previousMessages = [...previous]
                         if (previousMessages[message_index]) {
-                            previousMessages[message_index] = { text: data.message, files: [], is_from_user: false, model: model }
+                            previousMessages[message_index] = { text: data.message, files: [], is_from_user: false, model: regenerateModel.current || model }
                         }
                         return previousMessages
                     })
@@ -323,19 +366,22 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     }
 
     function regenerateMessage(index: number) {
-        if (chatUUID) {
-            regenerateMessageAPI(chatUUID, model, options, index).then(([chat, status]) => {
+        if (chatUUID && regenerateModel.current) {
+            regenerateMessageAPI(chatUUID, regenerateModel.current, options, index).then(([chat, status]) => {
                 if (status === 200) {
                     setMessages(previous => {
-                        const messages = [...previous]
-                        messages[index].text = ""
-                        return messages
+                        const previousMessages = [...previous]
+                        previousMessages[index].text = ""
+                        if (regenerateModel.current) {
+                            previousMessages[index].model = regenerateModel.current
+                        }
+                        return previousMessages
                     })
                     chat.then(chat => setPendingChat(chat))
                 }
             })
         } else {
-            alert("Edition of message was not possible")
+            alert("Regeneration of message was not possible")
         }
     }
 
@@ -391,6 +437,12 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
             receiveMessage()
         })
     }, [])
+
+    useEffect(() => {
+        if (regenerateModel.current) {
+            setModel(regenerateModel.current)
+        }
+    }, [regenerateModel.current])
 
     return (
         <div className="flex flex-col gap-2 pt-10 pb-25 items-center overflow-y-auto">
