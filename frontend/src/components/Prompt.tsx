@@ -211,7 +211,11 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
 
     function Attachments() {
         function removeFile(messageFile: MessageFile) {
-            setVisibleFiles(previous => previous.filter(file => file.messageFile.id !== messageFile.id))
+            setVisibleFiles(previous => previous.map(file => ({
+                messageFile: file.messageFile,
+                isBeingRemoved: file.messageFile.id !== messageFile.id ? false : true,
+                isNew: false
+            })))
             setCurrentFiles(previous => previous.filter(file => file.name + "|" + file.size !== messageFile.name + "|" + messageFile.content_size))
             setTimeout(() => setVisibleFiles(previous => previous.filter(file => file.messageFile.id !== messageFile.id)), 300)
         }
@@ -267,10 +271,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                     </div>
                 ))}
                 {AttachmentsInfo(visibleFiles.map(file => file.messageFile))}
-                <button
-                    className="absolute right-0 -translate-x-2 cursor-pointer text-red-400 hover:text-red-500"
-                    onClick={removeFiles}
-                >
+                <button className="absolute right-0 -translate-x-2 cursor-pointer text-red-400 hover:text-red-500" onClick={removeFiles}>
                     <Cross2Icon />
                 </button>
             </div>
@@ -401,13 +402,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
             >
                 {AddDropdown()}
 
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    style={{ display: "none" }}
-                    multiple
-                />
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: "none" }} multiple />
 
                 <div className="flex flex-1 flex-col gap-3 max-h-100 overflow-y-auto">
                     {visibleFiles.length > 0 && Attachments()}
@@ -427,11 +422,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                 </div>
 
                 {(prompt.trim() || currentFiles.length > 0) && pendingChat === undefined &&
-                    <button
-                        className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer"
-                        tabIndex={3}
-                        onClick={sendMessage}
-                    >
+                    <button className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer" tabIndex={3} onClick={sendMessage}>
                         <ArrowUpIcon className="size-6 text-white" />
                     </button>
                 }
