@@ -86,7 +86,8 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                     setEditingMessageText(message.text)
                     setVisibleFiles(message.files.map(file => ({
                         messageFile: { id: file.id, name: file.name, content_size: file.content_size, content_type: file.content_type },
-                        isBeingRemoved: false
+                        isBeingRemoved: false,
+                        isNew: false
                     })))
                 }}
                 isDisabled={pendingChat !== undefined}
@@ -231,16 +232,39 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
 
     function Attachments() {
         function removeFile(messageFile: MessageFile) {
-            messages[editingMessageIndex].files = messages[editingMessageIndex].files.filter(file => file.id !== messageFile.id)
-            setVisibleFiles(previous => previous.map(file => file.messageFile.id === messageFile.id ? { messageFile: messageFile, isBeingRemoved: true } : file))
-            setAddedFiles(previous => previous.filter(file => file.name + "|" + file.size !== messageFile.name + "|" + messageFile.content_size))
-            setRemovedFiles(previous => [...previous, messageFile])
-            setTimeout(() => setVisibleFiles(previous => previous.filter(file => file.messageFile.id !== messageFile.id)), 300)
+            setVisibleFiles(prev => {
+                const ui = prev.find(u => u.messageFile.id === messageFile.id && u.messageFile.name === messageFile.name && u.messageFile.content_size === messageFile.content_size)
+                if (ui && !ui.isNew) {
+                    setRemovedFiles(prevRemoved => {
+                        if (prevRemoved.find(r => r.id === messageFile.id)) return prevRemoved
+                        return [...prevRemoved, messageFile]
+                    })
+                } else {
+                    setAddedFiles(prevAdded => prevAdded.filter(f => !(f.name === messageFile.name && f.size === messageFile.content_size)))
+                }
+
+                return prev.map(u => u.messageFile.id === messageFile.id ? { ...u, isBeingRemoved: true } : u)
+            })
+
+            setTimeout(() => {
+                setVisibleFiles(prev => prev.filter(u => !(u.messageFile.id === messageFile.id && u.messageFile.name === messageFile.name && u.messageFile.content_size === messageFile.content_size)))
+            }, 300)
         }
 
         function removeFiles() {
             setIsRemovingFiles(true)
-            setRemovedFiles(visibleFiles.map(file => file.messageFile))
+
+            setRemovedFiles(prevRemoved => {
+                const originals = visibleFiles.filter(u => !u.isNew).map(u => u.messageFile)
+                const existingIDs = new Set(prevRemoved.map(r => r.id))
+                return [...prevRemoved, ...originals.filter(o => !existingIDs.has(o.id))]
+            })
+
+            setAddedFiles(prevAdded => {
+                const remaining = prevAdded.filter(added => !visibleFiles.some(u => u.isNew && u.messageFile.name === added.name && u.messageFile.content_size === added.size))
+                return remaining
+            })
+
             setTimeout(() => {
                 setVisibleFiles([])
                 setIsRemovingFiles(false)
@@ -272,6 +296,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                                 Size: {getFileSize(file.messageFile.content_size)}
                             </p>
                         </div>
+                        {/* The following is the "remove file button" */}
                         <button
                             className="absolute top-0 right-0 translate-x-2 -translate-y-2 cursor-pointer text-red-400 hover:text-red-500"
                             onClick={_ => removeFile(file.messageFile)}
@@ -281,6 +306,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                     </div>
                 ))}
                 {AttachmentsInfo(visibleFiles.map(file => file.messageFile))}
+                {/* The following is the "remove all files button" */}
                 <button
                     className="absolute right-0 -translate-x-2 cursor-pointer text-red-400 hover:text-red-500"
                     onClick={removeFiles}
@@ -434,7 +460,6 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
             alert("Regeneration of message was not possible")
         }
     }
-
     function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
         if (!event.target.files) return
 
@@ -444,38 +469,64 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
             return
         }
 
-        const totalSize =
-            visibleFiles.map(file => file.messageFile.content_size).reduce((total, size) => total + size, 0)
-            - removedFiles.map(file => file.content_size).reduce((total, size) => total + size, 0)
-            + Array(...event.target.files).map(file => file.size).reduce((total, size) => total + size, 0)
+        const newFiles = Array.from(event.target.files)
+
+        const visibleTotal = visibleFiles.map(v => v.messageFile.content_size).reduce((a, b) => a + b, 0)
+        const removedTotal = removedFiles.map(r => r.content_size).reduce((a, b) => a + b, 0)
+        const newTotal = newFiles.map(f => f.size).reduce((a, b) => a + b, 0)
+        const totalSize = visibleTotal - removedTotal + newTotal
+
         if (totalSize > MAX_FILE_SIZE) {
             alert(`Total file size exceeds ${getFileSize(MAX_FILE_SIZE)} limit. Please select smaller files.`)
             event.target.value = ""
             return
         }
 
-        const newFiles = Array.from(event.target.files)
-        const existingKeys = new Set([
-            ...addedFiles.map(file => file.name + "|" + file.size),
-            ...messages[editingMessageIndex].files.map(file => file.name + "|" + file.content_size)
-        ])
-        const uniqueNew = newFiles.filter(file => !existingKeys.has(file.name + "|" + file.size))
+        const existingAddedKeys = new Set(addedFiles.map(f => f.name + "|" + f.size))
+        const existingVisibleKeys = new Set(visibleFiles.map(u => u.messageFile.name + "|" + u.messageFile.content_size))
 
-        setAddedFiles(previous => [...previous, ...uniqueNew])
+        const highestVisibleFileID = visibleFiles.map(file => file.messageFile.id).sort((a, b) => a - b).at(-1) || 0
 
-        const highestVisibleFileID = visibleFiles.map(file => file.messageFile.id).sort().at(-1) || 0
-        setVisibleFiles(previous => [
-            ...previous,
-            ...uniqueNew.map((file, index) => ({
+        let syntheticCounter = 0
+        const toAddUI: UIAttachment[] = []
+        const toAddFiles: File[] = []
+
+        for (const f of newFiles) {
+            const key = f.name + "|" + f.size
+
+            if (existingAddedKeys.has(key) || existingVisibleKeys.has(key)) {
+                continue
+            }
+
+            const removedIndex = removedFiles.findIndex(r => r.name === f.name && r.content_size === f.size)
+            if (removedIndex !== -1) {
+                const original = removedFiles[removedIndex]
+                setRemovedFiles(prev => prev.filter((_, i) => i !== removedIndex))
+                toAddUI.push({ messageFile: original, isBeingRemoved: false, isNew: false })
+                existingVisibleKeys.add(key)
+                continue
+            }
+
+            toAddFiles.push(f)
+            syntheticCounter += 1
+            toAddUI.push({
                 messageFile: {
-                    id: highestVisibleFileID + index + 1,
-                    name: file.name,
-                    content_size: file.size,
-                    content_type: file.type
+                    id: highestVisibleFileID + syntheticCounter,
+                    name: f.name,
+                    content_size: f.size,
+                    content_type: f.type
                 },
-                isBeingRemoved: false
-            }))
-        ])
+                isBeingRemoved: false,
+                isNew: true
+            })
+        }
+
+        if (toAddFiles.length > 0) {
+            setAddedFiles(prev => [...prev, ...toAddFiles])
+        }
+        if (toAddUI.length > 0) {
+            setVisibleFiles(prev => [...prev, ...toAddUI])
+        }
 
         event.target.value = ""
     }
@@ -543,10 +594,13 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                                             setEditingMessageText("")
                                             setAddedFiles([])
                                             setRemovedFiles([])
-                                            for (const removedFile of removedFiles) {
-                                                setVisibleFiles(previous => previous.filter(file => file.messageFile.id !== removedFile.id))
-                                            }
+                                            setVisibleFiles(message.files.map(file => ({
+                                                messageFile: { id: file.id, name: file.name, content_size: file.content_size, content_type: file.content_type },
+                                                isBeingRemoved: false,
+                                                isNew: false
+                                            })))
                                         }}
+
                                     >
                                         Cancel
                                     </button>
