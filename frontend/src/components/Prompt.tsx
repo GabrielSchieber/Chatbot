@@ -309,7 +309,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
 
                         setMessages(previous => {
                             const previousMessages = [...previous]
-                            const highestCurrentFileID = previousMessages.flatMap(message => message.files).map(file => file.id).sort().at(-1) || 0
+                            const highestCurrentFileID = previousMessages.flatMap(message => message.files).map(file => file.id).sort().at(-1) || 1
                             const files = currentFiles.map((file, index) => ({
                                 id: highestCurrentFileID + index + 1,
                                 name: file.name,
@@ -363,7 +363,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
 
         setCurrentFiles(previous => [...previous, ...uniqueNew])
 
-        const highestVisibleFileID = visibleFiles.map(file => file.messageFile.id).sort().at(-1) || 0
+        const highestVisibleFileID = visibleFiles.map(file => file.messageFile.id).sort().at(-1) || 1
         setVisibleFiles(previous => [
             ...previous,
             ...uniqueNew.map((file, index) => ({
@@ -373,7 +373,8 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                     content_size: file.size,
                     content_type: file.type
                 },
-                isBeingRemoved: false
+                isBeingRemoved: false,
+                isNew: false
             }))
         ])
 

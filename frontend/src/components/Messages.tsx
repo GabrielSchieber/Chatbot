@@ -155,8 +155,11 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
         )
     }
 
-    function fetchFileContent(id: number) {
-        if (messagesFileContents.get(id) === undefined && chatUUID) {
+    function getFileContent(id: number) {
+        if (messagesFileContents.get(id)) {
+            return messagesFileContents.get(id)
+        } else if (chatUUID && !isFetchingFileContents.current) {
+            isFetchingFileContents.current = true
             getMessageFileContent(chatUUID, id).then(response => {
                 if (response.ok) {
                     response.blob().then(data => {
@@ -172,34 +175,23 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
         }
     }
 
-    function getFileContent(id: number) {
-        if (messagesFileContents.get(id) !== undefined) {
-            return messagesFileContents.get(id)
-        } else if (isFetchingFileContents.current === false) {
-            fetchFileContent(id)
-            isFetchingFileContents.current = true
-        }
-    }
-
     function FileItemIcon({ file }: { file: MessageFile }) {
         if (getFileType(file.name) === "Image") {
             const content = getFileContent(file.id)
-            if (content) {
-                return <img src={URL.createObjectURL(content)} alt={file.name} className="size-14 object-cover rounded-lg" />
-            } else {
-                return (
-                    <div className="flex p-2 rounded-lg bg-gray-800">
-                        <svg className="size-12 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                        </svg>
-                    </div>
-                )
-            }
+            return content ? (
+                <img src={URL.createObjectURL(content)} alt={file.name} className="size-14 object-cover rounded-lg" />
+            ) : (
+                <div className="flex p-2 rounded-lg bg-gray-800">
+                    <svg className="size-12 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                    </svg>
+                </div>
+            )
         }
         return <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
     }
@@ -410,7 +402,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                             previousMessages[index].files = [
                                 ...previousMessages[index].files,
                                 ...addedFiles.map((file, index) => ({
-                                    id: highestID + index,
+                                    id: highestID + index + 1,
                                     name: file.name,
                                     content_size: file.size,
                                     content_type: file.type
@@ -458,6 +450,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
             alert("Regeneration of message was not possible")
         }
     }
+
     function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
         if (!event.target.files) return
 
@@ -483,11 +476,11 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
         const existingAddedKeys = new Set(addedFiles.map(f => f.name + "|" + f.size))
         const existingVisibleKeys = new Set(visibleFiles.map(u => u.messageFile.name + "|" + u.messageFile.content_size))
 
-        const highestVisibleFileID = visibleFiles.map(file => file.messageFile.id).sort((a, b) => a - b).at(-1) || 0
+        const highestVisibleFileID = visibleFiles.map(file => file.messageFile.id).sort((a, b) => a - b).at(-1) || 1
 
         let syntheticCounter = 0
         const toAddUI: UIAttachment[] = []
-        const toAddFiles: File[] = []
+        const toAddFiles: [number, File][] = []
 
         for (const f of newFiles) {
             const key = f.name + "|" + f.size
@@ -505,22 +498,26 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                 continue
             }
 
-            toAddFiles.push(f)
             syntheticCounter += 1
+            const id = highestVisibleFileID + syntheticCounter
+
+            toAddFiles.push([id, f])
             toAddUI.push({
-                messageFile: {
-                    id: highestVisibleFileID + syntheticCounter,
-                    name: f.name,
-                    content_size: f.size,
-                    content_type: f.type
-                },
+                messageFile: { id, name: f.name, content_size: f.size, content_type: f.type },
                 isBeingRemoved: false,
                 isNew: true
             })
         }
 
         if (toAddFiles.length > 0) {
-            setAddedFiles(prev => [...prev, ...toAddFiles])
+            setAddedFiles(prev => [...prev, ...toAddFiles.map(([_, f]) => f)])
+            setMessagesFileContents(previous => {
+                const previousContents = new Map(previous)
+                for (const [id, file] of toAddFiles) {
+                    previousContents.set(id, file)
+                }
+                return previousContents
+            })
         }
         if (toAddUI.length > 0) {
             setVisibleFiles(prev => [...prev, ...toAddUI])
