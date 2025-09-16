@@ -37,7 +37,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     const [isRemovingFiles, setIsRemovingFiles] = useState(false)
 
     const isFetchingFileContents = useRef(false)
-    const [messagesFileContents, setMessagesFileContents] = useState<{ [key: number]: Blob }>({})
+    const [messagesFileContents, setMessagesFileContents] = useState<Map<number, Blob>>(new Map())
 
     function MessageButton({ children, onClick, tooltip, isDisabled = false, testID }: {
         children: ReactNode, onClick: () => void, tooltip: ReactNode, isDisabled?: boolean, testID?: string
@@ -156,13 +156,13 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     }
 
     function fetchFileContent(id: number) {
-        if (messagesFileContents[id] === undefined && chatUUID) {
+        if (messagesFileContents.get(id) === undefined && chatUUID) {
             getMessageFileContent(chatUUID, id).then(response => {
                 if (response.ok) {
                     response.blob().then(data => {
                         setMessagesFileContents(previous => {
-                            const previousContents = { ...previous }
-                            previousContents[id] = data
+                            const previousContents = new Map(previous)
+                            previousContents.set(id, data)
                             return previousContents
                         })
                         isFetchingFileContents.current = false
@@ -173,8 +173,8 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     }
 
     function getFileContent(id: number) {
-        if (messagesFileContents[id] !== undefined) {
-            return messagesFileContents[id]
+        if (messagesFileContents.get(id) !== undefined) {
+            return messagesFileContents.get(id)
         } else if (isFetchingFileContents.current === false) {
             fetchFileContent(id)
             isFetchingFileContents.current = true
@@ -296,7 +296,6 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                                 Size: {getFileSize(file.messageFile.content_size)}
                             </p>
                         </div>
-                        {/* The following is the "remove file button" */}
                         <button
                             className="absolute top-0 right-0 translate-x-2 -translate-y-2 cursor-pointer text-red-400 hover:text-red-500"
                             onClick={_ => removeFile(file.messageFile)}
@@ -306,7 +305,6 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                     </div>
                 ))}
                 {AttachmentsInfo(visibleFiles.map(file => file.messageFile))}
-                {/* The following is the "remove all files button" */}
                 <button
                     className="absolute right-0 -translate-x-2 cursor-pointer text-red-400 hover:text-red-500"
                     onClick={removeFiles}
