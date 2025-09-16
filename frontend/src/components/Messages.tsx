@@ -605,7 +605,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                                             light:bg-gray-900 light:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed
                                         "
                                         onClick={_ => editMessage(index)}
-                                        disabled={editingMessageText.trim() === ""}
+                                        disabled={editingMessageText.trim() === "" && visibleFiles.length === 0 && pendingChat === undefined}
                                     >
                                         Send
                                     </button>
