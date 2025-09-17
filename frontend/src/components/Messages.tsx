@@ -364,7 +364,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                                 previousMessages[index].files = previousMessages[index].files.filter(file => file.id !== removedFileID)
                             }
 
-                            let highestID = 0
+                            let highestID = 1
                             for (const file of previousMessages[index].files) {
                                 if (file.id > highestID) {
                                     highestID = file.id
