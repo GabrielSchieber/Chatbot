@@ -252,6 +252,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                             transition-all duration-300 ${file.isBeingRemoved ? "opacity-0 translate-x-10" : "opacity-100"}
                         `}
                     >
+                        <FileItemIcon file={file.messageFile} getFileContent={getFileContent} />
                         <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
                             <p className="px-2 py-1 rounded-lg bg-gray-800">
                                 Type: {getFileType(file.messageFile.name)}<br />
