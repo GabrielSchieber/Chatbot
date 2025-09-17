@@ -1,6 +1,6 @@
 import { CheckIcon, CopyIcon, Cross2Icon, FileIcon, Pencil1Icon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
 import { DropdownMenu, Tooltip } from "radix-ui"
-import React, { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react"
+import React, { type JSX, type ReactElement, type ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import { useParams } from "react-router"
 import remarkGfm from "remark-gfm"
@@ -36,7 +36,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
     const [isRemovingFiles, setIsRemovingFiles] = useState(false)
 
-    const isFetchingFileContents = useRef(false)
+    const isFetchingFileContents = useRef<Set<number>>(new Set())
     const [messagesFileContents, setMessagesFileContents] = useState<Map<number, Blob>>(new Map())
 
     function MessageButton({ children, onClick, tooltip, isDisabled = false, testID }: {
@@ -155,59 +155,31 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
         )
     }
 
-    function getFileContent(id: number) {
-        if (messagesFileContents.get(id)) {
-            return messagesFileContents.get(id)
-        } else if (chatUUID && !isFetchingFileContents.current) {
-            isFetchingFileContents.current = true
-            getMessageFileContent(chatUUID, id).then(response => {
-                if (response.ok) {
-                    response.blob().then(data => {
-                        setMessagesFileContents(previous => {
-                            const previousContents = new Map(previous)
-                            previousContents.set(id, data)
-                            return previousContents
-                        })
-                        isFetchingFileContents.current = false
-                    })
-                }
+    const getFileContent = useCallback((id: number) => {
+        const existing = messagesFileContents.get(id)
+        if (existing) return existing
+
+        if (isFetchingFileContents.current.has(id)) return
+
+        if (!chatUUID) return
+
+        isFetchingFileContents.current.add(id)
+        getMessageFileContent(chatUUID, id)
+            .then(response => {
+                if (!response.ok) throw new Error("fetch failed")
+                return response.blob()
             })
-        }
-    }
-
-    function FileItemIcon({ file }: { file: MessageFile }) {
-        if (getFileType(file.name) === "Image") {
-            const content = getFileContent(file.id)
-            return content ? (
-                <img src={URL.createObjectURL(content)} alt={file.name} className="size-14 object-cover rounded-lg" />
-            ) : (
-                <div className="flex p-2 rounded-lg bg-gray-800">
-                    <svg className="size-12 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                    </svg>
-                </div>
-            )
-        }
-        return <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
-    }
-
-    function FileItem({ file }: { file: MessageFile }) {
-        return (
-            <div className="relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl">
-                {<FileItemIcon file={file} />}
-                <p className="h-full content-center px-2 py-1 text-[12px] font-semibold rounded-lg bg-gray-800">
-                    Type: {getFileType(file.name)}<br />
-                    Name: {file.name}<br />
-                    Size: {getFileSize(file.content_size)}
-                </p>
-            </div>
-        )
-    }
+            .then(blob => {
+                setMessagesFileContents(prev => {
+                    const m = new Map(prev)
+                    m.set(id, blob)
+                    return m
+                })
+            })
+            .finally(() => {
+                isFetchingFileContents.current.delete(id)
+            })
+    }, [chatUUID, messagesFileContents])
 
     function AttachmentsInfo(files: MessageFile[]) {
         function getTotalSize(messageFiles: MessageFile[]): number {
@@ -280,7 +252,6 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                             transition-all duration-300 ${file.isBeingRemoved ? "opacity-0 translate-x-10" : "opacity-100"}
                         `}
                     >
-                        {<FileItemIcon file={file.messageFile} />}
                         <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
                             <p className="px-2 py-1 rounded-lg bg-gray-800">
                                 Type: {getFileType(file.messageFile.name)}<br />
@@ -614,19 +585,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                         </div>
                     ) : (
                         message.is_from_user ? (
-                            <div className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300" data-testid={`message-${index}`}>
-                                {message.files.length > 0 && (
-                                    <div className="flex flex-col gap-1 p-2 rounded-xl border border-gray-500">
-                                        {message.files.map(file => (
-                                            <FileItem key={file.id + "|" + file.name + "|" + file.content_size} file={file} />
-                                        ))}
-                                        {AttachmentsInfo(message.files)}
-                                    </div>
-                                )}
-                                <div className="whitespace-pre-wrap">
-                                    {message.text}
-                                </div>
-                            </div>
+                            <UserMessage text={message.text} index={index} files={message.files} getFileContent={getFileContent} AttachmentsInfo={AttachmentsInfo} />
                         ) : (
                             <div className="w-full whitespace-pre-wrap" data-testid={`message-${index}`}>
                                 <ReactMarkdown
@@ -708,3 +667,92 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
         </div>
     )
 }
+
+const FileItemIcon = React.memo(function FileItemIcon({
+    file,
+    getFileContent
+}: {
+    file: MessageFile
+    getFileContent: (id: number) => Blob | undefined
+}) {
+    if (getFileType(file.name) !== "Image") {
+        return <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
+    }
+
+    const content = getFileContent(file.id)
+    const [objectUrl, setObjectUrl] = React.useState<string | null>(null)
+
+    React.useEffect(() => {
+        if (!content) {
+            setObjectUrl(prev => {
+                if (prev) URL.revokeObjectURL(prev)
+                return null
+            })
+            return
+        }
+
+        const url = URL.createObjectURL(content)
+        setObjectUrl(prev => {
+            if (prev && prev !== url) URL.revokeObjectURL(prev)
+            return url
+        })
+
+        return () => {
+            URL.revokeObjectURL(url)
+        }
+    }, [content])
+
+    return objectUrl ? (
+        <img src={objectUrl} alt={file.name} className="size-14 object-cover rounded-lg" />
+    ) : (
+        <div className="flex p-2 rounded-lg bg-gray-800">
+            <svg className="size-12 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+            </svg>
+        </div>
+    )
+})
+
+function FileItem({ file, getFileContent }: { file: MessageFile, getFileContent: (id: number) => Blob | undefined }) {
+    return (
+        <div className="relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl">
+            {<FileItemIcon file={file} getFileContent={getFileContent} />}
+            <p className="h-full content-center px-2 py-1 text-[12px] font-semibold rounded-lg bg-gray-800">
+                Type: {getFileType(file.name)}<br />
+                Name: {file.name}<br />
+                Size: {getFileSize(file.content_size)}
+            </p>
+        </div>
+    )
+}
+
+const UserMessage = React.memo(function UserMessage({
+    text, index, files, getFileContent, AttachmentsInfo
+}: {
+    text: string
+    index: number
+    files: MessageFile[]
+    getFileContent: (id: number) => Blob | undefined
+    AttachmentsInfo: (files: MessageFile[]) => JSX.Element
+}) {
+    return (
+        <div className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300" data-testid={`message-${index}`}>
+            {files.length > 0 && (
+                <div className="flex flex-col gap-1 p-2 rounded-xl border border-gray-500">
+                    {files.map(file => (
+                        <FileItem key={file.id + "|" + file.name + "|" + file.content_size} file={file} getFileContent={getFileContent} />
+                    ))}
+                    {AttachmentsInfo(files)}
+                </div>
+            )}
+            <div className="whitespace-pre-wrap">
+                {text}
+            </div>
+        </div>
+    )
+})
