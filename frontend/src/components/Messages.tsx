@@ -131,7 +131,11 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                     </Tooltip.Root>
 
                     <DropdownMenu.Portal>
-                        <DropdownMenu.Content className="flex flex-col gap-1 p-2 rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200" sideOffset={5}>
+                        <DropdownMenu.Content
+                            className="flex flex-col gap-1 p-2 rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200"
+                            sideOffset={5}
+                            data-testid="regenerate-dropdown"
+                        >
                             {models.map(m => (
                                 <DropdownMenu.Item
                                     key={m}
@@ -143,6 +147,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                                         regenerateModel.current = m
                                         regenerateMessage(index)
                                     }}
+                                    data-testid="regenerate-dropdown-entry"
                                 >
                                     {m}
                                     {m === message.model && <CheckIcon className="size-5" />}

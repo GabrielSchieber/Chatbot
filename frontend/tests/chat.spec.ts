@@ -51,7 +51,17 @@ test("user can edit their message", async ({ page }) => {
 test("user can regenerate messages", async ({ page }) => {
     await signupAndLogin(page)
     await sendExampleMessage(page, 0)
+
     await page.getByTestId("regenerate").click()
+
+    const regenerateDropdown = page.getByTestId("regenerate-dropdown")
+    await expect(regenerateDropdown).toBeVisible()
+
+    const regenerateDropdownEntries = regenerateDropdown.getByTestId("regenerate-dropdown-entry")
+    await expect(regenerateDropdownEntries).toHaveCount(4)
+
+    await regenerateDropdownEntries.first().click()
+
     await expect(page.getByTestId("message-1")).toHaveText("")
     await expect(page.getByTestId("message-1")).not.toHaveText(exampleMessages[0].bot)
 })
