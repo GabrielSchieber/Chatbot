@@ -1,24 +1,13 @@
-import { defineConfig, devices } from "@playwright/test"
+import { defineConfig } from "@playwright/test"
 
 export default defineConfig({
     use: {
         baseURL: "http://localhost:5173"
     },
-    projects: [
-        {
-            name: "Set up database",
-            testMatch: "setUp.ts"
-        },
-        {
-            name: "Chromium with database",
-            use: { ...devices["Desktop Chrome"] },
-            dependencies: ["Set up database"]
-        }
-    ],
     webServer: [
         {
             name: "Backend",
-            command: "cd ../backend && python manage.py runserver",
+            command: "python ../backend/manage.py testserver --no-input tests/fixture.json",
             port: 8000,
             reuseExistingServer: true
         },

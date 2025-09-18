@@ -1,20 +1,24 @@
-import test, { expect } from "@playwright/test"
-import { createTestUser } from "./utils"
+import { Locator, expect, test } from "@playwright/test"
+import { Chat, loginWithTestUser } from "./utils"
 
 test("user can open search", async ({ page }) => {
-    const user = await createTestUser(page)
-    const chat = user.chats[0]
-    const messages = chat.messages
+    const user = await loginWithTestUser(page)
 
     await page.getByRole("button", { name: "Search", exact: true }).click()
 
     await expect(page.getByPlaceholder("Search chats...", { exact: true })).toBeVisible()
 
-    const entry = page.getByRole("link")
-    await expect(entry).toHaveCount(1)
-    expect(await entry.getAttribute("href")).toEqual(`/chat/${chat.uuid}`)
+    const entries = page.getByRole("link")
+    await expect(entries).toHaveCount(user.chats.length)
 
-    await expect(entry.getByText(chat.title, { exact: true })).toHaveRole("paragraph")
-    await expect(entry.getByText(messages[0].text + "...", { exact: true })).toHaveRole("listitem")
-    await expect(entry.getByText(messages[1].text + "...", { exact: true })).toHaveRole("listitem")
+    const entriesAndChats: [Locator, Chat][] = (await entries.all()).map((e, i) => [e, user.chats[i]])
+
+    for (const [entry, chat] of entriesAndChats) {
+        await expect(entry).toContainText(chat.title)
+        expect(await entry.getAttribute("href")).toEqual(`/chat/${chat.uuid}`)
+
+        for (const message of chat.messages) {
+            await expect(entry).toContainText(message.text.slice(0, 100) + "...")
+        }
+    }
 })

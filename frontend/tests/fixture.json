@@ -1,0 +1,127 @@
+[
+    {
+        "model": "chat.user",
+        "pk": 2,
+        "fields": {
+            "password": "pbkdf2_sha256$1000000$7EW1XOhxvl4mZliWOLtFCd$dyxvOmPA/lllPXhHzVBSpmGqO/9lFy1COSmukebOwp4=",
+            "last_login": null,
+            "is_superuser": false,
+            "email": "test@example.com",
+            "is_active": true,
+            "is_staff": false,
+            "theme": "System",
+            "has_sidebar_open": true,
+            "created_at": "2025-09-18T14:58:55.502Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
+        "fields": {
+            "user": 2,
+            "title": "Math Project",
+            "is_pending": false,
+            "created_at": "2025-09-18T14:59:09.145Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "d5139198-cbf2-489a-9ff4-111f08989712",
+        "fields": {
+            "user": 2,
+            "title": "Weather Inquiry",
+            "is_pending": false,
+            "created_at": "2025-09-18T15:03:05.374Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 1,
+        "fields": {
+            "chat": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
+            "text": "Hello!",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-09-18T14:59:09.159Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 2,
+        "fields": {
+            "chat": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
+            "text": "Hello! I'm here to help you with your math homework. What's the topic you're working on?",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-09-18T14:59:09.167Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 3,
+        "fields": {
+            "chat": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
+            "text": "I'm working on learning math.",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-09-18T15:00:08.920Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 4,
+        "fields": {
+            "chat": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
+            "text": "That sounds like a great project. Let me see if I can assist you in any way. Can you tell me what you've been trying to do and what kind of problems you're struggling with?",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-09-18T15:00:08.927Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 5,
+        "fields": {
+            "chat": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
+            "text": "What are derivatives and how are they used in Applied Mathematics?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-09-18T15:00:58.229Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 6,
+        "fields": {
+            "chat": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
+            "text": "Derivatives are a fundamental concept in calculus, and they play a crucial role in many areas of mathematics. In applied mathematics, derivatives are used to model and analyze complex systems, particularly those that involve rates of change or accumulation.\n\nIn physics and engineering, derivatives help us understand the behavior of physical systems, such as motion, collisions, and heat transfer. For example, in thermodynamics, derivatives describe how energy is transferred between particles, which is essential for understanding the behavior of systems at the molecular level.\n\nIn economics, derivatives are used to model economic systems, including supply and demand curves, inflation, and interest rates. They help economists understand the relationships between variables and make predictions about future outcomes.\n\nDerivatives also appear in computer graphics, where they are used to create realistic animations and simulations of complex systems. In signal processing, derivatives are used to analyze and filter signals, which is essential for understanding how signals behave over time or space.\n\nIn summary, derivatives are a powerful tool in applied mathematics that helps us understand the behavior of complex systems, model real-world phenomena, and make predictions about future outcomes.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-09-18T15:00:58.238Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 7,
+        "fields": {
+            "chat": "d5139198-cbf2-489a-9ff4-111f08989712",
+            "text": "What's the weather like today?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-09-18T15:03:05.380Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 8,
+        "fields": {
+            "chat": "d5139198-cbf2-489a-9ff4-111f08989712",
+            "text": "It's a beautiful day here in the mountains. The sun is shining brightly and the air is crisp and clean. We've had some rain showers so far this week, but it's been mostly light drizzle. The temperature has been around 70 degrees Fahrenheit, which is perfect for hiking or exploring the trails.\n\nThe trail we're on is a beautiful loop of dirt and gravel, with some nice views of the surrounding mountains. It's a great spot to take in the scenery and enjoy the fresh air. We've also had some interesting wildlife sightings today - a few deer grazing on the grasses, and a few birds flying overhead.\n\nOverall, it's going to be a wonderful day for hiking and exploring the trails here in the mountains.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-09-18T15:03:05.388Z"
+        }
+    }
+]

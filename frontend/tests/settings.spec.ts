@@ -1,5 +1,5 @@
-import test, { expect } from "@playwright/test"
-import { createTestUser, signupAndLogin } from "./utils"
+import { expect, test } from "@playwright/test"
+import { loginWithTestUser, signupAndLogin } from "./utils"
 
 test("user can open settings", async ({ page }) => {
     const [email] = await signupAndLogin(page)
@@ -85,7 +85,7 @@ test("user can change theme", async ({ page }) => {
 })
 
 test("user can delete chats", async ({ page }) => {
-    const user = await createTestUser(page)
+    const user = await loginWithTestUser(page)
 
     await expect(page.getByRole("link")).toHaveCount(1 + user.chats.length)
     for (const chat of user.chats) {
@@ -123,7 +123,7 @@ test("user can delete chats", async ({ page }) => {
 })
 
 test("user can delete account", async ({ page }) => {
-    const user = await createTestUser(page)
+    const user = await loginWithTestUser(page)
 
     await page.getByText("Settings").click()
 
