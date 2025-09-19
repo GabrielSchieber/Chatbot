@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test"
 import { apiFetch, getRandomEmail } from "./utils"
 
+test.describe.configure({ mode: "parallel" })
+
 test("user can sign up", async ({ page }) => {
     await page.goto("/")
     await page.waitForURL("/login")

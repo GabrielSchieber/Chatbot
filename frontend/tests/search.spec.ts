@@ -1,9 +1,7 @@
-import { Locator, expect, test } from "@playwright/test"
-import { Chat, loginWithTestUser } from "./utils"
+import { Locator, expect } from "@playwright/test"
+import { Chat, test } from "./utils"
 
-test("user can open search", async ({ page }) => {
-    const user = await loginWithTestUser(page)
-
+test("user can open search", async ({ page, user }) => {
     await page.getByRole("button", { name: "Search", exact: true }).click()
 
     await expect(page.getByPlaceholder("Search chats...", { exact: true })).toBeVisible()

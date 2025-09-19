@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test"
-import { loginWithTestUser, signupAndLogin } from "./utils"
+import { signupAndLogin } from "./utils"
+
+test.describe.configure({ mode: "parallel" })
 
 test("user can open settings", async ({ page }) => {
     const [email] = await signupAndLogin(page)
@@ -84,46 +86,8 @@ test("user can change theme", async ({ page }) => {
     expect(await html.getAttribute("class")).toEqual("Light")
 })
 
-test("user can delete chats", async ({ page }) => {
-    const user = await loginWithTestUser(page)
-
-    await expect(page.getByRole("link")).toHaveCount(1 + user.chats.length)
-    for (const chat of user.chats) {
-        await expect(page.getByRole("link", { name: chat.title, exact: true })).toBeVisible()
-    }
-
-    await page.getByText("Settings").click()
-
-    const deleteChats = page.getByRole("button", { name: "Delete all", exact: true })
-    await expect(deleteChats).toBeVisible()
-
-    await deleteChats.click()
-
-    const confirmDialogTitle = page.getByRole("heading", { name: "Delete Chats", exact: true })
-    await expect(confirmDialogTitle).toBeVisible()
-
-    const confirmDialog = confirmDialogTitle.locator("..")
-    await expect(confirmDialog).toBeVisible()
-
-    await expect(confirmDialog.getByRole("button", { name: "Cancel", exact: true })).toBeVisible()
-    await confirmDialog.getByRole("button", { name: "Delete all", exact: true }).click()
-    await expect(confirmDialogTitle).not.toBeVisible()
-    await expect(confirmDialog).not.toBeVisible()
-
-    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible()
-    await expect(page.getByRole("button", { name: "Settings" })).not.toBeVisible()
-    await expect(deleteChats).toBeVisible()
-
-    await page.getByTestId("close-settings").click()
-
-    await expect(page.getByRole("link")).toHaveCount(1)
-    for (const chat of user.chats) {
-        await expect(page.getByRole("link", { name: chat.title, exact: true })).not.toBeVisible()
-    }
-})
-
 test("user can delete account", async ({ page }) => {
-    const user = await loginWithTestUser(page)
+    const [email, password] = await signupAndLogin(page)
 
     await page.getByText("Settings").click()
 
@@ -139,8 +103,8 @@ test("user can delete account", async ({ page }) => {
     await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
     await page.waitForURL("/login")
 
-    await page.fill("input[type='email']", user.email)
-    await page.fill("input[type='password']", user.password)
+    await page.fill("input[type='email']", email)
+    await page.fill("input[type='password']", password)
 
     await page.click("button")
 

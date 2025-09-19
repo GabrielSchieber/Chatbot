@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test"
-import { loginWithTestUser, signupAndLogin } from "./utils"
+import { signupAndLogin, test as utilsTest } from "./utils"
 
 const toggleSidebarText = "Toggle Sidebar"
 const newChatText = "New Chat"
@@ -37,9 +37,7 @@ test("user can see and toggle sidebar", async ({ page }) => {
     await expect(settings).toContainText(settingsText)
 })
 
-test("user can see and toggle sidebar with chats", async ({ page }) => {
-    const user = await loginWithTestUser(page)
-
+utilsTest("user can see and toggle sidebar with chats", async ({ page, user }) => {
     const toggleSidebar = page.getByTestId("toggle-sidebar")
     const newChat = page.getByTestId("new-chat")
     const search = page.getByTestId("search")

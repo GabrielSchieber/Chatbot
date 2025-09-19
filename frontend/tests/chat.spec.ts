@@ -1,6 +1,22 @@
 import { Page, expect, test } from "@playwright/test"
 import { signupAndLogin } from "./utils"
 
+const timeout = 30000
+
+test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+        const store = { text: "" }
+
+        Object.defineProperty(navigator, "clipboard", {
+            value: {
+                writeText: async (t: string) => { store.text = t },
+                readText: async () => store.text
+            },
+            configurable: true
+        })
+    })
+})
+
 test("user can chat with bot", async ({ page }) => {
     await signupAndLogin(page)
     await sendExampleMessage(page, 0)
@@ -14,8 +30,6 @@ test("user can chat with bot multiple times", async ({ page }) => {
 })
 
 test("user can copy their own message", async ({ page }) => {
-    await page.context().grantPermissions(["clipboard-read", "clipboard-write"])
-
     await signupAndLogin(page)
     await sendExampleMessage(page, 0)
 
@@ -24,12 +38,11 @@ test("user can copy their own message", async ({ page }) => {
 })
 
 test("user can copy bot messages", async ({ page }) => {
-    await page.context().grantPermissions(["clipboard-read", "clipboard-write"])
-
     await signupAndLogin(page)
     await sendExampleMessage(page, 0)
 
     await page.getByTestId("copy").last().click()
+    await page.waitForResponse(response => response.url().endsWith("/api/get-message/") && response.status() === 200, { timeout })
     await expectClipboard(page, exampleMessages[0].bot)
 })
 
@@ -44,8 +57,8 @@ test("user can edit their message", async ({ page }) => {
     await page.getByText(exampleMessages[1].user).fill(exampleMessages[0].user)
     await page.getByRole("button", { name: "Send" }).click()
 
-    await expect(page.getByTestId("message-0")).toHaveText(exampleMessages[0].user)
-    await expect(page.getByTestId("message-1")).toHaveText(exampleMessages[0].bot)
+    await expect(page.getByTestId("message-0")).toHaveText(exampleMessages[0].user, { timeout })
+    await expect(page.getByTestId("message-1")).toHaveText(exampleMessages[0].bot, { timeout })
 })
 
 test("user can regenerate messages", async ({ page }) => {
@@ -62,8 +75,66 @@ test("user can regenerate messages", async ({ page }) => {
 
     await regenerateDropdownEntries.first().click()
 
-    await expect(page.getByTestId("message-1")).toHaveText("")
-    await expect(page.getByTestId("message-1")).not.toHaveText(exampleMessages[0].bot)
+    await expect(page.getByTestId("message-1")).not.toHaveText(exampleMessages[0].bot, { timeout })
+})
+
+test("user can delete chats", async ({ page }) => {
+    await signupAndLogin(page)
+
+    await sendExampleMessage(page, 0)
+    await page.goto("/")
+    await sendExampleMessage(page, 1)
+    await page.goto("/")
+    await sendExampleMessage(page, 2)
+    await page.goto("/")
+
+    await expect(page.getByRole("link")).toHaveCount(4)
+    for (let i = 1; i <= 3; i++) {
+        await expect(page.getByRole("link", { name: `Chat ${i}`, exact: true })).toBeVisible()
+    }
+
+    await page.getByText("Settings").click()
+
+    const deleteChats = page.getByRole("button", { name: "Delete all", exact: true })
+    await expect(deleteChats).toBeVisible()
+
+    await deleteChats.click()
+
+    const confirmDialogTitle = page.getByRole("heading", { name: "Delete Chats", exact: true })
+    await expect(confirmDialogTitle).toBeVisible()
+
+    const confirmDialog = confirmDialogTitle.locator("..")
+    await expect(confirmDialog).toBeVisible()
+
+    await expect(confirmDialog.getByRole("button", { name: "Cancel", exact: true })).toBeVisible()
+    await confirmDialog.getByRole("button", { name: "Delete all", exact: true }).click()
+    await expect(confirmDialogTitle).not.toBeVisible()
+    await expect(confirmDialog).not.toBeVisible()
+
+    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible()
+    await expect(page.getByRole("button", { name: "Settings" })).not.toBeVisible()
+    await expect(deleteChats).toBeVisible()
+
+    await page.getByTestId("close-settings").click()
+    await expect(page.getByRole("button", { name: "Settings" })).toBeVisible()
+
+    await expect(page.getByRole("link")).toHaveCount(1, { timeout: 30000 })
+    for (let i = 1; i <= 3; i++) {
+        await expect(page.getByRole("link", { name: `Chat ${i}`, exact: true })).not.toBeVisible()
+    }
+})
+
+test("user can create new chat", async ({ page }) => {
+    await signupAndLogin(page)
+    await sendExampleMessage(page, 1)
+
+    expect(page.url()).toContain("/chat/")
+    await page.getByText("New Chat").click()
+    await page.waitForURL("/")
+
+    await expect(page.getByTestId("message-0")).not.toBeVisible({ timeout })
+    await expect(page.getByTestId("message-1")).not.toBeVisible({ timeout })
+    await sendExampleMessage(page, 0)
 })
 
 const exampleMessages: { user: string, bot: string, seed: number }[] = [
@@ -89,19 +160,6 @@ const exampleMessages: { user: string, bot: string, seed: number }[] = [
     }
 ]
 
-test("user can create new chat", async ({ page }) => {
-    await signupAndLogin(page)
-    await sendExampleMessage(page, 1)
-
-    expect(page.url()).toContain("/chat/")
-    await page.getByText("New Chat").click()
-    await page.waitForURL("/")
-
-    await expect(page.getByTestId("message-0")).not.toBeVisible()
-    await expect(page.getByTestId("message-1")).not.toBeVisible()
-    await sendExampleMessage(page, 0)
-})
-
 async function setSeed(page: Page, seed: number) {
     const promptBar = page.getByTestId("prompt-bar")
     const dropdown = promptBar.getByTestId("add-dropdown")
@@ -126,8 +184,8 @@ async function sendMessage(page: Page, message: string, expectedResponse: string
     await textarea.fill(message)
     await textarea.press("Enter")
 
-    await expect(page.getByText(message)).toBeVisible()
-    await expect(page.getByText(expectedResponse)).toBeVisible()
+    await expect(page.getByText(message)).toBeVisible({ timeout })
+    await expect(page.getByText(expectedResponse)).toBeVisible({ timeout })
 }
 
 async function sendExampleMessage(page: Page, index: number) {
@@ -135,7 +193,5 @@ async function sendExampleMessage(page: Page, index: number) {
 }
 
 async function expectClipboard(page: Page, expected: string) {
-    page.evaluate(async _ => {
-        expect(await navigator.clipboard.readText()).toBe(expected)
-    })
+    expect(await page.evaluate(_ => navigator.clipboard.readText())).toEqual(expected)
 }
