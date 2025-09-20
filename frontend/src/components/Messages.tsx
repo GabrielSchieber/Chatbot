@@ -509,7 +509,12 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
             chats.length > 0 ? setPendingChat(chats[0]) : setPendingChat(undefined)
             receiveMessage()
         })
-    }, [])
+    }, [chatUUID])
+
+    useEffect(() => {
+        webSocket.current?.close()
+        webSocket.current = null
+    }, [chatUUID])
 
     useEffect(() => {
         if (regenerateModel.current) {
