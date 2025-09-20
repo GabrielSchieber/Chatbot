@@ -46,7 +46,9 @@ test("user can change theme", async ({ page }) => {
     await expect(lightOption).toBeVisible()
     await expect(darkOption).toBeVisible()
 
+    const darkResponse = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
     await darkOption.click()
+    await darkResponse
     await expect(page.locator("button").getByText("Dark")).toBeVisible()
     expect(await html.getAttribute("class")).toEqual("Dark")
 
@@ -63,7 +65,9 @@ test("user can change theme", async ({ page }) => {
     await expect(lightOption).toBeVisible()
     await expect(darkOption).toBeVisible()
 
+    const lightResponse = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
     await lightOption.click()
+    await lightResponse
     await expect(page.locator("button").getByText("Light")).toBeVisible()
     expect(await html.getAttribute("class")).toEqual("Light")
 
@@ -76,7 +80,9 @@ test("user can change theme", async ({ page }) => {
 
     await page.locator("button").getByText("Light").click()
 
+    const systemResponse = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
     await systemOption.click()
+    await systemResponse
     await expect(page.locator("button").getByText("System")).toBeVisible()
     expect(await html.getAttribute("class")).toEqual("Light")
 
