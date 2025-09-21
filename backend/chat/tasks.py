@@ -3,6 +3,7 @@ import logging
 import os
 import random
 import threading
+from concurrent.futures import CancelledError
 from typing import Literal, get_args
 
 logger = logging.getLogger(__name__)
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 import ollama
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
+from django.core.exceptions import ObjectDoesNotExist
 
 from .models import Chat, Message, MessageFile, User
 
@@ -30,10 +32,15 @@ def generate_message(chat: Chat, user_message: Message, bot_message: Message, mo
     global_futures[str(chat.uuid)] = future
 
 def task_done_callback(future: asyncio.Future[None], chat_uuid: str):
-    global global_futures
-    global_futures.pop(chat_uuid)
-    exception = future.exception()
-    return exception and logger.exception("Task failed", exc_info = future.exception())
+    global_futures.pop(chat_uuid, None)
+
+    try:
+        exception = future.exception()
+    except CancelledError:
+        return
+
+    if exception:
+        logger.exception("Task failed", exc_info = exception)
 
 async def sample_model(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName, options: dict[str, int | float]):
     if model_name not in get_args(ModelName):
@@ -59,11 +66,12 @@ async def sample_model(chat: Chat, user_message: Message, bot_message: Message, 
         async for part in await ollama.AsyncClient().chat(model_name, messages, stream = True, options = parse_options(options)):
             token = part["message"]["content"]
             bot_message.text += token
-            await database_sync_to_async(bot_message.save)()
+            if not await safe_save_message(bot_message):
+                return
             await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_token", "token": token, "message_index": message_index})
     except asyncio.CancelledError:
         chat.is_pending = False
-        await database_sync_to_async(chat.save)()
+        await safe_save_chat(chat)
         return
 
     await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": bot_message.text, "message_index": message_index})
@@ -150,3 +158,20 @@ def parse_options(options: dict[str, int | float]) -> dict[str, int | float]:
         "top_p": clamp(float(options.get("top_p", 0.9)), 0.1, 2.0),
         "seed": int(options.get("seed", random.randint(-(10 ** 10), 10 ** 10)))
     }
+
+async def safe_save_message(bot_message: Message):
+    try:
+        exists = await database_sync_to_async(Chat.objects.filter(pk = bot_message.chat_id).exists)()
+        if not exists:
+            return False
+        await database_sync_to_async(bot_message.save)()
+        return True
+    except ObjectDoesNotExist:
+        return False
+
+async def safe_save_chat(chat: Chat):
+    exists = await database_sync_to_async(Chat.objects.filter(pk = chat.pk).exists)()
+    if not exists:
+        return False
+    await database_sync_to_async(chat.save)()
+    return True

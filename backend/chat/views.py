@@ -13,7 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .models import Chat, Message, MessageFile, User
-from .tasks import generate_message, is_any_user_chat_pending, stop_pending_chats
+from .tasks import generate_message, is_any_user_chat_pending, stop_pending_chats, global_futures
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only = True)
@@ -201,11 +201,16 @@ class DeleteChat(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        chat_uuid = request.data.get("chat_uuid")
         try:
-            chat_uuid = request.data["chat_uuid"]
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            future = global_futures.pop(str(chat.uuid), None)
+            if future:
+                future.cancel()
             chat.delete()
             return Response(status = 200)
+        except Chat.DoesNotExist:
+            return Response(status = 404)
         except Exception:
             return Response(status = 400)
 
@@ -214,7 +219,12 @@ class DeleteChats(APIView):
 
     def get(self, request):
         try:
-            Chat.objects.filter(user = request.user).delete()
+            chats = Chat.objects.filter(user = request.user)
+            for chat in chats:
+                future = global_futures.pop(str(chat.uuid), None)
+                if future:
+                    future.cancel()
+            chats.delete()
             return Response(status = 200)
         except Exception:
             return Response(status = 400)
