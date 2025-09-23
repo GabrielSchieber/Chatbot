@@ -57,7 +57,7 @@ async def sample_model(chat: Chat, user_message: Message, bot_message: Message, 
     channel_layer = get_channel_layer()
 
     chat.is_pending = True
-    await database_sync_to_async(chat.save)()
+    await chat.asave()
 
     messages: list[dict[str, str]] = await database_sync_to_async(get_messages)(chat, user_message)
     message_index = len(messages) - 1
@@ -77,7 +77,7 @@ async def sample_model(chat: Chat, user_message: Message, bot_message: Message, 
     await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": bot_message.text, "message_index": message_index})
 
     chat.is_pending = False
-    await database_sync_to_async(chat.save)()
+    await chat.asave()
 
 def get_messages(chat: Chat, stop_user_message: Message) -> list[dict[str, str]]:
     user_messages = list(Message.objects.filter(chat = chat, is_from_user = True).order_by("created_at"))
@@ -164,7 +164,7 @@ async def safe_save_message(bot_message: Message):
         exists = await database_sync_to_async(Chat.objects.filter(pk = bot_message.chat_id).exists)()
         if not exists:
             return False
-        await database_sync_to_async(bot_message.save)()
+        await bot_message.asave()
         return True
     except ObjectDoesNotExist:
         return False
@@ -173,5 +173,5 @@ async def safe_save_chat(chat: Chat):
     exists = await database_sync_to_async(Chat.objects.filter(pk = chat.pk).exists)()
     if not exists:
         return False
-    await database_sync_to_async(chat.save)()
+    await chat.asave()
     return True
