@@ -13,12 +13,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         if self.user is None or isinstance(self.user, AnonymousUser):
             return await self.close()
         else:
-            try:
-                chat_uuid = self.scope["url_route"]["kwargs"].get("chat_uuid")
-                if chat_uuid:
+            chat_uuid = self.scope["url_route"]["kwargs"].get("chat_uuid")
+            if chat_uuid:
+                try:
                     self.chat: Chat = await Chat.objects.aget(user = self.user, uuid = chat_uuid)
                     await self.channel_layer.group_add(f"chat_{str(self.chat.uuid)}", self.channel_name)
-            except Chat.DoesNotExist:
+                except Chat.DoesNotExist:
+                    return await self.close()
+            else:
                 return await self.close()
 
         await self.accept()

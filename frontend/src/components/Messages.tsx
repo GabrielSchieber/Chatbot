@@ -304,8 +304,8 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     }
 
     function receiveMessage() {
-        if (!webSocket.current) {
-            webSocket.current = new WebSocket(chatUUID ? `ws://${location.host}/ws/chat/${chatUUID}/` : `ws://${location.host}/ws/chat/`)
+        if (!webSocket.current && chatUUID) {
+            webSocket.current = new WebSocket(`ws://${location.host}/ws/chat/${chatUUID}/`)
 
             webSocket.current.addEventListener("message", event => {
                 const data = JSON.parse(event.data)
