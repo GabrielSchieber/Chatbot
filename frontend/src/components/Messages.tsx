@@ -309,34 +309,26 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
 
             webSocket.current.addEventListener("message", event => {
                 const data = JSON.parse(event.data)
-                const message_index = data.message_index + 1
-                if (data.token) {
-                    setMessages(previous => {
-                        let previousMessages = [...previous]
-                        if (previousMessages[message_index]) {
-                            previousMessages[message_index] = {
-                                text: previousMessages[message_index].text + data.token, files: [], is_from_user: false, model: regenerateModel.current || model
+                let shouldSetMessages = true
+                setMessages(previous => {
+                    if (shouldSetMessages) {
+                        shouldSetMessages = false
+                        previous = [...previous]
+                        const message = previous[data.message_index + 1]
+                        if (message) {
+                            if (data.token) {
+                                message.text += data.token
+                            } else if (data.message) {
+                                message.text = data.message
+                                setPendingChat(undefined)
                             }
                         }
-                        return previousMessages
-                    })
-                } else if (data.message) {
-                    setMessages(previous => {
-                        let previousMessages = [...previous]
-                        if (previousMessages[message_index]) {
-                            previousMessages[message_index] = { text: data.message, files: [], is_from_user: false, model: regenerateModel.current || model }
-                        }
-                        return previousMessages
-                    })
-                    setPendingChat(undefined)
-                }
+                    }
+                    return previous
+                })
             })
 
-            webSocket.current.addEventListener("error", _ => {
-                if (chatUUID) {
-                    location.href = "/"
-                }
-            })
+            webSocket.current.addEventListener("error", _ => location.href = "/")
         }
     }
 
