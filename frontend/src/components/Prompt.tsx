@@ -288,52 +288,37 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
     }
 
     function sendMessage() {
-        function setUpMessages() {
-            setPrompt("")
-            setCurrentFiles([])
-            setVisibleFiles([])
+        newMessage(chatUUID || "", model, options, prompt, currentFiles).then(([chat, status]) => {
+            if (status === 200) {
+                setPrompt("")
+                setCurrentFiles([])
+                setVisibleFiles([])
 
-            setMessages(previous => {
-                const previousMessages = [...previous]
-                const highestCurrentFileID = previousMessages.flatMap(message => message.files).map(file => file.id).sort().at(-1) || 1
-                const files = currentFiles.map((file, index) => ({
-                    id: highestCurrentFileID + index + 1,
-                    name: file.name,
-                    content_size: file.size,
-                    content_type: file.type
-                }))
-                previousMessages.push({ text: prompt, files: files, is_from_user: true, model: undefined })
-                previousMessages.push({ text: "", files: [], is_from_user: false, model: model })
-                return previousMessages
-            })
-        }
+                setMessages(previous => {
+                    const previousMessages = [...previous]
+                    const highestCurrentFileID = previousMessages.flatMap(message => message.files).map(file => file.id).sort().at(-1) || 1
+                    const files = currentFiles.map((file, index) => ({
+                        id: highestCurrentFileID + index + 1,
+                        name: file.name,
+                        content_size: file.size,
+                        content_type: file.type
+                    }))
+                    previousMessages.push({ text: prompt, files: files, is_from_user: true, model: undefined })
+                    previousMessages.push({ text: "", files: [], is_from_user: false, model: model })
+                    return previousMessages
+                })
 
-        if (!chatUUID) {
-            newMessage("", model, options, prompt, currentFiles)
-                .then(([chat, status]) => {
-                    if (status === 200) {
-                        chat.then(chat => {
-                            navigate(`chat/${chat.uuid}`)
-                            setUpMessages()
-                            setPendingChat(chat)
-                        })
-                    } else {
-                        clearTimeout(messageNotificationID)
-                        setMessageNotificationID(window.setTimeout(() => setMessageNotificationID(-1), 2000))
+                chat.then(chat => {
+                    if (!chatUUID) {
+                        navigate(`chat/${chat.uuid}`)
                     }
+                    setPendingChat(chat)
                 })
-        } else {
-            newMessage(chatUUID, model, options, prompt, currentFiles)
-                .then(([chat, status]) => {
-                    if (status === 200) {
-                        setUpMessages()
-                        chat.then(chat => setPendingChat(chat))
-                    } else {
-                        clearTimeout(messageNotificationID)
-                        setMessageNotificationID(window.setTimeout(() => setMessageNotificationID(-1), 2000))
-                    }
-                })
-        }
+            } else {
+                clearTimeout(messageNotificationID)
+                setMessageNotificationID(window.setTimeout(() => setMessageNotificationID(-1), 2000))
+            }
+        })
     }
 
     function sendMessageWithEvent(event: React.KeyboardEvent) {
