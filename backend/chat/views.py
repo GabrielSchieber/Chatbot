@@ -281,19 +281,19 @@ class GetMessageFileContent(APIView):
 class GetMessages(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def get(self, request: Request):
         chat_uuid = request.data.get("chat_uuid")
         if not chat_uuid:
-            return Response({"error": "chat_uuid required"}, status = 400)
+            return Response({"error": "'chat_uuid' is required"}, status.HTTP_400_BAD_REQUEST)
 
         try:
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-        except:
-            return Response({"error": "Chat not found"}, status = 404)
+        except Chat.DoesNotExist:
+            return Response({"error": "Chat was not found"}, status.HTTP_404_NOT_FOUND)
 
         messages = Message.objects.filter(chat = chat).order_by("created_at").prefetch_related("files")
         serializer = MessageSerializer(messages, many = True)
-        return Response({"messages": serializer.data})
+        return Response(serializer.data, status.HTTP_200_OK)
 
 class NewMessage(APIView):
     permission_classes = [IsAuthenticated]
