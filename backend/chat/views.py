@@ -156,7 +156,7 @@ class SearchChats(APIView):
 class RenameChat(APIView):
     permission_classes = [IsAuthenticated]
 
-    def patch(self, request):
+    def patch(self, request: Request):
         try:
             chat_uuid = request.data.get("chat_uuid")
             new_title = request.data.get("new_title")
@@ -176,7 +176,7 @@ class RenameChat(APIView):
 class DeleteChat(APIView):
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request):
+    def delete(self, request: Request):
         chat_uuid = request.data.get("chat_uuid")
         try:
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
@@ -193,7 +193,7 @@ class DeleteChat(APIView):
 class DeleteChats(APIView):
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request):
+    def delete(self, request: Request):
         try:
             chats = Chat.objects.filter(user = request.user)
             for chat in chats:
@@ -208,7 +208,7 @@ class DeleteChats(APIView):
 class StopPendingChats(APIView):
     permission_classes = [IsAuthenticated]
 
-    def patch(self, request):
+    def patch(self, request: Request):
         pending_chats = Chat.objects.filter(user = request.user, is_pending = True)
         if pending_chats.count() > 0:
             for pending_chat in pending_chats:
@@ -222,15 +222,28 @@ class StopPendingChats(APIView):
 class GetMessage(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def get(self, request: Request):
         try:
-            chat_uuid = request.data["chat_uuid"]
-            message_index = int(request.data["message_index"])
-            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            message = Message.objects.filter(chat = chat).order_by("created_at")[message_index]
-            return Response({"text": message.text})
+            chat_uuid = request.get("chat_uuid")
+            message_index = request.get("message_index")
+
+            if not chat_uuid or message_index is None:
+                return Response({"error": "'chat_uuid' and 'message_index' fields are required"}, status.HTTP_400_BAD_REQUEST)
+
+            try:
+                chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            except Chat.DoesNotExist:
+                return Response({"error": "Chat not found"}, status.HTTP_404_NOT_FOUND)
+            
+            message = Message.objects.filter(chat = chat).order_by("created_at")
+
+            if message_index < 0 or message_index >= message.count():
+                return Response({"error": "Message index out of range"}, status.HTTP_400_BAD_REQUEST)
+
+            serializer = MessageSerializer(message[message_index], many = False)
+            return Response(serializer.data, status.HTTP_200_OK)
         except Exception:
-            return Response(status = 400)
+            return Response(status = status.HTTP_400_BAD_REQUEST)
 
 class BinaryFileRenderer(BaseRenderer):
     media_type = "application/octet-stream"
