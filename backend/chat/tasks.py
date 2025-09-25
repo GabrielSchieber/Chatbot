@@ -120,16 +120,6 @@ def get_user_message(message: Message) -> dict[str, str]:
 
     return {"role": "user", "content": content, "images": images}
 
-def stop_pending_chats(user: User):
-    pending_chats = Chat.objects.filter(user = user, is_pending = True)
-    if pending_chats.count() > 0:
-        for pending_chat in pending_chats:
-            if str(pending_chat.uuid) in global_futures:
-                global_futures[str(pending_chat.uuid)].cancel()
-
-            pending_chat.is_pending = False
-            pending_chat.save()
-
 def reset_stopped_pending_chats(user: User):
     pending_chats = Chat.objects.filter(user = user, is_pending = True)
     if pending_chats.count() > 0:

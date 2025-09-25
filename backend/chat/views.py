@@ -208,9 +208,16 @@ class DeleteChats(APIView):
 class StopPendingChats(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        stop_pending_chats(request.user)
-        return Response(status = 200)
+    def patch(self, request):
+        pending_chats = Chat.objects.filter(user = request.user, is_pending = True)
+        if pending_chats.count() > 0:
+            for pending_chat in pending_chats:
+                if str(pending_chat.uuid) in global_futures:
+                    global_futures[str(pending_chat.uuid)].cancel()
+
+                pending_chat.is_pending = False
+                pending_chat.save()
+        return Response(status = status.HTTP_200_OK)
 
 class GetMessage(APIView):
     permission_classes = [IsAuthenticated]
