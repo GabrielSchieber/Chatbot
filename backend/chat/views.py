@@ -3,7 +3,7 @@ import json
 from django.contrib.auth import authenticate
 from django.db.models import Prefetch, Q
 from django.shortcuts import render
-from rest_framework import generics, serializers, status
+from rest_framework import generics, status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.renderers import BaseRenderer
@@ -13,40 +13,10 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from serializers import ChatSerializer, MessageSerializer, RegisterSerializer, UserSerializer
+
 from .models import Chat, Message, MessageFile, User
 from .tasks import generate_message, is_any_user_chat_pending, stop_pending_chats, global_futures
-
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only = True)
-
-    class Meta:
-        model = User
-        fields = ["email", "password"]
-
-    def create(self, validated_data):
-        return User.objects.create_user(email = validated_data["email"], password = validated_data["password"])
-
-class ChatSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Chat
-        fields = ["title", "is_pending", "uuid"]
-
-class MessageFileSerializer(serializers.ModelSerializer):
-    content_size = serializers.SerializerMethodField()
-
-    class Meta:
-        model = MessageFile
-        fields = ["id", "name", "content_size", "content_type"]
-
-    def get_content_size(self, message_file: MessageFile):
-        return len(message_file.content)
-
-class MessageSerializer(serializers.ModelSerializer):
-    files = MessageFileSerializer(many = True, read_only = True)
-
-    class Meta:
-        model = Message
-        fields = ["text", "is_from_user", "files", "model"]
 
 class Signup(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -106,26 +76,25 @@ class Me(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
-        user: User = request.user
-        return Response({"id": user.id, "email": user.email, "theme": user.theme, "has_sidebar_open": user.has_sidebar_open})
+        return Response(UserSerializer(request.user, many = False).data)
 
-    def post(self, request: Request):
+    def patch(self, request: Request):
         user: User = request.user
 
         theme = request.data.get("theme")
         if theme != None: 
             if theme not in ["System", "Light", "Dark"]:
-                return Response({"error": "Invalid theme"}, 400)
+                return Response({"error": "Invalid theme"}, status.HTTP_400_BAD_REQUEST)
             user.theme = theme
 
         has_sidebar_open = request.data.get("has_sidebar_open")
         if has_sidebar_open != None:
             if type(has_sidebar_open) != bool:
-                return Response({"error": "Invalid data type for has_sidebar_open"}, 400)
+                return Response({"error": "Invalid data type for has_sidebar_open"}, status.HTTP_400_BAD_REQUEST)
             user.has_sidebar_open = has_sidebar_open
 
         user.save()
-        return Response(status = 200)
+        return Response(status = status.HTTP_200_OK)
 
 class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]
