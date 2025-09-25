@@ -13,10 +13,9 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from serializers import ChatSerializer, MessageSerializer, RegisterSerializer, UserSerializer
-
+from .serializers import ChatSerializer, MessageSerializer, RegisterSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, User
-from .tasks import generate_message, is_any_user_chat_pending, stop_pending_chats, global_futures
+from .tasks import generate_message, is_any_user_chat_pending, global_futures
 
 class Signup(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -258,31 +257,26 @@ class GetMessageFileContent(APIView):
     permission_classes = [IsAuthenticated]
     renderer_classes = [BinaryFileRenderer]
 
-    def get(self, request):
+    def get(self, request: Request):
         chat_uuid = request.GET.get("chat_uuid")
         if not chat_uuid:
-            return Response({"error": "chat_uuid required"}, status = 404)
+            return Response({"error": "'chat_uuid' is required"}, status.HTTP_400_BAD_REQUEST)
 
         message_file_id = request.GET.get("message_file_id")
         if not message_file_id:
-            return Response({"error": "message_file_id required"}, status = 404)
+            return Response({"error": "'message_file_id' is required"}, status.HTTP_400_BAD_REQUEST)
         message_file_id = int(message_file_id)
 
         chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
         if not chat:
-            return Response({"error": "Chat not found"}, status = 404)
+            return Response({"error": "Chat was not found"}, status.HTTP_404_NOT_FOUND)
 
-        message_file = None
-        for message in chat.messages.all():
-            for file in message.files.all():
-                if file.id == message_file_id:
-                    message_file = file
-                    break
+        message_file = MessageFile.objects.filter(message__chat = chat, id = message_file_id).first()
 
         if message_file:
-            return Response(message_file.content)
+            return Response(message_file.content, status.HTTP_200_OK, content_type = message_file.content_type)
         else:
-            return Response({"error": "MessageFile not found"}, status = 404)
+            return Response({"error": "File was not found"}, status.HTTP_404_NOT_FOUND)
 
 class GetMessages(APIView):
     permission_classes = [IsAuthenticated]
