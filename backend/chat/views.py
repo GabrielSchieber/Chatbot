@@ -99,12 +99,12 @@ class Me(APIView):
 class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def delete(self, request: Request):
         try:
             request.user.delete()
-            return Response(status = 200)
+            return Response(status = status.HTTP_204_NO_CONTENT)
         except Exception:
-            return Response(status = 400)
+            return Response({"error": "Failed to delete account"}, status.HTTP_400_BAD_REQUEST)
 
 class GetChats(APIView):
     permission_classes = [IsAuthenticated]
