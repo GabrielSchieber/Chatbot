@@ -176,7 +176,7 @@ class RenameChat(APIView):
 class DeleteChat(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def delete(self, request):
         chat_uuid = request.data.get("chat_uuid")
         try:
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
@@ -184,16 +184,16 @@ class DeleteChat(APIView):
             if future:
                 future.cancel()
             chat.delete()
-            return Response(status = 200)
+            return Response(status = status.HTTP_200_OK)
         except Chat.DoesNotExist:
-            return Response(status = 404)
+            return Response({"error": "Chat not found"}, status.HTTP_404_NOT_FOUND)
         except Exception:
-            return Response(status = 400)
+            return Response(status = status.HTTP_400_BAD_REQUEST)
 
 class DeleteChats(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def delete(self, request):
         try:
             chats = Chat.objects.filter(user = request.user)
             for chat in chats:
@@ -201,9 +201,9 @@ class DeleteChats(APIView):
                 if future:
                     future.cancel()
             chats.delete()
-            return Response(status = 200)
+            return Response(status = status.HTTP_200_OK)
         except Exception:
-            return Response(status = 400)
+            return Response(status = status.HTTP_400_BAD_REQUEST)
 
 class StopPendingChats(APIView):
     permission_classes = [IsAuthenticated]
