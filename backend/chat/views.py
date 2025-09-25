@@ -66,7 +66,7 @@ class Refresh(TokenRefreshView):
         access = serializer.validated_data["access"]
         new_refresh = serializer.validated_data.get("refresh")
 
-        response = Response({"success": True}, HTTP_200_OK)
+        response = Response({"success": True}, status.HTTP_200_OK)
         response.set_cookie("access_token", access, httponly = True, samesite = "Lax")
         if new_refresh:
             response.set_cookie("refresh_token", new_refresh, httponly = True, samesite = "Lax")
@@ -109,12 +109,12 @@ class DeleteAccount(APIView):
 class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request: Request):
         pending = request.GET.get("pending", False)
         if pending:
             chats = Chat.objects.filter(user = request.user, is_pending = True).order_by("created_at")
             serializer = ChatSerializer(chats, many = True)
-            return Response({"chats": serializer.data})
+            return Response({"chats": serializer.data}, status.HTTP_200_OK)
 
         limit = int(request.GET.get("limit", 20))
         offset = int(request.GET.get("offset", 0))
@@ -124,12 +124,12 @@ class GetChats(APIView):
         chats = chats[offset:offset + limit]
 
         serializer = ChatSerializer(chats, many = True)
-        return Response({"chats": serializer.data, "has_more": offset + limit < total})
+        return Response({"chats": serializer.data, "has_more": offset + limit < total}, status.HTTP_200_OK)
 
 class SearchChats(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request: Request):
         search = request.GET.get("search", "")
         limit = int(request.GET.get("limit", 20))
         offset = int(request.GET.get("offset", 0))
@@ -156,16 +156,22 @@ class SearchChats(APIView):
 class RenameChat(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def patch(self, request):
         try:
-            chat_uuid = request.data["chat_uuid"]
-            new_title = request.data["new_title"]
+            chat_uuid = request.data.get("chat_uuid")
+            new_title = request.data.get("new_title")
+
+            if not chat_uuid or not new_title:
+                return Response({"error": "'chat_uuid' and 'new_title' fields are required"},status.HTTP_400_BAD_REQUEST)
+
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
             chat.title = new_title
             chat.save()
-            return Response(status = 200)
+            return Response(status = status.HTTP_200_OK)
+        except Chat.DoesNotExist:
+            return Response({"error": "Chat not found"}, status.HTTP_404_NOT_FOUND)
         except Exception:
-            return Response(status = 400)
+            return Response(status = status.HTTP_400_BAD_REQUEST)
 
 class DeleteChat(APIView):
     permission_classes = [IsAuthenticated]
