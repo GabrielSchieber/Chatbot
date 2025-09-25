@@ -2,7 +2,6 @@ from django.conf import settings
 from django.urls import path, re_path
 
 from .views import (
-    CookieTokenRefreshView,
     DeleteAccount,
     DeleteChat,
     DeleteChats,
@@ -11,24 +10,25 @@ from .views import (
     GetMessage,
     GetMessageFileContent,
     GetMessages,
-    LoginView,
-    LogoutView,
-    MeView,
+    Login,
+    Logout,
+    Me,
     NewMessage,
+    Refresh,
     RegenerateMessage,
-    RegisterView,
     RenameChat,
     SearchChats,
+    Signup,
     StopPendingChats,
     index
 )
 
 urlpatterns = [
-    path("api/signup/", RegisterView.as_view()),
-    path("api/login/", LoginView.as_view()),
-    path("api/logout/", LogoutView.as_view()),
-    path("api/me/", MeView.as_view()),
-    path("api/refresh-token/", CookieTokenRefreshView.as_view()),
+    path("api/signup/", Signup.as_view()),
+    path("api/login/", Login.as_view()),
+    path("api/logout/", Logout.as_view()),
+    path("api/me/", Me.as_view()),
+    path("api/refresh/", Refresh.as_view()),
     path("api/delete-account/", DeleteAccount.as_view()),
     path("api/get-chats/", GetChats.as_view()),
     path("api/search-chats/", SearchChats.as_view()),

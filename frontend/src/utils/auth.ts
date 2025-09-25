@@ -1,21 +1,5 @@
 import type { Theme, User } from "../types"
 
-export async function login(email: string, password: string) {
-    const response = await fetch("/api/login/", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email, password: password })
-    })
-    if (!response.ok) {
-        throw Error("Login was not possible")
-    }
-}
-
-export async function logout() {
-    await apiFetch("/api/logout/", { credentials: "include" })
-}
-
 export async function signup(email: string, password: string) {
     const response = await fetch("/api/signup/", {
         method: "POST",
@@ -32,6 +16,22 @@ export async function signup(email: string, password: string) {
     } else {
         throw new Error("Sign up was not possible.")
     }
+}
+
+export async function login(email: string, password: string) {
+    const response = await fetch("/api/login/", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email, password: password })
+    })
+    if (!response.ok) {
+        throw Error("Login was not possible")
+    }
+}
+
+export async function logout() {
+    await apiFetch("/api/logout/", { method: "POST", credentials: "include" })
 }
 
 export async function getCurrentUser(): Promise<User | null> {
@@ -56,10 +56,7 @@ export async function apiFetch(input: RequestInfo, init?: RequestInit): Promise<
     let response = await fetch(input, { ...init, credentials: "include" })
 
     if (response.status === 401) {
-        const refreshResponse = await fetch("/api/refresh-token/", {
-            method: "POST",
-            credentials: "include"
-        })
+        const refreshResponse = await fetch("/api/refresh/", { method: "POST", credentials: "include" })
 
         if (refreshResponse.ok) {
             response = await fetch(input, { ...init, credentials: "include" })
