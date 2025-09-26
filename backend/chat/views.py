@@ -209,27 +209,24 @@ class GetMessage(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
+        chat_uuid = request.GET.get("chat_uuid")
+        message_index = int(request.GET.get("message_index"))
+
+        if not chat_uuid or message_index is None:
+            return Response({"error": "'chat_uuid' and 'message_index' fields are required"}, status.HTTP_400_BAD_REQUEST)
+
         try:
-            chat_uuid = request.GET.get("chat_uuid")
-            message_index = int(request.GET.get("message_index"))
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+        except Chat.DoesNotExist:
+            return Response({"error": "Chat not found"}, status.HTTP_404_NOT_FOUND)
 
-            if not chat_uuid or message_index is None:
-                return Response({"error": "'chat_uuid' and 'message_index' fields are required"}, status.HTTP_400_BAD_REQUEST)
+        message = Message.objects.filter(chat = chat).order_by("created_at")
 
-            try:
-                chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            except Chat.DoesNotExist:
-                return Response({"error": "Chat not found"}, status.HTTP_404_NOT_FOUND)
-            
-            message = Message.objects.filter(chat = chat).order_by("created_at")
+        if message_index < 0 or message_index >= message.count():
+            return Response({"error": "Message index out of range"}, status.HTTP_400_BAD_REQUEST)
 
-            if message_index < 0 or message_index >= message.count():
-                return Response({"error": "Message index out of range"}, status.HTTP_400_BAD_REQUEST)
-
-            serializer = MessageSerializer(message[message_index], many = False)
-            return Response(serializer.data, status.HTTP_200_OK)
-        except Exception:
-            return Response(status = status.HTTP_400_BAD_REQUEST)
+        serializer = MessageSerializer(message[message_index], many = False)
+        return Response(serializer.data, status.HTTP_200_OK)
 
 class BinaryFileRenderer(BaseRenderer):
     media_type = "application/octet-stream"
@@ -277,6 +274,8 @@ class GetMessages(APIView):
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
         except Chat.DoesNotExist:
             return Response({"error": "Chat was not found"}, status.HTTP_404_NOT_FOUND)
+        except Exception:
+            return Response({"error": "Invalid chat UUID"}, status.HTTP_400_BAD_REQUEST)
 
         messages = Message.objects.filter(chat = chat).order_by("created_at").prefetch_related("files")
         serializer = MessageSerializer(messages, many = True)
