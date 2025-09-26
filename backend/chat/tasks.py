@@ -59,7 +59,7 @@ async def sample_model(chat: Chat, user_message: Message, bot_message: Message, 
     chat.is_pending = True
     await chat.asave()
 
-    messages: list[dict[str, str]] = await database_sync_to_async(get_messages)(chat, user_message)
+    messages: list[dict[str, str]] = await get_messages(user_message)
     message_index = len(messages) - 1
 
     try:
@@ -79,46 +79,40 @@ async def sample_model(chat: Chat, user_message: Message, bot_message: Message, 
     chat.is_pending = False
     await chat.asave()
 
-def get_messages(chat: Chat, stop_user_message: Message) -> list[dict[str, str]]:
-    user_messages = list(Message.objects.filter(chat = chat, is_from_user = True).order_by("created_at"))
-    bot_messages = list(Message.objects.filter(chat = chat, is_from_user = False).order_by("created_at"))
-
-    for i, m in enumerate(user_messages):
-        if m == stop_user_message:
-            user_messages = user_messages[:i + 1]
-            bot_messages = bot_messages[:i + 1]
-
+@database_sync_to_async
+def get_messages(up_to_message: Message) -> list[dict[str, str]]:
     messages = []
-    for user_message, bot_message in zip(user_messages, bot_messages):
-        messages.extend([
-            get_user_message(user_message),
-            {"role": "assistant", "content": bot_message.text}
-        ])
-    messages.pop()
+    for message in up_to_message.chat.messages.order_by("created_at"):
+        messages.append(get_message_dict(message))
+        if message.pk == up_to_message.pk:
+            break
     return messages
 
-def get_user_message(message: Message) -> dict[str, str]:
-    files: list[MessageFile] = list(message.files.all())
+def get_message_dict(message: Message) -> dict[str, str]:
+    if message.is_from_user:
+        files: list[MessageFile] = list(message.files.all())
 
-    if len(files) == 0:
-        return {"role": "user", "content": message.text, "images": []}
+        if len(files) == 0:
+            return {"role": "user", "content": message.text, "images": []}
 
-    images = []
-    for file in files:
-        if "image" in file.content_type:
-            os.makedirs("chat_temp", exist_ok = True)
-            with open(f"chat_temp/{file.name}", "wb+") as writer:
-                writer.write(file.content)
-            images.append(f"chat_temp/{file.name}")
+        images = []
+        for file in files:
+            if "image" in file.content_type:
+                os.makedirs("chat_temp", exist_ok = True)
+                with open(f"chat_temp/{file.name}", "wb+") as writer:
+                    writer.write(file.content)
+                images.append(f"chat_temp/{file.name}")
 
-    file_contents = []
-    for file in files:
-        if "image" not in file.content_type:
-            file_contents.append(f"=== File: {file.name} ===\n{file.content.decode()}")
+        file_contents = []
+        for file in files:
+            if "image" not in file.content_type:
+                file_contents.append(f"=== File: {file.name} ===\n{file.content.decode()}")
 
-    content = f"{message.text}\n\nFiles:\n{"\n\n".join(file_contents)}" if len(file_contents) > 0 else message.text
+        content = f"{message.text}\n\nFiles:\n{"\n\n".join(file_contents)}" if len(file_contents) > 0 else message.text
 
-    return {"role": "user", "content": content, "images": images}
+        return {"role": "user", "content": content, "images": images}
+    else:
+        return {"role": "assistant", "content": message.text}
 
 def stop_pending_chat(chat: Chat):
     if chat.is_pending and str(chat.uuid) in global_futures:
