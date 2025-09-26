@@ -3,8 +3,7 @@ import { Dialog, Select } from "radix-ui"
 import { useState, type ReactNode } from "react"
 
 import ConfirmDialog from "./ConfirmDialog"
-import { deleteAccount, deleteChats } from "../utils/api"
-import { logout, setCurrentUser } from "../utils/auth"
+import { deleteAccount, deleteChats, logout, setCurrentUser } from "../utils/api"
 import { useAuth } from "../context/AuthProvider"
 import type { Theme } from "../types"
 import { applyTheme } from "../utils/theme"
@@ -78,7 +77,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
 
     function handleDeleteChats() {
         deleteChats().then(status => {
-            if (status === 200) {
+            if (status === 204) {
                 if (location.pathname.includes("chat")) {
                     location.href = "/"
                 } else {
@@ -95,7 +94,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
 
     function handleDeleteAccount() {
         deleteAccount().then(status => {
-            if (status === 200) {
+            if (status === 204) {
                 location.reload()
             } else {
                 alert("Deletion of account was not possible")

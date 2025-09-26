@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { login, signup } from "../utils/auth"
+import { login, signup } from "../utils/api"
 
 export default function AuthPage({ type }: { type: "Signup" | "Login" }) {
     const submitFunction = type === "Signup" ? signup : login

@@ -35,7 +35,7 @@ test("user can copy bot messages", async ({ page }) => {
     await signupAndLogin(page)
     await sendExampleChat(page, 1, 1)
 
-    const copyResponse = page.waitForResponse(response => response.url().endsWith("/api/get-message/") && response.status() === 200, { timeout })
+    const copyResponse = page.waitForResponse(response => response.url().includes("/api/get-message/") && response.status() === 200, { timeout })
     await page.getByTestId("copy").last().click()
     await copyResponse
     await expectClipboard(page, exampleChats[1].messagePairs[0].bot)

@@ -58,6 +58,14 @@ export default function History() {
         return () => div.removeEventListener("scroll", onScroll)
     }, [offset, loading])
 
+    useEffect(() => {
+        getChats().then(response => {
+            setChats(response.chats)
+            setOffset(response.chats.length)
+            setHasMore(response.has_more)
+        })
+    }, [chatUUID])
+
     function startRename(chat: Chat) {
         setRenameChatUUID(chat.uuid)
         setRenameTitle(chat.title)
@@ -81,7 +89,7 @@ export default function History() {
 
     function handleDelete(uuid: string) {
         deleteChat(uuid).then(status => {
-            if (status === 200) {
+            if (status === 204) {
                 setChats(previous => {
                     let previousChats = [...previous]
                     previousChats = previousChats.filter(c => c.uuid !== uuid)

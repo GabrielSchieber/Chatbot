@@ -183,7 +183,7 @@ class DeleteChat(APIView):
             if future:
                 future.cancel()
             chat.delete()
-            return Response(status = status.HTTP_200_OK)
+            return Response(status = status.HTTP_204_NO_CONTENT)
         except Chat.DoesNotExist:
             return Response({"error": "Chat not found"}, status.HTTP_404_NOT_FOUND)
         except Exception:
@@ -200,7 +200,7 @@ class DeleteChats(APIView):
                 if future:
                     future.cancel()
             chats.delete()
-            return Response(status = status.HTTP_200_OK)
+            return Response(status = status.HTTP_204_NO_CONTENT)
         except Exception:
             return Response(status = status.HTTP_400_BAD_REQUEST)
 
@@ -223,8 +223,8 @@ class GetMessage(APIView):
 
     def get(self, request: Request):
         try:
-            chat_uuid = request.get("chat_uuid")
-            message_index = request.get("message_index")
+            chat_uuid = request.GET.get("chat_uuid")
+            message_index = int(request.GET.get("message_index"))
 
             if not chat_uuid or message_index is None:
                 return Response({"error": "'chat_uuid' and 'message_index' fields are required"}, status.HTTP_400_BAD_REQUEST)
@@ -282,7 +282,7 @@ class GetMessages(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
-        chat_uuid = request.data.get("chat_uuid")
+        chat_uuid = request.GET.get("chat_uuid")
         if not chat_uuid:
             return Response({"error": "'chat_uuid' is required"}, status.HTTP_400_BAD_REQUEST)
 

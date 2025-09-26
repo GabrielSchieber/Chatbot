@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import type { User } from "../types"
-import { getCurrentUser } from "../utils/auth"
+import { getCurrentUser } from "../utils/api"
 
 interface AuthContextValue {
     user: User | null

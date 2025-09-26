@@ -337,9 +337,7 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
             navigator.clipboard.writeText(message.text)
         } else {
             if (chatUUID) {
-                getMessage(chatUUID, index).then(text => {
-                    text ? navigator.clipboard.writeText(text) : alert("Copying of message was not possible")
-                })
+                getMessage(chatUUID, index).then(m => m ? navigator.clipboard.writeText(m.text) : alert("Copying of message was not possible"))
             }
         }
         setCopiedMessageIndex(index)

@@ -5,7 +5,7 @@ import History from "./History"
 import Search from "./Search"
 import Settings from "./Settings"
 import { useAuth } from "../context/AuthProvider"
-import { setCurrentUser } from "../utils/auth"
+import { setCurrentUser } from "../utils/api"
 
 export default function Sidebar() {
     const { user } = useAuth()
