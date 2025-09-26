@@ -15,7 +15,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .serializers import ChatSerializer, MessageSerializer, RegisterSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, User
-from .tasks import generate_message, is_any_user_chat_pending, global_futures
+from .tasks import generate_message, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 
 class Signup(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -161,7 +161,7 @@ class RenameChat(APIView):
             new_title = request.data.get("new_title")
 
             if not chat_uuid or not new_title:
-                return Response({"error": "'chat_uuid' and 'new_title' fields are required"},status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "'chat_uuid' and 'new_title' fields are required"}, status.HTTP_400_BAD_REQUEST)
 
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
             chat.title = new_title
@@ -179,9 +179,7 @@ class DeleteChat(APIView):
         chat_uuid = request.data.get("chat_uuid")
         try:
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            future = global_futures.pop(str(chat.uuid), None)
-            if future:
-                future.cancel()
+            stop_pending_chat(chat)
             chat.delete()
             return Response(status = status.HTTP_204_NO_CONTENT)
         except Chat.DoesNotExist:
@@ -194,12 +192,8 @@ class DeleteChats(APIView):
 
     def delete(self, request: Request):
         try:
-            chats = Chat.objects.filter(user = request.user)
-            for chat in chats:
-                future = global_futures.pop(str(chat.uuid), None)
-                if future:
-                    future.cancel()
-            chats.delete()
+            stop_user_pending_chats(request.user)
+            Chat.objects.filter(user = request.user).delete()
             return Response(status = status.HTTP_204_NO_CONTENT)
         except Exception:
             return Response(status = status.HTTP_400_BAD_REQUEST)
@@ -208,14 +202,7 @@ class StopPendingChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request: Request):
-        pending_chats = Chat.objects.filter(user = request.user, is_pending = True)
-        if pending_chats.count() > 0:
-            for pending_chat in pending_chats:
-                if str(pending_chat.uuid) in global_futures:
-                    global_futures[str(pending_chat.uuid)].cancel()
-
-                pending_chat.is_pending = False
-                pending_chat.save()
+        stop_user_pending_chats(request.user)
         return Response(status = status.HTTP_200_OK)
 
 class GetMessage(APIView):
