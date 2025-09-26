@@ -299,9 +299,9 @@ class NewMessage(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
 
-    def post(self, request):
+    def post(self, request: Request):
         if is_any_user_chat_pending(request.user):
-            return Response({"error": "A chat is already pending"}, 400)
+            return Response({"error": "A chat is already pending"}, status.HTTP_400_BAD_REQUEST)
 
         chat_uuid = request.data.get("chat_uuid", "")
         if type(chat_uuid) == str:
@@ -310,33 +310,33 @@ class NewMessage(APIView):
             else:
                 chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
                 if not chat:
-                    return Response({"error": "Invalid chat UUID"}, 400)
+                    return Response({"error": "Invalid chat UUID"}, status.HTTP_400_BAD_REQUEST)
                 chat.is_pending = True
                 chat.save()
         else:
-            return Response({"error": "Invalid data type for chat UUID"}, 400)
+            return Response({"error": "Invalid data type for chat UUID"}, status.HTTP_400_BAD_REQUEST)
 
         model = request.data.get("model", "SmolLM2-135M")
         if type(model) != str:
-            return Response({"error": "Invalid data type for model"}, 400)
+            return Response({"error": "Invalid data type for model"}, status.HTTP_400_BAD_REQUEST)
 
         options = json.loads(request.data.get("options", "{}"))
         if type(model) != dict and type(model) == set:
-            return Response({"error": "Invalid data type for options"}, 400)
+            return Response({"error": "Invalid data type for options"}, status.HTTP_400_BAD_REQUEST)
 
         message = request.data.get("message", "")
         if type(message) != str:
-            return Response({"error": "Invalid data type for message"}, 400)
+            return Response({"error": "Invalid data type for message"}, status.HTTP_400_BAD_REQUEST)
 
         files = request.FILES.getlist("files")
         if type(files) != list:
-            return Response({"error": "Invalid data type for files"}, 400)
+            return Response({"error": "Invalid data type for files"}, status.HTTP_400_BAD_REQUEST)
 
         total_size = 0
         for file in files:
             total_size += file.size
         if total_size > 5_000_000:
-            return Response({"error": "Total file size exceeds limit of 5 MB"}, 400)
+            return Response({"error": "Total file size exceeds limit of 5 MB"}, status.HTTP_400_BAD_REQUEST)
 
         user_message = Message.objects.create(chat = chat, text = message, is_from_user = True)
         if len(files) > 0:
@@ -348,53 +348,53 @@ class NewMessage(APIView):
         generate_message(chat, user_message, bot_message, model, options)
 
         serializer = ChatSerializer(chat, many = False)
-        return Response(serializer.data, 200)
+        return Response(serializer.data, status.HTTP_200_OK)
 
 class EditMessage(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
 
-    def post(self, request):
+    def patch(self, request):
         if is_any_user_chat_pending(request.user):
-            return Response({"error": "A chat is already pending"}, 400)
+            return Response({"error": "A chat is already pending"}, status.HTTP_400_BAD_REQUEST)
 
         chat_uuid = request.data.get("chat_uuid")
         if chat_uuid:
             if type(chat_uuid) == str:
                 chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
                 if not chat:
-                    return Response({"error": "Invalid chat UUID"}, 400)
+                    return Response({"error": "Invalid chat UUID"}, status.HTTP_400_BAD_REQUEST)
                 chat.is_pending = True
                 chat.save()
             else:
-                return Response({"error": "Invalid data type for chat UUID"}, 400)
+                return Response({"error": "Invalid data type for chat UUID"}, status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error": "A vald chat UUID is required"}, 400)
+            return Response({"error": "A valid chat UUID is required"}, status.HTTP_400_BAD_REQUEST)
 
         model = request.data.get("model", "SmolLM2-135M")
         if type(model) != str:
-            return Response({"error": "Invalid data type for model"}, 400)
+            return Response({"error": "Invalid data type for model"}, status.HTTP_400_BAD_REQUEST)
 
         options = json.loads(request.data.get("options", "{}"))
         if type(model) != dict and type(model) == set:
-            return Response({"error": "Invalid data type for options"}, 400)
+            return Response({"error": "Invalid data type for options"}, status.HTTP_400_BAD_REQUEST)
 
         message = request.data.get("message", "")
         if type(message) != str:
-            return Response({"error": "Invalid data type for message"}, 400)
+            return Response({"error": "Invalid data type for message"}, status.HTTP_400_BAD_REQUEST)
 
         message_index = request.data.get("message_index")
         if not message_index:
-            return Response({"error": "Index is required"}, 400)
+            return Response({"error": "Index is required"}, status.HTTP_400_BAD_REQUEST)
         message_index = int(message_index)
 
         added_files = request.FILES.getlist("added_files")
         if type(added_files) != list:
-            return Response({"error": "Invalid data type for added files"}, 400)
+            return Response({"error": "Invalid data type for added files"}, status.HTTP_400_BAD_REQUEST)
 
         removed_file_ids = json.loads(request.data.get("removed_file_ids", []))
         if type(removed_file_ids) != list:
-            return Response({"error": "Invalid data type for removed files ids"}, 400)
+            return Response({"error": "Invalid data type for removed files ids"}, status.HTTP_400_BAD_REQUEST)
 
         messages = Message.objects.filter(chat = chat).order_by("created_at")
         user_message = messages[message_index]
@@ -411,7 +411,7 @@ class EditMessage(APIView):
         for file in removed_files:
             total_size -= len(file.content)
         if total_size > 5_000_000:
-            return Response({"error": "Total file size exceeds limit of 5 MB"}, 400)
+            return Response({"error": "Total file size exceeds limit of 5 MB"}, status.HTTP_400_BAD_REQUEST)
 
         bot_message = messages[message_index + 1]
 
@@ -430,44 +430,44 @@ class EditMessage(APIView):
         generate_message(chat, user_message, bot_message, model, options)
 
         serializer = ChatSerializer(chat, many = False)
-        return Response(serializer.data, 200)
+        return Response(serializer.data, status.HTTP_200_OK)
 
 class RegenerateMessage(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
 
-    def post(self, request):
+    def patch(self, request: Request):
         if is_any_user_chat_pending(request.user):
-            return Response({"error": "A chat is already pending"}, 400)
+            return Response({"error": "A chat is already pending"}, status.HTTP_400_BAD_REQUEST)
 
         chat_uuid = request.data.get("chat_uuid")
         if chat_uuid:
             if type(chat_uuid) == str:
                 chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
                 if not chat:
-                    return Response({"error": "Invalid chat UUID"}, 400)
+                    return Response({"error": "Invalid chat UUID"}, status.HTTP_400_BAD_REQUEST)
                 chat.is_pending = True
                 chat.save()
             else:
-                return Response({"error": "Invalid data type for chat UUID"}, 400)
+                return Response({"error": "Invalid data type for chat UUID"}, status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error": "A valid chat UUID is required"}, 400)
+            return Response({"error": "A valid chat UUID is required"}, status.HTTP_400_BAD_REQUEST)
 
         model = request.data.get("model", "SmolLM2-135M")
         if type(model) != str:
-            return Response({"error": "Invalid data type for model"}, 400)
+            return Response({"error": "Invalid data type for model"}, status.HTTP_400_BAD_REQUEST)
 
         options = json.loads(request.data.get("options", "{}"))
         if type(model) != dict and type(model) == set:
-            return Response({"error": "Invalid data type for options"}, 400)
+            return Response({"error": "Invalid data type for options"}, status.HTTP_400_BAD_REQUEST)
 
         message = request.data.get("message", "")
         if type(message) != str:
-            return Response({"error": "Invalid data type for message"}, 400)
+            return Response({"error": "Invalid data type for message"}, status.HTTP_400_BAD_REQUEST)
 
         message_index = request.data.get("message_index")
         if not message_index:
-            return Response({"error": "Index is required"}, 400)
+            return Response({"error": "Index is required"}, status.HTTP_400_BAD_REQUEST)
         message_index = int(message_index)
 
         messages = Message.objects.filter(chat = chat).order_by("created_at")
@@ -481,7 +481,7 @@ class RegenerateMessage(APIView):
         generate_message(chat, user_message, bot_message, model, options)
 
         serializer = ChatSerializer(chat, many = False)
-        return Response(serializer.data, 200)
+        return Response(serializer.data, status.HTTP_200_OK)
 
 def index(request):
     return render(request, "index.html")
