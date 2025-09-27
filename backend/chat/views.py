@@ -109,11 +109,11 @@ class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
-        pending = request.GET.get("pending", False)
+        pending = bool(request.GET.get("pending", False))
         if pending:
             chats = Chat.objects.filter(user = request.user, is_pending = True).order_by("created_at")
             serializer = ChatSerializer(chats, many = True)
-            return Response({"chats": serializer.data}, status.HTTP_200_OK)
+            return Response(serializer.data, status.HTTP_200_OK)
 
         limit = int(request.GET.get("limit", 20))
         offset = int(request.GET.get("offset", 0))
