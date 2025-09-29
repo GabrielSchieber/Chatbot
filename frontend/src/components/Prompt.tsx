@@ -295,17 +295,21 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                 setVisibleFiles([])
 
                 setMessages(previous => {
-                    const previousMessages = [...previous]
-                    const highestCurrentFileID = previousMessages.flatMap(message => message.files).map(file => file.id).sort().at(-1) || 1
+                    previous = [...previous]
+
+                    const highestCurrentFileID = previous.flatMap(message => message.files).map(file => file.id).sort().at(-1) || 1
                     const files = currentFiles.map((file, index) => ({
                         id: highestCurrentFileID + index + 1,
                         name: file.name,
                         content_size: file.size,
                         content_type: file.type
                     }))
-                    previousMessages.push({ text: prompt, files: files, is_from_user: true, model: undefined })
-                    previousMessages.push({ text: "", files: [], is_from_user: false, model: model })
-                    return previousMessages
+
+                    const highestMessageID = previous.map(m => m.id).sort().at(-1) || 1
+                    previous.push({ id: highestMessageID + 1, text: prompt, files: files, is_from_user: true, model: undefined })
+                    previous.push({ id: highestMessageID + 2, text: "", files: [], is_from_user: false, model: model })
+
+                    return previous
                 })
 
                 chat.then(chat => {

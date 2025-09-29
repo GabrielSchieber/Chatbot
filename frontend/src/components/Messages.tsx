@@ -287,11 +287,21 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     function loadMessages() {
         if (shouldLoadMessages.current && chatUUID) {
             shouldLoadMessages.current = false
-            getMessages(chatUUID).then(messages => {
-                if (messages) {
-                    setMessages(messages)
-                    if (messages.length > 0) {
-                        const lastMessage = messages[messages.length - 1]
+            getMessages(chatUUID).then(fetchedMessages => {
+                if (fetchedMessages) {
+                    setMessages(previous => {
+                        previous = [...previous]
+                        previous = fetchedMessages.map(m => m.id !== pendingChat?.pending_message_id ? m : {
+                            id: m.id,
+                            text: previous.filter(m => m.id === pendingChat.pending_message_id)[0]?.text || m.text,
+                            is_from_user: m.is_from_user,
+                            files: m.files,
+                            model: m.model
+                        })
+                        return previous
+                    })
+                    if (fetchedMessages.length > 0) {
+                        const lastMessage = fetchedMessages[fetchedMessages.length - 1]
                         if (lastMessage.model) {
                             setModel(lastMessage.model)
                         }
@@ -304,28 +314,37 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     }
 
     function receiveMessage() {
-        if (!webSocket.current && chatUUID) {
-            webSocket.current = new WebSocket(`ws://${location.host}/ws/chat/${chatUUID}/`)
+        if (!webSocket.current) {
+            webSocket.current = new WebSocket(`ws://${location.host}/ws/chat/`)
+
+            webSocket.current.addEventListener("open", _ => {
+                if (webSocket.current && chatUUID) {
+                    webSocket.current.send(JSON.stringify({ "chat_uuid": chatUUID }))
+                }
+            })
 
             webSocket.current.addEventListener("message", event => {
                 const data = JSON.parse(event.data)
-                let shouldSetMessages = true
-                setMessages(previous => {
-                    if (shouldSetMessages) {
-                        shouldSetMessages = false
-                        previous = [...previous]
-                        const message = previous[data.message_index + 1]
-                        if (message) {
-                            if (data.token) {
-                                message.text += data.token
-                            } else if (data.message) {
-                                message.text = data.message
-                                setPendingChat(undefined)
+                if (data.token || data.message) {
+                    let shouldSetMessages = true
+                    setMessages(previous => {
+                        if (shouldSetMessages) {
+                            shouldSetMessages = false
+                            previous = [...previous]
+                            const message = previous[data.message_index]
+                            if (message) {
+                                if (data.token) {
+                                    message.text += data.token
+                                } else {
+                                    message.text = data.message
+                                }
                             }
                         }
-                    }
-                    return previous
-                })
+                        return previous
+                    })
+                } else if (data === "end") {
+                    setPendingChat(undefined)
+                }
             })
 
             webSocket.current.addEventListener("error", _ => location.href = "/")
@@ -494,16 +513,15 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
     }
 
     useEffect(() => {
-        loadMessages()
         getPendingChats().then(chats => {
             chats.length > 0 ? setPendingChat(chats[0]) : setPendingChat(undefined)
+            loadMessages()
             receiveMessage()
         })
-    }, [chatUUID])
 
-    useEffect(() => {
-        webSocket.current?.close()
-        webSocket.current = null
+        if (webSocket.current && chatUUID) {
+            webSocket.current.send(JSON.stringify({ "chat_uuid": chatUUID }))
+        }
     }, [chatUUID])
 
     useEffect(() => {
@@ -567,7 +585,6 @@ export default function Messages({ messages, setMessages, pendingChat, setPendin
                                                 isNew: false
                                             })))
                                         }}
-
                                     >
                                         Cancel
                                     </button>

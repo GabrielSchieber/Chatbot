@@ -18,9 +18,14 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["id", "email", "theme", "has_sidebar_open"]
 
 class ChatSerializer(serializers.ModelSerializer):
+    pending_message_id = serializers.SerializerMethodField()
+
     class Meta:
         model = Chat
-        fields = ["title", "is_pending", "uuid"]
+        fields = ["title", "pending_message_id", "uuid"]
+
+    def get_pending_message_id(self, chat: Chat):
+        return chat.pending_message.id if chat.pending_message is not None else None
 
 class MessageFileSerializer(serializers.ModelSerializer):
     content_size = serializers.SerializerMethodField()
@@ -37,4 +42,4 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ["text", "is_from_user", "files", "model"]
+        fields = ["id", "text", "is_from_user", "files", "model"]

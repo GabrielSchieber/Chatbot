@@ -15,7 +15,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .serializers import ChatSerializer, MessageSerializer, RegisterSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, User
-from .tasks import generate_message, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
+from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 
 class Signup(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -111,7 +111,7 @@ class GetChats(APIView):
     def get(self, request: Request):
         pending = bool(request.GET.get("pending", False))
         if pending:
-            chats = Chat.objects.filter(user = request.user, is_pending = True).order_by("created_at")
+            chats = Chat.objects.filter(user = request.user).exclude(pending_message = None).order_by("created_at")
             serializer = ChatSerializer(chats, many = True)
             return Response(serializer.data, status.HTTP_200_OK)
 
@@ -291,23 +291,23 @@ class NewMessage(APIView):
 
         chat_uuid = request.data.get("chat_uuid", "")
         if type(chat_uuid) == str:
-            if chat_uuid=="":
-                chat = Chat.objects.create(user = request.user, title = f"Chat {Chat.objects.filter(user = request.user).count() + 1}", is_pending = True)
+            if chat_uuid == "":
+                chat = Chat.objects.create(user = request.user, title = f"Chat {Chat.objects.filter(user = request.user).count() + 1}")
             else:
                 chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
                 if not chat:
                     return Response({"error": "Invalid chat UUID"}, status.HTTP_400_BAD_REQUEST)
-                chat.is_pending = True
-                chat.save()
         else:
             return Response({"error": "Invalid data type for chat UUID"}, status.HTTP_400_BAD_REQUEST)
 
         model = request.data.get("model", "SmolLM2-135M")
         if type(model) != str:
             return Response({"error": "Invalid data type for model"}, status.HTTP_400_BAD_REQUEST)
+        if model not in [c[0] for c in Message._meta.get_field("model").choices]:
+            return Response({"error": "Invalid model"}, status.HTTP_400_BAD_REQUEST)
 
         options = json.loads(request.data.get("options", "{}"))
-        if type(model) != dict and type(model) == set:
+        if type(options) != dict and type(options) != set:
             return Response({"error": "Invalid data type for options"}, status.HTTP_400_BAD_REQUEST)
 
         message = request.data.get("message", "")
@@ -331,7 +331,10 @@ class NewMessage(APIView):
             )
         bot_message = Message.objects.create(chat = chat, text = "", is_from_user = False, model = model)
 
-        generate_message(chat, user_message, bot_message, model, options)
+        chat.pending_message = bot_message
+        chat.save()
+
+        generate_pending_message_in_chat(chat, options)
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, status.HTTP_200_OK)
@@ -350,8 +353,6 @@ class EditMessage(APIView):
                 chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
                 if not chat:
                     return Response({"error": "Invalid chat UUID"}, status.HTTP_400_BAD_REQUEST)
-                chat.is_pending = True
-                chat.save()
             else:
                 return Response({"error": "Invalid data type for chat UUID"}, status.HTTP_400_BAD_REQUEST)
         else:
@@ -360,9 +361,11 @@ class EditMessage(APIView):
         model = request.data.get("model", "SmolLM2-135M")
         if type(model) != str:
             return Response({"error": "Invalid data type for model"}, status.HTTP_400_BAD_REQUEST)
+        if model not in [c[0] for c in Message._meta.get_field("model").choices]:
+            return Response({"error": "Invalid model"}, status.HTTP_400_BAD_REQUEST)
 
         options = json.loads(request.data.get("options", "{}"))
-        if type(model) != dict and type(model) == set:
+        if type(options) != dict and type(options) != set:
             return Response({"error": "Invalid data type for options"}, status.HTTP_400_BAD_REQUEST)
 
         message = request.data.get("message", "")
@@ -413,7 +416,10 @@ class EditMessage(APIView):
         bot_message.model = model
         bot_message.save()
 
-        generate_message(chat, user_message, bot_message, model, options)
+        chat.pending_message = bot_message
+        chat.save()
+
+        generate_pending_message_in_chat(chat, options)
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, status.HTTP_200_OK)
@@ -432,8 +438,6 @@ class RegenerateMessage(APIView):
                 chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
                 if not chat:
                     return Response({"error": "Invalid chat UUID"}, status.HTTP_400_BAD_REQUEST)
-                chat.is_pending = True
-                chat.save()
             else:
                 return Response({"error": "Invalid data type for chat UUID"}, status.HTTP_400_BAD_REQUEST)
         else:
@@ -442,9 +446,11 @@ class RegenerateMessage(APIView):
         model = request.data.get("model", "SmolLM2-135M")
         if type(model) != str:
             return Response({"error": "Invalid data type for model"}, status.HTTP_400_BAD_REQUEST)
+        if model not in [c[0] for c in Message._meta.get_field("model").choices]:
+            return Response({"error": "Invalid model"}, status.HTTP_400_BAD_REQUEST)
 
         options = json.loads(request.data.get("options", "{}"))
-        if type(model) != dict and type(model) == set:
+        if type(options) != dict and type(options) != set:
             return Response({"error": "Invalid data type for options"}, status.HTTP_400_BAD_REQUEST)
 
         message = request.data.get("message", "")
@@ -456,15 +462,16 @@ class RegenerateMessage(APIView):
             return Response({"error": "Index is required"}, status.HTTP_400_BAD_REQUEST)
         message_index = int(message_index)
 
-        messages = Message.objects.filter(chat = chat).order_by("created_at")
-        user_message = messages[message_index - 1]
-        bot_message = messages[message_index]
+        bot_message = Message.objects.filter(chat = chat).order_by("created_at")[message_index]
 
         bot_message.text = ""
         bot_message.model = model
         bot_message.save()
 
-        generate_message(chat, user_message, bot_message, model, options)
+        chat.pending_message = bot_message
+        chat.save()
+
+        generate_pending_message_in_chat(chat, options)
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, status.HTTP_200_OK)

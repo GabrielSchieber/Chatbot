@@ -45,7 +45,7 @@ class Chat(models.Model):
     user = models.ForeignKey(User, models.CASCADE, related_name = "chats")
     uuid = models.UUIDField(primary_key = True, default = uuid.uuid4, editable = False)
     title = models.CharField(max_length = 200)
-    is_pending = models.BooleanField(default = False)
+    pending_message = models.OneToOneField("Message", models.CASCADE, related_name = "pending_message", blank = True, null = True)
     created_at = models.DateTimeField(auto_now_add = True)
 
     def __str__(self):

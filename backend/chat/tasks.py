@@ -4,7 +4,6 @@ import os
 import random
 import threading
 from concurrent.futures import CancelledError
-from typing import Literal, get_args
 
 logger = logging.getLogger(__name__)
 
@@ -13,26 +12,28 @@ from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 from django.core.exceptions import ObjectDoesNotExist
 
-from .models import Chat, Message, MessageFile, User
+channel_layer = get_channel_layer()
 
-ModelName = Literal["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]
+from .models import Chat, Message, User
 
 def start_background_loop(loop: asyncio.AbstractEventLoop):
     asyncio.set_event_loop(loop)
     loop.run_forever()
 
-global_loop = asyncio.new_event_loop()
-threading.Thread(target = start_background_loop, args = [global_loop], daemon = True).start()
+event_loop = asyncio.new_event_loop()
+threading.Thread(target = start_background_loop, args = [event_loop], daemon = True).start()
 
-global_futures: dict[str, asyncio.Future[None]] = {}
+chat_futures: dict[str, asyncio.Future[None]] = {}
+opened_chats: set[str] = set()
 
-def generate_message(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName, options: dict[str, int | float]):
-    future = asyncio.run_coroutine_threadsafe(sample_model(chat, user_message, bot_message, model_name, options), global_loop)
-    future.add_done_callback(lambda f: task_done_callback(f, str(chat.uuid)))
-    global_futures[str(chat.uuid)] = future
+def generate_pending_message_in_chat(chat: Chat, options: dict[str, int | float]):
+    if chat.pending_message is not None:
+        future = asyncio.run_coroutine_threadsafe(sample_model(chat, options), event_loop)
+        future.add_done_callback(lambda f: task_done_callback(f, str(chat.uuid)))
+        chat_futures[str(chat.uuid)] = future
 
 def task_done_callback(future: asyncio.Future[None], chat_uuid: str):
-    global_futures.pop(chat_uuid, None)
+    chat_futures.pop(chat_uuid, None)
 
     try:
         exception = future.exception()
@@ -42,61 +43,51 @@ def task_done_callback(future: asyncio.Future[None], chat_uuid: str):
     if exception:
         logger.exception("Task failed", exc_info = exception)
 
-async def sample_model(chat: Chat, user_message: Message, bot_message: Message, model_name: ModelName, options: dict[str, int | float]):
-    if model_name not in get_args(ModelName):
-        raise ValueError(f"Invalid model name: \"{model_name}\"")
+async def sample_model(chat: Chat, options: dict[str, int | float]):
+    model = get_ollama_model(chat.pending_message.model)
+    if model not in str(ollama.list()):
+        raise ValueError(f"Model {model} not installed")
 
-    if model_name == "Moondream":
-        model_name = "moondream:1.8b-v2-q2_K"
-    else:
-        model_name = model_name.lower().replace("-", ":")
-
-    if not model_name in str(ollama.list()):
-        raise ValueError(f"Model {model_name} not installed")
-
-    channel_layer = get_channel_layer()
-
-    chat.is_pending = True
-    await chat.asave()
-
-    messages: list[dict[str, str]] = await get_messages(user_message)
-    message_index = len(messages) - 1
+    messages: list[dict[str, str]] = await get_messages(chat.pending_message)
+    message_index = len(messages)
 
     try:
-        async for part in await ollama.AsyncClient().chat(model_name, messages, stream = True, options = parse_options(options)):
+        async for part in await ollama.AsyncClient().chat(model, messages, stream = True, options = parse_options(options)):
             token = part["message"]["content"]
-            bot_message.text += token
-            if not await safe_save_message(bot_message):
+            chat.pending_message.text += token
+            if not await safe_save_message(chat.pending_message):
                 return
-            await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_token", "token": token, "message_index": message_index})
+            if str(chat.uuid) in opened_chats:
+                opened_chats.discard(str(chat.uuid))
+                await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": chat.pending_message.text, "message_index": message_index})
+            else:
+                await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_token", "token": token, "message_index": message_index})
     except asyncio.CancelledError:
-        chat.is_pending = False
+        chat.pending_message = None
         await safe_save_chat(chat)
         return
 
-    await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": bot_message.text, "message_index": message_index})
-
-    chat.is_pending = False
+    chat.pending_message = None
     await chat.asave()
+
+    await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_end"})
 
 @database_sync_to_async
 def get_messages(up_to_message: Message) -> list[dict[str, str]]:
     messages = []
     for message in up_to_message.chat.messages.order_by("created_at"):
-        messages.append(get_message_dict(message))
         if message.pk == up_to_message.pk:
             break
+        messages.append(get_message_dict(message))
     return messages
 
 def get_message_dict(message: Message) -> dict[str, str]:
     if message.is_from_user:
-        files: list[MessageFile] = list(message.files.all())
-
-        if len(files) == 0:
-            return {"role": "user", "content": message.text, "images": []}
+        if message.files.count() == 0:
+            return {"role": "user", "content": message.text}
 
         images = []
-        for file in files:
+        for file in message.files.all():
             if "image" in file.content_type:
                 os.makedirs("chat_temp", exist_ok = True)
                 with open(f"chat_temp/{file.name}", "wb+") as writer:
@@ -104,7 +95,7 @@ def get_message_dict(message: Message) -> dict[str, str]:
                 images.append(f"chat_temp/{file.name}")
 
         file_contents = []
-        for file in files:
+        for file in message.files.all():
             if "image" not in file.content_type:
                 file_contents.append(f"=== File: {file.name} ===\n{file.content.decode()}")
 
@@ -115,33 +106,39 @@ def get_message_dict(message: Message) -> dict[str, str]:
         return {"role": "assistant", "content": message.text}
 
 def stop_pending_chat(chat: Chat):
-    if chat.is_pending and str(chat.uuid) in global_futures:
-        global_futures[str(chat.uuid)].cancel()
-        chat.is_pending = False
+    if chat.pending_message is not None and str(chat.uuid) in chat_futures:
+        chat_futures[str(chat.uuid)].cancel()
+        chat.pending_message = None
         chat.save()
 
 def stop_user_pending_chats(user: User):
-    pending_chats = Chat.objects.filter(user = user, is_pending = True)
+    pending_chats = Chat.objects.filter(user = user).exclude(pending_message = None)
 
     if pending_chats.count() > 0:
         for pending_chat in pending_chats:
-            if str(pending_chat.uuid) in global_futures:
-                global_futures[str(pending_chat.uuid)].cancel()
+            if str(pending_chat.uuid) in chat_futures:
+                chat_futures[str(pending_chat.uuid)].cancel()
 
-    pending_chats.update(is_pending = False)
+    pending_chats.update(pending_message = None)
 
 def reset_stopped_pending_chats(user: User):
-    pending_chats = Chat.objects.filter(user = user, is_pending = True)
+    pending_chats = Chat.objects.filter(user = user).exclude(pending_message = None)
     if pending_chats.count() > 0:
         for pending_chat in pending_chats:
-            if str(pending_chat.uuid) not in global_futures:
-                pending_chat.is_pending = False
+            if str(pending_chat.uuid) not in chat_futures:
+                pending_chat.pending_message = None
                 pending_chat.save()
 
 def is_any_user_chat_pending(user: User) -> bool:
     reset_stopped_pending_chats(user)
-    pending_chats = Chat.objects.filter(user = user, is_pending = True)
+    pending_chats = Chat.objects.filter(user = user).exclude(pending_message = None)
     return True if pending_chats.count() > 0 else False
+
+def get_ollama_model(model: str):
+    if model == "Moondream":
+        return "moondream:1.8b-v2-q2_K"
+    else:
+        return model.lower().replace("-", ":")
 
 def parse_options(options: dict[str, int | float]) -> dict[str, int | float]:
     def clamp(value: int | float, minimum: int | float, maximum: int | float) -> int | float:

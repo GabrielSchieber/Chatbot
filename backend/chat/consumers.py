@@ -1,39 +1,42 @@
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from jwt import decode as jwt_decode
 
-from .models import Chat, User
+from .models import User
+from .tasks import opened_chats
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.user: User = await self.get_user_from_cookie()
-        self.chat: Chat | None = None
+        self.chat_uuid = ""
 
         if self.user is None or isinstance(self.user, AnonymousUser):
-            return await self.close()
-        else:
-            chat_uuid = self.scope["url_route"]["kwargs"].get("chat_uuid")
-            if chat_uuid:
-                try:
-                    self.chat: Chat = await Chat.objects.aget(user = self.user, uuid = chat_uuid)
-                    await self.channel_layer.group_add(f"chat_{str(self.chat.uuid)}", self.channel_name)
-                except Chat.DoesNotExist:
-                    return await self.close()
-            else:
-                return await self.close()
+            return await self.close(401, "User not authenticated")
 
         await self.accept()
 
     async def disconnect(self, code):
-        if self.chat:
-            await self.channel_layer.group_discard(f"chat_{str(self.chat.uuid)}", self.channel_name)
+        if self.chat_uuid != "":
+            opened_chats.discard(self.chat_uuid)
+            await self.channel_layer.group_discard(f"chat_{self.chat_uuid}", self.channel_name)
+
+    async def receive_json(self, content):
+        if self.chat_uuid == "":
+            self.chat_uuid = str(content.get("chat_uuid", ""))
+            if await database_sync_to_async(self.user.chats.filter(uuid = self.chat_uuid).exists)():
+                await self.channel_layer.group_add(f"chat_{self.chat_uuid}", self.channel_name)
+                opened_chats.add(self.chat_uuid)
 
     async def send_token(self, event):
         await self.send_json({"token": event["token"], "message_index": event["message_index"]})
 
     async def send_message(self, event):
         await self.send_json({"message": event["message"], "message_index": event["message_index"]})
+
+    async def send_end(self, event):
+        await self.send_json("end")
 
     async def get_user_from_cookie(self):
         try:
