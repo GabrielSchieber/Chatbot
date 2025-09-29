@@ -14,7 +14,7 @@ export default function Chat() {
 
     return (
         <div className="flex flex-1 items-center justify-center">
-            <div className="flex flex-col w-full h-full">
+            <div className="relative flex flex-col w-full h-full">
                 <Messages
                     messages={messages}
                     setMessages={setMessages}

@@ -26,6 +26,9 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
     const [isRemovingFiles, setIsRemovingFiles] = useState(false)
     const [messageNotificationID, setMessageNotificationID] = useState(-1)
 
+    const [isCentered, setIsCentered] = useState<boolean>(() => !chatUUID)
+    useEffect(() => setIsCentered(!chatUUID), [chatUUID])
+
     function GeneratingMessageNotification({ title, uuid, }: { title: string, uuid: string }) {
         return (
             <div className="flex items-center justify-between px-4 py-2 rounded-xl bg-gray-700 light:bg-gray-300 z-10">
@@ -288,6 +291,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
     }
 
     function sendMessage() {
+        setIsCentered(false)
         newMessage(chatUUID || "", model, options, prompt, currentFiles).then(([chat, status]) => {
             if (status === 200) {
                 setPrompt("")
@@ -376,8 +380,18 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
 
     useEffect(() => updateTextAreaHeight(), [prompt, visibleFiles])
 
+    const containerStyle: React.CSSProperties = {
+        position: "absolute",
+        left: "50%",
+        top: isCentered ? "50%" : "100%",
+        transform: isCentered ? "translate(-50%, -50%)" : "translate(-50%, -100%)",
+        transition: "top 320ms ease, transform 320ms ease",
+        width: "50vw",
+        paddingBottom: "1rem"
+    }
+
     return (
-        <div className="absolute bottom-0 flex flex-col w-[50vw] pb-4 self-center" data-testid="prompt-bar">
+        <div style={containerStyle} className="flex flex-col pb-4" data-testid="prompt-bar">
             {messageNotificationID >= 0 && pendingChat && <GeneratingMessageNotification title={pendingChat.title} uuid={pendingChat.uuid} />}
 
             <div
