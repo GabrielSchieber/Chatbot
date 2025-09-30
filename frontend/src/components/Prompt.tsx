@@ -286,7 +286,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
         const textArea = textAreaRef.current
         if (textArea) {
             textArea.style.height = "auto"
-            textArea.style.height = textArea.scrollHeight + "px"
+            textArea.style.height = Math.min(textArea.scrollHeight, document.body.clientHeight * 0.5 - 50) + "px"
         }
     }
 
@@ -380,72 +380,88 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
 
     useEffect(() => updateTextAreaHeight(), [prompt, visibleFiles])
 
+    window.addEventListener("resize", updateTextAreaHeight)
+
     const containerStyle: React.CSSProperties = {
         position: "absolute",
         left: "50%",
         top: isCentered ? "50%" : "100%",
-        transform: isCentered ? "translate(-50%, -50%)" : "translate(-50%, -100%)",
+        transform: isCentered ? "translate(-50%, 0)" : "translate(-50%, -100%)",
         transition: "top 320ms ease, transform 320ms ease",
         width: "50vw",
         paddingBottom: "1rem"
     }
 
+    const headerStyle: React.CSSProperties = {
+        position: "absolute",
+        left: "50%",
+        top: "50%",
+        transform: "translate(-50%, -120%)",
+        transition: "opacity 160ms ease",
+        opacity: isCentered ? 1 : 0,
+        pointerEvents: "none",
+        willChange: "opacity"
+    }
+
     return (
-        <div style={containerStyle} className="flex flex-col pb-4" data-testid="prompt-bar">
-            {messageNotificationID >= 0 && pendingChat && <GeneratingMessageNotification title={pendingChat.title} uuid={pendingChat.uuid} />}
+        <>
+            <h1 style={headerStyle} className="pb-5 text-3xl font-light">Hello! How can I help you today?</h1>
+            <div style={containerStyle} className="flex flex-col pb-4" data-testid="prompt-bar">
+                {messageNotificationID >= 0 && pendingChat && <GeneratingMessageNotification title={pendingChat.title} uuid={pendingChat.uuid} />}
 
-            <div
-                className="
-                    flex gap-2 w-full px-4 py-3 items-center rounded-[30px] cursor-text shadow-xl/50
-                    border-t-4 border-gray-600 light:border-gray-400 bg-gray-700 light:bg-gray-300
-                "
-                onClick={e => {
-                    if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
-                        return
-                    }
-                    textAreaRef.current?.focus()
-                }}
-            >
-                {AddDropdown()}
+                <div
+                    className="
+                        flex gap-2 w-full px-4 py-3 items-center rounded-[30px] cursor-text shadow-xl/50
+                        border-t-4 border-gray-600 light:border-gray-400 bg-gray-700 light:bg-gray-300
+                    "
+                    onClick={e => {
+                        if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
+                            return
+                        }
+                        textAreaRef.current?.focus()
+                    }}
+                >
+                    {AddDropdown()}
 
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: "none" }} multiple />
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: "none" }} multiple />
 
-                <div className="flex flex-1 flex-col gap-3 max-h-100 overflow-y-auto">
-                    {visibleFiles.length > 0 && Attachments()}
-                    <div className="flex">
-                        <textarea
-                            className={`flex-1 px-2 content-center overflow-y-hidden resize-none outline-none ${visibleFiles.length > 0 && "py-2"}`}
-                            value={prompt}
-                            placeholder="Ask me anything..."
-                            rows={1}
-                            tabIndex={1}
-                            ref={textAreaRef}
-                            onChange={e => setPrompt(e.currentTarget.value)}
-                            onKeyDown={sendMessageWithEvent}
-                            autoFocus
-                        />
+                    <div className="flex flex-1 flex-col gap-3 max-h-100 overflow-y-auto">
+                        {visibleFiles.length > 0 && Attachments()}
+                        <div className="flex">
+                            <textarea
+                                className={`flex-1 px-2 content-center overflow-y-hidden resize-none outline-none ${visibleFiles.length > 0 && "py-2"}`}
+                                value={prompt}
+                                placeholder="Ask me anything..."
+                                rows={1}
+                                tabIndex={1}
+                                ref={textAreaRef}
+                                onChange={e => setPrompt(e.currentTarget.value)}
+                                onKeyDown={sendMessageWithEvent}
+                                autoFocus
+                            />
+                        </div>
                     </div>
+
+                    {(prompt.trim() || currentFiles.length > 0) && pendingChat === undefined &&
+                        <button className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer" tabIndex={3} onClick={sendMessage}>
+                            <ArrowUpIcon className="size-6 text-white" />
+                        </button>
+                    }
+
+                    {pendingChat !== undefined &&
+                        <button
+                            className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer"
+                            tabIndex={3}
+                            onClick={_ => {
+                                stopPendingChats()
+                                setPendingChat(undefined)
+                            }}
+                        >
+                            <PauseIcon className="size-6 text-white" />
+                        </button>
+                    }
                 </div>
-
-                {(prompt.trim() || currentFiles.length > 0) && pendingChat === undefined &&
-                    <button className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer" tabIndex={3} onClick={sendMessage}>
-                        <ArrowUpIcon className="size-6 text-white" />
-                    </button>
-                }
-
-                {pendingChat !== undefined &&
-                    <button
-                        className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer"
-                        tabIndex={3}
-                        onClick={_ => {
-                            stopPendingChats()
-                            setPendingChat(undefined)
-                        }}
-                    >
-                        <PauseIcon className="size-6 text-white" />
-                    </button>
-                }
             </div>
-        </div>
+        </>
     )
 }
