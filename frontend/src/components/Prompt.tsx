@@ -1,12 +1,16 @@
-import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, Cross2Icon, FileIcon, GearIcon, PauseIcon, PlusIcon, UploadIcon } from "@radix-ui/react-icons"
-import { useNavigate, useParams } from "react-router"
 import React, { useEffect, useRef, useState } from "react"
-import { newMessage, stopPendingChats } from "../utils/api.ts"
-import { getFileSize, getFileType } from "../utils/file"
-import type { Chat, Message, MessageFile, Model, Options, UIAttachment } from "../types"
-import { MAX_FILE_SIZE, MAX_FILES } from "./Chat.tsx"
+import { useNavigate, useParams } from "react-router"
 
-export default function Prompt({ setMessages, pendingChat, setPendingChat, model, setModel, options, setOptions }: {
+import Attachments from "./Prompt/Attachments.tsx"
+import Dropdown from "./Prompt/Dropdown.tsx"
+import Input from "./Prompt/Input.tsx"
+import Notification from "./Prompt/Notification.tsx"
+import Pause from "./Prompt/Pause.tsx"
+import Send from "./Prompt/Send.tsx"
+import type { Chat, Message, Model, Options, UIAttachment } from "../types"
+import { newMessage, stopPendingChats } from "../utils/api"
+
+type PromptProps = {
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
     pendingChat: Chat | undefined
     setPendingChat: React.Dispatch<React.SetStateAction<Chat | undefined>>
@@ -14,7 +18,9 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
     setModel: React.Dispatch<React.SetStateAction<Model>>
     options: Options
     setOptions: React.Dispatch<React.SetStateAction<Options>>
-}) {
+}
+
+export default function Prompt({ setMessages, pendingChat, setPendingChat, model, setModel, options, setOptions }: PromptProps) {
     const navigate = useNavigate()
     const { chatUUID } = useParams()
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -23,265 +29,10 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
     const [prompt, setPrompt] = useState<string>("")
     const [currentFiles, setCurrentFiles] = useState<File[]>([])
     const [visibleFiles, setVisibleFiles] = useState<UIAttachment[]>([])
-    const [isRemovingFiles, setIsRemovingFiles] = useState(false)
     const [messageNotificationID, setMessageNotificationID] = useState(-1)
 
     const [isCentered, setIsCentered] = useState<boolean>(() => !chatUUID)
     useEffect(() => setIsCentered(!chatUUID), [chatUUID])
-
-    function GeneratingMessageNotification({ title, uuid, }: { title: string, uuid: string }) {
-        return (
-            <div className="flex items-center justify-between px-4 py-2 rounded-xl bg-gray-700 light:bg-gray-300 z-10">
-                <div>
-                    A message is already being generated in <a className="underline" href={`/chat/${uuid}`}>{title}</a>
-                </div>
-                <button className="p-1 rounded-3xl cursor-pointer hover:bg-gray-800" onClick={_ => setMessageNotificationID(-1)}>
-                    <Cross2Icon />
-                </button>
-            </div>
-        )
-    }
-
-    function AddDropdown() {
-        type OptionKey = "num_predict" | "temperature" | "top_p" | "seed"
-
-        function OptionItem(optionKey: OptionKey) {
-            function clamp(value: number, minimum: number, maximum: number) {
-                return Math.max(Math.min(value, maximum), minimum)
-            }
-
-            function getOptionName() {
-                switch (optionKey) {
-                    case "num_predict": return "🔣 Max. Tokens"
-                    case "temperature": return "🌡 Temperature"
-                    case "top_p": return "⬆ Top P"
-                    case "seed": return "🌱 Seed"
-                }
-            }
-
-            function getOptionValue() {
-                if (optionKey === currentOption?.key) {
-                    return currentOption.value
-                } else if (options[optionKey] !== undefined) {
-                    return options[optionKey]
-                } else {
-                    return "Random"
-                }
-            }
-
-            function handleSetOptions(value: string) {
-                setCurrentOption(null)
-                setOptions(previous => {
-                    const newOptions = { ...previous }
-                    if (optionKey === "num_predict" || optionKey === "seed") {
-                        if (optionKey === "seed" && value === "Random") {
-                            newOptions.seed = undefined
-                        } else {
-                            const parsedValue = parseInt(value)
-                            if (isFinite(parsedValue)) {
-                                newOptions[optionKey] = optionKey === "num_predict" ? clamp(parsedValue, 32, 4096) : parsedValue
-                            }
-                        }
-                    } else {
-                        const parsedValue = parseInt(value)
-                        if (isFinite(parsedValue)) {
-                            newOptions[optionKey] = clamp(parseFloat(value), 0.1, 2)
-                        }
-                    }
-                    return newOptions
-                })
-            }
-
-            return (
-                <div className="flex gap-3 px-2 py-1 items-center rounded bg-gray-700 light:bg-gray-300">
-                    <p className="flex-1 text-center truncate">{getOptionName()}</p>
-                    <input
-                        className="
-                            px-2 py-1 rounded outline-none bg-gray-600 light:bg-gray-400/50 hover:bg-gray-500
-                            light:hover:bg-gray-400/75 select:bg-gray-500 light:select:bg-gray-400/75
-                        "
-                        value={getOptionValue()}
-                        onChange={e => setCurrentOption({ key: optionKey, value: e.target.value })}
-                        onBlur={_ => currentOption && handleSetOptions(currentOption.value)}
-                        onKeyDown={e => e.key === "Enter" && currentOption && handleSetOptions(currentOption.value)}
-                    />
-                </div>
-            )
-        }
-
-        function ModelItem(modelName: "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondream") {
-            return (
-                <button
-                    className={`
-                        flex gap-1 w-40 px-2 py-1 items-center justify-between rounded truncate cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400/50
-                        ${modelName === model ? "bg-gray-600/90 light:bg-gray-400/40" : "bg-gray-700 light:bg-gray-300"}
-                    `}
-                    onClick={_ => setModel(modelName)}
-                >
-                    {modelName}
-                    {modelName === model && <CheckIcon className="size-5" />}
-                </button>
-            )
-        }
-
-        const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-        const [isDropdownOptionsOpen, setIsDropdownOptionsOpen] = useState(false)
-        const [isDropdownModelOpen, setIsDropdownModelOpen] = useState(false)
-        const [currentOption, setCurrentOption] = useState<{ key: OptionKey, value: string } | null>(null)
-
-        const buttonClassNames = "flex w-full px-1 gap-2 justify-between items-center cursor-pointer rounded hover:bg-gray-700 light:hover:bg-gray-300"
-        const dropdownClassNames = "absolute flex flex-col gap-1 p-2 rounded-xl bg-gray-800 light:bg-gray-200"
-
-        return (
-            <div className="relative flex flex-col self-end" onClick={e => e.stopPropagation()}>
-                <button
-                    className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400 z-2"
-                    tabIndex={2}
-                    onClick={_ => setIsDropdownOpen(!isDropdownOpen)}
-                    data-testid="add-dropdown"
-                >
-                    <PlusIcon className="size-6" />
-                </button>
-                {isDropdownOpen && (
-                    <>
-                        <div className="fixed inset-0 z-1 cursor-auto" onClick={_ => setIsDropdownOpen(false)}></div>
-                        <div className={`absolute flex flex-col gap-1 p-2 self-center items-center cursor-auto ${isCentered ? "top-12" : "bottom-12"} left-0 rounded-xl bg-gray-800 light:bg-gray-200 z-2`}>
-                            <button
-                                className={buttonClassNames}
-                                onClick={_ => {
-                                    setIsDropdownOptionsOpen(!isDropdownOptionsOpen)
-                                    setIsDropdownModelOpen(false)
-                                }}
-                            >
-                                <GearIcon /> Options {isDropdownOptionsOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
-                            </button>
-
-                            {isDropdownOptionsOpen && (
-                                <div className={dropdownClassNames + " bottom-15 left-32"}>
-                                    {OptionItem("num_predict")}
-                                    {OptionItem("temperature")}
-                                    {OptionItem("top_p")}
-                                    {OptionItem("seed")}
-                                </div>
-                            )}
-
-                            <button
-                                className={buttonClassNames}
-                                onClick={_ => {
-                                    setIsDropdownModelOpen(!isDropdownModelOpen)
-                                    setIsDropdownOptionsOpen(false)
-                                }}
-                            >
-                                <BoxModelIcon /> Model {isDropdownModelOpen ? <ChevronRightIcon /> : <ChevronDownIcon />}
-                            </button>
-
-                            {isDropdownModelOpen && (
-                                <div className={dropdownClassNames + " bottom-0 left-32"}>
-                                    {ModelItem("SmolLM2-135M")}
-                                    {ModelItem("SmolLM2-360M")}
-                                    {ModelItem("SmolLM2-1.7B")}
-                                    {ModelItem("Moondream")}
-                                </div>
-                            )}
-
-                            <button
-                                className={buttonClassNames + " justify-start"}
-                                onClick={_ => {
-                                    fileInputRef.current?.click()
-                                    setIsDropdownOpen(false)
-                                }}>
-                                <UploadIcon /> Add files
-                            </button>
-                        </div>
-                    </>
-                )
-                }
-            </div >
-
-        )
-    }
-
-    function AttachmentsInfo(files: MessageFile[]) {
-        function getTotalSize(messageFiles: MessageFile[]): number {
-            return messageFiles.map(file => file.content_size).reduce((total, size) => total + size)
-        }
-
-        return (
-            <div className="flex gap-1">
-                <p className="text-sm px-2 rounded bg-gray-600">Files: {files.length}/{MAX_FILES}</p>
-                <p className="text-sm px-2 rounded bg-gray-600">Size: {getFileSize(getTotalSize(files))} / {getFileSize(MAX_FILE_SIZE)}</p>
-            </div>
-        )
-    }
-
-    function Attachments() {
-        function removeFile(messageFile: MessageFile) {
-            setVisibleFiles(previous => previous.map(file => ({
-                messageFile: file.messageFile,
-                isBeingRemoved: file.messageFile.id !== messageFile.id ? false : true,
-                isNew: false
-            })))
-            setCurrentFiles(previous => previous.filter(file => file.name + "|" + file.size !== messageFile.name + "|" + messageFile.content_size))
-            setTimeout(() => setVisibleFiles(previous => previous.filter(file => file.messageFile.id !== messageFile.id)), 300)
-        }
-
-        function removeFiles() {
-            setIsRemovingFiles(true)
-            setCurrentFiles([])
-            setTimeout(() => {
-                setVisibleFiles([])
-                setIsRemovingFiles(false)
-            }, 300)
-        }
-
-        return (
-            <div
-                className={`
-                    relative flex flex-col gap-1 p-2 border border-gray-500 top-0 rounded-xl
-                    transition-all duration-300 ${isRemovingFiles ? "opacity-0 overflow-y-hidden" : "opacity-100"}
-                `}
-                style={{ maxHeight: isRemovingFiles ? 0 : visibleFiles.length * 120 }}
-                onClick={e => e.stopPropagation()}
-            >
-                {visibleFiles.map(file => (
-                    <div
-                        key={file.messageFile.id + "|" + file.messageFile.name + "|" + file.messageFile.content_size}
-                        className={`
-                            relative flex gap-1 p-2 w-fit items-center bg-gray-800/50 rounded-xl
-                            transition-all duration-300 ${file.isBeingRemoved ? "opacity-0 translate-x-10" : "opacity-100"}
-                        `}
-                    >
-                        {getFileType(file.messageFile.name) === "Image" ? (
-                            <img
-                                src={URL.createObjectURL(currentFiles.find(currentFile => currentFile.name === file.messageFile.name) || new Blob())}
-                                alt={file.messageFile.name}
-                                className="size-14 object-cover rounded-lg"
-                            />
-                        ) : (
-                            <FileIcon className="size-14 bg-gray-800 p-2 rounded-lg" />
-                        )}
-                        <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
-                            <p className="px-2 py-1 rounded-lg bg-gray-800">
-                                Type: {getFileType(file.messageFile.name)}<br />
-                                Name: {file.messageFile.name}<br />
-                                Size: {getFileSize(file.messageFile.content_size)}
-                            </p>
-                        </div>
-                        <button
-                            className="absolute top-0 right-0 translate-x-2 -translate-y-2 cursor-pointer text-red-400 hover:text-red-500"
-                            onClick={_ => removeFile(file.messageFile)}
-                        >
-                            <Cross2Icon className="size-4" />
-                        </button>
-                    </div>
-                ))}
-                {AttachmentsInfo(visibleFiles.map(file => file.messageFile))}
-                <button className="absolute right-0 -translate-x-2 cursor-pointer text-red-400 hover:text-red-500" onClick={removeFiles}>
-                    <Cross2Icon />
-                </button>
-            </div>
-        )
-    }
 
     function updateTextAreaHeight() {
         const textArea = textAreaRef.current
@@ -337,48 +88,6 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
         }
     }
 
-    function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-        if (!event.target.files) return
-
-        if (event.target.files.length + currentFiles.length > MAX_FILES) {
-            alert(`You can only attach up to ${MAX_FILES} files at a time.`)
-            event.target.value = ""
-            return
-        }
-
-        const totalSize =
-            visibleFiles.map(file => file.messageFile.content_size).reduce((total, size) => total + size, 0)
-            + Array(...event.target.files).map(file => file.size).reduce((total, size) => total + size, 0)
-        if (totalSize > MAX_FILE_SIZE) {
-            alert(`Total file size exceeds ${getFileSize(MAX_FILE_SIZE)} limit. Please select smaller files.`)
-            event.target.value = ""
-            return
-        }
-
-        const newFiles = Array.from(event.target.files)
-        const existingKeys = new Set(currentFiles.map(file => file.name + "|" + file.size))
-        const uniqueNew = newFiles.filter(file => !existingKeys.has(file.name + "|" + file.size))
-
-        setCurrentFiles(previous => [...previous, ...uniqueNew])
-
-        const highestVisibleFileID = visibleFiles.map(file => file.messageFile.id).sort().at(-1) || 1
-        setVisibleFiles(previous => [
-            ...previous,
-            ...uniqueNew.map((file, index) => ({
-                messageFile: {
-                    id: highestVisibleFileID + index + 1,
-                    name: file.name,
-                    content_size: file.size,
-                    content_type: file.type
-                },
-                isBeingRemoved: false,
-                isNew: false
-            }))
-        ])
-
-        event.target.value = ""
-    }
-
     useEffect(() => updateTextAreaHeight(), [prompt, visibleFiles])
 
     window.addEventListener("resize", updateTextAreaHeight)
@@ -408,7 +117,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
         <>
             <h1 style={headerStyle} className="pb-5 text-3xl font-light">Hello! How can I help you today?</h1>
             <div style={containerStyle} className="flex flex-col pb-4" data-testid="prompt-bar">
-                {messageNotificationID >= 0 && pendingChat && <GeneratingMessageNotification title={pendingChat.title} uuid={pendingChat.uuid} />}
+                {messageNotificationID >= 0 && pendingChat && <Notification title={pendingChat.title} uuid={pendingChat.uuid} onClick={() => setMessageNotificationID(-1)} />}
 
                 <div
                     className="
@@ -422,44 +131,40 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                         textAreaRef.current?.focus()
                     }}
                 >
-                    {AddDropdown()}
-
-                    <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: "none" }} multiple />
+                    <Dropdown
+                        isPromptBarCentered={isCentered}
+                        model={model}
+                        setModel={setModel}
+                        options={options}
+                        setOptions={setOptions}
+                        currentFiles={currentFiles}
+                        setCurrentFiles={setCurrentFiles}
+                        visibleFiles={visibleFiles}
+                        setVisibleFiles={setVisibleFiles}
+                        fileInputRef={fileInputRef}
+                    />
 
                     <div className="flex flex-1 flex-col gap-3 max-h-100 overflow-y-auto">
-                        {visibleFiles.length > 0 && Attachments()}
-                        <div className="flex">
-                            <textarea
-                                className={`flex-1 px-2 content-center overflow-y-hidden resize-none outline-none ${visibleFiles.length > 0 && "py-2"}`}
-                                value={prompt}
-                                placeholder="Ask me anything..."
-                                rows={1}
-                                tabIndex={1}
-                                ref={textAreaRef}
-                                onChange={e => setPrompt(e.currentTarget.value)}
-                                onKeyDown={sendMessageWithEvent}
-                                autoFocus
-                            />
-                        </div>
+                        <Attachments
+                            currentFiles={currentFiles}
+                            setCurrentFiles={setCurrentFiles}
+                            visibleFiles={visibleFiles}
+                            setVisibleFiles={setVisibleFiles}
+                        />
+                        <Input
+                            ref={textAreaRef}
+                            prompt={prompt}
+                            setPrompt={setPrompt}
+                            sendMessage={sendMessageWithEvent}
+                        />
                     </div>
 
                     {(prompt.trim() || currentFiles.length > 0) && pendingChat === undefined &&
-                        <button className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer" tabIndex={3} onClick={sendMessage}>
-                            <ArrowUpIcon className="size-6 text-white" />
-                        </button>
+                        <Send sendMessage={sendMessage} />
                     }
 
                     {pendingChat !== undefined &&
-                        <button
-                            className="bg-blue-700 hover:bg-blue-600 rounded-[25px] p-1.5 self-end cursor-pointer"
-                            tabIndex={3}
-                            onClick={_ => {
-                                stopPendingChats()
-                                setPendingChat(undefined)
-                            }}
-                        >
-                            <PauseIcon className="size-6 text-white" />
-                        </button>
+                        <Pause stopPendingChats={stopPendingChats} setPendingChat={setPendingChat} />
                     }
                 </div>
             </div>
