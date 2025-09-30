@@ -145,7 +145,7 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                 {isDropdownOpen && (
                     <>
                         <div className="fixed inset-0 z-1 cursor-auto" onClick={_ => setIsDropdownOpen(false)}></div>
-                        <div className="absolute flex flex-col gap-1 p-2 self-center items-center cursor-auto bottom-12 left-0 rounded-xl bg-gray-800 light:bg-gray-200 z-2">
+                        <div className={`absolute flex flex-col gap-1 p-2 self-center items-center cursor-auto ${isCentered ? "top-12" : "bottom-12"} left-0 rounded-xl bg-gray-800 light:bg-gray-200 z-2`}>
                             <button
                                 className={buttonClassNames}
                                 onClick={_ => {
@@ -194,8 +194,9 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat, model
                             </button>
                         </div>
                     </>
-                )}
-            </div>
+                )
+                }
+            </div >
 
         )
     }
