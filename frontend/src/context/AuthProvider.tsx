@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react"
+
+import { me } from "../utils/api"
 import type { User } from "../types"
-import { getCurrentUser } from "../utils/api"
 
 interface AuthContextValue {
     user: User | null
@@ -8,28 +9,35 @@ interface AuthContextValue {
     isLoggedIn: boolean
 }
 
-const ThemeContext = createContext<AuthContextValue | undefined>(undefined)
+const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        getCurrentUser().then(user => {
-            setUser(user)
-            setLoading(false)
+        me().then(response => {
+            if (response.ok) {
+                response.json().then(data => {
+                    setUser(data)
+                    setLoading(false)
+                })
+            } else {
+                setUser(null)
+                setLoading(false)
+            }
         })
     }, [])
 
     return (
-        <ThemeContext.Provider value={{ user, loading, isLoggedIn: user !== null }}>
+        <AuthContext.Provider value={{ user, loading, isLoggedIn: user !== null }}>
             {children}
-        </ThemeContext.Provider>
+        </AuthContext.Provider>
     )
 }
 
 export function useAuth() {
-    const context = useContext(ThemeContext)
+    const context = useContext(AuthContext)
     if (!context) throw new Error("useAuth must be used inside AuthProvider")
     return context
 }

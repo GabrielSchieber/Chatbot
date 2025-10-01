@@ -16,8 +16,25 @@ export default function AuthPage({ type }: { type: "Signup" | "Login" }) {
         setError("")
 
         try {
-            await submitFunction(email, password)
-            location.href = "/"
+            const response = await submitFunction(email, password)
+            if (response.ok) {
+                if (type === "Signup") {
+                    const response = await login(email, password)
+                    if (response.ok) {
+                        location.href = "/"
+                    } else {
+                        alert("Error logging in after sign up")
+                    }
+                } else {
+                    location.href = "/"
+                }
+            } else {
+                if (type === "Signup") {
+                    alert("Error signing up")
+                } else {
+                    alert("Error logging in")
+                }
+            }
         } catch {
             setError(submitError)
         }

@@ -1,170 +1,126 @@
-import type { Chat, Message, Model, Options, SearchEntry } from "../types"
-import type { Theme, User } from "../types"
+import type { Model, Theme } from "../types"
 
-export async function signup(email: string, password: string) {
-    const response = await fetch("/api/signup/", {
+export function signup(email: string, password: string) {
+    return fetch("/api/signup/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
     })
-
-    if (response.ok) {
-        try {
-            await login(email, password)
-        } catch {
-            throw new Error("Log in after sign up was not possible.")
-        }
-    } else {
-        throw new Error("Sign up was not possible.")
-    }
-
-    return response.status
 }
 
-export async function login(email: string, password: string) {
-    const response = await fetch("/api/login/", {
+export function login(email: string, password: string) {
+    return fetch("/api/login/", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
     })
+}
 
-    if (!response.ok) {
-        throw Error("Login was not possible")
+export function logout() {
+    return apiFetch("logout/", { method: "POST" })
+}
+
+export function me(theme?: Theme, hasSidebarOpen?: boolean) {
+    if (theme === undefined && hasSidebarOpen === undefined) {
+        return apiFetch("me/")
+    } else {
+        return apiFetch("me/", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ theme, has_sidebar_open: hasSidebarOpen })
+        })
     }
-
-    return response.status
 }
 
-export async function logout() {
-    return (await apiFetch("logout/", { method: "POST" })).status
+export function deleteAccount() {
+    return apiFetch("delete-account/", { method: "DELETE" })
 }
 
-export async function getCurrentUser(): Promise<User | null> {
-    const response = await apiFetch("me/")
-    if (!response.ok) {
-        return null
-    }
-    return await response.json()
+export function getChats(offset = 0, limit = 20) {
+    return apiFetch(`get-chats/?offset=${offset}&limit=${limit}`)
 }
 
-export async function setCurrentUser(theme?: Theme, hasSidebarOpen?: boolean) {
-    return (await apiFetch("me/", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ theme, has_sidebar_open: hasSidebarOpen })
-    })).status
+export function getPendingChats() {
+    return apiFetch(`get-chats/?pending=true`)
 }
 
-export async function deleteAccount() {
-    return (await apiFetch("delete-account/", { method: "DELETE" })).status
+export function searchChats(search: string, offset = 0, limit = 20) {
+    return apiFetch(`search-chats/?search=${search}&offset=${offset}&limit=${limit}`)
 }
 
-export async function getChats(offset = 0, limit = 20): Promise<{ chats: Chat[], has_more: boolean }> {
-    return (await apiFetch(`get-chats/?offset=${offset}&limit=${limit}`)).json()
-}
-
-export async function getPendingChats(): Promise<Chat[]> {
-    return (await apiFetch(`get-chats/?pending=true`)).json()
-}
-
-export async function searchChats(search: string, offset = 0, limit = 20): Promise<{ chats: SearchEntry[], has_more: boolean }> {
-    return (await apiFetch(`search-chats/?search=${search}&offset=${offset}&limit=${limit}`)).json()
-}
-
-export async function renameChat(chatUUID: string, newTitle: string) {
-    return (await apiFetch("rename-chat/", {
+export function renameChat(chatUUID: string, newTitle: string) {
+    return apiFetch("rename-chat/", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_uuid: chatUUID, new_title: newTitle })
-    })).status
+    })
 }
 
-export async function deleteChat(chatUUID: string) {
-    return (await apiFetch("delete-chat/", {
+export function deleteChat(chatUUID: string) {
+    return apiFetch("delete-chat/", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_uuid: chatUUID })
-    })).status
+    })
 }
 
-export async function deleteChats() {
-    return (await apiFetch("delete-chats/", { method: "DELETE" })).status
+export function deleteChats() {
+    return apiFetch("delete-chats/", { method: "DELETE" })
 }
 
-export async function stopPendingChats() {
-    return (await apiFetch("stop-pending-chats/", { method: "PATCH" })).status
+export function stopPendingChats() {
+    return apiFetch("stop-pending-chats/", { method: "PATCH" })
 }
 
-export async function getMessage(chatUUID: string, messageIndex: number): Promise<Message | undefined> {
-    return (await apiFetch(`get-message/?chat_uuid=${chatUUID}&message_index=${messageIndex}`)).json()
+export function getMessage(chatUUID: string, messageIndex: number) {
+    return apiFetch(`get-message/?chat_uuid=${chatUUID}&message_index=${messageIndex}`)
 }
 
-export async function getMessageFileContent(chatUUID: string, messageFileID: number) {
-    return await apiFetch(`get-message-file-content/?chat_uuid=${chatUUID}&message_file_id=${messageFileID}`)
+export function getMessageFileContent(chatUUID: string, messageFileID: number) {
+    return apiFetch(`get-message-file-content/?chat_uuid=${chatUUID}&message_file_id=${messageFileID}`)
 }
 
-export async function getMessages(chatUUID: string): Promise<Message[] | undefined> {
-    return (await apiFetch(`get-messages/?chat_uuid=${chatUUID}`)).json()
+export function getMessages(chatUUID: string) {
+    return apiFetch(`get-messages/?chat_uuid=${chatUUID}`)
 }
 
-export async function newMessage(
-    chatUUID: string,
-    model: Model,
-    options: Options,
-    message: string,
-    files: File[],
-): Promise<[Promise<Chat>, number]> {
+export function newMessage(chatUUID: string, text: string, model: Model, files: File[]) {
     const formData = new FormData()
     formData.append("chat_uuid", chatUUID)
+    formData.append("text", text)
     formData.append("model", model)
-    formData.append("options", JSON.stringify(options))
-    formData.append("message", message)
     files.forEach(file => formData.append("files", file))
-
-    const response = await apiFetch("new-message/", { method: "POST", body: formData })
-    return [response.json(), response.status]
+    return apiFetch("new-message/", { method: "POST", body: formData })
 }
 
-export async function editMessage(
+export function editMessage(
     chatUUID: string,
-    model: Model,
-    options: Options,
     message: string,
     message_index: number,
+    model: Model,
     added_files: File[],
     removed_file_ids: number[]
-): Promise<[Promise<Chat>, number]> {
+) {
     const formData = new FormData()
     formData.append("chat_uuid", chatUUID)
-    formData.append("model", model)
-    formData.append("options", JSON.stringify(options))
     formData.append("message", message)
     formData.append("message_index", message_index.toString())
+    formData.append("model", model)
     formData.append("removed_file_ids", JSON.stringify(removed_file_ids))
     added_files.forEach(added_file => formData.append("added_files", added_file))
-
-    const response = await apiFetch("edit-message/", { method: "PATCH", body: formData })
-    return [response.json(), response.status]
+    return apiFetch("edit-message/", { method: "PATCH", body: formData })
 }
 
-export async function regenerateMessage(
-    chatUUID: string,
-    model: Model,
-    options: Options,
-    message_index: number
-): Promise<[Promise<Chat>, number]> {
+export function regenerateMessage(chatUUID: string, message_index: number, model: Model) {
     const formData = new FormData()
     formData.append("chat_uuid", chatUUID)
     formData.append("model", model)
-    formData.append("options", JSON.stringify(options))
     formData.append("message_index", message_index.toString())
-
-    const response = await apiFetch("regenerate-message/", { method: "PATCH", body: formData })
-    return [response.json(), response.status]
+    return apiFetch("regenerate-message/", { method: "PATCH", body: formData })
 }
 
-async function apiFetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
+async function apiFetch(input: RequestInfo, init?: RequestInit) {
     let response = await fetch(`/api/${input}`, { ...init, credentials: "include" })
 
     if (response.status === 401) {
