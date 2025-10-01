@@ -6,8 +6,9 @@ import rehypeHighlight from "rehype-highlight"
 import remarkGfm from "remark-gfm"
 
 import { getMessages, regenerateMessage } from "../utils/api"
-import type { Message, Model } from "../types"
+import type { Message, MessageFile, Model } from "../types"
 import { DropdownMenu, Tooltip } from "radix-ui"
+import { Attachment } from "./Chat"
 
 export default function Messages({ messages, setMessages }: {
     messages: Message[]
@@ -117,7 +118,7 @@ export default function Messages({ messages, setMessages }: {
             {messages.map((m, i) => (
                 <div key={m.id} className={`flex flex-col gap-0.5 w-[60vw] justify-self-center ${m.is_from_user ? "items-end" : "items-start"}`}>
                     {m.is_from_user ? (
-                        <UserMessage text={m.text} isDisabled={false} onEditClick={() => { }} />
+                        <UserMessage text={m.text} files={m.files} isDisabled={false} onEditClick={() => { }} />
                     ) : (
                         <BotMessage
                             text={m.text}
@@ -237,11 +238,21 @@ function RegenerateButton({ model, isDisabled, onSelect }: { model?: Model, isDi
     )
 }
 
-function UserMessage({ text, isDisabled, onEditClick }: { text: string, isDisabled: boolean, onEditClick: () => void }) {
+function UserMessage({ text, files, isDisabled, onEditClick }: { text: string, files: MessageFile[], isDisabled: boolean, onEditClick: () => void }) {
     return (
         <>
-            <div className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
-                {text}
+            <div
+                className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300"
+                style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
+            >
+                <div className="flex flex-col gap-2 items-start">
+                    {files.map(f => (
+                        <Attachment key={f.id} file={f} />
+                    ))}
+                </div>
+                <div className="w-full whitespace-pre-wrap">
+                    {text}
+                </div>
             </div>
 
             <div className="flex gap-1">
