@@ -54,6 +54,7 @@ export default function Prompt({ setMessages }: { setMessages: React.Dispatch<Re
 
     function sendMessageWithEvent(e: React.KeyboardEvent<HTMLTextAreaElement>) {
         if (e.key === "Enter" && !e.shiftKey && (text.trim() !== "" || files.length > 0)) {
+            e.preventDefault()
             sendMessage()
         }
     }
