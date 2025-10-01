@@ -1,5 +1,9 @@
-import { useEffect, useRef } from "react"
+import { CheckIcon, CopyIcon } from "@radix-ui/react-icons"
+import React, { useEffect, useRef, useState, type ReactElement } from "react"
+import ReactMarkdown from "react-markdown"
 import { useParams } from "react-router"
+import rehypeHighlight from "rehype-highlight"
+import remarkGfm from "remark-gfm"
 
 import { getMessages } from "../utils/api"
 import type { Message as MessageType } from "../types"
@@ -74,16 +78,84 @@ export default function Messages({ messages, setMessages }: { messages: MessageT
     )
 }
 
+function UserMessage({ text }: { text: string }) {
+    return (
+        <div className="w-[50%] m-3 p-3 self-end whitespace-pre-wrap rounded-2xl bg-blue-600 light:bg-blue-300">
+            {text}
+        </div>
+    )
+}
+
+function BotMessage({ text }: { text: string }) {
+    return (
+        <div className="w-[50%] m-3 p-3 self-start whitespace-pre-wrap rounded-2xl bg-gray-700 light:bg-gray-300">
+            <ReactMarkdown
+                children={text}
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeHighlight]}
+                components={{
+                    code({ node, className, children, ...props }) {
+                        const isInline = !className
+                        if (isInline) {
+                            return (
+                                <code className="px-1 bg-gray-700 light:bg-gray-300 rounded" {...props}>
+                                    {children}
+                                </code>
+                            )
+                        }
+                        return <code className={className} {...props}>{children}</code>
+                    },
+
+                    pre({ node, children, ...props }) {
+                        const [copied, setCopied] = useState(false)
+
+                        function copyCodeBlock(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+                            const codeBlock = e.currentTarget?.parentElement?.parentElement?.querySelector("pre")
+                            navigator.clipboard.writeText(codeBlock?.textContent || "")
+                            setCopied(true)
+                            setTimeout(() => setCopied(false), 2000)
+                        }
+
+                        const childArray = React.Children.toArray(children)
+                        const codeNode = childArray[0] as ReactElement<{ className?: string, children?: React.ReactNode }>
+
+                        const className = codeNode?.props.className || ""
+                        const languageMatch = /language-(\w+)/.exec(className)
+                        const language = languageMatch ? languageMatch[1] : "code"
+
+                        return (
+                            <div className="rounded-lg overflow-hidden my-2">
+                                <div className="flex items-center justify-between bg-gray-700 light:bg-gray-300 px-4 py-1">
+                                    <p className="text-sm m-0">{language}</p>
+                                    <button
+                                        className="
+                                            flex items-center gap-1 px-2 py-[2px] text-xs cursor-pointer
+                                            rounded hover:bg-gray-800 light:hover:bg-gray-200
+                                        "
+                                        onClick={copyCodeBlock}
+                                    >
+                                        {copied ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />}
+                                        {copied ? "Copied" : "Copy"}
+                                    </button>
+                                </div>
+                                <pre className="overflow-x-auto m-0" {...props}>
+                                    {children}
+                                </pre>
+                            </div>
+                        )
+                    }
+                }}
+            />
+        </div>
+    )
+}
+
 function Message({ text, isFromUser }: { text: string, isFromUser: boolean }) {
     return (
         isFromUser ? (
-            <div className="w-[50%] whitespace-pre-wrap">
-                {text}
-            </div>
+            <UserMessage text={text} />
         ) : (
-            <div className="w-full whitespace-pre-wrap">
-                {text}
-            </div>
+            <BotMessage text={text} />
         )
     )
 }
