@@ -11,6 +11,8 @@ export default function Prompt({ setMessages }: { setMessages: React.Dispatch<Re
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
+    const fileInputRef = useRef<HTMLInputElement | null>(null)
+
     const [text, setText] = useState("")
     const [files, setFiles] = useState<File[]>([])
     const [model, setModel] = useState<Model>("SmolLM2-135M")
@@ -53,13 +55,40 @@ export default function Prompt({ setMessages }: { setMessages: React.Dispatch<Re
         }
     }
 
+    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+        if (!e.target.files) return
+
+        if (files.length + e.target.files.length > MAX_FILES) {
+            alert(`You can only attach up to ${MAX_FILES} files at a time.`)
+            e.target.value = ""
+            return
+        }
+
+        const newFiles = Array.from(e.target.files)
+
+        const currentTotal = files.map(f => f.size).reduce((a, b) => a + b, 0)
+        const newTotal = newFiles.map(f => f.size).reduce((a, b) => a + b, 0)
+
+        if (currentTotal + newTotal > MAX_FILE_SIZE) {
+            alert(`Total file size exceeds ${getFileSize(MAX_FILE_SIZE)} limit. Please select smaller files.`)
+            e.target.value = ""
+            return
+        }
+
+        const currentKeys = new Set(files.map(f => f.name + "|" + f.size))
+        const newUniqueFiles = newFiles.filter(f => !currentKeys.has(f.name + "|" + f.size))
+
+        setFiles(previous => [...previous, ...newUniqueFiles])
+    }
+
     return (
         <div className="flex w-[60vw] h-auto mb-5 px-2 items-end rounded-3xl bg-gray-700 light:bg-gray-300">
             <div className="flex gap-0.5 items-center">
-                <Button icon={<PlusIcon className="size-6" />} />
+                <Button icon={<PlusIcon className="size-6" />} onClick={() => fileInputRef.current?.click()} />
                 <Dropdown icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
             </div>
             <div className="flex flex-1 flex-col max-h-[50vh] overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
+                <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
                 <Attachments files={files.map((f, i) => ({ id: i, name: f.name, content_size: f.size, content_type: f.type }))} />
                 <TextArea text={text} setText={setText} sendMessage={sendMessageWithEvent} />
             </div>
@@ -165,3 +194,6 @@ function TextArea({ text, setText, sendMessage }: {
         </div>
     )
 }
+
+const MAX_FILES = 10
+const MAX_FILE_SIZE = 5_000_000
