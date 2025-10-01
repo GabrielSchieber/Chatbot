@@ -6,13 +6,14 @@ import type { Chat } from "../types"
 export function Sidebar() {
     return (
         <div className="flex flex-col w-60 text-center bg-gray-800 light:bg-gray-200">
-            <Buttons />
+            <TopButtons />
             <History />
+            <SettingsButton />
         </div>
     )
 }
 
-function Buttons() {
+function TopButtons() {
     return (
         <div className="flex flex-col gap-1">
             <button>Toggle Sidebar</button>
@@ -36,10 +37,16 @@ function History() {
     }, [])
 
     return (
-        <div className="flex flex-col bg-gray-800/50 light:bg-gray-200/50">
+        <div className="flex flex-col h-full bg-gray-800/50 light:bg-gray-200/50">
             {chats.map(c => (
                 <a key={c.uuid} href={`/chat/${c.uuid}`}>{c.title}</a>
             ))}
         </div>
+    )
+}
+
+function SettingsButton() {
+    return (
+        <button>Settings</button>
     )
 }
