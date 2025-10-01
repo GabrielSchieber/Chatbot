@@ -5,7 +5,7 @@ import { useParams } from "react-router"
 import rehypeHighlight from "rehype-highlight"
 import remarkGfm from "remark-gfm"
 
-import { getMessages } from "../utils/api"
+import { getMessages, regenerateMessage } from "../utils/api"
 import type { Message, Model } from "../types"
 import { DropdownMenu, Tooltip } from "radix-ui"
 
@@ -24,6 +24,25 @@ export default function Messages({ messages, setMessages }: {
         if (!ref.current) return
         const atBottom = ref.current.scrollHeight - ref.current.clientHeight - ref.current.scrollTop <= 20
         if (!atBottom) setShouldScrollToBottom(false)
+    }
+
+    function regenerate(index: number, model: Model) {
+        if (chatUUID) {
+            regenerateMessage(chatUUID, index, model).then(response => {
+                if (response.ok) {
+                    setMessages(previous => {
+                        const previousMessages = [...previous]
+                        previousMessages[index].text = ""
+                        previousMessages[index].model = model
+                        return previousMessages
+                    })
+                } else {
+                    alert("Regeneration of message was not possible")
+                }
+            })
+        } else {
+            alert("You must be in a chat to regenerate a message")
+        }
     }
 
     useEffect(() => {
@@ -95,7 +114,7 @@ export default function Messages({ messages, setMessages }: {
             style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
             onScroll={handleScroll}
         >
-            {messages.map(m => (
+            {messages.map((m, i) => (
                 <div key={m.id} className={`flex flex-col gap-0.5 w-[60vw] justify-self-center ${m.is_from_user ? "items-end" : "items-start"}`}>
                     {m.is_from_user ? (
                         <UserMessage text={m.text} isDisabled={false} onEditClick={() => { }} />
@@ -104,7 +123,7 @@ export default function Messages({ messages, setMessages }: {
                             text={m.text}
                             model={m.model}
                             isRegenerateButtonDisabled={false}
-                            onRegenerateSelect={() => { }}
+                            onRegenerateSelect={() => m.model && regenerate(i, m.model)}
                         />
                     )}
                 </div>
