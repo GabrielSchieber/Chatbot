@@ -1,4 +1,4 @@
-import { ArrowUpIcon, BoxModelIcon, CheckIcon, FileIcon, PlusIcon } from "@radix-ui/react-icons"
+import { ArrowUpIcon, BoxModelIcon, CheckIcon, Cross1Icon, FileIcon, PlusIcon } from "@radix-ui/react-icons"
 import { DropdownMenu } from "radix-ui"
 import { useState, useEffect, useRef, type ReactNode } from "react"
 import { useNavigate, useParams } from "react-router"
@@ -79,6 +79,8 @@ export default function Prompt({ setMessages }: { setMessages: React.Dispatch<Re
         const newUniqueFiles = newFiles.filter(f => !currentKeys.has(f.name + "|" + f.size))
 
         setFiles(previous => [...previous, ...newUniqueFiles])
+
+        e.target.value = ""
     }
 
     return (
@@ -87,9 +89,9 @@ export default function Prompt({ setMessages }: { setMessages: React.Dispatch<Re
                 <Button icon={<PlusIcon className="size-6" />} onClick={() => fileInputRef.current?.click()} />
                 <Dropdown icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
             </div>
+            <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
             <div className="flex flex-1 flex-col max-h-[50vh] overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
-                <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
-                <Attachments files={files.map((f, i) => ({ id: i, name: f.name, content_size: f.size, content_type: f.type }))} />
+                <Attachments files={files} setFiles={setFiles} />
                 <TextArea text={text} setText={setText} sendMessage={sendMessageWithEvent} />
             </div>
             {(text.trim() !== "" || files.length > 0) && <Button icon={<ArrowUpIcon className="size-6" />} onClick={sendMessage} />}
@@ -141,7 +143,7 @@ function Dropdown({ icon, model, setModel }: {
     )
 }
 
-function Attachment({ file }: { file: MessageFile }) {
+function Attachment({ file, onRemove }: { file: MessageFile, onRemove: () => void }) {
     return (
         <div className="flex px-4 gap-1 items-center rounded-md bg-gray-800 light:bg-gray-200">
             <FileIcon className="size-8" />
@@ -152,15 +154,19 @@ function Attachment({ file }: { file: MessageFile }) {
                     Size: {getFileSize(file.content_size)}
                 </p>
             </div>
+            <button className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/40" onClick={onRemove}>
+                <Cross1Icon className="size-3.5" />
+            </button>
         </div>
     )
 }
 
-function Attachments({ files }: { files: MessageFile[] }) {
+function Attachments({ files, setFiles }: { files: File[], setFiles: React.Dispatch<React.SetStateAction<File[]>> }) {
+    const messageFiles = files.map((f, i) => ({ id: i, name: f.name, content_size: f.size, content_type: f.type }))
     return (
         <div className="flex flex-col gap-2 items-start">
-            {files.map(f => (
-                <Attachment key={f.id} file={f} />
+            {messageFiles.map(f => (
+                <Attachment key={f.id} file={f} onRemove={() => setFiles(previous => previous.filter(p => p.name + "|" + p.size !== f.name + "|" + f.content_size))} />
             ))}
         </div>
     )
