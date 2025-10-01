@@ -71,6 +71,7 @@ export default function Messages({ messages, setMessages }: { messages: MessageT
 
     return (
         <div
+            id="messages"
             className="flex flex-col size-full px-5 overflow-y-auto"
             style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
         >

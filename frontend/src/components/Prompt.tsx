@@ -38,6 +38,11 @@ export default function Prompt({ setMessages }: { setMessages: React.Dispatch<Re
                 setText("")
                 setFiles([])
 
+                requestAnimationFrame(_ => {
+                    const messages = document.getElementById("messages")
+                    if (messages) messages.scrollTo({ top: messages.scrollHeight, behavior: "auto" })
+                })
+
                 response.json().then(chat => {
                     navigate(`/chat/${chat.uuid}`)
                 })
