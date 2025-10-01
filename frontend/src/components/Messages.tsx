@@ -8,10 +8,24 @@ import remarkGfm from "remark-gfm"
 import { getMessages } from "../utils/api"
 import type { Message as MessageType } from "../types"
 
-export default function Messages({ messages, setMessages }: { messages: MessageType[], setMessages: React.Dispatch<React.SetStateAction<MessageType[]>> }) {
+export default function Messages({ messages, setMessages }: {
+    messages: MessageType[]
+    setMessages: React.Dispatch<React.SetStateAction<MessageType[]>>
+}) {
     const { chatUUID } = useParams()
 
     const webSocket = useRef<WebSocket | null>(null)
+    const ref = useRef<HTMLDivElement | null>(null)
+
+    const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
+
+    function handleScroll() {
+        const el = ref.current
+        if (!el) return
+        // consider user at bottom if within 20px of the end
+        const atBottom = el.scrollHeight - el.clientHeight - el.scrollTop <= 20
+        if (!atBottom) setShouldScrollToBottom(false)
+    }
 
     useEffect(() => {
         if (chatUUID) {
@@ -69,11 +83,20 @@ export default function Messages({ messages, setMessages }: { messages: MessageT
         }
     }, [chatUUID])
 
+    useEffect(() => setShouldScrollToBottom(true), [messages.length])
+
+    useEffect(() => {
+        if (shouldScrollToBottom) {
+            requestAnimationFrame(_ => ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: "auto" }))
+        }
+    }, [shouldScrollToBottom, messages.at(-1)?.text])
+
     return (
         <div
-            id="messages"
+            ref={ref}
             className="flex flex-col size-full px-5 overflow-y-auto"
             style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
+            onScroll={handleScroll}
         >
             {messages.map(m => (
                 <Message key={m.id} text={m.text} isFromUser={m.is_from_user} />
