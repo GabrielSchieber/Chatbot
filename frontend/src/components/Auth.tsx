@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { login, signup } from "../utils/api"
 
-export default function AuthPage({ type }: { type: "Signup" | "Login" }) {
+export default function Auth({ type }: { type: "Signup" | "Login" }) {
     const submitFunction = type === "Signup" ? signup : login
     const submitError = type === "Signup" ? "Email is already registered. Please choose another one." : "Email and/or password are invalid."
     const headerText = type === "Signup" ? "Sign up" : "Log in"
