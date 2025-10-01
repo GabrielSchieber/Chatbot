@@ -70,7 +70,10 @@ export default function Messages({ messages, setMessages }: { messages: MessageT
     }, [chatUUID])
 
     return (
-        <div className="flex flex-col w-[60vw]">
+        <div
+            className="flex flex-col size-full px-5 overflow-y-auto"
+            style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
+        >
             {messages.map(m => (
                 <Message key={m.id} text={m.text} isFromUser={m.is_from_user} />
             ))}
