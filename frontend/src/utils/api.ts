@@ -96,27 +96,27 @@ export function newMessage(chatUUID: string, text: string, model: Model, files: 
 
 export function editMessage(
     chatUUID: string,
-    message: string,
-    message_index: number,
+    text: string,
+    index: number,
     model: Model,
     added_files: File[],
     removed_file_ids: number[]
 ) {
     const formData = new FormData()
     formData.append("chat_uuid", chatUUID)
-    formData.append("message", message)
-    formData.append("message_index", message_index.toString())
+    formData.append("text", text)
+    formData.append("index", index.toString())
     formData.append("model", model)
-    formData.append("removed_file_ids", JSON.stringify(removed_file_ids))
     added_files.forEach(added_file => formData.append("added_files", added_file))
+    formData.append("removed_file_ids", JSON.stringify(removed_file_ids))
     return apiFetch("edit-message/", { method: "PATCH", body: formData })
 }
 
-export function regenerateMessage(chatUUID: string, message_index: number, model: Model) {
+export function regenerateMessage(chatUUID: string, index: number, model: Model) {
     const formData = new FormData()
     formData.append("chat_uuid", chatUUID)
+    formData.append("index", index.toString())
     formData.append("model", model)
-    formData.append("message_index", message_index.toString())
     return apiFetch("regenerate-message/", { method: "PATCH", body: formData })
 }
 

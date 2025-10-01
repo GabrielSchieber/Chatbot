@@ -300,15 +300,15 @@ class NewMessage(APIView):
         else:
             return Response({"error": "Invalid data type for chat UUID"}, status.HTTP_400_BAD_REQUEST)
 
+        text = request.data.get("text", "")
+        if type(text) != str:
+            return Response({"error": "Invalid data type for message"}, status.HTTP_400_BAD_REQUEST)
+
         model = request.data.get("model", "SmolLM2-135M")
         if type(model) != str:
             return Response({"error": "Invalid data type for model"}, status.HTTP_400_BAD_REQUEST)
         if model not in [c[0] for c in Message._meta.get_field("model").choices]:
             return Response({"error": "Invalid model"}, status.HTTP_400_BAD_REQUEST)
-
-        text = request.data.get("text", "")
-        if type(text) != str:
-            return Response({"error": "Invalid data type for message"}, status.HTTP_400_BAD_REQUEST)
 
         files = request.FILES.getlist("files")
         if type(files) != list:
@@ -354,12 +354,6 @@ class EditMessage(APIView):
         else:
             return Response({"error": "A valid chat UUID is required"}, status.HTTP_400_BAD_REQUEST)
 
-        model = request.data.get("model", "SmolLM2-135M")
-        if type(model) != str:
-            return Response({"error": "Invalid data type for model"}, status.HTTP_400_BAD_REQUEST)
-        if model not in [c[0] for c in Message._meta.get_field("model").choices]:
-            return Response({"error": "Invalid model"}, status.HTTP_400_BAD_REQUEST)
-
         text = request.data.get("text", "")
         if type(text) != str:
             return Response({"error": "Invalid data type for message"}, status.HTTP_400_BAD_REQUEST)
@@ -368,6 +362,12 @@ class EditMessage(APIView):
         if not index:
             return Response({"error": "Index is required"}, status.HTTP_400_BAD_REQUEST)
         index = int(index)
+
+        model = request.data.get("model", "SmolLM2-135M")
+        if type(model) != str:
+            return Response({"error": "Invalid data type for model"}, status.HTTP_400_BAD_REQUEST)
+        if model not in [c[0] for c in Message._meta.get_field("model").choices]:
+            return Response({"error": "Invalid model"}, status.HTTP_400_BAD_REQUEST)
 
         added_files = request.FILES.getlist("added_files")
         if type(added_files) != list:
