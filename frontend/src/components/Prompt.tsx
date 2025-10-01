@@ -1,10 +1,11 @@
-import { ArrowUpIcon, BoxModelIcon, CheckIcon, PlusIcon } from "@radix-ui/react-icons"
+import { ArrowUpIcon, BoxModelIcon, CheckIcon, FileIcon, PlusIcon } from "@radix-ui/react-icons"
 import { DropdownMenu } from "radix-ui"
-import { useState, type ReactNode } from "react"
+import { useState, useEffect, useRef, type ReactNode } from "react"
 import { useNavigate, useParams } from "react-router"
 
 import { newMessage } from "../utils/api"
 import type { Message, MessageFile, Model } from "../types"
+import { getFileSize, getFileType } from "../utils/file"
 
 export default function Prompt({ setMessages }: { setMessages: React.Dispatch<React.SetStateAction<Message[]>> }) {
     const { chatUUID } = useParams()
@@ -53,12 +54,12 @@ export default function Prompt({ setMessages }: { setMessages: React.Dispatch<Re
     }
 
     return (
-        <div className="flex w-[60vw] mt-auto mb-5 px-5 rounded-3xl bg-gray-700 light:bg-gray-300">
-            <div className="flex gap-2">
+        <div className="flex w-[60vw] h-auto mb-5 px-2 items-end rounded-3xl bg-gray-700 light:bg-gray-300">
+            <div className="flex gap-0.5 items-center">
                 <Button icon={<PlusIcon className="size-6" />} />
                 <Dropdown icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
             </div>
-            <div className="flex flex-1 flex-col">
+            <div className="flex flex-1 flex-col max-h-[50vh] overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
                 <Attachments files={files.map((f, i) => ({ id: i, name: f.name, content_size: f.size, content_type: f.type }))} />
                 <TextArea text={text} setText={setText} sendMessage={sendMessageWithEvent} />
             </div>
@@ -68,7 +69,12 @@ export default function Prompt({ setMessages }: { setMessages: React.Dispatch<Re
 }
 
 function Button({ icon, onClick }: { icon: ReactNode, onClick?: () => void }) {
-    return <button onClick={onClick}>{icon}</button>
+    return <button
+        className="my-2 p-1 rounded-3xl cursor-pointer hover:bg-gray-600 light:bg-gray-400"
+        onClick={onClick}
+    >
+        {icon}
+    </button>
 }
 
 function Dropdown({ icon, model, setModel }: {
@@ -93,7 +99,9 @@ function Dropdown({ icon, model, setModel }: {
 
     return (
         <DropdownMenu.Root>
-            <DropdownMenu.Trigger>{icon}</DropdownMenu.Trigger>
+            <DropdownMenu.Trigger className="p-1 rounded-md cursor-pointer hover:bg-gray-600 light:bg-gray-400">
+                {icon}
+            </DropdownMenu.Trigger>
 
             <DropdownMenu.Content className="flex flex-col gap-1 p-1 rounded-md bg-gray-800 light:bg-gray-200">
                 {models.map(m => (
@@ -106,15 +114,22 @@ function Dropdown({ icon, model, setModel }: {
 
 function Attachment({ file }: { file: MessageFile }) {
     return (
-        <div className="flex bg-gray-800 light:bg-gray-200">
-            {file.name}
+        <div className="flex px-4 gap-1 items-center rounded-md bg-gray-800 light:bg-gray-200">
+            <FileIcon className="size-8" />
+            <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
+                <p className="px-2 py-1 rounded-lg bg-gray-800">
+                    Type: {getFileType(file.name)}<br />
+                    Name: {file.name}<br />
+                    Size: {getFileSize(file.content_size)}
+                </p>
+            </div>
         </div>
     )
 }
 
 function Attachments({ files }: { files: MessageFile[] }) {
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 items-start">
             {files.map(f => (
                 <Attachment key={f.id} file={f} />
             ))}
@@ -127,14 +142,26 @@ function TextArea({ text, setText, sendMessage }: {
     setText: React.Dispatch<React.SetStateAction<string>>
     sendMessage: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
 }) {
+    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
+
+    useEffect(() => {
+        const textArea = textAreaRef.current
+        if (!textArea) return
+        textArea.style.height = "auto"
+        textArea.style.height = `${textArea.scrollHeight}px`
+    }, [text])
+
     return (
-        <textarea
-            className="px-3 py-1 content-center rounded-3xl resize-none outline-none bg-gray-700 light:bg-gray-300"
-            placeholder="Type your message here..."
-            value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={sendMessage}
-            autoFocus
-        />
+        <div className="flex">
+            <textarea
+                ref={textAreaRef}
+                className="flex-1 px-2 content-center resize-none outline-none"
+                placeholder="Type your message here..."
+                value={text}
+                onChange={e => setText(e.target.value)}
+                onKeyDown={sendMessage}
+                autoFocus
+            />
+        </div>
     )
 }
