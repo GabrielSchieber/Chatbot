@@ -38,9 +38,7 @@ export default function Prompt({ setMessages }: { setMessages: React.Dispatch<Re
                 setText("")
                 setFiles([])
 
-                response.json().then(chat => {
-                    navigate(`/chat/${chat.uuid}`)
-                })
+                response.json().then(chat => navigate(`/chat/${chat.uuid}`))
             } else {
                 alert("Failed to send message")
             }
@@ -64,13 +62,13 @@ export default function Prompt({ setMessages }: { setMessages: React.Dispatch<Re
                 <Attachments files={files.map((f, i) => ({ id: i, name: f.name, content_size: f.size, content_type: f.type }))} />
                 <TextArea text={text} setText={setText} sendMessage={sendMessageWithEvent} />
             </div>
-            <Button icon={<ArrowUpIcon className="size-6" />} />
+            {(text.trim() !== "" || files.length > 0) && <Button icon={<ArrowUpIcon className="size-6" />} onClick={sendMessage} />}
         </div>
     )
 }
 
-function Button({ icon }: { icon: ReactNode }) {
-    return <button>{icon}</button>
+function Button({ icon, onClick }: { icon: ReactNode, onClick?: () => void }) {
+    return <button onClick={onClick}>{icon}</button>
 }
 
 function Dropdown({ icon, model, setModel }: {
