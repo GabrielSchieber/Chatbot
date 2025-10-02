@@ -3,7 +3,7 @@ import { DropdownMenu } from "radix-ui"
 import { useState, useEffect, useRef, type ReactNode } from "react"
 import { useNavigate, useParams } from "react-router"
 
-import { Attachment } from "./Chat"
+import { Attachment, MAX_FILE_SIZE, MAX_FILES } from "./Chat"
 import { newMessage } from "../utils/api"
 import { getFileSize } from "../utils/file"
 import type { Message, Model } from "../types"
@@ -101,12 +101,14 @@ export default function Prompt({ setMessages }: { setMessages: React.Dispatch<Re
 }
 
 function Button({ icon, onClick }: { icon: ReactNode, onClick?: () => void }) {
-    return <button
-        className="my-2 p-1 rounded-3xl cursor-pointer hover:bg-gray-600 light:bg-gray-400"
-        onClick={onClick}
-    >
-        {icon}
-    </button>
+    return (
+        <button
+            className="my-2 p-1 rounded-3xl cursor-pointer hover:bg-gray-600 light:bg-gray-400"
+            onClick={onClick}
+        >
+            {icon}
+        </button>
+    )
 }
 
 function Dropdown({ icon, model, setModel }: {
@@ -183,6 +185,3 @@ function TextArea({ text, setText, sendMessage }: {
         </div>
     )
 }
-
-const MAX_FILES = 10
-const MAX_FILE_SIZE = 5_000_000
