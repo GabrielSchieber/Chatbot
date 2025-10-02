@@ -1,4 +1,4 @@
-import { ArrowUpIcon, BoxModelIcon, PlusIcon } from "@radix-ui/react-icons"
+import { ArrowUpIcon, BoxModelIcon, Cross2Icon, PlusIcon } from "@radix-ui/react-icons"
 import { useState, useRef } from "react"
 import { useNavigate, useParams } from "react-router"
 
@@ -23,6 +23,8 @@ export default function Prompt() {
     const [text, setText] = useState("")
     const [files, setFiles] = useState<File[]>([])
     const [model, setModel] = useState<Model>("SmolLM2-135M")
+
+    const [shouldShowNotification, setShouldShowNotification] = useState(false)
 
     function sendMessage() {
         newMessage(chatUUID || "", text, model, files).then(response => {
@@ -61,7 +63,12 @@ export default function Prompt() {
     function sendMessageWithEvent(e: React.KeyboardEvent<HTMLTextAreaElement>) {
         if (e.key === "Enter" && !e.shiftKey && (text.trim() !== "" || files.length > 0)) {
             e.preventDefault()
-            sendMessage()
+            if (!pendingChat) {
+                sendMessage()
+            } else if (!shouldShowNotification) {
+                setShouldShowNotification(true)
+                setTimeout(() => setShouldShowNotification(false), 2000)
+            }
         }
     }
 
@@ -94,25 +101,39 @@ export default function Prompt() {
     }
 
     return (
-        <div className="flex w-[60vw] h-auto mb-5 px-2 items-end rounded-3xl bg-gray-700 light:bg-gray-300">
-            <div className="flex gap-0.5 items-center">
-                <Button icon={<PlusIcon className="size-6" />} onClick={() => fileInputRef.current?.click()} />
-                <Dropdown icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
-            </div>
-
-            <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
-
-            <div className="flex flex-1 flex-col max-h-[50vh] overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
-                <Attachments
-                    files={files.map((f, i) => ({ id: i, name: f.name, content_size: f.size, content_type: f.type }))}
-                    onRemove={file => setFiles(previous => previous.filter(f => f.name + "|" + f.size !== file.name + "|" + file.content_size))}
-                />
-                <TextArea text={text} setText={setText} onKeyDown={sendMessageWithEvent} placeholder="Ask me anything..." autoFocus />
-            </div>
-
-            {(text.trim() !== "" || files.length > 0) &&
-                <Button icon={<ArrowUpIcon className="size-6" />} isDisabled={pendingChat !== null || isLoading} onClick={sendMessage} />
+        <>
+            {shouldShowNotification && pendingChat &&
+                <div className="flex items-center justify-between gap-3 px-4 py-2 m-2 rounded-xl bg-gray-700 light:bg-gray-300 z-10">
+                    <div>
+                        A message is already being generated in <a className="underline" href={`/chat/${pendingChat.uuid}`}>{pendingChat.title}</a>
+                    </div>
+                    <button className="p-1 rounded-3xl cursor-pointer hover:bg-gray-800" onClick={_ => setShouldShowNotification(false)}>
+                        <Cross2Icon />
+                    </button>
+                </div>
             }
-        </div>
+
+            <div className="flex w-[60vw] h-auto mb-5 px-2 items-end rounded-3xl bg-gray-700 light:bg-gray-300">
+
+                <div className="flex gap-0.5 items-center">
+                    <Button icon={<PlusIcon className="size-6" />} onClick={() => fileInputRef.current?.click()} />
+                    <Dropdown icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
+                </div>
+
+                <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
+
+                <div className="flex flex-1 flex-col max-h-[50vh] overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
+                    <Attachments
+                        files={files.map((f, i) => ({ id: i, name: f.name, content_size: f.size, content_type: f.type }))}
+                        onRemove={file => setFiles(previous => previous.filter(f => f.name + "|" + f.size !== file.name + "|" + file.content_size))}
+                    />
+                    <TextArea text={text} setText={setText} onKeyDown={sendMessageWithEvent} placeholder="Ask me anything..." autoFocus />
+                </div>
+
+                {(text.trim() !== "" || files.length > 0) &&
+                    <Button icon={<ArrowUpIcon className="size-6" />} isDisabled={pendingChat !== null || isLoading} onClick={sendMessage} />
+                }
+            </div>
+        </>
     )
 }
