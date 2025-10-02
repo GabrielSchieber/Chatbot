@@ -6,9 +6,13 @@ import { useNavigate, useParams } from "react-router"
 import { Attachment, MAX_FILE_SIZE, MAX_FILES } from "./Chat"
 import { newMessage } from "../utils/api"
 import { getFileSize } from "../utils/file"
-import type { Message, Model } from "../types"
+import type { Chat, Message, Model } from "../types"
 
-export default function Prompt({ setMessages }: { setMessages: React.Dispatch<React.SetStateAction<Message[]>> }) {
+export default function Prompt({ setMessages, pendingChat, setPendingChat }: {
+    setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+    pendingChat: Chat | null
+    setPendingChat: React.Dispatch<React.SetStateAction<Chat | null>>
+}) {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
@@ -42,7 +46,10 @@ export default function Prompt({ setMessages }: { setMessages: React.Dispatch<Re
                 setText("")
                 setFiles([])
 
-                response.json().then(chat => navigate(`/chat/${chat.uuid}`))
+                response.json().then(chat => {
+                    navigate(`/chat/${chat.uuid}`)
+                    setPendingChat(chat)
+                })
             } else {
                 alert("Failed to send message")
             }
@@ -95,15 +102,16 @@ export default function Prompt({ setMessages }: { setMessages: React.Dispatch<Re
                 <Attachments files={files} setFiles={setFiles} />
                 <TextArea text={text} setText={setText} sendMessage={sendMessageWithEvent} />
             </div>
-            {(text.trim() !== "" || files.length > 0) && <Button icon={<ArrowUpIcon className="size-6" />} onClick={sendMessage} />}
+            {(text.trim() !== "" || files.length > 0) && <Button icon={<ArrowUpIcon className="size-6" />} isDisabled={pendingChat !== null} onClick={sendMessage} />}
         </div>
     )
 }
 
-function Button({ icon, onClick }: { icon: ReactNode, onClick?: () => void }) {
+function Button({ icon, onClick, isDisabled = false }: { icon: ReactNode, onClick?: () => void, isDisabled?: boolean, }) {
     return (
         <button
-            className="my-2 p-1 rounded-3xl cursor-pointer hover:bg-gray-600 light:bg-gray-400"
+            className="my-2 p-1 rounded-3xl hover:bg-gray-600 light:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isDisabled}
             onClick={onClick}
         >
             {icon}
@@ -168,7 +176,7 @@ function TextArea({ text, setText, sendMessage }: {
         const textArea = textAreaRef.current
         if (!textArea) return
         textArea.style.height = "auto"
-        textArea.style.height = `${textArea.scrollHeight}px`
+        textArea.style.height = `${textArea.scrollHeight} px`
     }, [text])
 
     return (

@@ -6,14 +6,16 @@ import rehypeHighlight from "rehype-highlight"
 import remarkGfm from "remark-gfm"
 
 import { editMessage, getMessages, regenerateMessage } from "../utils/api"
-import type { Message, MessageFile, Model } from "../types"
+import type { Chat, Message, MessageFile, Model } from "../types"
 import { DropdownMenu, Tooltip } from "radix-ui"
 import { Attachment, MAX_FILE_SIZE, MAX_FILES } from "./Chat"
 import { getFileSize } from "../utils/file"
 
-export default function Messages({ messages, setMessages }: {
+export default function Messages({ messages, setMessages, pendingChat, setPendingChat }: {
     messages: Message[]
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+    pendingChat: Chat | null
+    setPendingChat: React.Dispatch<React.SetStateAction<Chat | null>>
 }) {
     const { chatUUID } = useParams()
 
@@ -73,6 +75,8 @@ export default function Messages({ messages, setMessages }: {
 
                         return previous
                     })
+                } else if (data === "end") {
+                    setPendingChat(null)
                 }
             })
 
@@ -102,12 +106,31 @@ export default function Messages({ messages, setMessages }: {
             {messages.map((m, i) => (
                 <div key={m.id} className={`flex flex-col gap-0.5 w-[60vw] justify-self-center ${m.is_from_user ? "items-end" : "items-start"}`}>
                     {editingMessageIndex === i ? (
-                        <MessageEditor index={editingMessageIndex} setIndex={setEditingMessageIndex} messages={messages} setMessages={setMessages} />
+                        <MessageEditor
+                            index={editingMessageIndex}
+                            setIndex={setEditingMessageIndex}
+                            messages={messages}
+                            setMessages={setMessages}
+                            pendingChat={pendingChat}
+                            setPendingChat={setPendingChat}
+                        />
                     ) : (
                         m.is_from_user ? (
-                            <UserMessage text={m.text} files={m.files} isDisabled={false} onEditClick={() => setEditingMessageIndex(i)} />
+                            <UserMessage
+                                text={m.text}
+                                files={m.files}
+                                isEditButtonDisabled={pendingChat !== null}
+                                onEditClick={() => setEditingMessageIndex(i)}
+                            />
                         ) : (
-                            <BotMessage index={i} text={m.text} model={m.model} setMessages={setMessages} isRegenerateButtonDisabled={false} />
+                            <BotMessage
+                                index={i}
+                                text={m.text}
+                                model={m.model}
+                                setMessages={setMessages}
+                                isRegenerateButtonDisabled={pendingChat !== null}
+                                setPendingChat={setPendingChat}
+                            />
                         )
                     )}
                 </div>
@@ -126,7 +149,7 @@ function MessageButton({ trigger, tooltip, onClick, isDisabled = false }: {
         <Tooltip.Provider delayDuration={200}>
             <Tooltip.Root>
                 <Tooltip.Trigger
-                    className={`p-2 rounded-lg hover:bg-gray-700 light:hover:bg-gray-300 ${isDisabled ? "opacity-50" : "cursor-pointer"}`}
+                    className="p-2 rounded-lg hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={onClick}
                     disabled={isDisabled}
                 >
@@ -169,11 +192,12 @@ function EditButton({ isDisabled, onClick }: { isDisabled: boolean, onClick: () 
     )
 }
 
-function RegenerateButton({ index, model, setMessages, isDisabled }: {
+function RegenerateButton({ index, model, setMessages, isDisabled, setPendingChat }: {
     index: number
     model?: Model
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
     isDisabled: boolean
+    setPendingChat: React.Dispatch<React.SetStateAction<Chat | null>>
 }) {
     const { chatUUID } = useParams()
 
@@ -187,6 +211,8 @@ function RegenerateButton({ index, model, setMessages, isDisabled }: {
                         previousMessages[index].model = model
                         return previousMessages
                     })
+
+                    response.json().then(chat => setPendingChat(chat))
                 } else {
                     alert("Regeneration of message was not possible")
                 }
@@ -202,7 +228,7 @@ function RegenerateButton({ index, model, setMessages, isDisabled }: {
                 <Tooltip.Root>
                     <Tooltip.Trigger asChild>
                         <DropdownMenu.Trigger
-                            className={`p-2 rounded-lg hover:bg-gray-700 light:hover:bg-gray-300 ${isDisabled ? "opacity-50" : "cursor-pointer"}`}
+                            className="p-2 rounded-lg hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={isDisabled}
                             data-testid="regenerate"
                         >
@@ -334,11 +360,13 @@ function Dropdown({ icon, model, setModel }: {
 }
 
 
-function MessageEditor({ index, setIndex, messages, setMessages }: {
+function MessageEditor({ index, setIndex, messages, setMessages, pendingChat, setPendingChat }: {
     index: number
     setIndex: React.Dispatch<React.SetStateAction<number>>
     messages: Message[],
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+    pendingChat: Chat | null
+    setPendingChat: React.Dispatch<React.SetStateAction<Chat | null>>
 }) {
     const { chatUUID } = useParams()
 
@@ -395,6 +423,8 @@ function MessageEditor({ index, setIndex, messages, setMessages }: {
                     setText("")
                     setAddedFiles([])
                     setRemovedFiles([])
+
+                    response.json().then(chat => setPendingChat(chat))
                 } else {
                     alert("Edition of message was not possible")
                 }
@@ -533,7 +563,7 @@ function MessageEditor({ index, setIndex, messages, setMessages }: {
                             light:bg-gray-900 light:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed
                         "
                         onClick={_ => edit(index)}
-                        disabled={text.trim() === "" && getCurrentFiles().length === 0}
+                        disabled={(text.trim() === "" && getCurrentFiles().length === 0) || pendingChat !== null}
                     >
                         Send
                     </button>
@@ -543,7 +573,12 @@ function MessageEditor({ index, setIndex, messages, setMessages }: {
     )
 }
 
-function UserMessage({ text, files, isDisabled, onEditClick }: { text: string, files: MessageFile[], isDisabled: boolean, onEditClick: () => void }) {
+function UserMessage({ text, files, isEditButtonDisabled, onEditClick }: {
+    text: string
+    files: MessageFile[]
+    isEditButtonDisabled: boolean
+    onEditClick: () => void
+}) {
     return (
         <>
             <div
@@ -561,19 +596,20 @@ function UserMessage({ text, files, isDisabled, onEditClick }: { text: string, f
             </div>
 
             <div className="flex gap-1">
-                <EditButton isDisabled={isDisabled} onClick={onEditClick} />
+                <EditButton isDisabled={isEditButtonDisabled} onClick={onEditClick} />
                 <CopyButton text={text} />
             </div>
         </>
     )
 }
 
-function BotMessage({ index, text, model, isRegenerateButtonDisabled, setMessages }: {
+function BotMessage({ index, text, model, isRegenerateButtonDisabled, setMessages, setPendingChat }: {
     index: number,
     text: string,
     model?: Model,
     isRegenerateButtonDisabled: boolean
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+    setPendingChat: React.Dispatch<React.SetStateAction<Chat | null>>
 }) {
     return (
         <>
@@ -639,7 +675,7 @@ function BotMessage({ index, text, model, isRegenerateButtonDisabled, setMessage
 
             <div className="flex gap-1">
                 <CopyButton text={text} />
-                <RegenerateButton index={index} model={model} setMessages={setMessages} isDisabled={isRegenerateButtonDisabled} />
+                <RegenerateButton index={index} model={model} setMessages={setMessages} isDisabled={isRegenerateButtonDisabled} setPendingChat={setPendingChat} />
             </div>
         </>
     )
