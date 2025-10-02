@@ -30,25 +30,6 @@ export default function Messages({ messages, setMessages }: {
         if (!atBottom) setShouldScrollToBottom(false)
     }
 
-    function regenerate(index: number, model: Model) {
-        if (chatUUID) {
-            regenerateMessage(chatUUID, index, model).then(response => {
-                if (response.ok) {
-                    setMessages(previous => {
-                        const previousMessages = [...previous]
-                        previousMessages[index].text = ""
-                        previousMessages[index].model = model
-                        return previousMessages
-                    })
-                } else {
-                    alert("Regeneration of message was not possible")
-                }
-            })
-        } else {
-            alert("You must be in a chat to regenerate a message")
-        }
-    }
-
     useEffect(() => {
         if (chatUUID) {
             getMessages(chatUUID).then(response => {
@@ -126,12 +107,7 @@ export default function Messages({ messages, setMessages }: {
                         m.is_from_user ? (
                             <UserMessage text={m.text} files={m.files} isDisabled={false} onEditClick={() => setEditingMessageIndex(i)} />
                         ) : (
-                            <BotMessage
-                                text={m.text}
-                                model={m.model}
-                                isRegenerateButtonDisabled={false}
-                                onRegenerateSelect={() => m.model && regenerate(i, m.model)}
-                            />
+                            <BotMessage index={i} text={m.text} model={m.model} setMessages={setMessages} isRegenerateButtonDisabled={false} />
                         )
                     )}
                 </div>
@@ -193,7 +169,33 @@ function EditButton({ isDisabled, onClick }: { isDisabled: boolean, onClick: () 
     )
 }
 
-function RegenerateButton({ model, isDisabled, onSelect }: { model?: Model, isDisabled: boolean, onSelect: () => void }) {
+function RegenerateButton({ index, model, setMessages, isDisabled }: {
+    index: number
+    model?: Model
+    setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+    isDisabled: boolean
+}) {
+    const { chatUUID } = useParams()
+
+    function regenerate(model: Model) {
+        if (chatUUID) {
+            regenerateMessage(chatUUID, index, model).then(response => {
+                if (response.ok) {
+                    setMessages(previous => {
+                        const previousMessages = [...previous]
+                        previousMessages[index].text = ""
+                        previousMessages[index].model = model
+                        return previousMessages
+                    })
+                } else {
+                    alert("Regeneration of message was not possible")
+                }
+            })
+        } else {
+            alert("You must be in a chat to regenerate a message")
+        }
+    }
+
     return (
         <Tooltip.Provider delayDuration={200}>
             <DropdownMenu.Root>
@@ -224,14 +226,14 @@ function RegenerateButton({ model, isDisabled, onSelect }: { model?: Model, isDi
 
                 <DropdownMenu.Portal>
                     <DropdownMenu.Content className="flex flex-col gap-1 p-2 rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200" sideOffset={5}>
-                        {["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"].map(m => (
+                        {(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
                             <DropdownMenu.Item
                                 key={m}
                                 className={`
                                     flex gap-1 w-40 px-2 py-1 items-center justify-between rounded truncate cursor-pointer hover:bg-gray-600
                                     light:hover:bg-gray-400/50 ${m === model ? "bg-gray-600/90 light:bg-gray-400/40" : "bg-gray-700 light:bg-gray-300"}
                                 `}
-                                onSelect={onSelect}
+                                onSelect={_ => regenerate(m)}
                                 data-testid="regenerate-dropdown-entry"
                             >
                                 {m}
@@ -566,11 +568,12 @@ function UserMessage({ text, files, isDisabled, onEditClick }: { text: string, f
     )
 }
 
-function BotMessage({ text, model, isRegenerateButtonDisabled, onRegenerateSelect }: {
+function BotMessage({ index, text, model, isRegenerateButtonDisabled, setMessages }: {
+    index: number,
     text: string,
     model?: Model,
     isRegenerateButtonDisabled: boolean
-    onRegenerateSelect: () => void
+    setMessages: React.Dispatch<React.SetStateAction<Message[]>>
 }) {
     return (
         <>
@@ -636,7 +639,7 @@ function BotMessage({ text, model, isRegenerateButtonDisabled, onRegenerateSelec
 
             <div className="flex gap-1">
                 <CopyButton text={text} />
-                <RegenerateButton model={model} isDisabled={isRegenerateButtonDisabled} onSelect={onRegenerateSelect} />
+                <RegenerateButton index={index} model={model} setMessages={setMessages} isDisabled={isRegenerateButtonDisabled} />
             </div>
         </>
     )
