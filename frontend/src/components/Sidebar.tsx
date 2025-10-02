@@ -1,52 +1,53 @@
-import { useEffect, useState } from "react"
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "@radix-ui/react-icons"
+import { useState } from "react"
 
-import { getChats } from "../utils/api"
-import type { Chat } from "../types"
+import History from "./sidebar/History"
+import Search from "./sidebar/Search"
+import Settings from "./sidebar/Settings"
+import { useAuth } from "../context/AuthProvider"
+import { me } from "../utils/api"
 
-export function Sidebar() {
+export default function Sidebar() {
+    const { user } = useAuth()
+
+    const [isSidebarOpen, setIsSidebarOpen] = useState(user ? user.has_sidebar_open : true)
+
+    function TopButtons() {
+        const itemClassNames = `
+            flex items-center gap-2 p-2 rounded outline-none cursor-pointer
+            hover:bg-gray-700 light:hover:bg-gray-300 focus:bg-gray-700 light:focus:bg-gray-300
+        `
+
+        return (
+            <div className={`flex flex-col gap-2 p-2 ${!isSidebarOpen && "items-center"}`}>
+                <button
+                    className={itemClassNames} onClick={_ => {
+                        me(undefined, !isSidebarOpen)
+                        setIsSidebarOpen(!isSidebarOpen)
+                    }}
+                >
+                    {isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+                    {isSidebarOpen && <span>Toggle Sidebar</span>}
+                </button>
+                <a className={itemClassNames} href="/">
+                    <PlusIcon />
+                    {isSidebarOpen && <span>New Chat</span>}
+                </a>
+                <Search isSidebarOpen={isSidebarOpen} />
+            </div>
+        )
+    }
+
     return (
-        <div className="flex flex-col w-60 text-center bg-gray-800 light:bg-gray-200">
+        <div
+            className={`
+                flex flex-col bg-gray-800 light:bg-gray-200 justify-between
+                divide-y-1 divide-gray-700 transition-all duration-300 ${isSidebarOpen ? "min-w-[250px] max-w-[250px]" : "min-w-[50px] max-w-[50px]"}
+            `}
+        >
             <TopButtons />
-            <History />
-            <SettingsButton />
+            {isSidebarOpen && <History />}
+            <Settings isSidebarOpen={isSidebarOpen} />
         </div>
-    )
-}
-
-function TopButtons() {
-    return (
-        <div className="flex flex-col gap-1">
-            <button>Toggle Sidebar</button>
-            <a href="/">New Chat</a>
-            <button>Search chats</button>
-        </div>
-    )
-}
-
-function History() {
-    const [chats, setChats] = useState<Chat[]>([])
-
-    useEffect(() => {
-        getChats(0, 20).then(response => {
-            if (response.ok) {
-                response.json().then(data => {
-                    setChats(data.chats)
-                })
-            }
-        })
-    }, [])
-
-    return (
-        <div className="flex flex-col h-full bg-gray-800/50 light:bg-gray-200/50">
-            {chats.map(c => (
-                <a key={c.uuid} href={`/chat/${c.uuid}`}>{c.title}</a>
-            ))}
-        </div>
-    )
-}
-
-function SettingsButton() {
-    return (
-        <button>Settings</button>
     )
 }
