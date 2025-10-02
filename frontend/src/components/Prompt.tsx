@@ -1,9 +1,12 @@
-import { ArrowUpIcon, BoxModelIcon, CheckIcon, PlusIcon } from "@radix-ui/react-icons"
-import { DropdownMenu } from "radix-ui"
-import { useState, useEffect, useRef, type ReactNode } from "react"
+import { ArrowUpIcon, BoxModelIcon, PlusIcon } from "@radix-ui/react-icons"
+import { useState, useRef } from "react"
 import { useNavigate, useParams } from "react-router"
 
-import { Attachment, MAX_FILE_SIZE, MAX_FILES } from "./Chat"
+import Button from "../components/ui/Button"
+import Dropdown from "../components/ui/Dropdown"
+import Attachment from "../components/ui/Attachment"
+import TextArea from "../components/ui/TextArea"
+import { MAX_FILE_SIZE, MAX_FILES } from "../constants/files"
 import { newMessage } from "../utils/api"
 import { getFileSize } from "../utils/file"
 import type { Chat, Message, Model } from "../types"
@@ -99,97 +102,14 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat }: {
             </div>
             <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
             <div className="flex flex-1 flex-col max-h-[50vh] overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
-                <Attachments files={files} setFiles={setFiles} />
-                <TextArea text={text} setText={setText} sendMessage={sendMessageWithEvent} />
+                <div className="flex flex-col gap-2 items-start">
+                    {files.map((f, i) => (
+                        <Attachment key={f.name + "|" + f.size} file={{ id: i, name: f.name, content_size: f.size, content_type: f.type }} onRemove={() => setFiles(previous => previous.filter(p => p.name + "|" + p.size !== f.name + "|" + f.size))} />
+                    ))}
+                </div>
+                <TextArea text={text} setText={setText} onKeyDown={sendMessageWithEvent} autoFocus />
             </div>
             {(text.trim() !== "" || files.length > 0) && <Button icon={<ArrowUpIcon className="size-6" />} isDisabled={pendingChat !== null} onClick={sendMessage} />}
-        </div>
-    )
-}
-
-function Button({ icon, onClick, isDisabled = false }: { icon: ReactNode, onClick?: () => void, isDisabled?: boolean, }) {
-    return (
-        <button
-            className="my-2 p-1 rounded-3xl hover:bg-gray-600 light:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isDisabled}
-            onClick={onClick}
-        >
-            {icon}
-        </button>
-    )
-}
-
-function Dropdown({ icon, model, setModel }: {
-    icon: ReactNode
-    model: Model
-    setModel: React.Dispatch<React.SetStateAction<Model>>
-}) {
-    function Item({ m }: { m: Model }) {
-        return (
-            <DropdownMenu.Item
-                className="p-2 rounded-md cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"
-                onClick={_ => setModel(m)}
-            >
-                <div className="flex gap-2 items-center">
-                    {m}{m === model && <CheckIcon className="size-5" />}
-                </div>
-            </DropdownMenu.Item>
-        )
-    }
-
-    const models: Model[] = ["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]
-
-    return (
-        <DropdownMenu.Root>
-            <DropdownMenu.Trigger className="p-1 rounded-md cursor-pointer hover:bg-gray-600 light:bg-gray-400">
-                {icon}
-            </DropdownMenu.Trigger>
-
-            <DropdownMenu.Content className="flex flex-col gap-1 p-1 rounded-md bg-gray-800 light:bg-gray-200">
-                {models.map(m => (
-                    <Item key={m} m={m} />
-                ))}
-            </DropdownMenu.Content>
-        </DropdownMenu.Root>
-    )
-}
-
-function Attachments({ files, setFiles }: { files: File[], setFiles: React.Dispatch<React.SetStateAction<File[]>> }) {
-    const messageFiles = files.map((f, i) => ({ id: i, name: f.name, content_size: f.size, content_type: f.type }))
-    return (
-        <div className="flex flex-col gap-2 items-start">
-            {messageFiles.map(f => (
-                <Attachment key={f.id} file={f} onRemove={() => setFiles(previous => previous.filter(p => p.name + "|" + p.size !== f.name + "|" + f.content_size))} />
-            ))}
-        </div>
-    )
-}
-
-function TextArea({ text, setText, sendMessage }: {
-    text: string
-    setText: React.Dispatch<React.SetStateAction<string>>
-    sendMessage: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
-}) {
-    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
-
-    useEffect(() => {
-        const textArea = textAreaRef.current
-        if (!textArea) return
-        textArea.style.height = "auto"
-        textArea.style.height = `${textArea.scrollHeight} px`
-    }, [text])
-
-    return (
-        <div className="flex">
-            <textarea
-                ref={textAreaRef}
-                className="flex-1 px-2 content-center resize-none outline-none"
-                placeholder="Type your message here..."
-                value={text}
-                onChange={e => setText(e.target.value)}
-                onKeyDown={sendMessage}
-                autoFocus
-            />
         </div>
     )
 }

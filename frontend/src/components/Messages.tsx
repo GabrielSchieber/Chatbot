@@ -8,7 +8,11 @@ import remarkGfm from "remark-gfm"
 import { editMessage, getMessages, regenerateMessage } from "../utils/api"
 import type { Chat, Message, MessageFile, Model } from "../types"
 import { DropdownMenu, Tooltip } from "radix-ui"
-import { Attachment, MAX_FILE_SIZE, MAX_FILES } from "./Chat"
+import { MAX_FILE_SIZE, MAX_FILES } from "../constants/files"
+import Attachment from "../components/ui/Attachment"
+import Button from "../components/ui/Button"
+import Dropdown from "../components/ui/Dropdown"
+import TextArea from "../components/ui/TextArea"
 import { getFileSize } from "../utils/file"
 
 export default function Messages({ messages, setMessages, pendingChat, setPendingChat }: {
@@ -285,80 +289,6 @@ function Attachments({ files, onRemove, onRemoveAll }: { files: MessageFile[], o
         </div>
     )
 }
-
-function TextArea({ text, setText }: {
-    text: string
-    setText: React.Dispatch<React.SetStateAction<string>>
-}) {
-    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
-
-    useEffect(() => {
-        const textArea = textAreaRef.current
-        if (!textArea) return
-        textArea.style.height = "auto"
-        textArea.style.height = `${textArea.scrollHeight}px`
-    }, [text])
-
-    return (
-        <div className="flex">
-            <textarea
-                ref={textAreaRef}
-                className="flex-1 px-2 content-center resize-none outline-none"
-                placeholder="Type your message here..."
-                value={text}
-                onChange={e => setText(e.target.value)}
-                autoFocus
-            />
-        </div>
-    )
-}
-
-function Button({ icon, onClick }: { icon: ReactNode, onClick?: () => void }) {
-    return (
-        <button
-            className="my-2 p-1 rounded-3xl cursor-pointer hover:bg-gray-600 light:bg-gray-400"
-            onClick={onClick}
-        >
-            {icon}
-        </button>
-    )
-}
-
-function Dropdown({ icon, model, setModel }: {
-    icon: ReactNode
-    model: Model
-    setModel: React.Dispatch<React.SetStateAction<Model>>
-}) {
-    function Item({ m }: { m: Model }) {
-        return (
-            <DropdownMenu.Item
-                className="p-2 rounded-md cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"
-                onClick={_ => setModel(m)}
-            >
-                <div className="flex gap-2 items-center">
-                    {m}{m === model && <CheckIcon className="size-5" />}
-                </div>
-            </DropdownMenu.Item>
-        )
-    }
-
-    const models: Model[] = ["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]
-
-    return (
-        <DropdownMenu.Root>
-            <DropdownMenu.Trigger className="p-1 rounded-md cursor-pointer hover:bg-gray-600 light:bg-gray-400">
-                {icon}
-            </DropdownMenu.Trigger>
-
-            <DropdownMenu.Content className="flex flex-col gap-1 p-1 rounded-md bg-gray-800 light:bg-gray-200">
-                {models.map(m => (
-                    <Item key={m} m={m} />
-                ))}
-            </DropdownMenu.Content>
-        </DropdownMenu.Root>
-    )
-}
-
 
 function MessageEditor({ index, setIndex, messages, setMessages, pendingChat, setPendingChat }: {
     index: number
