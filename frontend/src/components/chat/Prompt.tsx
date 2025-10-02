@@ -1,4 +1,5 @@
 import { ArrowUpIcon, BoxModelIcon, Cross2Icon, PlusIcon } from "@radix-ui/react-icons"
+import { motion, AnimatePresence } from "motion/react"
 import { useState, useRef } from "react"
 import { useNavigate, useParams } from "react-router"
 
@@ -24,7 +25,7 @@ export default function Prompt() {
     const [files, setFiles] = useState<File[]>([])
     const [model, setModel] = useState<Model>("SmolLM2-135M")
 
-    const [shouldShowNotification, setShouldShowNotification] = useState(false)
+    const [shouldShowPendingNotification, setShouldShowPendingNotification] = useState(false)
 
     function sendMessage() {
         newMessage(chatUUID || "", text, model, files).then(response => {
@@ -65,9 +66,9 @@ export default function Prompt() {
             e.preventDefault()
             if (!pendingChat) {
                 sendMessage()
-            } else if (!shouldShowNotification) {
-                setShouldShowNotification(true)
-                setTimeout(() => setShouldShowNotification(false), 2000)
+            } else if (!shouldShowPendingNotification) {
+                setShouldShowPendingNotification(true)
+                setTimeout(() => setShouldShowPendingNotification(false), 2000)
             }
         }
     }
@@ -102,19 +103,27 @@ export default function Prompt() {
 
     return (
         <>
-            {shouldShowNotification && pendingChat &&
-                <div className="flex items-center justify-between gap-3 px-4 py-2 m-2 rounded-xl bg-gray-700 light:bg-gray-300 z-10">
-                    <div>
-                        A message is already being generated in <a className="underline" href={`/chat/${pendingChat.uuid}`}>{pendingChat.title}</a>
-                    </div>
-                    <button className="p-1 rounded-3xl cursor-pointer hover:bg-gray-800" onClick={_ => setShouldShowNotification(false)}>
-                        <Cross2Icon />
-                    </button>
-                </div>
-            }
+            <AnimatePresence>
+                {shouldShowPendingNotification && pendingChat && (
+                    <motion.div
+                        key="pending-notification"
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.25 }}
+                        className="flex items-center justify-between gap-3 px-4 py-2 m-2 rounded-xl bg-gray-700 light:bg-gray-300 z-10"
+                    >
+                        <div>
+                            A message is already being generated in <a className="underline" href={`/chat/${pendingChat.uuid}`}>{pendingChat.title}</a>
+                        </div>
+                        <button className="p-1 rounded-3xl cursor-pointer hover:bg-gray-800" onClick={_ => setShouldShowPendingNotification(false)}>
+                            <Cross2Icon />
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <div className="flex w-[60vw] h-auto mb-5 px-2 items-end rounded-3xl bg-gray-700 light:bg-gray-300">
-
                 <div className="flex gap-0.5 items-center">
                     <Button icon={<PlusIcon className="size-6" />} onClick={() => fileInputRef.current?.click()} />
                     <Dropdown icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
