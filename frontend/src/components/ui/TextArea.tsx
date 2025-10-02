@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react"
 
-export default function TextArea({ text, setText, onKeyDown, placeholder = "Type your message here...", autoFocus = false }: {
+export default function TextArea({ text, setText, placeholder, onKeyDown, autoFocus = false }: {
     text: string
     setText: React.Dispatch<React.SetStateAction<string>>
     onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void

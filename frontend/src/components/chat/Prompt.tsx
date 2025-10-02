@@ -107,7 +107,7 @@ export default function Prompt() {
                     files={files.map((f, i) => ({ id: i, name: f.name, content_size: f.size, content_type: f.type }))}
                     onRemove={file => setFiles(previous => previous.filter(f => f.name + "|" + f.size !== file.name + "|" + file.content_size))}
                 />
-                <TextArea text={text} setText={setText} onKeyDown={sendMessageWithEvent} autoFocus />
+                <TextArea text={text} setText={setText} onKeyDown={sendMessageWithEvent} placeholder="Ask me anything..." autoFocus />
             </div>
 
             {(text.trim() !== "" || files.length > 0) &&
