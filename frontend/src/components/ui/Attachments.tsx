@@ -2,7 +2,22 @@ import { Cross1Icon, FileIcon } from "@radix-ui/react-icons"
 import { getFileSize, getFileType } from "../../utils/file"
 import type { MessageFile } from "../../types"
 
-export default function Attachment({ file, onRemove }: { file: MessageFile, onRemove?: () => void }) {
+export default function Attachments({ files, onRemove, onRemoveAll }: { files: MessageFile[], onRemove?: (file: MessageFile) => void, onRemoveAll?: () => void }) {
+    return (
+        <div className="relative flex flex-col gap-2 items-start">
+            {files.map(f => (
+                onRemove ? <Attachment key={f.id} file={f} onRemove={() => onRemove(f)} /> : <Attachment key={f.id} file={f} />
+            ))}
+            {onRemoveAll && files.length > 0 &&
+                <button className="absolute right-0 p-1 rounded-3xl cursor-pointer hover:bg-red-500/40" onClick={onRemoveAll}>
+                    <Cross1Icon className="size-3.5" />
+                </button>
+            }
+        </div>
+    )
+}
+
+function Attachment({ file, onRemove }: { file: MessageFile, onRemove?: () => void }) {
     return (
         <div className="flex px-4 gap-1 items-center rounded-md bg-gray-800 light:bg-gray-200">
             <FileIcon className="size-8" />

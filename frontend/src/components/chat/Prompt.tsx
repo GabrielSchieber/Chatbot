@@ -2,22 +2,21 @@ import { ArrowUpIcon, BoxModelIcon, PlusIcon } from "@radix-ui/react-icons"
 import { useState, useRef } from "react"
 import { useNavigate, useParams } from "react-router"
 
-import Button from "../components/ui/Button"
-import Dropdown from "../components/ui/Dropdown"
-import Attachment from "../components/ui/Attachment"
-import TextArea from "../components/ui/TextArea"
-import { MAX_FILE_SIZE, MAX_FILES } from "../constants/files"
-import { newMessage } from "../utils/api"
-import { getFileSize } from "../utils/file"
-import type { Chat, Message, Model } from "../types"
+import Button from "../ui/Button"
+import Dropdown from "../ui/Dropdown"
+import TextArea from "../ui/TextArea"
+import Attachments from "../ui/Attachments"
+import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
+import { useChat } from "../../context/ChatProvider"
+import { newMessage } from "../../utils/api"
+import { getFileSize } from "../../utils/file"
+import type { Model } from "../../types"
 
-export default function Prompt({ setMessages, pendingChat, setPendingChat }: {
-    setMessages: React.Dispatch<React.SetStateAction<Message[]>>
-    pendingChat: Chat | null
-    setPendingChat: React.Dispatch<React.SetStateAction<Chat | null>>
-}) {
+export default function Prompt() {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
+
+    const { setMessages, pendingChat, setPendingChat, isLoading } = useChat()
 
     const fileInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -100,16 +99,20 @@ export default function Prompt({ setMessages, pendingChat, setPendingChat }: {
                 <Button icon={<PlusIcon className="size-6" />} onClick={() => fileInputRef.current?.click()} />
                 <Dropdown icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
             </div>
+
             <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
+
             <div className="flex flex-1 flex-col max-h-[50vh] overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
-                <div className="flex flex-col gap-2 items-start">
-                    {files.map((f, i) => (
-                        <Attachment key={f.name + "|" + f.size} file={{ id: i, name: f.name, content_size: f.size, content_type: f.type }} onRemove={() => setFiles(previous => previous.filter(p => p.name + "|" + p.size !== f.name + "|" + f.size))} />
-                    ))}
-                </div>
+                <Attachments
+                    files={files.map((f, i) => ({ id: i, name: f.name, content_size: f.size, content_type: f.type }))}
+                    onRemove={file => setFiles(previous => previous.filter(f => f.name + "|" + f.size !== file.name + "|" + file.content_size))}
+                />
                 <TextArea text={text} setText={setText} onKeyDown={sendMessageWithEvent} autoFocus />
             </div>
-            {(text.trim() !== "" || files.length > 0) && <Button icon={<ArrowUpIcon className="size-6" />} isDisabled={pendingChat !== null} onClick={sendMessage} />}
+
+            {(text.trim() !== "" || files.length > 0) &&
+                <Button icon={<ArrowUpIcon className="size-6" />} isDisabled={pendingChat !== null || isLoading} onClick={sendMessage} />
+            }
         </div>
     )
 }
