@@ -150,9 +150,11 @@ export default function PromptBar() {
                 <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
 
                 {isExtended ? (
-                    <motion.div layout className="flex flex-col gap-2">
-                        <Files files={files} setFiles={setFiles} />
-                        <TextArea ref={textAreaRef} text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />
+                    <motion.div layout className="flex flex-col gap-1">
+                        <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
+                            <Files files={files} setFiles={setFiles} />
+                            <TextArea ref={textAreaRef} text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />
+                        </div>
 
                         <div className="flex justify-between items-center px-1">
                             <div className="flex gap-1">
@@ -206,15 +208,17 @@ function TextArea({ ref, text, setText, sendMessageWithEvent }: {
     sendMessageWithEvent: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
 }) {
     return (
-        <motion.textarea
-            ref={ref}
-            className="w-full resize-none overflow-hidden rounded-xl border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            value={text}
-            placeholder="Ask me anything..."
-            onChange={e => setText(e.target.value)}
-            onKeyDown={sendMessageWithEvent}
-            rows={1}
-        />
+        <motion.div className="flex flex-1">
+            <motion.textarea
+                ref={ref}
+                className="flex-1 resize-none overflow-hidden rounded-xl border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={text}
+                placeholder="Ask me anything..."
+                onChange={e => setText(e.target.value)}
+                onKeyDown={sendMessageWithEvent}
+                rows={1}
+            />
+        </motion.div>
     )
 }
 
