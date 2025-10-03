@@ -1,24 +1,23 @@
 import { ArrowUpIcon, BoxModelIcon, Cross2Icon, PlusIcon } from "@radix-ui/react-icons"
 import { motion, AnimatePresence } from "motion/react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useNavigate, useParams } from "react-router"
 
-import Button from "../ui/Button"
-import Dropdown from "../ui/Dropdown"
-import TextArea from "../ui/TextArea"
 import Attachments from "../ui/Attachments"
+import Dropdown from "../ui/Dropdown"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
 import { newMessage } from "../../utils/api"
 import { getFileSize } from "../../utils/file"
 import type { Model } from "../../types"
 
-export default function Prompt() {
+export default function PromptBar() {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
     const { setMessages, pendingChat, setPendingChat, isLoading } = useChat()
 
+    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
 
     const [text, setText] = useState("")
@@ -26,6 +25,10 @@ export default function Prompt() {
     const [model, setModel] = useState<Model>("SmolLM2-135M")
 
     const [shouldShowPendingNotification, setShouldShowPendingNotification] = useState(false)
+
+    const [isExtended, setIsExtended] = useState(false)
+
+    const isSendButtonDisabled = (text.trim() === "" && files.length === 0) || pendingChat !== null || isLoading
 
     function sendMessage() {
         newMessage(chatUUID || "", text, model, files).then(response => {
@@ -101,6 +104,22 @@ export default function Prompt() {
         e.target.value = ""
     }
 
+    useEffect(() => {
+        if (textAreaRef.current) {
+            textAreaRef.current.style.height = "auto"
+            textAreaRef.current.style.height = textAreaRef.current.scrollHeight + "px"
+        }
+    }, [text])
+
+    useEffect(() => {
+        if (files.length > 0) {
+            setIsExtended(true)
+        } else {
+            const lineCount = text.split("\n").length
+            setIsExtended(lineCount > 1 || text.length > 80)
+        }
+    }, [text, files])
+
     return (
         <>
             <AnimatePresence>
@@ -123,26 +142,104 @@ export default function Prompt() {
                 )}
             </AnimatePresence>
 
-            <div className="flex w-[60vw] h-auto mb-5 px-2 items-end rounded-3xl bg-gray-700 light:bg-gray-300">
-                <div className="flex gap-0.5 items-center">
-                    <Button icon={<PlusIcon className="size-6" />} onClick={() => fileInputRef.current?.click()} />
-                    <Dropdown icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
-                </div>
-
+            <motion.div
+                layout
+                transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
+                className="w-full max-w-3xl mx-auto mb-5 p-2 rounded-2xl bg-gray-800 light:bg-gray-200"
+            >
                 <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
 
-                <div className="flex flex-1 flex-col max-h-[50vh] overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
+                {isExtended ? (
+                    <motion.div layout className="flex flex-col gap-2">
+                        <Files files={files} setFiles={setFiles} />
+                        <TextArea ref={textAreaRef} text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />
+
+                        <div className="flex justify-between items-center px-1">
+                            <div className="flex gap-1">
+                                <AttachButton fileInputRef={fileInputRef} />
+                                <Dropdown icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
+                            </div>
+                            <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} />
+                        </div>
+                    </motion.div>
+                ) : (
+                    <motion.div layout className="flex items-center justify-between gap-2">
+                        <div className="flex gap-1">
+                            <AttachButton fileInputRef={fileInputRef} />
+                            <Dropdown icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
+                        </div>
+                        <TextArea ref={textAreaRef} text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />
+                        <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} />
+                    </motion.div>
+                )}
+            </motion.div>
+        </>
+    )
+}
+
+function Files({ files, setFiles }: { files: File[], setFiles: React.Dispatch<React.SetStateAction<File[]>> }) {
+    return (
+        <AnimatePresence>
+            {files.length > 0 && (
+                <motion.div
+                    layout
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    className="flex flex-wrap gap-2 p-2 rounded-xl border bg-gray-700 light:bg-gray-300 border-gray-200 light:border-gray-800"
+                >
                     <Attachments
                         files={files.map((f, i) => ({ id: i, name: f.name, content_size: f.size, content_type: f.type }))}
-                        onRemove={file => setFiles(previous => previous.filter(f => f.name + "|" + f.size !== file.name + "|" + file.content_size))}
+                        onRemove={f => setFiles(previous => previous.filter(p => p.name + "|" + p.size !== f.name + "|" + f.content_size))}
+                        onRemoveAll={() => setFiles([])}
                     />
-                    <TextArea text={text} setText={setText} onKeyDown={sendMessageWithEvent} placeholder="Ask me anything..." autoFocus />
-                </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    )
+}
 
-                {(text.trim() !== "" || files.length > 0) &&
-                    <Button icon={<ArrowUpIcon className="size-6" />} isDisabled={pendingChat !== null || isLoading} onClick={sendMessage} />
-                }
-            </div>
-        </>
+function TextArea({ ref, text, setText, sendMessageWithEvent }: {
+    ref: React.RefObject<HTMLTextAreaElement | null>
+    text: string
+    setText: React.Dispatch<React.SetStateAction<string>>
+    sendMessageWithEvent: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+}) {
+    return (
+        <motion.textarea
+            ref={ref}
+            className="w-full resize-none overflow-hidden rounded-xl border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            value={text}
+            placeholder="Ask me anything..."
+            onChange={e => setText(e.target.value)}
+            onKeyDown={sendMessageWithEvent}
+            rows={1}
+        />
+    )
+}
+
+function AttachButton({ fileInputRef }: { fileInputRef: React.RefObject<HTMLInputElement | null> }) {
+    return (
+        <button
+            className="p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300 transition"
+            onClick={_ => fileInputRef.current?.click()}
+        >
+            <PlusIcon className="size-5" />
+        </button>
+    )
+}
+
+function SendButton({ sendMessage, isDisabled }: { sendMessage: () => void, isDisabled: boolean }) {
+    return (
+        <button
+            className="
+                p-1.5 rounded-full cursor-pointer bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500
+                disabled:hover:bg-gray-600 disabled:cursor-not-allowed transition
+            "
+            onClick={sendMessage}
+            disabled={isDisabled}
+        >
+            <ArrowUpIcon className="size-5" />
+        </button>
     )
 }

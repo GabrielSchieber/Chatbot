@@ -4,7 +4,7 @@ import type { MessageFile } from "../../types"
 
 export default function Attachments({ files, onRemove, onRemoveAll }: { files: MessageFile[], onRemove?: (file: MessageFile) => void, onRemoveAll?: () => void }) {
     return (
-        <div className="relative flex flex-col gap-2 items-start">
+        <div className="relative flex flex-1 flex-col gap-2 items-start">
             {files.map(f => (
                 onRemove ? <Attachment key={f.id} file={f} onRemove={() => onRemove(f)} /> : <Attachment key={f.id} file={f} />
             ))}
