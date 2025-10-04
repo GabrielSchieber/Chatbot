@@ -1,6 +1,6 @@
 import { ArrowUpIcon, CheckIcon, CopyIcon, Pencil1Icon, PlusIcon, UpdateIcon } from "@radix-ui/react-icons"
 import { DropdownMenu, Tooltip } from "radix-ui"
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { useParams } from "react-router"
 
 import { useChat } from "../../context/ChatProvider"
@@ -102,6 +102,8 @@ export function RegenerateButton({ index, model }: { index: number, model?: Mode
 
     const { setMessages, pendingChat, setPendingChat, isLoading } = useChat()
 
+    const [isRotating, setIsRotating] = useState(false)
+
     function regenerate(model: Model) {
         if (chatUUID) {
             regenerateMessage(chatUUID, index, model).then(response => {
@@ -113,7 +115,10 @@ export function RegenerateButton({ index, model }: { index: number, model?: Mode
                         return previousMessages
                     })
 
-                    response.json().then(chat => setPendingChat(chat))
+                    response.json().then(chat => {
+                        setPendingChat(chat)
+                        setIsRotating(true)
+                    })
                 } else {
                     alert("Regeneration of message was not possible")
                 }
@@ -122,6 +127,12 @@ export function RegenerateButton({ index, model }: { index: number, model?: Mode
             alert("You must be in a chat to regenerate a message")
         }
     }
+
+    useEffect(() => {
+        if (pendingChat === null) {
+            setIsRotating(false)
+        }
+    }, [pendingChat])
 
     return (
         <Tooltip.Provider delayDuration={200}>
@@ -132,7 +143,7 @@ export function RegenerateButton({ index, model }: { index: number, model?: Mode
                             className="p-2 rounded-lg cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={pendingChat !== null || isLoading}
                         >
-                            <UpdateIcon className="size-4.5" />
+                            <UpdateIcon className={`size-4.5 ${isRotating && "animate-spin"}`} />
                         </DropdownMenu.Trigger>
                     </Tooltip.Trigger>
 
