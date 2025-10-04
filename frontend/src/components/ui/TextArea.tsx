@@ -1,32 +1,31 @@
-import React, { useEffect, useRef } from "react"
+import { motion } from "motion/react"
+import { useEffect, useRef } from "react"
 
-export default function TextArea({ text, setText, placeholder, onKeyDown, autoFocus = false }: {
+export default function TextArea({ text, setText, sendMessageWithEvent }: {
     text: string
     setText: React.Dispatch<React.SetStateAction<string>>
-    onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
-    placeholder?: string
-    autoFocus?: boolean
+    sendMessageWithEvent: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
 }) {
-    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
+    const ref = useRef<HTMLTextAreaElement | null>(null)
 
     useEffect(() => {
-        const textArea = textAreaRef.current
-        if (!textArea) return
-        textArea.style.height = "auto"
-        textArea.style.height = `${textArea.scrollHeight}px`
+        if (ref.current) {
+            ref.current.style.height = "auto"
+            ref.current.style.height = ref.current.scrollHeight + "px"
+        }
     }, [text])
 
     return (
-        <div className="flex">
-            <textarea
-                ref={textAreaRef}
-                className="flex-1 px-2 content-center resize-none outline-none"
-                placeholder={placeholder}
+        <motion.div className="flex flex-1">
+            <motion.textarea
+                ref={ref}
+                className="flex-1 resize-none overflow-hidden rounded-xl border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={text}
+                placeholder="Ask me anything..."
                 onChange={e => setText(e.target.value)}
-                onKeyDown={onKeyDown}
-                autoFocus={autoFocus}
+                onKeyDown={sendMessageWithEvent}
+                rows={1}
             />
-        </div>
+        </motion.div>
     )
 }

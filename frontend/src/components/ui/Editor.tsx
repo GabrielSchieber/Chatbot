@@ -1,16 +1,16 @@
-import { BoxModelIcon, PlusIcon } from "@radix-ui/react-icons"
+import { BoxModelIcon, Cross2Icon } from "@radix-ui/react-icons"
+import { AnimatePresence, motion } from "motion/react"
 import { useRef, useState } from "react"
 import { useParams } from "react-router"
 
-import Attachments from "../../ui/Attachments"
-import Button from "../../ui/Button"
-import Dropdown from "../../ui/Dropdown"
-import TextArea from "../../ui/TextArea"
-import { MAX_FILE_SIZE, MAX_FILES } from "../../Chat"
-import { useChat } from "../../../context/ChatProvider"
-import { editMessage } from "../../../utils/api"
-import { getFileSize } from "../../../utils/file"
-import type { MessageFile, Model } from "../../../types"
+import Attachments from "./Attachments"
+import { AttachButton, ModelButton, SendButton } from "./Buttons"
+import TextArea from "./TextArea"
+import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
+import { useChat } from "../../context/ChatProvider"
+import { editMessage } from "../../utils/api"
+import { getFileSize } from "../../utils/file"
+import type { MessageFile, Model } from "../../types"
 
 export default function Editor({ index, setIndex }: { index: number, setIndex: React.Dispatch<React.SetStateAction<number>> }) {
     const { chatUUID } = useParams()
@@ -167,55 +167,57 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
         return [...current, ...added]
     }
 
+    const isSendButtonDisabled = (text.trim() === "" && getCurrentFiles().length === 0) || pendingChat !== null
+
     return (
-        <div className="flex flex-col gap-1 w-[80%] max-h-100 px-3 py-2 rounded-2xl bg-gray-700 light:bg-gray-300">
-            <div className="flex flex-col overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
-                {getCurrentFiles().length > 0 &&
-                    <Attachments files={getCurrentFiles()} onRemove={removeFile} onRemoveAll={removeFiles} />
-                }
-                <TextArea text={text} setText={setText} />
-            </div>
+        <motion.div
+            layout
+            transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
+            className="w-full max-w-3xl mx-auto mb-5 p-2 rounded-2xl bg-gray-800 light:bg-gray-200"
+        >
+            <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
 
-            <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                style={{ display: "none" }}
-                multiple
-            />
+            <motion.div layout className="flex flex-col gap-1">
+                <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
+                    <Files files={getCurrentFiles()} onRemove={removeFile} onRemoveAll={removeFiles} />
+                    <TextArea text={text} setText={setText} sendMessageWithEvent={() => { }} />
+                </div>
 
-            <div className="flex items-center justify-between">
-                <div className="flex gap-1 items-center">
-                    <Button icon={<PlusIcon className="size-6" />} onClick={() => fileInputRef.current?.click()} />
-                    <Dropdown icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
+                <div className="flex justify-between items-center px-1">
+                    <div className="flex gap-1">
+                        <AttachButton fileInputRef={fileInputRef} />
+                        <ModelButton icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
+                    </div>
+                    <div className="flex gap-1">
+                        <button className="p-1.5 rounded-full cursor-pointer bg-red-500/70 hover:bg-red-600/70 transition" onClick={_ => setIndex(-1)}>
+                            <Cross2Icon className="size-5" />
+                        </button>
+                        <SendButton sendMessage={() => edit(index)} isDisabled={isSendButtonDisabled} />
+                    </div>
                 </div>
-                <div className="flex gap-1 items-center">
-                    <button
-                        className="
-                            px-3 py-1 rounded-lg cursor-pointer bg-gray-800
-                            hover:bg-gray-800/60 light:bg-gray-200 light:hover:bg-gray-200/60
-                        "
-                        onClick={_ => {
-                            setIndex(-1)
-                            setText("")
-                            setAddedFiles([])
-                            setRemovedFiles([])
-                        }}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        className="
-                            px-3 py-1 rounded-lg cursor-pointer text-black light:text-white bg-gray-100 hover:bg-gray-200
-                            light:bg-gray-900 light:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed
-                        "
-                        onClick={_ => edit(index)}
-                        disabled={(text.trim() === "" && getCurrentFiles().length === 0) || pendingChat !== null}
-                    >
-                        Send
-                    </button>
-                </div>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
+    )
+}
+
+function Files({ files, onRemove, onRemoveAll }: { files: MessageFile[], onRemove: (file: MessageFile) => void, onRemoveAll: () => void }) {
+    return (
+        <AnimatePresence>
+            {files.length > 0 && (
+                <motion.div
+                    layout
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    className="flex flex-wrap gap-2 p-2 rounded-xl border bg-gray-700 light:bg-gray-300 border-gray-200 light:border-gray-800"
+                >
+                    <Attachments
+                        files={files}
+                        onRemove={onRemove}
+                        onRemoveAll={onRemoveAll}
+                    />
+                </motion.div>
+            )}
+        </AnimatePresence>
     )
 }

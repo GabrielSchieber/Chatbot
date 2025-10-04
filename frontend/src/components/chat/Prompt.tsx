@@ -1,10 +1,11 @@
-import { ArrowUpIcon, BoxModelIcon, Cross2Icon, PlusIcon } from "@radix-ui/react-icons"
+import { BoxModelIcon, Cross2Icon } from "@radix-ui/react-icons"
 import { motion, AnimatePresence } from "motion/react"
 import { useState, useRef, useEffect } from "react"
 import { useNavigate, useParams } from "react-router"
 
 import Attachments from "../ui/Attachments"
-import Dropdown from "../ui/Dropdown"
+import { AttachButton, ModelButton, SendButton } from "../ui/Buttons"
+import TextArea from "../ui/TextArea"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
 import { newMessage } from "../../utils/api"
@@ -17,7 +18,6 @@ export default function PromptBar() {
 
     const { setMessages, pendingChat, setPendingChat, isLoading } = useChat()
 
-    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
 
     const [text, setText] = useState("")
@@ -105,13 +105,6 @@ export default function PromptBar() {
     }
 
     useEffect(() => {
-        if (textAreaRef.current) {
-            textAreaRef.current.style.height = "auto"
-            textAreaRef.current.style.height = textAreaRef.current.scrollHeight + "px"
-        }
-    }, [text])
-
-    useEffect(() => {
         if (files.length > 0) {
             setIsExtended(true)
         } else {
@@ -153,13 +146,13 @@ export default function PromptBar() {
                     <motion.div layout className="flex flex-col gap-1">
                         <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
                             <Files files={files} setFiles={setFiles} />
-                            <TextArea ref={textAreaRef} text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />
+                            <TextArea text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />
                         </div>
 
                         <div className="flex justify-between items-center px-1">
                             <div className="flex gap-1">
                                 <AttachButton fileInputRef={fileInputRef} />
-                                <Dropdown icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
+                                <ModelButton icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
                             </div>
                             <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} />
                         </div>
@@ -168,9 +161,9 @@ export default function PromptBar() {
                     <motion.div layout className="flex items-center justify-between gap-2">
                         <div className="flex gap-1">
                             <AttachButton fileInputRef={fileInputRef} />
-                            <Dropdown icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
+                            <ModelButton icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
                         </div>
-                        <TextArea ref={textAreaRef} text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />
+                        <TextArea text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />
                         <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} />
                     </motion.div>
                 )}
@@ -188,7 +181,7 @@ function Files({ files, setFiles }: { files: File[], setFiles: React.Dispatch<Re
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -5 }}
-                    className="flex flex-wrap gap-2 p-2 rounded-xl border bg-gray-700 light:bg-gray-300 border-gray-200 light:border-gray-800"
+                    className="flex flex-wrap gap-2 p-1.5 rounded-xl border bg-gray-700 light:bg-gray-300 border-gray-200 light:border-gray-800"
                 >
                     <Attachments
                         files={files.map((f, i) => ({ id: i, name: f.name, content_size: f.size, content_type: f.type }))}
@@ -198,52 +191,5 @@ function Files({ files, setFiles }: { files: File[], setFiles: React.Dispatch<Re
                 </motion.div>
             )}
         </AnimatePresence>
-    )
-}
-
-function TextArea({ ref, text, setText, sendMessageWithEvent }: {
-    ref: React.RefObject<HTMLTextAreaElement | null>
-    text: string
-    setText: React.Dispatch<React.SetStateAction<string>>
-    sendMessageWithEvent: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
-}) {
-    return (
-        <motion.div className="flex flex-1">
-            <motion.textarea
-                ref={ref}
-                className="flex-1 resize-none overflow-hidden rounded-xl border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                value={text}
-                placeholder="Ask me anything..."
-                onChange={e => setText(e.target.value)}
-                onKeyDown={sendMessageWithEvent}
-                rows={1}
-            />
-        </motion.div>
-    )
-}
-
-function AttachButton({ fileInputRef }: { fileInputRef: React.RefObject<HTMLInputElement | null> }) {
-    return (
-        <button
-            className="p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300 transition"
-            onClick={_ => fileInputRef.current?.click()}
-        >
-            <PlusIcon className="size-5" />
-        </button>
-    )
-}
-
-function SendButton({ sendMessage, isDisabled }: { sendMessage: () => void, isDisabled: boolean }) {
-    return (
-        <button
-            className="
-                p-1.5 rounded-full cursor-pointer bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500
-                disabled:hover:bg-gray-600 disabled:cursor-not-allowed transition
-            "
-            onClick={sendMessage}
-            disabled={isDisabled}
-        >
-            <ArrowUpIcon className="size-5" />
-        </button>
     )
 }

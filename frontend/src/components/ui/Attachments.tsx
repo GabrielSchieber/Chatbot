@@ -6,16 +6,16 @@ import type { MessageFile } from "../../types"
 
 export default function Attachments({ files, onRemove, onRemoveAll }: { files: MessageFile[], onRemove?: (file: MessageFile) => void, onRemoveAll?: () => void }) {
     return (
-        <div className="relative flex flex-1 flex-col gap-2 items-start">
+        <div className="relative flex flex-1 flex-col gap-1 items-start">
             {files.map(f => (
                 onRemove ? <Attachment key={f.id} file={f} onRemove={() => onRemove(f)} /> : <Attachment key={f.id} file={f} />
             ))}
             {files.length > 0 &&
-                <div className="flex gap-2">
-                    <p className="px-2.5 rounded-lg bg-gray-800 light:bg-gray-200" >
+                <div className="flex gap-1 text-sm">
+                    <p className="px-2.5 py-1 rounded-lg bg-gray-800 light:bg-gray-200">
                         Files: {files.length}/{MAX_FILES}
                     </p>
-                    <p className="px-2.5 rounded-lg bg-gray-800 light:bg-gray-200">
+                    <p className="px-2.5 py-1 rounded-lg bg-gray-800 light:bg-gray-200">
                         Size: {getFileSize(files.map(f => f.content_size).reduce((a, c) => a + c, 0))}/{getFileSize(MAX_FILE_SIZE)}
                     </p>
                 </div>
@@ -31,14 +31,12 @@ export default function Attachments({ files, onRemove, onRemoveAll }: { files: M
 
 function Attachment({ file, onRemove }: { file: MessageFile, onRemove?: () => void }) {
     return (
-        <div className="flex px-4 gap-1 items-center rounded-md bg-gray-800 light:bg-gray-200">
-            <FileIcon className="size-8" />
-            <div className="flex flex-col gap-0.5 text-[12px] font-semibold">
-                <p className="px-2 py-1 rounded-lg bg-gray-800">
-                    Type: {getFileType(file.name)}<br />
-                    Name: {file.name}<br />
-                    Size: {getFileSize(file.content_size)}
-                </p>
+        <div className="flex px-2 py-1 gap-1 items-center rounded-md bg-gray-800 light:bg-gray-200">
+            <FileIcon className="size-14 p-1 rounded-md bg-gray-700 light:bg-gray-300" />
+            <div className="flex flex-col px-2 py-1 text-xs rounded-md bg-gray-700 light:bg-gray-300">
+                Type: {getFileType(file.name)}<br />
+                Name: {file.name}<br />
+                Size: {getFileSize(file.content_size)}
             </div>
             {onRemove &&
                 <button className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/40" onClick={onRemove}>
