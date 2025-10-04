@@ -41,6 +41,7 @@ export default function PromptBar() {
                     const newFiles = files.map((f, i) => ({
                         id: highestFileID + i + 1,
                         name: f.name,
+                        content: f.slice(),
                         content_size: f.size,
                         content_type: f.type
                     }))
@@ -184,7 +185,7 @@ function Files({ files, setFiles }: { files: File[], setFiles: React.Dispatch<Re
                     className="flex flex-wrap gap-2 p-1.5 rounded-xl border bg-gray-700 light:bg-gray-300 border-gray-200 light:border-gray-800"
                 >
                     <Attachments
-                        files={files.map((f, i) => ({ id: i, name: f.name, content_size: f.size, content_type: f.type }))}
+                        files={files.map((f, id) => ({ id, name: f.name, content: f.slice(), content_size: f.size, content_type: f.type }))}
                         onRemove={f => setFiles(previous => previous.filter(p => p.name + "|" + p.size !== f.name + "|" + f.content_size))}
                         onRemoveAll={() => setFiles([])}
                     />

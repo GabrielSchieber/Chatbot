@@ -17,6 +17,7 @@ export type Chat = {
 export type MessageFile = {
     id: number
     name: string
+    content: Blob | undefined
     content_size: number
     content_type: string
 }

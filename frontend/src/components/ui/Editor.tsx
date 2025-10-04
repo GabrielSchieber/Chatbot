@@ -53,6 +53,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
                                 ...addedFiles.map((file, index) => ({
                                     id: highestID + index + 1,
                                     name: file.name,
+                                    content: file.slice(),
                                     content_size: file.size,
                                     content_type: file.type
                                 }))]
@@ -132,11 +133,11 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
             const id = highestVisibleFileID + syntheticCounter
 
             toAddFiles.push([id, f])
-            toAddUI.push({ id, name: f.name, content_size: f.size, content_type: f.type })
+            toAddUI.push({ id, name: f.name, content: f.slice(), content_size: f.size, content_type: f.type })
         }
 
         if (toAddFiles.length > 0) {
-            setAddedFiles(prev => [...prev, ...toAddFiles.map(([_, f]) => f)])
+            setAddedFiles(previous => [...previous, ...toAddFiles.map(([_, f]) => f)])
         }
 
         event.target.value = ""
@@ -163,7 +164,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
     function getCurrentFiles() {
         const highestFileID = messages.flatMap(m => m.files).map(f => f.id).sort().at(-1) || 1
         const current = message.files.filter(f => !(new Set(removedFiles.map(f => f.id)).has(f.id)))
-        const added: MessageFile[] = addedFiles.map((f, i) => ({ id: highestFileID + i + 1, name: f.name, content_size: f.size, content_type: f.type }))
+        const added: MessageFile[] = addedFiles.map((f, i) => ({ id: highestFileID + i + 1, name: f.name, content: f.slice(), content_size: f.size, content_type: f.type }))
         return [...current, ...added]
     }
 
@@ -211,11 +212,7 @@ function Files({ files, onRemove, onRemoveAll }: { files: MessageFile[], onRemov
                     exit={{ opacity: 0, y: -5 }}
                     className="flex flex-wrap gap-2 p-2 rounded-xl border bg-gray-700 light:bg-gray-300 border-gray-200 light:border-gray-800"
                 >
-                    <Attachments
-                        files={files}
-                        onRemove={onRemove}
-                        onRemoveAll={onRemoveAll}
-                    />
+                    <Attachments files={files} onRemove={onRemove} onRemoveAll={onRemoveAll} />
                 </motion.div>
             )}
         </AnimatePresence>
