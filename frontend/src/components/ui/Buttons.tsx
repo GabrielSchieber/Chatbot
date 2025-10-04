@@ -1,10 +1,10 @@
-import { ArrowUpIcon, CheckIcon, CopyIcon, Pencil1Icon, PlusIcon, UpdateIcon } from "@radix-ui/react-icons"
+import { ArrowUpIcon, CheckIcon, CopyIcon, PauseIcon, Pencil1Icon, PlusIcon, UpdateIcon } from "@radix-ui/react-icons"
 import { DropdownMenu, Tooltip } from "radix-ui"
 import { useEffect, useState, type ReactNode } from "react"
 import { useParams } from "react-router"
 
 import { useChat } from "../../context/ChatProvider"
-import { regenerateMessage } from "../../utils/api"
+import { regenerateMessage, stopPendingChats } from "../../utils/api"
 import type { Model } from "../../types"
 
 export function AttachButton({ fileInputRef }: { fileInputRef: React.RefObject<HTMLInputElement | null> }) {
@@ -54,17 +54,20 @@ export function ModelButton({ icon, model, setModel }: {
 }
 
 export function SendButton({ sendMessage, isDisabled }: { sendMessage: () => void, isDisabled: boolean }) {
+    return <Button icon={<ArrowUpIcon className="size-5" />} onClick={sendMessage} isDisabled={isDisabled} />
+}
+
+export function StopButton() {
+    const { setPendingChat } = useChat()
+
     return (
-        <button
-            className="
-                p-1.5 rounded-full cursor-pointer bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500
-                disabled:hover:bg-gray-600 disabled:cursor-not-allowed transition
-            "
-            onClick={sendMessage}
-            disabled={isDisabled}
-        >
-            <ArrowUpIcon className="size-5" />
-        </button>
+        <Button
+            icon={<PauseIcon className="size-5" />}
+            onClick={() => {
+                stopPendingChats()
+                setPendingChat(null)
+            }}
+        />
     )
 }
 
@@ -207,4 +210,18 @@ function TooltipButton({ trigger, tooltip, onClick, isDisabled = false }: {
             </Tooltip.Root>
         </Tooltip.Provider>
     )
+}
+
+function Button({ icon, onClick, isDisabled = false }: { icon: ReactNode, onClick: () => void, isDisabled?: boolean }) {
+    return (
+        <button
+            className="
+                p-1.5 rounded-full cursor-pointer bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500
+                disabled:hover:bg-gray-600 disabled:cursor-not-allowed transition
+            "
+            onClick={onClick}
+            disabled={isDisabled}
+        >
+            {icon}
+        </button>)
 }

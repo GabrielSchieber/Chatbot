@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { useNavigate, useParams } from "react-router"
 
 import Attachments from "../ui/Attachments"
-import { AttachButton, ModelButton, SendButton } from "../ui/Buttons"
+import { AttachButton, ModelButton, SendButton, StopButton } from "../ui/Buttons"
 import TextArea from "../ui/TextArea"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
@@ -155,7 +155,11 @@ export default function PromptBar() {
                                 <AttachButton fileInputRef={fileInputRef} />
                                 <ModelButton icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
                             </div>
-                            <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} />
+                            {pendingChat !== null ? (
+                                <StopButton />
+                            ) : (
+                                <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} />
+                            )}
                         </div>
                     </motion.div>
                 ) : (
@@ -165,7 +169,11 @@ export default function PromptBar() {
                             <ModelButton icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
                         </div>
                         <TextArea text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />
-                        <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} />
+                        {pendingChat !== null ? (
+                            <StopButton />
+                        ) : (
+                            <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} />
+                        )}
                     </motion.div>
                 )}
             </motion.div>
