@@ -106,13 +106,8 @@ export default function PromptBar() {
     }
 
     useEffect(() => {
-        if (files.length > 0) {
-            setIsExtended(true)
-        } else {
-            const lineCount = text.split("\n").length
-            setIsExtended(lineCount > 1 || text.length > 80)
-        }
-    }, [text, files])
+        setIsExtended(text.split("\n").length > 1 || text.length > 80)
+    }, [text])
 
     return (
         <>
@@ -139,43 +134,27 @@ export default function PromptBar() {
             <motion.div
                 layout
                 transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
-                className="w-full max-w-3xl mx-auto mb-5 p-2 rounded-2xl bg-gray-800 light:bg-gray-200"
+                className="flex flex-col gap-1 w-[60vw] mb-5 px-2 py-1 rounded-2xl bg-gray-800 light:bg-gray-200"
             >
                 <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
 
-                {isExtended ? (
-                    <motion.div layout className="flex flex-col gap-1">
-                        <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
-                            <Files files={files} setFiles={setFiles} />
-                            <TextArea text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />
-                        </div>
+                <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
+                    <Files files={files} setFiles={setFiles} />
+                    {isExtended && <TextArea text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />}
+                </div>
 
-                        <div className="flex justify-between items-center px-1">
-                            <div className="flex gap-1">
-                                <AttachButton fileInputRef={fileInputRef} />
-                                <ModelButton icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
-                            </div>
-                            {pendingChat !== null ? (
-                                <StopButton />
-                            ) : (
-                                <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} />
-                            )}
-                        </div>
-                    </motion.div>
-                ) : (
-                    <motion.div layout className="flex items-center justify-between gap-2">
-                        <div className="flex gap-1">
-                            <AttachButton fileInputRef={fileInputRef} />
-                            <ModelButton icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
-                        </div>
-                        <TextArea text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />
-                        {pendingChat !== null ? (
-                            <StopButton />
-                        ) : (
-                            <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} />
-                        )}
-                    </motion.div>
-                )}
+                <div className="flex gap-2 items-center justify-between">
+                    <div className="flex gap-1">
+                        <AttachButton fileInputRef={fileInputRef} />
+                        <ModelButton icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
+                    </div>
+                    {!isExtended && <TextArea text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />}
+                    {pendingChat !== null ? (
+                        <StopButton />
+                    ) : (
+                        <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} />
+                    )}
+                </div>
             </motion.div>
         </>
     )
