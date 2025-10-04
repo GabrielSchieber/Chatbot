@@ -12,7 +12,7 @@ import { newMessage } from "../../utils/api"
 import { getFileSize } from "../../utils/file"
 import type { Model } from "../../types"
 
-export default function PromptBar() {
+export default function Prompt() {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
