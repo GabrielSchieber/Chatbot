@@ -129,7 +129,7 @@ export function RegenerateButton({ index, model }: { index: number, model?: Mode
                 <Tooltip.Root>
                     <Tooltip.Trigger asChild>
                         <DropdownMenu.Trigger
-                            className="p-2 rounded-lg hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-2 rounded-lg cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={pendingChat !== null || isLoading}
                         >
                             <UpdateIcon className="size-4.5" />
@@ -182,7 +182,7 @@ function TooltipButton({ trigger, tooltip, onClick, isDisabled = false }: {
         <Tooltip.Provider delayDuration={200}>
             <Tooltip.Root>
                 <Tooltip.Trigger
-                    className="p-2 rounded-lg hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 rounded-lg cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={onClick}
                     disabled={isDisabled}
                 >
