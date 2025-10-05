@@ -9,17 +9,22 @@ import type { Chat } from "../../types"
 
 export default function History() {
     const { chatUUID } = useParams()
-    const [renameChatUUID, setRenameChatUUID] = useState<string | null>(null)
-    const [renameTitle, setRenameTitle] = useState("")
-    const [selectedDropdownIndex, setSelectedDropdownIndex] = useState(-1)
+
+    const historyRef = useRef<HTMLDivElement | null>(null)
+    const shouldSetChats = useRef(true)
 
     const [chats, setChats] = useState<Chat[]>([])
 
     const [offset, setOffset] = useState(0)
     const [loading, setLoading] = useState(false)
     const [hasMore, setHasMore] = useState(true)
-    const historyRef = useRef<HTMLDivElement>(null)
-    const shouldSetChats = useRef(true)
+
+    const [renameUUID, setRenameUUID] = useState("")
+    const [renameTitle, setRenameTitle] = useState("")
+
+    const [hoveringEntryIndex, setHoveringEntryIndex] = useState(-1)
+    const [hoveringDropdownIndex, setHoveringDropdownIndex] = useState(-1)
+    const [selectedDropdownIndex, setSelectedDropdownIndex] = useState(-1)
 
     async function loadMoreChats() {
         if (loading || !hasMore) return
@@ -44,40 +49,8 @@ export default function History() {
         }
     }
 
-    useEffect(() => {
-        if (!shouldSetChats.current) return
-        shouldSetChats.current = false
-        loadMoreChats()
-    }, [])
-
-    useEffect(() => {
-        const div = historyRef.current
-        if (!div) return
-
-        function onScroll() {
-            if (div !== null && div.scrollTop + div.clientHeight >= div.scrollHeight - 50) {
-                shouldSetChats.current = true
-                loadMoreChats()
-            }
-        }
-        div.addEventListener("scroll", onScroll)
-        return () => div.removeEventListener("scroll", onScroll)
-    }, [offset, loading])
-
-    useEffect(() => {
-        getChats(0, 30).then(response => {
-            if (response.ok) {
-                response.json().then(data => {
-                    setChats(data.chats)
-                    setOffset(data.chats.length)
-                    setHasMore(data.has_more)
-                })
-            }
-        })
-    }, [chatUUID])
-
     function startRename(chat: Chat) {
-        setRenameChatUUID(chat.uuid)
+        setRenameUUID(chat.uuid)
         setRenameTitle(chat.title)
         setTimeout(() => document.querySelector("input")?.focus(), 100)
     }
@@ -94,7 +67,10 @@ export default function History() {
                 return previousChats
             })
         }
-        setRenameChatUUID(null)
+        setRenameUUID("")
+        setHoveringEntryIndex(-1)
+        setSelectedDropdownIndex(-1)
+        setHoveringDropdownIndex(-1)
     }
 
     function handleDelete(uuid: string) {
@@ -112,6 +88,41 @@ export default function History() {
         })
     }
 
+    useEffect(() => {
+        if (!shouldSetChats.current) return
+        shouldSetChats.current = false
+        loadMoreChats()
+    }, [])
+
+    useEffect(() => {
+        getChats(0, 30).then(response => {
+            if (response.ok) {
+                response.json().then(data => {
+                    setChats(data.chats)
+                    setOffset(data.chats.length)
+                    setHasMore(data.has_more)
+                })
+            }
+        })
+    }, [chatUUID])
+
+    useEffect(() => {
+        const div = historyRef.current
+        if (!div) return
+
+        function onScroll() {
+            if (div !== null && div.scrollTop + div.clientHeight >= div.scrollHeight - 50) {
+                shouldSetChats.current = true
+                loadMoreChats()
+            }
+        }
+
+        div.addEventListener("scroll", onScroll)
+        return () => div.removeEventListener("scroll", onScroll)
+    }, [offset, loading])
+
+    const dropdowmItemClassNames = "px-4 py-2 text-center rounded-xl outline-none cursor-pointer"
+
     return (
         <div
             ref={historyRef}
@@ -119,77 +130,89 @@ export default function History() {
             style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
         >
             <p className="pl-2 text-sm text-gray-400">Chats</p>
-            <div className="history-entries">
-                {chats.map((chat, index) => (
-                    <div
-                        key={chat.uuid}
-                        className={`
-                            flex group px-2 py-1 justify-between rounded
-                            ${(chatUUID === chat.uuid || renameChatUUID === chat.uuid) && "bg-gray-700 light:bg-gray-400/40"}
-                            ${selectedDropdownIndex === index ? "bg-gray-600 light:bg-gray-300" : "hover:bg-gray-600 light:hover:bg-gray-300"}
-                        `}
-                    >
-                        {renameChatUUID === chat.uuid ? (
-                            <input
-                                className="flex-1 rounded outline-none"
-                                type="text"
-                                value={renameTitle}
-                                onChange={e => setRenameTitle(e.target.value)}
-                                onBlur={_ => confirmRename(chat)}
-                                onKeyDown={e => {
-                                    if (e.key === "Enter") confirmRename(chat)
-                                    if (e.key === "Escape") setRenameChatUUID(null)
-                                }}
-                                autoFocus
-                            />
-                        ) : (
-                            <a className="flex-1 truncate" href={`/chat/${chat.uuid}`}>
-                                {chat.title}
-                            </a>
-                        )}
 
-                        <DropdownMenu.Root onOpenChange={o => setSelectedDropdownIndex(o ? index : -1)}>
-                            <DropdownMenu.Trigger
-                                className="
-                                    h-full py-1 self-center outline-none rounded hover:bg-gray-500 
-                                    light:hover:bg-gray-400 focus:bg-gray-500 light:focus:bg-gray-400
-                                "
-                            >
-                                <DotsVerticalIcon />
-                            </DropdownMenu.Trigger>
+            <div className="history-entries flex flex-col gap-1">
+                {chats.map((c, i) => (
+                    renameUUID === c.uuid ? (
+                        <input
+                            key={`input-${c.uuid}`}
+                            className="px-2 py-1 outline-none rounded-lg bg-gray-700 light:bg-gray-300 focus:bg-gray-700 light:focus:bg-gray-300"
+                            type="text"
+                            value={renameTitle}
+                            onChange={e => setRenameTitle(e.target.value)}
+                            onBlur={_ => confirmRename(c)}
+                            onKeyDown={e => {
+                                if (e.key === "Enter") confirmRename(c)
+                                if (e.key === "Escape") setRenameUUID("")
+                            }}
+                            autoFocus
+                        />
+                    ) : (
+                        <a
+                            key={`a-${c.uuid}`}
+                            className={`
+                                flex gap-1 px-2 py-1 items-center justify-between rounded-lg outline-none
+                                hover:bg-gray-700 light:hover:bg-gray-300 focus:bg-gray-700 light:focus:bg-gray-300
+                                ${chatUUID === c.uuid ? "bg-gray-700/70 light:bg-gray-300/70" : selectedDropdownIndex === i && "bg-gray-700 light:hover:bg-gray-300"}
+                            `}
+                            href={(selectedDropdownIndex === i || hoveringDropdownIndex === i) ? undefined : `/chat/${c.uuid}`}
+                            onFocus={_ => setHoveringEntryIndex(i)}
+                            onBlur={e => {
+                                const related = (e as React.FocusEvent<HTMLAnchorElement>).relatedTarget as Node | null
+                                if (related && e.currentTarget.contains(related)) return
+                                setHoveringEntryIndex(-1)
+                            }}
+                            onMouseEnter={_ => setHoveringEntryIndex(i)}
+                            onMouseLeave={_ => setHoveringEntryIndex(-1)}
+                        >
+                            {c.title}
 
-                            <DropdownMenu.Content className="bg-gray-700 light:bg-gray-200 p-2 rounded-xl shadow-xl/30 translate-x-7" sideOffset={2}>
-                                <DropdownMenu.Item
-                                    className="
-                                        px-4 py-2 text-center outline-none rounded-xl select-none cursor-pointer
-                                        hover:bg-gray-600 light:hover:bg-gray-300 focus:bg-gray-600 light:focus:bg-gray-300
-                                    "
-                                    onSelect={_ => startRename(chat)}
-                                >
-                                    Rename
-                                </DropdownMenu.Item>
+                            {(hoveringEntryIndex === i || selectedDropdownIndex === i) &&
+                                <DropdownMenu.Root onOpenChange={o => setSelectedDropdownIndex(o ? i : -1)} modal={false}>
+                                    <DropdownMenu.Trigger
+                                        className="
+                                            py-1 cursor-pointer rounded outline-none
+                                            hover:bg-gray-600 light:hover:bg-gray-400 focus:bg-gray-600 light:focus:bg-gray-400
+                                        "
+                                        onClick={e => e.preventDefault()}
+                                    >
+                                        <DotsVerticalIcon />
+                                    </DropdownMenu.Trigger>
 
-                                <ConfirmDialog
-                                    trigger={
+                                    <DropdownMenu.Content
+                                        className="flex flex-col gap-1 p-2 rounded-xl translate-x-8 bg-gray-700 light:bg-gray-300"
+                                        onMouseEnter={_ => setHoveringDropdownIndex(i)}
+                                        onMouseLeave={_ => setHoveringDropdownIndex(-1)}
+                                        sideOffset={4}
+                                    >
                                         <DropdownMenu.Item
-                                            className="
-                                                px-4 py-2 text-center text-red-400 outline-none rounded-xl
-                                                select-none cursor-pointer hover:bg-red-300/30 focus:bg-red-300/40
-                                            "
-                                            onSelect={e => e.preventDefault()}
+                                            className={dropdowmItemClassNames + " hover:bg-gray-600 light:hover:bg-gray-400 focus:bg-gray-600 light:focus:bg-gray-400"}
+                                            onSelect={_ => startRename(c)}
                                         >
-                                            Delete
+                                            Rename
                                         </DropdownMenu.Item>
-                                    }
-                                    title="Delete Chat"
-                                    description={`Are you sure you want to delete "${chat.title}"? This action cannot be undone.`}
-                                    confirmText="Delete"
-                                    cancelText="Cancel"
-                                    onConfirm={() => handleDelete(chat.uuid)}
-                                />
-                            </DropdownMenu.Content>
-                        </DropdownMenu.Root>
-                    </div>
+
+                                        <ConfirmDialog
+                                            trigger={
+                                                <DropdownMenu.Item
+                                                    className={dropdowmItemClassNames + " text-red-400 hover:bg-red-400/20 focus:bg-red-400/20"}
+                                                    onSelect={e => e.preventDefault()}
+                                                >
+                                                    Delete
+                                                </DropdownMenu.Item>
+                                            }
+                                            title="Delete Chat"
+                                            description={`Are you sure you want to delete "${c.title}"? This action cannot be undone.`}
+                                            confirmText="Delete"
+                                            cancelText="Cancel"
+                                            onConfirm={() => handleDelete(c.uuid)}
+
+                                        />
+                                    </DropdownMenu.Content>
+                                </DropdownMenu.Root>
+                            }
+                        </a>
+                    )
                 ))}
             </div>
 
