@@ -1,5 +1,5 @@
-import { ArrowUpIcon, CheckIcon, CopyIcon, PauseIcon, Pencil1Icon, PlusIcon, UpdateIcon } from "@radix-ui/react-icons"
-import { DropdownMenu, Tooltip } from "radix-ui"
+import { ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, CopyIcon, PauseIcon, Pencil1Icon, PlusIcon, UpdateIcon } from "@radix-ui/react-icons"
+import { DropdownMenu, Select, Tooltip } from "radix-ui"
 import { useEffect, useState, type ReactNode } from "react"
 import { useParams } from "react-router"
 
@@ -18,38 +18,47 @@ export function AttachButton({ fileInputRef }: { fileInputRef: React.RefObject<H
     )
 }
 
-export function ModelButton({ icon, model, setModel }: {
-    icon: React.ReactNode
-    model: Model
-    setModel: React.Dispatch<React.SetStateAction<Model>>
-}) {
-    function Item({ m }: { m: Model }) {
-        return (
-            <DropdownMenu.Item
-                className="w-40 p-2 rounded-md cursor-pointer hover:bg-gray-800/50 light:hover:bg-gray-200/50"
-                onClick={() => setModel(m)}
-            >
-                <div className="flex gap-2 items-center justify-between">
-                    {m}{m === model && <CheckIcon className="size-5" />}
-                </div>
-            </DropdownMenu.Item>
-        )
-    }
-
-    const models: Model[] = ["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]
-
+export function ModelSelect({ model, setModel }: { model: Model, setModel: React.Dispatch<React.SetStateAction<Model>> }) {
     return (
-        <DropdownMenu.Root>
-            <DropdownMenu.Trigger className="p-1 rounded-md cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300 transition">
-                {icon}
-            </DropdownMenu.Trigger>
+        <Select.Root value={model} onValueChange={v => setModel(v as Model)}>
+            <Select.Trigger className="flex items-center gap-2 px-2 cursor-pointer rounded hover:bg-gray-700 light:hover:bg-gray-300">
+                <Select.Value placeholder="Select model..." />
+                <Select.Icon>
+                    <ChevronDownIcon />
+                </Select.Icon>
+            </Select.Trigger>
 
-            <DropdownMenu.Content className="flex flex-col gap-1 p-1 rounded-md bg-gray-700 light:bg-gray-300" sideOffset={4}>
-                {models.map(m => (
-                    <Item key={m} m={m} />
-                ))}
-            </DropdownMenu.Content>
-        </DropdownMenu.Root>
+            <Select.Portal>
+                <Select.Content position="popper">
+                    <Select.ScrollUpButton>
+                        <ChevronUpIcon />
+                    </Select.ScrollUpButton>
+
+                    <Select.Viewport className="flex flex-col gap-1 p-2 rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200">
+                        {[(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
+                            <Select.Item
+                                key={m}
+                                value={m}
+                                className={`
+                                    flex gap-1 w-40 px-2 py-1 items-center justify-between rounded truncate cursor-pointer outline-none
+                                    focus:bg-gray-600 light:focus:bg-gray-400 hover:bg-gray-600 light:hover:bg-gray-400
+                                    ${m === model ? "bg-gray-700 light:bg-gray-300" : "bg-gray-700/50 light:bg-gray-300/50"}
+                                `}
+                            >
+                                <Select.ItemText>{m}</Select.ItemText>
+                                <Select.ItemIndicator className="ml-auto">
+                                    <CheckIcon className="size-5" />
+                                </Select.ItemIndicator>
+                            </Select.Item>
+                        ))]}
+                    </Select.Viewport>
+
+                    <Select.ScrollDownButton>
+                        <ChevronDownIcon />
+                    </Select.ScrollDownButton>
+                </Select.Content>
+            </Select.Portal>
+        </Select.Root>
     )
 }
 
@@ -170,9 +179,10 @@ export function RegenerateButton({ index, model }: { index: number, model?: Mode
                             <DropdownMenu.Item
                                 key={m}
                                 className={`
-                                        flex gap-1 w-40 px-2 py-1 items-center justify-between rounded truncate cursor-pointer hover:bg-gray-600
-                                        light:hover:bg-gray-400/50 ${m === model ? "bg-gray-600/90 light:bg-gray-400/40" : "bg-gray-700 light:bg-gray-300"}
-                                    `}
+                                    flex gap-1 w-40 px-2 py-1 items-center justify-between rounded truncate cursor-pointer outline-none
+                                    focus:bg-gray-600 light:focus:bg-gray-400 hover:bg-gray-600 light:hover:bg-gray-400
+                                    ${m === model ? "bg-gray-700 light:bg-gray-300" : "bg-gray-700/50 light:bg-gray-300/50"}
+                                `}
                                 onSelect={_ => regenerate(m)}
                             >
                                 {m}

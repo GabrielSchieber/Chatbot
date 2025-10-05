@@ -1,10 +1,10 @@
-import { BoxModelIcon, Cross2Icon } from "@radix-ui/react-icons"
+import { Cross2Icon } from "@radix-ui/react-icons"
 import { AnimatePresence, motion } from "motion/react"
 import { useRef, useState } from "react"
 import { useParams } from "react-router"
 
 import Attachments from "./Attachments"
-import { AttachButton, ModelButton, SendButton } from "./Buttons"
+import { AttachButton, ModelSelect, SendButton } from "./Buttons"
 import TextArea from "./TextArea"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
@@ -19,7 +19,6 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
 
     const message = messages[index]
 
-    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
 
     const [text, setText] = useState(message.text)
@@ -183,13 +182,13 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
             <motion.div layout className="flex flex-col gap-1">
                 <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
                     <Files files={getCurrentFiles()} onRemove={removeFile} onRemoveAll={removeFiles} />
-                    <TextArea ref={textAreaRef} text={text} setText={setText} sendMessageWithEvent={() => { }} />
+                    <TextArea text={text} setText={setText} sendMessageWithEvent={() => { }} />
                 </div>
 
                 <div className="flex justify-between items-center px-1">
                     <div className="flex gap-1">
                         <AttachButton fileInputRef={fileInputRef} />
-                        <ModelButton icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
+                        <ModelSelect model={model} setModel={setModel} />
                     </div>
                     <div className="flex gap-1">
                         <button className="p-1.5 rounded-full cursor-pointer bg-red-500/70 hover:bg-red-600/70 transition" onClick={_ => setIndex(-1)}>

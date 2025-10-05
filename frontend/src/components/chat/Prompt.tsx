@@ -1,10 +1,10 @@
-import { BoxModelIcon, Cross2Icon } from "@radix-ui/react-icons"
+import { Cross2Icon } from "@radix-ui/react-icons"
 import { motion, AnimatePresence } from "motion/react"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import { useNavigate, useParams } from "react-router"
 
 import Attachments from "../ui/Attachments"
-import { AttachButton, ModelButton, SendButton, StopButton } from "../ui/Buttons"
+import { AttachButton, ModelSelect, SendButton, StopButton } from "../ui/Buttons"
 import TextArea from "../ui/TextArea"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
@@ -18,21 +18,13 @@ export default function Prompt() {
 
     const { setMessages, pendingChat, setPendingChat, isLoading } = useChat()
 
-    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
-
-    const selectionStart = useRef(0)
-    const selectionEnd = useRef(0)
 
     const [text, setText] = useState("")
     const [files, setFiles] = useState<File[]>([])
     const [model, setModel] = useState<Model>("SmolLM2-135M")
 
     const [shouldShowPendingNotification, setShouldShowPendingNotification] = useState(false)
-
-    const [isExtended, setIsExtended] = useState(false)
-
-    const isSendButtonDisabled = (text.trim() === "" && files.length === 0) || pendingChat !== null || isLoading
 
     function sendMessage() {
         newMessage(chatUUID || "", text, model, files).then(response => {
@@ -109,15 +101,6 @@ export default function Prompt() {
         e.target.value = ""
     }
 
-    useEffect(() => {
-        setIsExtended(text.split("\n").length > 1 || text.length > 80)
-    }, [text])
-
-    useEffect(() => {
-        textAreaRef.current?.setSelectionRange(selectionStart.current, selectionEnd.current)
-        textAreaRef.current?.focus()
-    }, [isExtended])
-
     return (
         <>
             <AnimatePresence>
@@ -149,37 +132,18 @@ export default function Prompt() {
 
                 <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
                     <Files files={files} setFiles={setFiles} />
-                    {isExtended &&
-                        <TextArea
-                            ref={textAreaRef}
-                            text={text}
-                            setText={setText}
-                            sendMessageWithEvent={sendMessageWithEvent}
-                            selectionStart={selectionStart}
-                            selectionEnd={selectionEnd}
-                        />
-                    }
+                    <TextArea text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />
                 </div>
 
                 <div className="flex gap-2 items-center justify-between">
                     <div className="flex gap-1">
                         <AttachButton fileInputRef={fileInputRef} />
-                        <ModelButton icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
+                        <ModelSelect model={model} setModel={setModel} />
                     </div>
-                    {!isExtended &&
-                        <TextArea
-                            ref={textAreaRef}
-                            text={text}
-                            setText={setText}
-                            sendMessageWithEvent={sendMessageWithEvent}
-                            selectionStart={selectionStart}
-                            selectionEnd={selectionEnd}
-                        />
-                    }
                     {pendingChat !== null ? (
                         <StopButton />
                     ) : (
-                        <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} />
+                        <SendButton sendMessage={sendMessage} isDisabled={(text.trim() === "" && files.length === 0) || pendingChat !== null || isLoading} />
                     )}
                 </div>
             </motion.div>
