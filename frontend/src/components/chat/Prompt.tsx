@@ -18,7 +18,11 @@ export default function Prompt() {
 
     const { setMessages, pendingChat, setPendingChat, isLoading } = useChat()
 
+    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+    const selectionStart = useRef(0)
+    const selectionEnd = useRef(0)
 
     const [text, setText] = useState("")
     const [files, setFiles] = useState<File[]>([])
@@ -109,6 +113,11 @@ export default function Prompt() {
         setIsExtended(text.split("\n").length > 1 || text.length > 80)
     }, [text])
 
+    useEffect(() => {
+        textAreaRef.current?.setSelectionRange(selectionStart.current, selectionEnd.current)
+        textAreaRef.current?.focus()
+    }, [isExtended])
+
     return (
         <>
             <AnimatePresence>
@@ -140,7 +149,16 @@ export default function Prompt() {
 
                 <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
                     <Files files={files} setFiles={setFiles} />
-                    {isExtended && <TextArea text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />}
+                    {isExtended &&
+                        <TextArea
+                            ref={textAreaRef}
+                            text={text}
+                            setText={setText}
+                            sendMessageWithEvent={sendMessageWithEvent}
+                            selectionStart={selectionStart}
+                            selectionEnd={selectionEnd}
+                        />
+                    }
                 </div>
 
                 <div className="flex gap-2 items-center justify-between">
@@ -148,7 +166,16 @@ export default function Prompt() {
                         <AttachButton fileInputRef={fileInputRef} />
                         <ModelButton icon={<BoxModelIcon className="size-6" />} model={model} setModel={setModel} />
                     </div>
-                    {!isExtended && <TextArea text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />}
+                    {!isExtended &&
+                        <TextArea
+                            ref={textAreaRef}
+                            text={text}
+                            setText={setText}
+                            sendMessageWithEvent={sendMessageWithEvent}
+                            selectionStart={selectionStart}
+                            selectionEnd={selectionEnd}
+                        />
+                    }
                     {pendingChat !== null ? (
                         <StopButton />
                     ) : (

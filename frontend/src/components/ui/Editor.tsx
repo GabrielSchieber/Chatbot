@@ -19,7 +19,9 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
 
     const message = messages[index]
 
+    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
+
     const [text, setText] = useState(message.text)
     const [model, setModel] = useState<Model>(messages[index + 1].model || "SmolLM2-135M")
 
@@ -181,7 +183,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
             <motion.div layout className="flex flex-col gap-1">
                 <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
                     <Files files={getCurrentFiles()} onRemove={removeFile} onRemoveAll={removeFiles} />
-                    <TextArea text={text} setText={setText} sendMessageWithEvent={() => { }} />
+                    <TextArea ref={textAreaRef} text={text} setText={setText} sendMessageWithEvent={() => { }} />
                 </div>
 
                 <div className="flex justify-between items-center px-1">
