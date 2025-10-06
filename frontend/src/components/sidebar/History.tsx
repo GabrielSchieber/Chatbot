@@ -1,22 +1,23 @@
 import { DotsVerticalIcon } from "@radix-ui/react-icons"
 import { DropdownMenu } from "radix-ui"
-import { useEffect, useRef, useState } from "react"
-import { useParams } from "react-router"
+import { useEffect, useRef, useState, type RefObject } from "react"
 
 import ConfirmDialog from "../ui/ConfirmDialog"
 import { deleteChat, getChats, renameChat } from "../../utils/api"
 import type { Chat } from "../../types"
 
-export default function History() {
-    const { chatUUID } = useParams()
-
-    const historyRef = useRef<HTMLDivElement | null>(null)
-    const shouldSetChats = useRef(true)
+export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }: {
+    sidebarRef: RefObject<HTMLDivElement | null>
+    topButtonsRef: RefObject<HTMLDivElement | null>
+    settingsButtonRef: RefObject<HTMLDivElement | null>
+}) {
+    const offset = useRef(0)
+    const limit = useRef(1)
+    const isLoadingRef = useRef(true)
 
     const [chats, setChats] = useState<Chat[]>([])
 
-    const [offset, setOffset] = useState(0)
-    const [loading, setLoading] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
     const [hasMore, setHasMore] = useState(true)
 
     const [renameUUID, setRenameUUID] = useState("")
@@ -26,11 +27,14 @@ export default function History() {
     const [hoveringDropdownIndex, setHoveringDropdownIndex] = useState(-1)
     const [selectedDropdownIndex, setSelectedDropdownIndex] = useState(-1)
 
-    async function loadMoreChats() {
-        if (loading || !hasMore) return
-        setLoading(true)
+    const dropdowmItemClassNames = "px-3 py-2 text-center cursor-pointer outline-none rounded-lg"
 
-        const response = await getChats(offset, 30)
+    async function loadMoreChats() {
+        if (isLoading || !hasMore || !isLoadingRef.current) return
+        setIsLoading(true)
+        isLoadingRef.current = false
+
+        const response = await getChats(offset.current, limit.current)
         if (response.ok) {
             response.json().then((data: { chats: Chat[], has_more: boolean }) => {
                 const newChats = data.chats
@@ -40,11 +44,12 @@ export default function History() {
                         const seen = new Set(previous.map(c => c.uuid))
                         return [...previous, ...newChats.filter(c => !seen.has(c.uuid))]
                     })
-                    setOffset(previous => previous + newChats.length)
+                    offset.current += newChats.length
                 }
 
                 setHasMore(data.has_more)
-                setLoading(false)
+                setIsLoading(false)
+                isLoadingRef.current = true
             })
         }
     }
@@ -88,50 +93,51 @@ export default function History() {
         })
     }
 
+    function getFullHeightOfDiv(div: HTMLDivElement) {
+        const style = getComputedStyle(div)
+        return parseInt(style.paddingBottom) + div.offsetHeight + parseInt(style.paddingTop)
+    }
+
+    function updateLimit() {
+        if (sidebarRef.current && topButtonsRef.current && settingsButtonRef.current) {
+            const visibleHeight = getFullHeightOfDiv(sidebarRef.current) - getFullHeightOfDiv(topButtonsRef.current) - getFullHeightOfDiv(settingsButtonRef.current)
+            limit.current = Math.max(Math.round(visibleHeight / 30), 1)
+        }
+    }
+
     useEffect(() => {
-        if (!shouldSetChats.current) return
-        shouldSetChats.current = false
+        updateLimit()
         loadMoreChats()
+
+        let previousHeight = window.innerHeight
+        window.addEventListener("resize", _ => {
+            if (window.innerHeight > previousHeight) {
+                previousHeight = window.innerHeight
+                updateLimit()
+                loadMoreChats()
+            }
+        })
     }, [])
 
     useEffect(() => {
-        getChats(0, 30).then(response => {
-            if (response.ok) {
-                response.json().then(data => {
-                    setChats(data.chats)
-                    setOffset(data.chats.length)
-                    setHasMore(data.has_more)
-                })
-            }
-        })
-    }, [chatUUID])
-
-    useEffect(() => {
-        const div = historyRef.current
+        const div = sidebarRef.current
         if (!div) return
 
         function onScroll() {
             if (div !== null && div.scrollTop + div.clientHeight >= div.scrollHeight - 50) {
-                shouldSetChats.current = true
                 loadMoreChats()
             }
         }
 
         div.addEventListener("scroll", onScroll)
         return () => div.removeEventListener("scroll", onScroll)
-    }, [offset, loading])
-
-    const dropdowmItemClassNames = "px-4 py-2 text-center rounded-xl outline-none cursor-pointer"
+    }, [offset.current, isLoading])
 
     return (
-        <div
-            ref={historyRef}
-            className="flex flex-col gap-1 p-2 w-full h-full p-1 overflow-x-hidden overflow-y-auto"
-            style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
-        >
-            <p className="pl-2 text-sm text-gray-400">Chats</p>
+        <div className="flex-1 py-4">
+            <p className="pl-3 text-sm text-gray-400">Chats</p>
 
-            <div className="history-entries flex flex-col gap-1">
+            <div className="flex flex-col gap-1 p-2">
                 {chats.map((c, i) => (
                     renameUUID === c.uuid ? (
                         <input
@@ -150,11 +156,7 @@ export default function History() {
                     ) : (
                         <a
                             key={`a-${c.uuid}`}
-                            className={`
-                                flex gap-1 px-2 py-1 items-center justify-between rounded-lg outline-none
-                                hover:bg-gray-700 light:hover:bg-gray-300 focus:bg-gray-700 light:focus:bg-gray-300
-                                ${chatUUID === c.uuid ? "bg-gray-700/70 light:bg-gray-300/70" : selectedDropdownIndex === i && "bg-gray-700 light:hover:bg-gray-300"}
-                            `}
+                            className="flex px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-700 light:hover:bg-gray-300"
                             href={(selectedDropdownIndex === i || hoveringDropdownIndex === i) ? undefined : `/chat/${c.uuid}`}
                             onFocus={_ => setHoveringEntryIndex(i)}
                             onBlur={e => {
@@ -180,7 +182,7 @@ export default function History() {
                                     </DropdownMenu.Trigger>
 
                                     <DropdownMenu.Content
-                                        className="flex flex-col gap-1 p-2 rounded-xl translate-x-8 bg-gray-700 light:bg-gray-300"
+                                        className="flex flex-col gap-1 p-2 rounded-xl translate-x-8 bg-gray-700 light:bg-gray-300 z-10"
                                         onMouseEnter={_ => setHoveringDropdownIndex(i)}
                                         onMouseLeave={_ => setHoveringDropdownIndex(-1)}
                                         sideOffset={4}
@@ -216,11 +218,11 @@ export default function History() {
                 ))}
             </div>
 
-            {loading ? (
+            {isLoading ? (
                 <p className="text-center text-gray-400">Loading ...</p>
             ) : chats.length === 0 ? (
                 <p className="text-center text-gray-400">You don't have any chats</p>
-            ) : !hasMore && chats.length > 20 && (
+            ) : !hasMore && (
                 <p className="text-center text-gray-400">No more chats</p>
             )}
         </div>
