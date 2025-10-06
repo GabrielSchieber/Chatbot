@@ -1,14 +1,19 @@
-import { ChevronLeftIcon, ChevronRightIcon, GearIcon, MagnifyingGlassIcon, PlusIcon } from "@radix-ui/react-icons"
+import { ChevronLeftIcon, ChevronRightIcon, GearIcon, PlusIcon } from "@radix-ui/react-icons"
 import { useRef, useState } from "react"
 
 import History from "./sidebar/History"
+import Search from "./sidebar/Search"
+import { useAuth } from "../context/AuthProvider"
+import { me } from "../utils/api"
 
 export default function Sidebar() {
+    const { user } = useAuth()
+
     const ref = useRef<HTMLDivElement | null>(null)
     const topButtonsRef = useRef<HTMLDivElement | null>(null)
     const settingsButtonRef = useRef<HTMLDivElement | null>(null)
 
-    const [isOpen, setIsOpen] = useState(true)
+    const [isOpen, setIsOpen] = useState(user ? user.has_sidebar_open : true)
 
     const itemClassNames = "flex gap-1 p-2 items-center rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"
 
@@ -21,8 +26,14 @@ export default function Sidebar() {
             `}
             style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
         >
-            <div ref={topButtonsRef} className="flex flex-col sticky top-0 gap-1 p-2 border-b bg-gray-800 light:bg-gray-200">
-                <button className={itemClassNames} onClick={_ => setIsOpen(!isOpen)}>
+            <div ref={topButtonsRef} className={`flex flex-col sticky top-0 gap-1 p-2 bg-gray-800 light:bg-gray-200 ${isOpen && "border-b"}`}>
+                <button
+                    className={itemClassNames}
+                    onClick={_ => {
+                        me(undefined, !isOpen)
+                        setIsOpen(!isOpen)
+                    }}
+                >
                     {isOpen ? (
                         <><ChevronLeftIcon className="size-5" /> Close Sidebar</>
                     ) : (
@@ -34,14 +45,12 @@ export default function Sidebar() {
                     <PlusIcon className="size-5" /> {isOpen && "New Chat"}
                 </a>
 
-                <button className={itemClassNames}>
-                    <MagnifyingGlassIcon className="size-5" /> {isOpen && "Search Chats"}
-                </button>
+                <Search isSidebarOpen={isOpen} itemClassNames={itemClassNames} />
             </div>
 
             {isOpen && <History sidebarRef={ref} topButtonsRef={topButtonsRef} settingsButtonRef={settingsButtonRef} />}
 
-            <div ref={settingsButtonRef} className="flex flex-col sticky bottom-0 p-2 border-t bg-gray-800 light:bg-gray-200">
+            <div ref={settingsButtonRef} className={`flex flex-col sticky bottom-0 p-2 bg-gray-800 light:bg-gray-200 ${isOpen && "border-t"}`}>
                 <button className={itemClassNames}>
                     <GearIcon className="size-5" /> {isOpen && "Settings"}
                 </button>

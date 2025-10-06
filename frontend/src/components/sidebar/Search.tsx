@@ -4,36 +4,40 @@ import { useEffect, useRef, useState } from "react"
 
 import { getChats, searchChats } from "../../utils/api"
 
-export default function Search({ isSidebarOpen }: { isSidebarOpen: boolean }) {
+export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
     type SearchEntry = { title: string, matches: string[], uuid: string }
 
+    const loaderRef = useRef<HTMLDivElement | null>(null)
+
     const [search, setSearch] = useState("")
-    const [results, setResults] = useState<SearchEntry[]>([])
+    const [entries, setEntries] = useState<SearchEntry[]>([])
     const [hasChats, setHasChats] = useState(false)
 
     const [offset, setOffset] = useState(0)
     const [hasMore, setHasMore] = useState(true)
-    const [loading, setLoading] = useState(false)
-    const loaderRef = useRef<HTMLDivElement | null>(null)
+    const [isLoading, setIsLoading] = useState(false)
 
-    function fetchResults(reset = false) {
-        if (loading) return
+    const limit = 10
 
-        setLoading(true)
+    function loadEntries(reset = false) {
+        if (isLoading) return
 
-        searchChats(search, reset ? 0 : offset, 10).then(response => {
+        setIsLoading(true)
+
+        searchChats(search, reset ? 0 : offset, limit).then(response => {
             if (response.ok) {
                 response.json().then((data: { chats: SearchEntry[], has_more: boolean }) => {
-                    setResults(previous => {
+                    setEntries(previous => {
                         const combined = reset ? data.chats : [...previous, ...data.chats]
                         const unique = Array.from(new Map(combined.map(c => [c.uuid, c])).values())
                         return unique
                     })
-                    setOffset(previous => (reset ? 10 : previous + 10))
+                    setOffset(previous => (reset ? limit : previous + limit))
                     setHasMore(data.has_more)
+                    setIsLoading(false)
                 })
             }
-        }).finally(() => setLoading(false))
+        })
     }
 
     useEffect(() => {
@@ -47,98 +51,100 @@ export default function Search({ isSidebarOpen }: { isSidebarOpen: boolean }) {
     useEffect(() => {
         if (!hasChats) return
         setOffset(0)
-        fetchResults(true)
+        loadEntries(true)
     }, [search])
 
     useEffect(() => {
         const observer = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && hasMore && !loading) {
-                fetchResults(false)
+            if (entries[0].isIntersecting && hasMore && !isLoading) {
+                loadEntries(false)
             }
         })
 
         if (loaderRef.current) observer.observe(loaderRef.current)
         return () => observer.disconnect()
-    }, [hasMore, loading])
+    }, [hasMore, isLoading])
 
     return (
         <Dialog.Root>
             <Dialog.Trigger
-                className="
-                    flex items-center gap-2 p-2 rounded outline-none cursor-pointer
-                    hover:bg-gray-700 light:hover:bg-gray-300 focus:bg-gray-700 light:focus:bg-gray-300
-                "
-                onClick={_ => fetchResults(true)}
+                className={itemClassNames}
+                onClick={_ => {
+                    setOffset(0)
+                    loadEntries(true)
+                }}
             >
-                <MagnifyingGlassIcon />
-                {isSidebarOpen && <span>Search</span>}
+                <MagnifyingGlassIcon className="size-5" /> {isSidebarOpen && "Search Chats"}
             </Dialog.Trigger>
 
-            <Dialog.Overlay className="fixed z-40 inset-0 bg-black/50" />
+            <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 bg-black/50" />
 
-            <Dialog.Content
-                className="
-                    fixed z-50 flex flex-col w-150 items-center
-                    top-[20vh] left-1/2 -translate-x-1/2
-                    rounded-xl bg-gray-800 light:bg-gray-200
-                "
-            >
-                <Dialog.Title hidden>Search</Dialog.Title>
-                <div className="flex w-full px-5 py-5 gap-5 border-b border-gray-600 light:border-gray-400">
-                    <input
-                        className="flex-1 outline-none placeholder-gray-400 light:placeholder-gray-600"
-                        type="text"
-                        placeholder="Search chats..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        autoFocus
-                    />
-                    <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
-                        <Cross1Icon className="size-4" />
-                    </Dialog.Close>
-                </div>
-
-                <div
-                    className="flex flex-col w-full max-h-[50vh] overflow-y-auto gap-3 p-3"
-                    style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
+                <Dialog.Content
+                    className="
+                        fixed flex flex-col w-150 items-center top-[20vh] left-1/2 -translate-x-1/2
+                        rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
+                    "
                 >
-                    {!hasChats ? (
-                        <p className="text-gray-400 light:text-gray-600 px-3 py-2">You have no chats to search.</p>
-                    ) : loading && results.length === 0 ? (
-                        <p className="text-gray-400 light:text-gray-600 px-3 py-2">Loading...</p>
-                    ) : results.length === 0 ? (
-                        <p className="text-gray-400 light:text-gray-600 px-3 py-2">No chats found.</p>
-                    ) : (
-                        <>
-                            {results.map(entry => (
-                                <a
-                                    key={entry.uuid}
-                                    className="flex gap-5 px-2 py-1 items-center rounded-lg hover:bg-gray-600 light:hover:bg-gray-300"
-                                    href={`/chat/${entry.uuid}`}
-                                >
-                                    <ChatBubbleIcon className="size-10" />
-                                    <div className="flex flex-col">
-                                        <p>{entry.title}</p>
-                                        {entry.matches.length > 0 && (
-                                            <ul>
-                                                {entry.matches.map((m, i) => (
-                                                    <li key={i}>{m.slice(0, 100)}...</li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                    </div>
-                                </a>
-                            ))}
+                    <Dialog.Title hidden>Search Chats</Dialog.Title>
+                    <Dialog.Description hidden>Search Chats</Dialog.Description>
 
-                            {loading && results.length > 0 && (
-                                <p className="text-gray-400 light:text-gray-600 px-3 py-2">Loading...</p>
-                            )}
-                        </>
-                    )}
+                    <div className="flex w-full gap-5 p-5 border-b border-gray-600 light:border-gray-400">
+                        <input
+                            className="flex-1 outline-none placeholder-gray-400 light:placeholder-gray-600"
+                            type="text"
+                            placeholder="Search chats..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            autoFocus
+                        />
+                        <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
+                            <Cross1Icon className="size-4" />
+                        </Dialog.Close>
+                    </div>
 
-                    {hasMore && <div ref={loaderRef} className="h-6"></div>}
-                </div>
-            </Dialog.Content>
+                    <div
+                        className="flex flex-col w-full max-h-[50vh] gap-3 p-3 overflow-y-auto"
+                        style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
+                    >
+                        {!hasChats ? (
+                            <p className="text-gray-400 light:text-gray-600 px-3 py-2">You have no chats to search.</p>
+                        ) : isLoading && entries.length === 0 ? (
+                            <p className="text-gray-400 light:text-gray-600 px-3 py-2">Loading...</p>
+                        ) : entries.length === 0 ? (
+                            <p className="text-gray-400 light:text-gray-600 px-3 py-2">No chats found.</p>
+                        ) : (
+                            <>
+                                {entries.map(e => (
+                                    <a
+                                        key={e.uuid}
+                                        className="flex gap-5 px-2 py-1 items-center rounded-lg hover:bg-gray-600 light:hover:bg-gray-300"
+                                        href={`/chat/${e.uuid}`}
+                                    >
+                                        <ChatBubbleIcon className="size-10" />
+                                        <div className="flex flex-col">
+                                            <p>{e.title}</p>
+                                            {e.matches.length > 0 && (
+                                                <ul>
+                                                    {e.matches.slice(0, 10).map((m, i) => (
+                                                        <li key={i}>{m.slice(0, 100)}...</li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    </a>
+                                ))}
+
+                                {isLoading && entries.length > 0 && (
+                                    <p className="text-gray-400 light:text-gray-600 px-3 py-2">Loading...</p>
+                                )}
+                            </>
+                        )}
+
+                        {hasMore && <div ref={loaderRef} className="h-6"></div>}
+                    </div>
+                </Dialog.Content>
+            </Dialog.Portal>
         </Dialog.Root>
     )
 }
