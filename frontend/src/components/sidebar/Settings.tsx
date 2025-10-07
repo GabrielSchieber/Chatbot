@@ -61,7 +61,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
 
     return (
         <Dialog.Root>
-            <Dialog.Trigger className={itemClassNames}>
+            <Dialog.Trigger className={itemClassNames} data-testid="open-settings">
                 <GearIcon className="size-5" /> {isSidebarOpen && "Settings"}
             </Dialog.Trigger>
 
@@ -76,7 +76,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                 >
                     <div className="flex justify-between items-center">
                         <Dialog.Title className="text-lg font-semibold">Settings</Dialog.Title>
-                        <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-200">
+                        <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-200" data-testid="close-settings">
                             <Cross1Icon className="size-5" />
                         </Dialog.Close>
                     </div>

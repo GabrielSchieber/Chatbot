@@ -9,9 +9,9 @@ import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
 import { newMessage } from "../../utils/api"
 import { getFileSize } from "../../utils/file"
-import type { Model } from "../../types"
+import type { Chat, Model } from "../../types"
 
-export default function Prompt() {
+export default function Prompt({ setChats }: { setChats: React.Dispatch<React.SetStateAction<Chat[]>> }) {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
@@ -57,7 +57,10 @@ export default function Prompt() {
                 setFiles([])
 
                 response.json().then(chat => {
-                    navigate(`/chat/${chat.uuid}`)
+                    if (!chatUUID) {
+                        navigate(`/chat/${chat.uuid}`)
+                        setChats(previous => [chat, ...previous])
+                    }
                     setPendingChat(chat)
                 })
             } else {

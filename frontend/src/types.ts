@@ -11,7 +11,7 @@ export type User = {
 export type Chat = {
     uuid: string
     title: string
-    pending_message: Message
+    pending_message: Message | undefined
 }
 
 export type MessageFile = {

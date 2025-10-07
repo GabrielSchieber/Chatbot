@@ -48,6 +48,9 @@ async def sample_model(chat: Chat):
         raise ValueError(f"Model {model} not installed")
     options = {"num_predict": 256, "temperature": 0.1, "top_p": 0.1}
 
+    if os.getenv("PLAYWRIGHT_TEST") == "True":
+        options["seed"] = 0
+
     messages: list[dict[str, str]] = await get_messages(chat.pending_message)
     message_index = len(messages)
 
@@ -66,6 +69,8 @@ async def sample_model(chat: Chat):
         chat.pending_message = None
         await safe_save_chat(chat)
         return
+
+    await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": chat.pending_message.text, "message_index": message_index})
 
     chat.pending_message = None
     await chat.asave()

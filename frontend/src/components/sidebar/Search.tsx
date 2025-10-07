@@ -76,6 +76,7 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
                     setOffset(0)
                     loadEntries(true)
                 }}
+                data-testid="search-chats"
             >
                 <MagnifyingGlassIcon className="size-5" /> {isSidebarOpen && "Search Chats"}
             </Dialog.Trigger>

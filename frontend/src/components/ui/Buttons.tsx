@@ -85,7 +85,16 @@ export function PlusDropdown({ fileInputRef, model, setModel }: {
 }
 
 export function SendButton({ sendMessage, isDisabled }: { sendMessage: () => void, isDisabled: boolean }) {
-    return <TooltipButton trigger={<ArrowUpIcon className="size-6" />} tooltip="Send" onClick={sendMessage} className={promptBarButtonClassNames} isDisabled={isDisabled} />
+    return (
+        <TooltipButton
+            trigger={<ArrowUpIcon className="size-6" />}
+            tooltip="Send"
+            onClick={sendMessage}
+            className={promptBarButtonClassNames}
+            isDisabled={isDisabled}
+            dataTestID="send"
+        />
+    )
 }
 
 export function StopButton() {
@@ -105,7 +114,15 @@ export function StopButton() {
 }
 
 export function CancelButton({ setIndex }: { setIndex: React.Dispatch<React.SetStateAction<number>> }) {
-    return <TooltipButton trigger={<Cross2Icon className="size-6" />} tooltip="Cancel" className={promptBarButtonClassNames} onClick={() => setIndex(-1)} />
+    return (
+        <TooltipButton
+            trigger={<Cross2Icon className="size-6" />}
+            tooltip="Cancel"
+            className={promptBarButtonClassNames}
+            onClick={() => setIndex(-1)}
+            dataTestID="cancel"
+        />
+    )
 }
 
 export function EditButton({ onClick }: { onClick: () => void }) {
@@ -118,6 +135,7 @@ export function EditButton({ onClick }: { onClick: () => void }) {
             className={messageButtonClassNames}
             onClick={onClick}
             isDisabled={pendingChat !== null || isLoading}
+            dataTestID="edit"
         />
     )
 }
@@ -135,6 +153,7 @@ export function CopyButton({ text }: { text: string }) {
                 setIsChecked(true)
                 setTimeout(() => setIsChecked(false), 2000)
             }}
+            dataTestID="copy"
         />
     )
 }
@@ -184,6 +203,7 @@ export function RegenerateButton({ index, model }: { index: number, model?: Mode
                         <DropdownMenu.Trigger
                             className="p-2 rounded-lg cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={pendingChat !== null || isLoading}
+                            data-testid="regenerate"
                         >
                             <UpdateIcon className={`size-4.5 ${isRotating && "animate-spin"}`} />
                         </DropdownMenu.Trigger>
@@ -204,7 +224,11 @@ export function RegenerateButton({ index, model }: { index: number, model?: Mode
                 </Tooltip.Root>
 
                 <DropdownMenu.Portal>
-                    <DropdownMenu.Content className="flex flex-col gap-1 p-2 rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200" sideOffset={5}>
+                    <DropdownMenu.Content
+                        className="flex flex-col gap-1 p-2 rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200"
+                        sideOffset={5}
+                        data-testid="regenerate-dropdown"
+                    >
                         {(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
                             <DropdownMenu.Item
                                 key={m}
@@ -214,6 +238,7 @@ export function RegenerateButton({ index, model }: { index: number, model?: Mode
                                     ${m === model ? "bg-gray-700 light:bg-gray-300" : "bg-gray-700/50 light:bg-gray-300/50"}
                                 `}
                                 onSelect={_ => regenerate(m)}
+                                data-testid="regenerate-dropdown-entry"
                             >
                                 {m}
                                 {m === model && <CheckIcon className="size-5" />}
@@ -226,18 +251,19 @@ export function RegenerateButton({ index, model }: { index: number, model?: Mode
     )
 }
 
-export function TooltipButton({ trigger, tooltip, onClick, className = "", isDisabled = false, asChild = false }: {
+export function TooltipButton({ trigger, tooltip, onClick, className = "", isDisabled = false, asChild = false, dataTestID }: {
     trigger: ReactNode
     tooltip: ReactNode
     className?: string
     onClick?: () => void
     isDisabled?: boolean
     asChild?: boolean
+    dataTestID?: string
 }) {
     return (
         <Tooltip.Provider delayDuration={200}>
             <Tooltip.Root>
-                <Tooltip.Trigger className={className} onClick={onClick} disabled={isDisabled} asChild={asChild}>
+                <Tooltip.Trigger className={className} onClick={onClick} disabled={isDisabled} asChild={asChild} data-testid={dataTestID}>
                     {trigger}
                 </Tooltip.Trigger>
                 <Tooltip.Portal>

@@ -9,7 +9,8 @@ export default defineConfig({
             name: "Backend",
             command: "python ../backend/manage.py testserver --no-input tests/fixture.json",
             port: 8000,
-            reuseExistingServer: true
+            reuseExistingServer: true,
+            env: { "PLAYWRIGHT_TEST": "True" }
         },
         {
             name: "Frontend",

@@ -66,7 +66,7 @@ async function loginWithTestUser(page: Page) {
 }
 
 async function waitForIndexPageToload(page: Page, chats: Chat[]) {
-    const historyPanel = page.locator("div[class='history-entries']").locator("..")
+    const historyPanel = page.locator("div[class~='history-entries']").locator("..")
     await expect(historyPanel).toBeVisible()
     await expect(historyPanel).not.toContainText("Loading ...")
     if (chats.length === 0) {

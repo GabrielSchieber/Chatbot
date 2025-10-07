@@ -15,27 +15,19 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
         event.preventDefault()
         setError("")
 
-        try {
-            const response = await submitFunction(email, password)
-            if (response.ok) {
-                if (type === "Signup") {
-                    const response = await login(email, password)
-                    if (response.ok) {
-                        location.href = "/"
-                    } else {
-                        alert("Error logging in after sign up")
-                    }
-                } else {
+        const response = await submitFunction(email, password)
+        if (response.ok) {
+            if (type === "Signup") {
+                const response = await login(email, password)
+                if (response.ok) {
                     location.href = "/"
+                } else {
+                    alert("Error logging in after sign up")
                 }
             } else {
-                if (type === "Signup") {
-                    alert("Error signing up")
-                } else {
-                    alert("Error logging in")
-                }
+                location.href = "/"
             }
-        } catch {
+        } else {
             setError(submitError)
         }
     }

@@ -51,6 +51,7 @@ export default function Messages() {
 
             webSocket.current.addEventListener("message", e => {
                 const data = JSON.parse(e.data)
+                console.log(data)
 
                 if (data.token || data.message) {
                     let shouldSetMessages = true
@@ -110,6 +111,7 @@ export default function Messages() {
                                 <div
                                     className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-800 light:bg-gray-200"
                                     style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
+                                    data-testid={`message-${i}`}
                                 >
                                     {m.files.length > 0 &&
                                         <div className="flex flex-wrap gap-2 p-2 rounded-xl border bg-gray-700 light:bg-gray-300 border-gray-200 light:border-gray-800">
@@ -123,12 +125,12 @@ export default function Messages() {
 
                                 <div className="flex gap-1">
                                     <EditButton onClick={() => setEditingMessageIndex(i)} />
-                                    <CopyButton text={m.text} />
+                                    <CopyButton text={m.text} data-testid="copy" />
                                 </div>
                             </>
                         ) : (
                             <>
-                                <div className="w-full whitespace-pre-wrap">
+                                <div className="w-full whitespace-pre-wrap" data-testid={`message-${i}`}>
                                     <ReactMarkdown
                                         children={m.text}
                                         remarkPlugins={[remarkGfm]}

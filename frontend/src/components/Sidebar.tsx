@@ -6,8 +6,9 @@ import Search from "./sidebar/Search"
 import { useAuth } from "../context/AuthProvider"
 import { me } from "../utils/api"
 import Settings from "./sidebar/Settings"
+import type { Chat } from "../types"
 
-export default function Sidebar() {
+export default function Sidebar({ chats, setChats }: { chats: Chat[], setChats: React.Dispatch<React.SetStateAction<Chat[]>> }) {
     const { user } = useAuth()
 
     const ref = useRef<HTMLDivElement | null>(null)
@@ -34,6 +35,7 @@ export default function Sidebar() {
                         me(undefined, !isOpen)
                         setIsOpen(!isOpen)
                     }}
+                    data-testid="toggle-sidebar"
                 >
                     {isOpen ? (
                         <><ChevronLeftIcon className="size-5" /> Close Sidebar</>
@@ -42,14 +44,14 @@ export default function Sidebar() {
                     )}
                 </button>
 
-                <a className={itemClassNames} href="/">
+                <a className={itemClassNames} href="/" data-testid="new-chat">
                     <PlusIcon className="size-5" /> {isOpen && "New Chat"}
                 </a>
 
                 <Search isSidebarOpen={isOpen} itemClassNames={itemClassNames} />
             </div>
 
-            {isOpen && <History sidebarRef={ref} topButtonsRef={topButtonsRef} settingsButtonRef={settingsButtonRef} />}
+            {isOpen && <History sidebarRef={ref} topButtonsRef={topButtonsRef} settingsButtonRef={settingsButtonRef} chats={chats} setChats={setChats} />}
 
             <div ref={settingsButtonRef} className={`flex flex-col sticky bottom-0 p-2 bg-gray-800 light:bg-gray-200 ${isOpen && "border-t"}`}>
                 <Settings isSidebarOpen={isOpen} itemClassNames={itemClassNames} />
