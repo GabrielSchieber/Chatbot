@@ -96,7 +96,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                                     </Select.Trigger>
 
                                     <Select.Portal>
-                                        <Select.Content className="z-50 overflow-hidden rounded-md shadow-lg text-white bg-gray-600 light:text-black light:bg-gray-200">
+                                        <Select.Content className="text-white overflow-hidden rounded-md shadow-lg bg-gray-600 light:text-black light:bg-gray-200">
                                             <Select.ScrollUpButton>
                                                 <ChevronUpIcon />
                                             </Select.ScrollUpButton>

@@ -182,7 +182,7 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
                                     </DropdownMenu.Trigger>
 
                                     <DropdownMenu.Content
-                                        className="flex flex-col gap-1 p-2 rounded-xl translate-x-8 bg-gray-700 light:bg-gray-300 z-10"
+                                        className="flex flex-col gap-1 p-2 rounded-xl translate-x-8 bg-gray-700 light:bg-gray-300"
                                         onMouseEnter={_ => setHoveringDropdownIndex(i)}
                                         onMouseLeave={_ => setHoveringDropdownIndex(-1)}
                                         sideOffset={4}
