@@ -199,6 +199,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
             sendMessage={() => edit(index)}
             sendMessageWithEvent={() => { }}
             isSendDisabled={(text.trim() === "" && getCurrentFiles().length === 0) || pendingChat !== null}
+            setIndex={setIndex}
         />
     )
 }

@@ -1,9 +1,9 @@
 import { motion } from "motion/react"
-import type { RefObject } from "react"
+import type { ChangeEvent, Dispatch, KeyboardEvent, ReactNode, RefObject, SetStateAction } from "react"
 
-import { PlusDropdown, SendButton } from "../ui/Buttons"
+import { CancelButton, PlusDropdown, SendButton, StopButton } from "../ui/Buttons"
 import TextArea from "../ui/TextArea"
-import type { Model } from "../../types"
+import type { Chat, Model } from "../../types"
 
 export default function Composer({
     fileInputRef,
@@ -20,23 +20,27 @@ export default function Composer({
     setModel,
     sendMessage,
     sendMessageWithEvent,
-    isSendDisabled
+    isSendDisabled,
+    setIndex,
+    pendingChat
 }: {
     fileInputRef: RefObject<HTMLInputElement | null>
     textAreaRef: RefObject<HTMLTextAreaElement | null>
     selectionStart: RefObject<number>
     selectionEnd: RefObject<number>
     text: string
-    setText: React.Dispatch<React.SetStateAction<string>>
+    setText: Dispatch<SetStateAction<string>>
     isExtended: boolean
     hasFiles: boolean
-    filesArea: React.ReactNode
-    onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+    filesArea: ReactNode
+    onFileChange: (e: ChangeEvent<HTMLInputElement>) => void
     model: Model
-    setModel: React.Dispatch<React.SetStateAction<Model>>
+    setModel: Dispatch<React.SetStateAction<Model>>
     sendMessage: () => void
-    sendMessageWithEvent: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void | (() => void)
+    sendMessageWithEvent: (e: KeyboardEvent<HTMLTextAreaElement>) => void | (() => void)
     isSendDisabled: boolean
+    setIndex?: Dispatch<SetStateAction<number>>
+    pendingChat?: Chat | null
 }) {
     return (
         <motion.div
@@ -81,7 +85,14 @@ export default function Composer({
                         selectionEnd={selectionEnd}
                     />
                 }
-                <SendButton sendMessage={sendMessage} isDisabled={isSendDisabled} />
+                <div className="flex gap-1">
+                    {setIndex && <CancelButton setIndex={setIndex} />}
+                    {pendingChat !== undefined && pendingChat !== null ? (
+                        <StopButton />
+                    ) : (
+                        <SendButton sendMessage={sendMessage} isDisabled={isSendDisabled} />
+                    )}
+                </div>
             </div>
         </motion.div>
     )

@@ -153,6 +153,7 @@ export default function Prompt() {
                 sendMessage={sendMessage}
                 sendMessageWithEvent={sendMessageWithEvent}
                 isSendDisabled={(text.trim() === "" && files.length === 0) || pendingChat !== null || isLoading}
+                pendingChat={pendingChat}
             />
         </>
     )
