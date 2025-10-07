@@ -3,13 +3,12 @@ import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
 import Attachments from "./Attachments"
-import { CancelButton, PlusDropdown, SendButton } from "./Buttons"
-import TextArea from "./TextArea"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
 import { editMessage } from "../../utils/api"
 import { getFileSize } from "../../utils/file"
 import type { MessageFile, Model } from "../../types"
+import Composer from "./Composer"
 
 export default function Editor({ index, setIndex }: { index: number, setIndex: React.Dispatch<React.SetStateAction<number>> }) {
     const { chatUUID } = useParams()
@@ -184,54 +183,23 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
     }, [isExtended])
 
     return (
-        <motion.div
-            layout
-            transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
-            className={`
-                flex flex-col w-[60vw] mb-5 rounded-4xl bg-gray-800 light:bg-gray-200
-                shadow-xl/50 light:border-gray-400 ${getCurrentFiles().length > 0 ? "gap-2 px-4 pt-3 pb-1" : "px-3 py-1"}
-            `}
-            onClick={e => {
-                if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
-                    return
-                }
-                textAreaRef.current?.focus()
-            }}
-        >
-            <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
-
-            <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
-                <Files files={getCurrentFiles()} onRemove={removeFile} onRemoveAll={removeFiles} />
-                {isExtended &&
-                    <TextArea
-                        ref={textAreaRef}
-                        text={text}
-                        setText={setText}
-                        sendMessageWithEvent={() => { }}
-                        selectionStart={selectionStart}
-                        selectionEnd={selectionEnd}
-                    />
-                }
-            </div>
-
-            <div className="flex gap-2 items-center justify-between">
-                <PlusDropdown fileInputRef={fileInputRef} model={model} setModel={setModel} />
-                {!isExtended &&
-                    <TextArea
-                        ref={textAreaRef}
-                        text={text}
-                        setText={setText}
-                        sendMessageWithEvent={() => { }}
-                        selectionStart={selectionStart}
-                        selectionEnd={selectionEnd}
-                    />
-                }
-                <div className="flex gap-1">
-                    <CancelButton setIndex={setIndex} />
-                    <SendButton sendMessage={() => edit(index)} isDisabled={(text.trim() === "" && getCurrentFiles().length === 0) || pendingChat !== null} />
-                </div>
-            </div>
-        </motion.div>
+        <Composer
+            fileInputRef={fileInputRef}
+            textAreaRef={textAreaRef}
+            selectionStart={selectionStart}
+            selectionEnd={selectionEnd}
+            text={text}
+            setText={setText}
+            isExtended={isExtended}
+            hasFiles={getCurrentFiles().length > 0}
+            filesArea={<Files files={getCurrentFiles()} onRemove={removeFile} onRemoveAll={removeFiles} />}
+            onFileChange={handleFileChange}
+            model={model}
+            setModel={setModel}
+            sendMessage={() => edit(index)}
+            sendMessageWithEvent={() => { }}
+            isSendDisabled={(text.trim() === "" && getCurrentFiles().length === 0) || pendingChat !== null}
+        />
     )
 }
 

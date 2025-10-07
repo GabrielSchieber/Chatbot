@@ -4,13 +4,12 @@ import { useState, useRef, useEffect } from "react"
 import { useNavigate, useParams } from "react-router"
 
 import Attachments from "../ui/Attachments"
-import TextArea from "../ui/TextArea"
+import Composer from "../ui/Composer"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
 import { newMessage } from "../../utils/api"
 import { getFileSize } from "../../utils/file"
 import type { Model } from "../../types"
-import { PlusDropdown, SendButton } from "../ui/Buttons"
 
 export default function Prompt() {
     const { chatUUID } = useParams()
@@ -131,58 +130,30 @@ export default function Prompt() {
                         <div>
                             A message is already being generated in <a className="underline" href={`/chat/${pendingChat.uuid}`}>{pendingChat.title}</a>
                         </div>
-                        <button className="p-1 rounded-3xl cursor-pointer hover:bg-gray-800" onClick={_ => setShouldShowPendingNotification(false)}>
+                        <button className="p-1 rounded-3xl cursor-pointer hover:bg-gray-800" onClick={() => setShouldShowPendingNotification?.(false)}>
                             <Cross2Icon />
                         </button>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            <motion.div
-                layout
-                transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
-                className={`
-                    flex flex-col w-[60vw] mb-5 rounded-4xl bg-gray-800 light:bg-gray-200
-                    shadow-xl/50 border-t-4 border-gray-600 light:border-gray-400 ${files.length > 0 ? "gap-2 px-4 pt-3 pb-1" : "px-3 py-1"}
-                `}
-                onClick={e => {
-                    if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
-                        return
-                    }
-                    textAreaRef.current?.focus()
-                }}
-            >
-                <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
-
-                <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
-                    <Files files={files} setFiles={setFiles} />
-                    {isExtended &&
-                        <TextArea
-                            ref={textAreaRef}
-                            text={text}
-                            setText={setText}
-                            sendMessageWithEvent={sendMessageWithEvent}
-                            selectionStart={selectionStart}
-                            selectionEnd={selectionEnd}
-                        />
-                    }
-                </div>
-
-                <div className="flex gap-2 items-center justify-between">
-                    <PlusDropdown fileInputRef={fileInputRef} model={model} setModel={setModel} />
-                    {!isExtended &&
-                        <TextArea
-                            ref={textAreaRef}
-                            text={text}
-                            setText={setText}
-                            sendMessageWithEvent={sendMessageWithEvent}
-                            selectionStart={selectionStart}
-                            selectionEnd={selectionEnd}
-                        />
-                    }
-                    <SendButton sendMessage={sendMessage} isDisabled={(text.trim() === "" && files.length === 0) || pendingChat !== null || isLoading} />
-                </div>
-            </motion.div>
+            <Composer
+                fileInputRef={fileInputRef}
+                textAreaRef={textAreaRef}
+                selectionStart={selectionStart}
+                selectionEnd={selectionEnd}
+                text={text}
+                setText={setText}
+                isExtended={isExtended}
+                hasFiles={files.length > 0}
+                filesArea={<Files files={files} setFiles={setFiles} />}
+                onFileChange={handleFileChange}
+                model={model}
+                setModel={setModel}
+                sendMessage={sendMessage}
+                sendMessageWithEvent={sendMessageWithEvent}
+                isSendDisabled={(text.trim() === "" && files.length === 0) || pendingChat !== null || isLoading}
+            />
         </>
     )
 }
