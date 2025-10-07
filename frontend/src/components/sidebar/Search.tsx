@@ -8,6 +8,7 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
     type SearchEntry = { title: string, matches: string[], uuid: string }
 
     const loaderRef = useRef<HTMLDivElement | null>(null)
+    const isLoadingRef = useRef(false)
 
     const [search, setSearch] = useState("")
     const [entries, setEntries] = useState<SearchEntry[]>([])
@@ -20,8 +21,9 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
     const limit = 10
 
     function loadEntries(reset = false) {
-        if (isLoading) return
+        if (isLoadingRef.current || isLoading) return
 
+        isLoadingRef.current = true
         setIsLoading(true)
 
         searchChats(search, reset ? 0 : offset, limit).then(response => {
@@ -35,6 +37,7 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
                     setOffset(previous => (reset ? limit : previous + limit))
                     setHasMore(data.has_more)
                     setIsLoading(false)
+                    isLoadingRef.current = false
                 })
             }
         })

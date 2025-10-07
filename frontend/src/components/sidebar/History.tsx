@@ -137,7 +137,7 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
         <div className="flex-1 py-4">
             <p className="pl-3 text-sm text-gray-400">Chats</p>
 
-            <div className="flex flex-col gap-1 p-2">
+            <div className="history-entries flex flex-col gap-1 p-2">
                 {chats.map((c, i) => (
                     renameUUID === c.uuid ? (
                         <input

@@ -1,10 +1,11 @@
-import { ChevronLeftIcon, ChevronRightIcon, GearIcon, PlusIcon } from "@radix-ui/react-icons"
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "@radix-ui/react-icons"
 import { useRef, useState } from "react"
 
 import History from "./sidebar/History"
 import Search from "./sidebar/Search"
 import { useAuth } from "../context/AuthProvider"
 import { me } from "../utils/api"
+import Settings from "./sidebar/Settings"
 
 export default function Sidebar() {
     const { user } = useAuth()
@@ -51,9 +52,7 @@ export default function Sidebar() {
             {isOpen && <History sidebarRef={ref} topButtonsRef={topButtonsRef} settingsButtonRef={settingsButtonRef} />}
 
             <div ref={settingsButtonRef} className={`flex flex-col sticky bottom-0 p-2 bg-gray-800 light:bg-gray-200 ${isOpen && "border-t"}`}>
-                <button className={itemClassNames}>
-                    <GearIcon className="size-5" /> {isOpen && "Settings"}
-                </button>
+                <Settings isSidebarOpen={isOpen} itemClassNames={itemClassNames} />
             </div>
         </div>
     )
