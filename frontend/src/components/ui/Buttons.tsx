@@ -1,4 +1,4 @@
-import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, CopyIcon, PauseIcon, Pencil1Icon, PlusIcon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
+import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, CopyIcon, Cross2Icon, PauseIcon, Pencil1Icon, PlusIcon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
 import { DropdownMenu, Select, Tooltip } from "radix-ui"
 import { useEffect, useState, type ReactNode, type RefObject } from "react"
 import { useParams } from "react-router"
@@ -20,7 +20,7 @@ export function PlusDropdown({ fileInputRef, model, setModel }: {
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger className={itemClassNames + " p-1.5 rounded-full"}>
-                <PlusIcon className="size-6" />
+                <TooltipButton trigger={<PlusIcon className="size-6" />} tooltip="Add files and more..." asChild />
             </DropdownMenu.Trigger>
 
             <DropdownMenu.Content className="flex flex-col gap-1 p-2 rounded-lg translate-x-20 bg-gray-800 light:bg-gray-200" sideOffset={12}>
@@ -28,82 +28,84 @@ export function PlusDropdown({ fileInputRef, model, setModel }: {
                     <UploadIcon className="size-5" /> Add files
                 </DropdownMenu.Item>
 
-                <ModelSelect model={model} setModel={setModel} />
+                <DropdownMenu.Item asChild>
+                    <Select.Root value={model} onValueChange={v => setModel(v as Model)}>
+                        <Select.Trigger
+                            className={`
+                                flex gap-2 w-50 px-2.5 py-1.5 items-center justify-between rounded-lg cursor-pointer outline-none
+                                hover:bg-gray-700 focus:bg-gray-700 light:hover:bg-gray-300 light:focus:bg-gray-300 transition
+                            `}
+                        >
+                            <div className="flex gap-2 items-center">
+                                <Select.Icon>
+                                    <BoxModelIcon className="size-5" />
+                                </Select.Icon>
+                                <Select.Value placeholder="Select model..." />
+                            </div>
+                            <Select.Icon>
+                                <ChevronRightIcon className="size-4.5" />
+                            </Select.Icon>
+                        </Select.Trigger>
+
+                        <Select.Portal>
+                            <Select.Content position="popper" side="right" sideOffset={10} className="-translate-y-17">
+                                <Select.ScrollUpButton>
+                                    <ChevronUpIcon />
+                                </Select.ScrollUpButton>
+
+                                <Select.Viewport className="flex flex-col gap-1 p-2 rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200">
+                                    {[(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
+                                        <Select.Item
+                                            key={m}
+                                            value={m}
+                                            className={`
+                                                flex gap-1 w-40 px-2 py-1 items-center justify-between rounded truncate cursor-pointer outline-none
+                                                focus:bg-gray-600 light:focus:bg-gray-400 hover:bg-gray-600 light:hover:bg-gray-400
+                                                ${m === model ? "bg-gray-700 light:bg-gray-300" : "bg-gray-700/50 light:bg-gray-300/50"}
+                                            `}
+                                        >
+                                            <Select.ItemText>{m}</Select.ItemText>
+                                            <Select.ItemIndicator className="ml-auto">
+                                                <CheckIcon className="size-5" />
+                                            </Select.ItemIndicator>
+                                        </Select.Item>
+                                    ))]}
+                                </Select.Viewport>
+
+                                <Select.ScrollDownButton>
+                                    <ChevronDownIcon />
+                                </Select.ScrollDownButton>
+                            </Select.Content>
+                        </Select.Portal>
+                    </Select.Root>
+                </DropdownMenu.Item>
             </DropdownMenu.Content>
         </DropdownMenu.Root>
     )
 }
 
-export function ModelSelect({ model, setModel }: { model: Model, setModel: React.Dispatch<React.SetStateAction<Model>> }) {
-    return (
-        <Select.Root value={model} onValueChange={v => setModel(v as Model)}>
-            <Select.Trigger
-                className={`
-                    flex gap-2 w-50 px-2.5 py-1.5 items-center justify-between rounded-lg cursor-pointer outline-none hover:bg-gray-700
-                    focus:bg-gray-700 light:hover:bg-gray-300 light:focus:bg-gray-300 transition
-                `}
-            >
-                <div className="flex gap-2 items-center">
-                    <Select.Icon>
-                        <BoxModelIcon className="size-5" />
-                    </Select.Icon>
-                    <Select.Value placeholder="Select model..." />
-                </div>
-                <Select.Icon>
-                    <ChevronRightIcon className="size-4.5" />
-                </Select.Icon>
-            </Select.Trigger>
-
-            <Select.Portal>
-                <Select.Content position="popper" side="right" sideOffset={10} className="-translate-y-17">
-                    <Select.ScrollUpButton>
-                        <ChevronUpIcon />
-                    </Select.ScrollUpButton>
-
-                    <Select.Viewport className="flex flex-col gap-1 p-2 rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200">
-                        {[(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
-                            <Select.Item
-                                key={m}
-                                value={m}
-                                className={`
-                                    flex gap-1 w-40 px-2 py-1 items-center justify-between rounded truncate cursor-pointer outline-none
-                                    focus:bg-gray-600 light:focus:bg-gray-400 hover:bg-gray-600 light:hover:bg-gray-400
-                                    ${m === model ? "bg-gray-700 light:bg-gray-300" : "bg-gray-700/50 light:bg-gray-300/50"}
-                                `}
-                            >
-                                <Select.ItemText>{m}</Select.ItemText>
-                                <Select.ItemIndicator className="ml-auto">
-                                    <CheckIcon className="size-5" />
-                                </Select.ItemIndicator>
-                            </Select.Item>
-                        ))]}
-                    </Select.Viewport>
-
-                    <Select.ScrollDownButton>
-                        <ChevronDownIcon />
-                    </Select.ScrollDownButton>
-                </Select.Content>
-            </Select.Portal>
-        </Select.Root>
-    )
-}
-
 export function SendButton({ sendMessage, isDisabled }: { sendMessage: () => void, isDisabled: boolean }) {
-    return <Button icon={<ArrowUpIcon className="size-6" />} onClick={sendMessage} isDisabled={isDisabled} />
+    return <TooltipButton trigger={<ArrowUpIcon className="size-6" />} tooltip="Send" onClick={sendMessage} className={promptBarButtonClassNames} isDisabled={isDisabled} />
 }
 
 export function StopButton() {
     const { setPendingChat } = useChat()
 
     return (
-        <Button
-            icon={<PauseIcon className="size-6" />}
+        <TooltipButton
+            trigger={<PauseIcon className="size-6" />}
+            tooltip="Stop"
+            className={promptBarButtonClassNames}
             onClick={() => {
                 stopPendingChats()
                 setPendingChat(null)
             }}
         />
     )
+}
+
+export function CancelButton({ setIndex }: { setIndex: React.Dispatch<React.SetStateAction<number>> }) {
+    return <TooltipButton trigger={<Cross2Icon className="size-6" />} tooltip="Cancel" className={promptBarButtonClassNames} onClick={() => setIndex(-1)} />
 }
 
 export function EditButton({ onClick }: { onClick: () => void }) {
@@ -113,6 +115,7 @@ export function EditButton({ onClick }: { onClick: () => void }) {
         <TooltipButton
             trigger={<Pencil1Icon className="size-4.5" />}
             tooltip="Edit"
+            className={messageButtonClassNames}
             onClick={onClick}
             isDisabled={pendingChat !== null || isLoading}
         />
@@ -126,6 +129,7 @@ export function CopyButton({ text }: { text: string }) {
         <TooltipButton
             trigger={isChecked ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />}
             tooltip="Copy"
+            className={messageButtonClassNames}
             onClick={() => {
                 navigator.clipboard.writeText(text)
                 setIsChecked(true)
@@ -222,38 +226,22 @@ export function RegenerateButton({ index, model }: { index: number, model?: Mode
     )
 }
 
-export function Button({ icon, onClick, isDisabled = false }: { icon: ReactNode, onClick: () => void, isDisabled?: boolean }) {
-    return (
-        <button
-            className="
-                p-1.5 rounded-full cursor-pointer disabled:cursor-not-allowed
-                hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 transition
-            "
-            onClick={onClick}
-            disabled={isDisabled}
-        >
-            {icon}
-        </button>)
-}
-
-function TooltipButton({ trigger, tooltip, onClick, isDisabled = false }: {
+export function TooltipButton({ trigger, tooltip, onClick, className = "", isDisabled = false, asChild = false }: {
     trigger: ReactNode
     tooltip: ReactNode
-    onClick: () => void
+    className?: string
+    onClick?: () => void
     isDisabled?: boolean
+    asChild?: boolean
 }) {
     return (
         <Tooltip.Provider delayDuration={200}>
             <Tooltip.Root>
-                <Tooltip.Trigger
-                    className="p-2 rounded-lg cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={onClick}
-                    disabled={isDisabled}
-                >
+                <Tooltip.Trigger className={className} onClick={onClick} disabled={isDisabled} asChild={asChild}>
                     {trigger}
                 </Tooltip.Trigger>
                 <Tooltip.Portal>
-                    <Tooltip.Content className="text-white text-sm bg-black px-2 py-1 rounded-xl" side="bottom" sideOffset={3}>
+                    <Tooltip.Content className="px-2 py-1 rounded-lg text-white text-sm bg-black" side="bottom" sideOffset={3}>
                         {tooltip}
                     </Tooltip.Content>
                 </Tooltip.Portal>
@@ -261,3 +249,13 @@ function TooltipButton({ trigger, tooltip, onClick, isDisabled = false }: {
         </Tooltip.Provider>
     )
 }
+
+const messageButtonClassNames = `
+    p-2 rounded-lg cursor-pointer hover:bg-gray-700
+    light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed
+`
+
+const promptBarButtonClassNames = `
+    p-1.5 rounded-full cursor-pointer disabled:cursor-not-allowed
+    hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 transition
+`

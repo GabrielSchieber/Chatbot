@@ -1,10 +1,9 @@
-import { Cross2Icon } from "@radix-ui/react-icons"
 import { AnimatePresence, motion } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
 import Attachments from "./Attachments"
-import { Button, PlusDropdown, SendButton } from "./Buttons"
+import { CancelButton, PlusDropdown, SendButton } from "./Buttons"
 import TextArea from "./TextArea"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
@@ -189,8 +188,8 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
             layout
             transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
             className={`
-                flex flex-col w-[60vw] mb-5 px-3 py-1 rounded-4xl bg-gray-800 light:bg-gray-200
-                shadow-xl/50 border-t-4 border-gray-600 light:border-gray-400 ${getCurrentFiles().length > 0 && "gap-2"}
+                flex flex-col w-[60vw] mb-5 rounded-4xl bg-gray-800 light:bg-gray-200
+                shadow-xl/50 light:border-gray-400 ${getCurrentFiles().length > 0 ? "gap-2 px-4 pt-3 pb-1" : "px-3 py-1"}
             `}
             onClick={e => {
                 if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
@@ -228,7 +227,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
                     />
                 }
                 <div className="flex gap-1">
-                    <Button icon={<Cross2Icon className="size-6" />} onClick={() => setIndex(-1)} />
+                    <CancelButton setIndex={setIndex} />
                     <SendButton sendMessage={() => edit(index)} isDisabled={(text.trim() === "" && getCurrentFiles().length === 0) || pendingChat !== null} />
                 </div>
             </div>

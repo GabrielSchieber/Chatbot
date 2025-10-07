@@ -142,8 +142,8 @@ export default function Prompt() {
                 layout
                 transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
                 className={`
-                    flex flex-col w-[60vw] mb-5 px-3 py-1 rounded-4xl bg-gray-800 light:bg-gray-200
-                    shadow-xl/50 border-t-4 border-gray-600 light:border-gray-400 ${files.length > 0 && "gap-2"}
+                    flex flex-col w-[60vw] mb-5 rounded-4xl bg-gray-800 light:bg-gray-200
+                    shadow-xl/50 border-t-4 border-gray-600 light:border-gray-400 ${files.length > 0 ? "gap-2 px-4 pt-3 pb-1" : "px-3 py-1"}
                 `}
                 onClick={e => {
                     if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
