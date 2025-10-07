@@ -1,35 +1,61 @@
-import { ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, CopyIcon, PauseIcon, Pencil1Icon, PlusIcon, UpdateIcon } from "@radix-ui/react-icons"
+import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, CopyIcon, PauseIcon, Pencil1Icon, PlusIcon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
 import { DropdownMenu, Select, Tooltip } from "radix-ui"
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode, type RefObject } from "react"
 import { useParams } from "react-router"
 
 import { useChat } from "../../context/ChatProvider"
 import { regenerateMessage, stopPendingChats } from "../../utils/api"
 import type { Model } from "../../types"
 
-export function AttachButton({ fileInputRef }: { fileInputRef: React.RefObject<HTMLInputElement | null> }) {
+export function PlusDropdown({ fileInputRef, model, setModel }: {
+    fileInputRef: RefObject<HTMLInputElement | null>
+    model: Model
+    setModel: React.Dispatch<React.SetStateAction<Model>>
+}) {
+    const itemClassNames = `
+        flex gap-2 items-center cursor-pointer outline-none hover:bg-gray-700
+        focus:bg-gray-700 light:hover:bg-gray-300 light:focus:bg-gray-300 transition
+    `
+
     return (
-        <button
-            className="p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300 transition"
-            onClick={_ => fileInputRef.current?.click()}
-        >
-            <PlusIcon className="size-5" />
-        </button>
+        <DropdownMenu.Root>
+            <DropdownMenu.Trigger className={itemClassNames + " p-1.5 rounded-full"}>
+                <PlusIcon className="size-6" />
+            </DropdownMenu.Trigger>
+
+            <DropdownMenu.Content className="flex flex-col gap-1 p-2 rounded-lg translate-x-20 bg-gray-800 light:bg-gray-200" sideOffset={12}>
+                <DropdownMenu.Item className={itemClassNames + " px-2.5 py-1.5 rounded-lg"} onClick={_ => fileInputRef.current?.click()}>
+                    <UploadIcon className="size-5" /> Add files
+                </DropdownMenu.Item>
+
+                <ModelSelect model={model} setModel={setModel} />
+            </DropdownMenu.Content>
+        </DropdownMenu.Root>
     )
 }
 
 export function ModelSelect({ model, setModel }: { model: Model, setModel: React.Dispatch<React.SetStateAction<Model>> }) {
     return (
         <Select.Root value={model} onValueChange={v => setModel(v as Model)}>
-            <Select.Trigger className="flex items-center gap-2 px-2 cursor-pointer rounded hover:bg-gray-700 light:hover:bg-gray-300">
-                <Select.Value placeholder="Select model..." />
+            <Select.Trigger
+                className={`
+                    flex gap-2 w-50 px-2.5 py-1.5 items-center justify-between rounded-lg cursor-pointer outline-none hover:bg-gray-700
+                    focus:bg-gray-700 light:hover:bg-gray-300 light:focus:bg-gray-300 transition
+                `}
+            >
+                <div className="flex gap-2 items-center">
+                    <Select.Icon>
+                        <BoxModelIcon className="size-5" />
+                    </Select.Icon>
+                    <Select.Value placeholder="Select model..." />
+                </div>
                 <Select.Icon>
-                    <ChevronDownIcon />
+                    <ChevronRightIcon className="size-4.5" />
                 </Select.Icon>
             </Select.Trigger>
 
             <Select.Portal>
-                <Select.Content position="popper">
+                <Select.Content position="popper" side="right" sideOffset={10} className="-translate-y-17">
                     <Select.ScrollUpButton>
                         <ChevronUpIcon />
                     </Select.ScrollUpButton>
@@ -63,7 +89,7 @@ export function ModelSelect({ model, setModel }: { model: Model, setModel: React
 }
 
 export function SendButton({ sendMessage, isDisabled }: { sendMessage: () => void, isDisabled: boolean }) {
-    return <Button icon={<ArrowUpIcon className="size-5" />} onClick={sendMessage} isDisabled={isDisabled} />
+    return <Button icon={<ArrowUpIcon className="size-6" />} onClick={sendMessage} isDisabled={isDisabled} />
 }
 
 export function StopButton() {
@@ -71,7 +97,7 @@ export function StopButton() {
 
     return (
         <Button
-            icon={<PauseIcon className="size-5" />}
+            icon={<PauseIcon className="size-6" />}
             onClick={() => {
                 stopPendingChats()
                 setPendingChat(null)
@@ -196,6 +222,20 @@ export function RegenerateButton({ index, model }: { index: number, model?: Mode
     )
 }
 
+export function Button({ icon, onClick, isDisabled = false }: { icon: ReactNode, onClick: () => void, isDisabled?: boolean }) {
+    return (
+        <button
+            className="
+                p-1.5 rounded-full cursor-pointer disabled:cursor-not-allowed
+                hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 transition
+            "
+            onClick={onClick}
+            disabled={isDisabled}
+        >
+            {icon}
+        </button>)
+}
+
 function TooltipButton({ trigger, tooltip, onClick, isDisabled = false }: {
     trigger: ReactNode
     tooltip: ReactNode
@@ -220,18 +260,4 @@ function TooltipButton({ trigger, tooltip, onClick, isDisabled = false }: {
             </Tooltip.Root>
         </Tooltip.Provider>
     )
-}
-
-function Button({ icon, onClick, isDisabled = false }: { icon: ReactNode, onClick: () => void, isDisabled?: boolean }) {
-    return (
-        <button
-            className="
-                p-1.5 rounded-full cursor-pointer bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500
-                disabled:hover:bg-gray-600 disabled:cursor-not-allowed transition
-            "
-            onClick={onClick}
-            disabled={isDisabled}
-        >
-            {icon}
-        </button>)
 }

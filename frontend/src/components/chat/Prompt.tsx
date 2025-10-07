@@ -1,16 +1,16 @@
 import { Cross2Icon } from "@radix-ui/react-icons"
 import { motion, AnimatePresence } from "motion/react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useNavigate, useParams } from "react-router"
 
 import Attachments from "../ui/Attachments"
-import { AttachButton, ModelSelect, SendButton, StopButton } from "../ui/Buttons"
 import TextArea from "../ui/TextArea"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
 import { newMessage } from "../../utils/api"
 import { getFileSize } from "../../utils/file"
 import type { Model } from "../../types"
+import { PlusDropdown, SendButton } from "../ui/Buttons"
 
 export default function Prompt() {
     const { chatUUID } = useParams()
@@ -19,12 +19,18 @@ export default function Prompt() {
     const { setMessages, pendingChat, setPendingChat, isLoading } = useChat()
 
     const fileInputRef = useRef<HTMLInputElement | null>(null)
+    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
+
+    const selectionStart = useRef(0)
+    const selectionEnd = useRef(0)
 
     const [text, setText] = useState("")
     const [files, setFiles] = useState<File[]>([])
     const [model, setModel] = useState<Model>("SmolLM2-135M")
 
     const [shouldShowPendingNotification, setShouldShowPendingNotification] = useState(false)
+
+    const [isExtended, setIsExtended] = useState(false)
 
     function sendMessage() {
         newMessage(chatUUID || "", text, model, files).then(response => {
@@ -101,6 +107,15 @@ export default function Prompt() {
         e.target.value = ""
     }
 
+    useEffect(() => {
+        setIsExtended(isExtended ? text !== "" : text.split("\n").length > 1 || (textAreaRef.current?.clientHeight || 0) > 48)
+    }, [text])
+
+    useEffect(() => {
+        textAreaRef.current?.setSelectionRange(selectionStart.current, selectionEnd.current)
+        textAreaRef.current?.focus()
+    }, [isExtended])
+
     return (
         <>
             <AnimatePresence>
@@ -126,25 +141,46 @@ export default function Prompt() {
             <motion.div
                 layout
                 transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
-                className="flex flex-col gap-1 w-[60vw] mb-5 px-2 py-1 rounded-2xl bg-gray-800 light:bg-gray-200"
+                className={`
+                    flex flex-col w-[60vw] mb-5 px-3 py-1 rounded-4xl bg-gray-800 light:bg-gray-200
+                    shadow-xl/50 border-t-4 border-gray-600 light:border-gray-400 ${files.length > 0 && "gap-2"}
+                `}
+                onClick={e => {
+                    if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
+                        return
+                    }
+                    textAreaRef.current?.focus()
+                }}
             >
                 <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
 
                 <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
                     <Files files={files} setFiles={setFiles} />
-                    <TextArea text={text} setText={setText} sendMessageWithEvent={sendMessageWithEvent} />
+                    {isExtended &&
+                        <TextArea
+                            ref={textAreaRef}
+                            text={text}
+                            setText={setText}
+                            sendMessageWithEvent={sendMessageWithEvent}
+                            selectionStart={selectionStart}
+                            selectionEnd={selectionEnd}
+                        />
+                    }
                 </div>
 
                 <div className="flex gap-2 items-center justify-between">
-                    <div className="flex gap-1">
-                        <AttachButton fileInputRef={fileInputRef} />
-                        <ModelSelect model={model} setModel={setModel} />
-                    </div>
-                    {pendingChat !== null ? (
-                        <StopButton />
-                    ) : (
-                        <SendButton sendMessage={sendMessage} isDisabled={(text.trim() === "" && files.length === 0) || pendingChat !== null || isLoading} />
-                    )}
+                    <PlusDropdown fileInputRef={fileInputRef} model={model} setModel={setModel} />
+                    {!isExtended &&
+                        <TextArea
+                            ref={textAreaRef}
+                            text={text}
+                            setText={setText}
+                            sendMessageWithEvent={sendMessageWithEvent}
+                            selectionStart={selectionStart}
+                            selectionEnd={selectionEnd}
+                        />
+                    }
+                    <SendButton sendMessage={sendMessage} isDisabled={(text.trim() === "" && files.length === 0) || pendingChat !== null || isLoading} />
                 </div>
             </motion.div>
         </>

@@ -1,10 +1,10 @@
 import { Cross2Icon } from "@radix-ui/react-icons"
 import { AnimatePresence, motion } from "motion/react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
 import Attachments from "./Attachments"
-import { AttachButton, ModelSelect, SendButton } from "./Buttons"
+import { Button, PlusDropdown, SendButton } from "./Buttons"
 import TextArea from "./TextArea"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
@@ -20,12 +20,18 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
     const message = messages[index]
 
     const fileInputRef = useRef<HTMLInputElement | null>(null)
+    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
+
+    const selectionStart = useRef(0)
+    const selectionEnd = useRef(0)
 
     const [text, setText] = useState(message.text)
     const [model, setModel] = useState<Model>(messages[index + 1].model || "SmolLM2-135M")
 
     const [addedFiles, setAddedFiles] = useState<File[]>([])
     const [removedFiles, setRemovedFiles] = useState<MessageFile[]>([])
+
+    const [isExtended, setIsExtended] = useState(false)
 
     function edit(index: number) {
         if (chatUUID) {
@@ -169,35 +175,63 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
         return [...current, ...added]
     }
 
-    const isSendButtonDisabled = (text.trim() === "" && getCurrentFiles().length === 0) || pendingChat !== null
+    useEffect(() => {
+        setIsExtended(isExtended ? text !== "" : text.split("\n").length > 1 || (textAreaRef.current?.clientHeight || 0) > 48)
+    }, [text])
+
+    useEffect(() => {
+        textAreaRef.current?.setSelectionRange(selectionStart.current, selectionEnd.current)
+        textAreaRef.current?.focus()
+    }, [isExtended])
 
     return (
         <motion.div
             layout
             transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
-            className="w-full max-w-3xl mx-auto mb-5 p-2 rounded-2xl bg-gray-800 light:bg-gray-200"
+            className={`
+                flex flex-col w-[60vw] mb-5 px-3 py-1 rounded-4xl bg-gray-800 light:bg-gray-200
+                shadow-xl/50 border-t-4 border-gray-600 light:border-gray-400 ${getCurrentFiles().length > 0 && "gap-2"}
+            `}
+            onClick={e => {
+                if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
+                    return
+                }
+                textAreaRef.current?.focus()
+            }}
         >
             <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} multiple />
 
-            <motion.div layout className="flex flex-col gap-1">
-                <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
-                    <Files files={getCurrentFiles()} onRemove={removeFile} onRemoveAll={removeFiles} />
-                    <TextArea text={text} setText={setText} sendMessageWithEvent={() => { }} />
-                </div>
+            <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
+                <Files files={getCurrentFiles()} onRemove={removeFile} onRemoveAll={removeFiles} />
+                {isExtended &&
+                    <TextArea
+                        ref={textAreaRef}
+                        text={text}
+                        setText={setText}
+                        sendMessageWithEvent={() => { }}
+                        selectionStart={selectionStart}
+                        selectionEnd={selectionEnd}
+                    />
+                }
+            </div>
 
-                <div className="flex justify-between items-center px-1">
-                    <div className="flex gap-1">
-                        <AttachButton fileInputRef={fileInputRef} />
-                        <ModelSelect model={model} setModel={setModel} />
-                    </div>
-                    <div className="flex gap-1">
-                        <button className="p-1.5 rounded-full cursor-pointer bg-red-500/70 hover:bg-red-600/70 transition" onClick={_ => setIndex(-1)}>
-                            <Cross2Icon className="size-5" />
-                        </button>
-                        <SendButton sendMessage={() => edit(index)} isDisabled={isSendButtonDisabled} />
-                    </div>
+            <div className="flex gap-2 items-center justify-between">
+                <PlusDropdown fileInputRef={fileInputRef} model={model} setModel={setModel} />
+                {!isExtended &&
+                    <TextArea
+                        ref={textAreaRef}
+                        text={text}
+                        setText={setText}
+                        sendMessageWithEvent={() => { }}
+                        selectionStart={selectionStart}
+                        selectionEnd={selectionEnd}
+                    />
+                }
+                <div className="flex gap-1">
+                    <Button icon={<Cross2Icon className="size-6" />} onClick={() => setIndex(-1)} />
+                    <SendButton sendMessage={() => edit(index)} isDisabled={(text.trim() === "" && getCurrentFiles().length === 0) || pendingChat !== null} />
                 </div>
-            </motion.div>
+            </div>
         </motion.div>
     )
 }
