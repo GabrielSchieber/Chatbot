@@ -2,7 +2,7 @@ import { Locator, expect } from "@playwright/test"
 import { Chat, test } from "./utils"
 
 test("user can open search", async ({ page, user }) => {
-    await page.getByRole("button", { name: "Search", exact: true }).click()
+    await page.getByRole("button", { name: "Search Chats", exact: true }).click()
 
     await expect(page.getByPlaceholder("Search chats...", { exact: true })).toBeVisible()
 

@@ -1,39 +1,14 @@
-import Messages from "./Messages"
-import Prompt from "./Prompt"
-import type { Chat as ChatType, Message, Model, Options } from "../types"
-import { useState } from "react"
+import Messages from "./chat/Messages"
+import Prompt from "./chat/Prompt"
 
 export const MAX_FILES = 10
 export const MAX_FILE_SIZE = 5_000_000
 
 export default function Chat() {
-    const [messages, setMessages] = useState<Message[]>([])
-    const [model, setModel] = useState<Model>("SmolLM2-135M")
-    const [options, setOptions] = useState<Options>({ num_predict: 256, temperature: 0.2, top_p: 0.9 })
-    const [pendingChat, setPendingChat] = useState<ChatType | undefined>()
-
     return (
-        <div className="flex flex-1 items-center justify-center">
-            <div className="relative flex flex-col w-full h-full">
-                <Messages
-                    messages={messages}
-                    setMessages={setMessages}
-                    pendingChat={pendingChat}
-                    setPendingChat={setPendingChat}
-                    model={model}
-                    setModel={setModel}
-                    options={options}
-                />
-                <Prompt
-                    setMessages={setMessages}
-                    pendingChat={pendingChat}
-                    setPendingChat={setPendingChat}
-                    model={model}
-                    setModel={setModel}
-                    options={options}
-                    setOptions={setOptions}
-                />
-            </div>
+        <div className="flex flex-col size-full items-center">
+            <Messages />
+            <Prompt />
         </div>
     )
 }

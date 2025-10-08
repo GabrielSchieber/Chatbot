@@ -26,8 +26,8 @@ export default function ConfirmDialog({
                 <AlertDialog.Overlay className="bg-black/50 fixed inset-0" />
                 <AlertDialog.Content
                     className="
-                        bg-gray-700 z-50 light:bg-gray-200 p-6 rounded-xl shadow-xl fixed
-                        top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm
+                        fixed w-[90vw] max-w-sm p-6 rounded-xl shadow-xl top-1/2 left-1/2
+                        -translate-x-1/2 -translate-y-1/2 bg-gray-700 light:bg-gray-200
                     "
                 >
                     <AlertDialog.Title className="text-lg font-semibold text-white light:text-black">

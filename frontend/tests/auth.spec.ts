@@ -28,7 +28,7 @@ test("user cannot sign up with existing email", async ({ page }) => {
     await page.fill("input[type='password']", password)
 
     await page.click("button")
-    await expect(page.getByRole("paragraph"), { message: "Email is already registered. Please choose another one." }).toBeVisible()
+    await expect(page.getByText("Email is already registered. Please choose another one.", { exact: true })).toBeVisible()
 })
 
 test("user can login", async ({ page }) => {
@@ -52,7 +52,7 @@ test("user cannot login with invalid email", async ({ page }) => {
     await page.fill("input[type='password']", password)
 
     await page.click("button")
-    await expect(page.getByRole("paragraph"), { message: "Email and/or password are invalid." }).toBeVisible()
+    await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
 })
 
 test("user cannot login with invalid password", async ({ page }) => {
@@ -65,7 +65,7 @@ test("user cannot login with invalid password", async ({ page }) => {
     await page.fill("input[type='password']", "invalidpassword")
 
     await page.click("button")
-    await expect(page.getByRole("paragraph"), { message: "Email and/or password are invalid." }).toBeVisible()
+    await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
 })
 
 const password = "testpassword"

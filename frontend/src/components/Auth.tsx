@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { login, signup } from "../utils/api"
 
-export default function AuthPage({ type }: { type: "Signup" | "Login" }) {
+export default function Auth({ type }: { type: "Signup" | "Login" }) {
     const submitFunction = type === "Signup" ? signup : login
     const submitError = type === "Signup" ? "Email is already registered. Please choose another one." : "Email and/or password are invalid."
     const headerText = type === "Signup" ? "Sign up" : "Log in"
@@ -15,10 +15,19 @@ export default function AuthPage({ type }: { type: "Signup" | "Login" }) {
         event.preventDefault()
         setError("")
 
-        try {
-            await submitFunction(email, password)
-            location.href = "/"
-        } catch {
+        const response = await submitFunction(email, password)
+        if (response.ok) {
+            if (type === "Signup") {
+                const response = await login(email, password)
+                if (response.ok) {
+                    location.href = "/"
+                } else {
+                    alert("Error logging in after sign up")
+                }
+            } else {
+                location.href = "/"
+            }
+        } else {
             setError(submitError)
         }
     }

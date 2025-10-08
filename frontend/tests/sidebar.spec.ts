@@ -1,57 +1,57 @@
 import { expect, test } from "@playwright/test"
 import { signupAndLogin, test as utilsTest } from "./utils"
 
-const toggleSidebarText = "Toggle Sidebar"
+const toggleSidebarText = "Close Sidebar"
 const newChatText = "New Chat"
-const searchText = "Search"
-const settingsText = "Settings"
+const searchChatsText = "Search Chats"
+const openSettingsText = "Settings"
 
 test("user can see and toggle sidebar", async ({ page }) => {
     await signupAndLogin(page)
 
     const toggleSidebar = page.getByTestId("toggle-sidebar")
     const newChat = page.getByTestId("new-chat")
-    const search = page.getByTestId("search")
-    const settings = page.getByTestId("settings")
+    const searchChats = page.getByTestId("search-chats")
+    const openSettings = page.getByTestId("open-settings")
 
     await expect(toggleSidebar).toBeVisible()
     await expect(newChat).toBeVisible()
-    await expect(search).toBeVisible()
-    await expect(settings).toBeVisible()
+    await expect(searchChats).toBeVisible()
+    await expect(openSettings).toBeVisible()
 
     await expect(toggleSidebar).toContainText(toggleSidebarText)
     await expect(newChat).toContainText(newChatText)
-    await expect(search).toContainText(searchText)
-    await expect(settings).toContainText(settingsText)
+    await expect(searchChats).toContainText(searchChatsText)
+    await expect(openSettings).toContainText(openSettingsText)
 
     await toggleSidebar.click()
     await expect(toggleSidebar).not.toContainText(toggleSidebarText)
     await expect(newChat).not.toContainText(newChatText)
-    await expect(search).not.toContainText(searchText)
-    await expect(settings).not.toContainText(settingsText)
+    await expect(searchChats).not.toContainText(searchChatsText)
+    await expect(openSettings).not.toContainText(openSettingsText)
 
     await toggleSidebar.click()
     await expect(toggleSidebar).toContainText(toggleSidebarText)
     await expect(newChat).toContainText(newChatText)
-    await expect(search).toContainText(searchText)
-    await expect(settings).toContainText(settingsText)
+    await expect(searchChats).toContainText(searchChatsText)
+    await expect(openSettings).toContainText(openSettingsText)
 })
 
 utilsTest("user can see and toggle sidebar with chats", async ({ page, user }) => {
     const toggleSidebar = page.getByTestId("toggle-sidebar")
     const newChat = page.getByTestId("new-chat")
-    const search = page.getByTestId("search")
-    const settings = page.getByTestId("settings")
+    const searchChats = page.getByTestId("search-chats")
+    const openSettings = page.getByTestId("open-settings")
 
     await expect(toggleSidebar).toBeVisible()
     await expect(newChat).toBeVisible()
-    await expect(search).toBeVisible()
-    await expect(settings).toBeVisible()
+    await expect(searchChats).toBeVisible()
+    await expect(openSettings).toBeVisible()
 
     await expect(toggleSidebar).toContainText(toggleSidebarText)
     await expect(newChat).toContainText(newChatText)
-    await expect(search).toContainText(searchText)
-    await expect(settings).toContainText(settingsText)
+    await expect(searchChats).toContainText(searchChatsText)
+    await expect(openSettings).toContainText(openSettingsText)
     for (const chat of user.chats) {
         await expect(page.getByRole("link", { name: chat.title })).toBeVisible()
     }
@@ -59,8 +59,8 @@ utilsTest("user can see and toggle sidebar with chats", async ({ page, user }) =
     await toggleSidebar.click()
     await expect(toggleSidebar).not.toContainText(toggleSidebarText)
     await expect(newChat).not.toContainText(newChatText)
-    await expect(search).not.toContainText(searchText)
-    await expect(settings).not.toContainText(settingsText)
+    await expect(searchChats).not.toContainText(searchChatsText)
+    await expect(openSettings).not.toContainText(openSettingsText)
     for (const chat of user.chats) {
         await expect(page.getByRole("link", { name: chat.title })).not.toBeVisible()
     }
@@ -68,8 +68,8 @@ utilsTest("user can see and toggle sidebar with chats", async ({ page, user }) =
     await toggleSidebar.click()
     await expect(toggleSidebar).toContainText(toggleSidebarText)
     await expect(newChat).toContainText(newChatText)
-    await expect(search).toContainText(searchText)
-    await expect(settings).toContainText(settingsText)
+    await expect(searchChats).toContainText(searchChatsText)
+    await expect(openSettings).toContainText(openSettingsText)
     for (const chat of user.chats) {
         await expect(page.getByRole("link", { name: chat.title })).toBeVisible()
     }

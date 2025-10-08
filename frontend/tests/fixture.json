@@ -22,7 +22,7 @@
         "fields": {
             "user": 2,
             "title": "Math Project",
-            "is_pending": false,
+            "pending_message": null,
             "created_at": "2025-09-18T14:59:09.145Z"
         }
     },
@@ -32,7 +32,7 @@
         "fields": {
             "user": 2,
             "title": "Weather Inquiry",
-            "is_pending": false,
+            "pending_message": null,
             "created_at": "2025-09-18T15:03:05.374Z"
         }
     },

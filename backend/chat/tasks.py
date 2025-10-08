@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import random
 import threading
 from concurrent.futures import CancelledError
 
@@ -26,9 +25,9 @@ threading.Thread(target = start_background_loop, args = [event_loop], daemon = T
 chat_futures: dict[str, asyncio.Future[None]] = {}
 opened_chats: set[str] = set()
 
-def generate_pending_message_in_chat(chat: Chat, options: dict[str, int | float]):
+def generate_pending_message_in_chat(chat: Chat):
     if chat.pending_message is not None:
-        future = asyncio.run_coroutine_threadsafe(sample_model(chat, options), event_loop)
+        future = asyncio.run_coroutine_threadsafe(sample_model(chat), event_loop)
         future.add_done_callback(lambda f: task_done_callback(f, str(chat.uuid)))
         chat_futures[str(chat.uuid)] = future
 
@@ -43,16 +42,20 @@ def task_done_callback(future: asyncio.Future[None], chat_uuid: str):
     if exception:
         logger.exception("Task failed", exc_info = exception)
 
-async def sample_model(chat: Chat, options: dict[str, int | float]):
+async def sample_model(chat: Chat):
     model = get_ollama_model(chat.pending_message.model)
     if model not in str(ollama.list()):
         raise ValueError(f"Model {model} not installed")
+    options = {"num_predict": 256, "temperature": 0.1, "top_p": 0.1}
+
+    if os.getenv("PLAYWRIGHT_TEST") == "True":
+        options["seed"] = 0
 
     messages: list[dict[str, str]] = await get_messages(chat.pending_message)
     message_index = len(messages)
 
     try:
-        async for part in await ollama.AsyncClient().chat(model, messages, stream = True, options = parse_options(options)):
+        async for part in await ollama.AsyncClient().chat(model, messages, stream = True, options = options):
             token = part["message"]["content"]
             chat.pending_message.text += token
             if not await safe_save_message(chat.pending_message):
@@ -66,6 +69,8 @@ async def sample_model(chat: Chat, options: dict[str, int | float]):
         chat.pending_message = None
         await safe_save_chat(chat)
         return
+
+    await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": chat.pending_message.text, "message_index": message_index})
 
     chat.pending_message = None
     await chat.asave()
@@ -139,17 +144,6 @@ def get_ollama_model(model: str):
         return "moondream:1.8b-v2-q2_K"
     else:
         return model.lower().replace("-", ":")
-
-def parse_options(options: dict[str, int | float]) -> dict[str, int | float]:
-    def clamp(value: int | float, minimum: int | float, maximum: int | float) -> int | float:
-        return max(min(value, maximum), minimum)
-
-    return  {
-        "num_predict": clamp(int(options.get("num_predict", 256)), 32, 4096),
-        "temperature": clamp(float(options.get("temperature", 0.2)), 0.1, 2.0),
-        "top_p": clamp(float(options.get("top_p", 0.9)), 0.1, 2.0),
-        "seed": int(options.get("seed", random.randint(-(10 ** 10), 10 ** 10)))
-    }
 
 async def safe_save_message(bot_message: Message):
     try:
