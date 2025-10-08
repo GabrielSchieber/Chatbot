@@ -5,6 +5,8 @@ import { getMessages, getPendingChats } from "../utils/api"
 import type { Chat, Message } from "../types"
 
 interface ChatContextValue {
+    chats: Chat[]
+    setChats: React.Dispatch<React.SetStateAction<Chat[]>>
     messages: Message[]
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
     pendingChat: Chat | null
@@ -17,6 +19,7 @@ const ChatContext = createContext<ChatContextValue | undefined>(undefined)
 export function ChatProvider({ children }: { children: React.ReactNode }) {
     const { chatUUID } = useParams()
 
+    const [chats, setChats] = useState<Chat[]>([])
     const [messages, setMessages] = useState<Message[]>([])
     const [pendingChat, setPendingChat] = useState<Chat | null>(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -43,7 +46,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     return (
-        <ChatContext.Provider value={{ messages, setMessages, pendingChat, setPendingChat, isLoading }}>
+        <ChatContext.Provider value={{ chats, setChats, messages, setMessages, pendingChat, setPendingChat, isLoading }}>
             {children}
         </ChatContext.Provider>
     )

@@ -9,13 +9,13 @@ import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
 import { newMessage } from "../../utils/api"
 import { getFileSize } from "../../utils/file"
-import type { Chat, Model } from "../../types"
+import type { Model } from "../../types"
 
-export default function Prompt({ setChats }: { setChats: React.Dispatch<React.SetStateAction<Chat[]>> }) {
+export default function Prompt() {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
-    const { setMessages, pendingChat, setPendingChat, isLoading } = useChat()
+    const { setChats, setMessages, pendingChat, setPendingChat, isLoading } = useChat()
 
     const fileInputRef = useRef<HTMLInputElement | null>(null)
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)

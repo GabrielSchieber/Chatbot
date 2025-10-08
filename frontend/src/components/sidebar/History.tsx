@@ -3,19 +3,20 @@ import { DropdownMenu } from "radix-ui"
 import { useEffect, useRef, useState, type RefObject } from "react"
 
 import ConfirmDialog from "../ui/ConfirmDialog"
+import { useChat } from "../../context/ChatProvider"
 import { deleteChat, getChats, renameChat } from "../../utils/api"
 import type { Chat } from "../../types"
 
-export default function History({ sidebarRef, topButtonsRef, settingsButtonRef, chats, setChats }: {
+export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }: {
     sidebarRef: RefObject<HTMLDivElement | null>
     topButtonsRef: RefObject<HTMLDivElement | null>
     settingsButtonRef: RefObject<HTMLDivElement | null>
-    chats: Chat[]
-    setChats: React.Dispatch<React.SetStateAction<Chat[]>>
 }) {
     const offset = useRef(0)
     const limit = useRef(1)
     const isLoadingRef = useRef(true)
+
+    const { chats, setChats } = useChat()
 
     const [isLoading, setIsLoading] = useState(false)
     const [hasMore, setHasMore] = useState(true)

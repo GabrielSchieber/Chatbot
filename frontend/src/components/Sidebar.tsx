@@ -3,12 +3,11 @@ import { useRef, useState } from "react"
 
 import History from "./sidebar/History"
 import Search from "./sidebar/Search"
+import Settings from "./sidebar/Settings"
 import { useAuth } from "../context/AuthProvider"
 import { me } from "../utils/api"
-import Settings from "./sidebar/Settings"
-import type { Chat } from "../types"
 
-export default function Sidebar({ chats, setChats }: { chats: Chat[], setChats: React.Dispatch<React.SetStateAction<Chat[]>> }) {
+export default function Sidebar() {
     const { user } = useAuth()
 
     const ref = useRef<HTMLDivElement | null>(null)
@@ -51,7 +50,7 @@ export default function Sidebar({ chats, setChats }: { chats: Chat[], setChats: 
                 <Search isSidebarOpen={isOpen} itemClassNames={itemClassNames} />
             </div>
 
-            {isOpen && <History sidebarRef={ref} topButtonsRef={topButtonsRef} settingsButtonRef={settingsButtonRef} chats={chats} setChats={setChats} />}
+            {isOpen && <History sidebarRef={ref} topButtonsRef={topButtonsRef} settingsButtonRef={settingsButtonRef} />}
 
             <div ref={settingsButtonRef} className={`flex flex-col sticky bottom-0 p-2 bg-gray-800 light:bg-gray-200 ${isOpen && "border-t"}`}>
                 <Settings isSidebarOpen={isOpen} itemClassNames={itemClassNames} />
