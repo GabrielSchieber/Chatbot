@@ -1,13 +1,15 @@
 import { Locator, expect } from "@playwright/test"
 import { Chat, test } from "./utils"
 
+test.describe.configure({ mode: "parallel" })
+
 test("user can open search", async ({ page, user }) => {
     await page.getByRole("button", { name: "Search Chats", exact: true }).click()
 
     await expect(page.getByPlaceholder("Search chats...", { exact: true })).toBeVisible()
 
     const entries = page.getByRole("link")
-    await expect(entries).toHaveCount(user.chats.length)
+    await expect(entries).toHaveCount(Math.min(user.chats.length, 10))
 
     const entriesAndChats: [Locator, Chat][] = (await entries.all()).map((e, i) => [e, user.chats[i]])
 
@@ -19,4 +21,80 @@ test("user can open search", async ({ page, user }) => {
             await expect(entry).toContainText(message.text.slice(0, 100) + "...")
         }
     }
+})
+
+test("search filters by title", async ({ page, user }) => {
+    const target = user.chats[0]
+
+    await page.getByRole("button", { name: "Search Chats", exact: true }).click()
+    const input = page.getByPlaceholder("Search chats...", { exact: true })
+    await expect(input).toBeVisible()
+
+    const entries = page.getByRole("link")
+    await expect(entries).toHaveCount(Math.min(user.chats.length, 10))
+
+    await input.click()
+    await input.fill(target.title)
+    await input.press("Enter")
+
+    await expect(entries).toHaveCount(1, { timeout: 5000 })
+
+    const entry = entries.nth(0)
+    await expect(entry).toContainText(target.title)
+    expect(await entry.getAttribute("href")).toEqual(`/chat/${target.uuid}`)
+})
+
+test("search shows no results message when nothing matches", async ({ page, user }) => {
+    await page.getByRole("button", { name: "Search Chats", exact: true }).click()
+    const input = page.getByPlaceholder("Search chats...", { exact: true })
+    await expect(input).toBeVisible()
+
+    const entries = page.getByRole("link")
+    await expect(entries).toHaveCount(Math.min(user.chats.length, 10))
+
+    const randomQuery = `no-results-${Math.random().toString(36).slice(2)}`
+    await input.click()
+    await input.fill(randomQuery)
+    await input.press("Enter")
+
+    await expect(page.getByText("No chats found.", { exact: true })).toBeVisible({ timeout: 5000 })
+})
+
+test("infinite scroll loads more search entries", async ({ page, user }) => {
+    await page.getByRole("button", { name: "Search Chats", exact: true }).click()
+    const dialog = page.getByRole("dialog")
+
+    const entries = dialog.getByRole("link")
+    const initialCount = Math.min(user.chats.length, 10)
+    await expect(entries).toHaveCount(initialCount, { timeout: 5000 })
+
+    const container = dialog.locator('div.overflow-y-auto')
+    await container.evaluate((el: HTMLElement) => { el.scrollTop = el.scrollHeight })
+
+    await page.waitForFunction((initial) => {
+        const dialogEl = document.querySelector('[role="dialog"]')
+        if (!dialogEl) return false
+        const links = dialogEl.querySelectorAll('a')
+        return links.length > initial
+    }, initialCount, { timeout: 5000 })
+
+    const newCount = await entries.count()
+    expect(newCount).toBeGreaterThanOrEqual(initialCount + 1)
+})
+
+test("clicking a search entry navigates to the chat", async ({ page, user }) => {
+    await page.getByRole("button", { name: "Search Chats", exact: true }).click()
+    const dialog = page.getByRole("dialog")
+    const entries = dialog.getByRole("link")
+
+    await expect(entries).toHaveCount(Math.min(user.chats.length, 10), { timeout: 5000 })
+
+    const firstChat = user.chats[0]
+    const first = entries.nth(0)
+    const href = await first.getAttribute("href")
+    expect(href).toEqual(`/chat/${firstChat.uuid}`)
+
+    await first.click()
+    await page.waitForURL(`**/chat/${firstChat.uuid}`, { timeout: 5000 })
+    expect(page.url()).toContain(`/chat/${firstChat.uuid}`)
 })
