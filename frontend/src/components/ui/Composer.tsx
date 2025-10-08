@@ -14,6 +14,7 @@ export default function Composer({
     setText,
     isExtended,
     hasFiles,
+    withBorderAndShadow,
     filesArea,
     onFileChange,
     model,
@@ -32,6 +33,7 @@ export default function Composer({
     setText: Dispatch<SetStateAction<string>>
     isExtended: boolean
     hasFiles: boolean
+    withBorderAndShadow: boolean
     filesArea: ReactNode
     onFileChange: (e: ChangeEvent<HTMLInputElement>) => void
     model: Model
@@ -47,9 +49,10 @@ export default function Composer({
             layout
             transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
             className={`
-                    flex flex-col w-[60vw] mb-5 rounded-4xl bg-gray-800 light:bg-gray-200
-                    shadow-xl/50 border-t-4 border-gray-600 light:border-gray-400 ${hasFiles ? "gap-2 px-4 pt-3 pb-1" : "px-3 py-1"}
-                `}
+                flex flex-col w-[60vw] mb-5 rounded-4xl bg-gray-800 light:bg-gray-200
+                ${hasFiles ? "gap-2 px-4 pt-3 pb-1" : "px-3 py-1"}
+                ${withBorderAndShadow && "border-t-4 border-gray-600 light:border-gray-400 shadow-xl/50"}
+            `}
             onClick={e => {
                 if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
                     return

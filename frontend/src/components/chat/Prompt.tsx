@@ -149,6 +149,7 @@ export default function Prompt({ setChats }: { setChats: React.Dispatch<React.Se
                 setText={setText}
                 isExtended={isExtended}
                 hasFiles={files.length > 0}
+                withBorderAndShadow={true}
                 filesArea={<Files files={files} setFiles={setFiles} />}
                 onFileChange={handleFileChange}
                 model={model}

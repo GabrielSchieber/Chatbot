@@ -3,12 +3,12 @@ import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
 import Attachments from "./Attachments"
+import Composer from "./Composer"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
 import { editMessage } from "../../utils/api"
 import { getFileSize } from "../../utils/file"
 import type { MessageFile, Model } from "../../types"
-import Composer from "./Composer"
 
 export default function Editor({ index, setIndex }: { index: number, setIndex: React.Dispatch<React.SetStateAction<number>> }) {
     const { chatUUID } = useParams()
@@ -192,6 +192,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
             setText={setText}
             isExtended={isExtended}
             hasFiles={getCurrentFiles().length > 0}
+            withBorderAndShadow={false}
             filesArea={<Files files={getCurrentFiles()} onRemove={removeFile} onRemoveAll={removeFiles} />}
             onFileChange={handleFileChange}
             model={model}
