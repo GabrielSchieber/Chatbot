@@ -205,29 +205,6 @@ class StopPendingChats(APIView):
         stop_user_pending_chats(request.user)
         return Response(status = status.HTTP_200_OK)
 
-class GetMessage(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request: Request):
-        chat_uuid = request.GET.get("chat_uuid")
-        message_index = int(request.GET.get("message_index"))
-
-        if not chat_uuid or message_index is None:
-            return Response({"error": "'chat_uuid' and 'message_index' fields are required"}, status.HTTP_400_BAD_REQUEST)
-
-        try:
-            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-        except Chat.DoesNotExist:
-            return Response({"error": "Chat not found"}, status.HTTP_404_NOT_FOUND)
-
-        message = Message.objects.filter(chat = chat).order_by("created_at")
-
-        if message_index < 0 or message_index >= message.count():
-            return Response({"error": "Message index out of range"}, status.HTTP_400_BAD_REQUEST)
-
-        serializer = MessageSerializer(message[message_index], many = False)
-        return Response(serializer.data, status.HTTP_200_OK)
-
 class BinaryFileRenderer(BaseRenderer):
     media_type = "application/octet-stream"
     format = None
