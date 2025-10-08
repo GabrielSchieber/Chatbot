@@ -51,7 +51,6 @@ export default function Messages() {
 
             webSocket.current.addEventListener("message", e => {
                 const data = JSON.parse(e.data)
-                console.log(data)
 
                 if (data.token || data.message) {
                     let shouldSetMessages = true

@@ -158,7 +158,7 @@ export function CopyButton({ text }: { text: string }) {
     )
 }
 
-export function RegenerateButton({ index, model }: { index: number, model?: Model }) {
+export function RegenerateButton({ index, model }: { index: number, model: Model | null }) {
     const { chatUUID } = useParams()
 
     const { setMessages, pendingChat, setPendingChat, isLoading } = useChat()

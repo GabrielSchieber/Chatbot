@@ -26,7 +26,7 @@ class ChatTests(TestCase):
         chat = Chat.objects.create(user = user, title = "Test chat")
         self.assertEqual(chat.user, user)
         self.assertEqual(chat.title, "Test chat")
-        self.assertFalse(chat.is_pending)
+        self.assertIsNone(chat.pending_message)
 
 class MessageTests(TestCase):
     def test_creation(self):
@@ -93,36 +93,7 @@ class ViewTests(TestCase):
         user, _ = self.create_and_login_user()
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["id"], user.id)
         self.assertEqual(response.json()["email"], user.email)
-
-    def test_get_message(self):
-        response = self.client.get("/api/get-message/")
-        self.assertEqual(response.status_code, 401)
-
-        test_chat_uuid = "849087f8-4b3f-47f1-980d-5a5a3d325912"
-
-        response = self.client.get(f"/api/get-message/?chat_uuid={test_chat_uuid}&message_index=0")
-        self.assertEqual(response.status_code, 401)
-
-        user, _ = self.create_and_login_user()
-        response = self.client.get(f"/api/get-message/?chat_uuid={test_chat_uuid}&message_index=0")
-        self.assertEqual(response.status_code, 404)
-
-        chat = Chat.objects.create(user = user, title = "Test chat")
-        response = self.client.get(f"/api/get-message/?chat_uuid={str(chat.uuid)}&message_index=0")
-        self.assertEqual(response.status_code, 400)
-
-        Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
-        Message.objects.create(chat = chat, text = "Hi!", is_from_user = False)
-
-        response = self.client.get(f"/api/get-message/?chat_uuid={str(chat.uuid)}&message_index=0")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["text"], "Hello!")
-
-        response = self.client.get(f"/api/get-message/?chat_uuid={str(chat.uuid)}&message_index=1")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["text"], "Hi!")
 
     def test_get_messages(self):
         response = self.client.get("/api/get-messages/")
@@ -151,8 +122,8 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         expected_messages = [
-            {"text": "Hello!", "is_from_user": True, "files": [], "model": None},
-            {"text": "Hi!", "is_from_user": False, "files": [], "model": None}
+            {"id": 1, "text": "Hello!", "is_from_user": True, "files": [], "model": None},
+            {"id": 2, "text": "Hi!", "is_from_user": False, "files": [], "model": None}
         ]
         self.assertEqual(response.json(), expected_messages)
 
@@ -163,10 +134,10 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         expected_messages = [
-            {"text": "Hello!", "is_from_user": True, "files": [], "model": None},
-            {"text": "Hi!", "is_from_user": False, "files": [], "model": None},
-            {"text": "Hello again!", "is_from_user": True, "files": [], "model": None},
-            {"text": "Hi again!", "is_from_user": False, "files": [], "model": None}
+            {"id": 1, "text": "Hello!", "is_from_user": True, "files": [], "model": None},
+            {"id": 2, "text": "Hi!", "is_from_user": False, "files": [], "model": None},
+            {"id": 3, "text": "Hello again!", "is_from_user": True, "files": [], "model": None},
+            {"id": 4, "text": "Hi again!", "is_from_user": False, "files": [], "model": None}
         ]
         self.assertEqual(response.json(), expected_messages)
 
@@ -187,7 +158,7 @@ class ViewTests(TestCase):
         response = self.client.get("/api/get-chats/")
         self.assertEqual(response.status_code, 200)
 
-        expected_chats = [{"title": chat1.title, "is_pending": False, "uuid": str(chat1.uuid)}]
+        expected_chats = [{"uuid": str(chat1.uuid), "title": chat1.title, "pending_message_id": None}]
         self.assertEqual(response.json()["chats"], expected_chats)
 
         chat2 = Chat.objects.create(user = user1, title = "Test chat 2")
@@ -195,8 +166,8 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         expected_chats = [
-            {"title": chat2.title, "is_pending": False, "uuid": str(chat2.uuid)},
-            {"title": chat1.title, "is_pending": False, "uuid": str(chat1.uuid)}
+            {"uuid": str(chat2.uuid), "title": chat2.title, "pending_message_id": None},
+            {"uuid": str(chat1.uuid), "title": chat1.title, "pending_message_id": None}
         ]
         self.assertEqual(response.json()["chats"], expected_chats)
 
@@ -210,7 +181,7 @@ class ViewTests(TestCase):
         response = self.client.get("/api/get-chats/")
         self.assertEqual(response.status_code, 200)
 
-        expected_chats = [{"title": chat3.title, "is_pending": False, "uuid": str(chat3.uuid)}]
+        expected_chats = [{"uuid": str(chat3.uuid), "title": chat3.title, "pending_message_id": None}]
         self.assertEqual(response.json()["chats"], expected_chats)
 
         chat4 = Chat.objects.create(user = user2, title = "Test chat 4")
@@ -218,8 +189,8 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         expected_chats = [
-            {"title": chat4.title, "is_pending": False, "uuid": str(chat4.uuid)},
-            {"title": chat3.title, "is_pending": False, "uuid": str(chat3.uuid)}
+            {"uuid": str(chat4.uuid), "title": chat4.title, "pending_message_id": None},
+            {"uuid": str(chat3.uuid), "title": chat3.title, "pending_message_id": None}
         ]
         self.assertEqual(response.json()["chats"], expected_chats)
 

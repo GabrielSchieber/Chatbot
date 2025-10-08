@@ -57,11 +57,11 @@ function Attachment({ file, onRemove }: { file: MessageFile, onRemove?: (file: M
 function ImageIcon({ file }: { file: MessageFile }) {
     const { chatUUID } = useParams()
 
-    const [data, setData] = useState<Blob | undefined>(file.content)
+    const [data, setData] = useState<Blob | null>(file.content)
     const shouldLoadContent = useRef(true)
 
     useEffect(() => {
-        if (chatUUID && data === undefined && shouldLoadContent.current) {
+        if (chatUUID && data === null && shouldLoadContent.current) {
             shouldLoadContent.current = false
             getMessageFileContent(chatUUID, file.id).then(response => {
                 if (response.ok) {
@@ -72,7 +72,7 @@ function ImageIcon({ file }: { file: MessageFile }) {
     }, [])
 
     return (
-        data !== undefined ? (
+        data !== null ? (
             <img className="size-14 object-cover rounded-md" src={URL.createObjectURL(data || new Blob)} />
         ) : (
             <svg className="size-14 object-cover rounded-md animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
