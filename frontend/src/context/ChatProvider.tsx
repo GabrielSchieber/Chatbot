@@ -1,8 +1,9 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
-import { getMessages, getPendingChats } from "../utils/api"
+import { getMessageFileContent, getMessages, getPendingChats } from "../utils/api"
 import type { Chat, Message } from "../types"
+import { getFileType } from "../utils/file"
 
 interface ChatContextValue {
     chats: Chat[]
@@ -19,17 +20,44 @@ const ChatContext = createContext<ChatContextValue | undefined>(undefined)
 export function ChatProvider({ children }: { children: React.ReactNode }) {
     const { chatUUID } = useParams()
 
+    const shouldSet = useRef(true)
+
     const [chats, setChats] = useState<Chat[]>([])
     const [messages, setMessages] = useState<Message[]>([])
     const [pendingChat, setPendingChat] = useState<Chat | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
+        if (!shouldSet.current) return
+        shouldSet.current = false
+
         if (chatUUID) {
             getMessages(chatUUID).then(response => {
                 if (response.ok) {
-                    response.json().then(data => setMessages(data))
+                    response.json().then(data => {
+                        setMessages(data)
+
+                        for (const m of data) {
+                            for (const f of m.files) {
+                                if (getFileType(f.name) === "Image" && f.content === null) {
+                                    getMessageFileContent(chatUUID, f.id).then(response => {
+                                        if (response.ok) {
+                                            response.blob().then(blob => {
+                                                setMessages(previous =>
+                                                    previous.map(p => (
+                                                        p.id !== m.id ? p :
+                                                            { ...p, files: p.files.map(file => file.id === f.id ? { ...file, content: blob } : file) }
+                                                    ))
+                                                )
+                                            })
+                                        }
+                                    })
+                                }
+                            }
+                        }
+                    })
                 }
+
             })
         }
 

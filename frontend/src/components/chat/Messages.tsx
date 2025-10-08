@@ -9,7 +9,6 @@ import Attachments from "../ui/Attachments"
 import { CopyButton, EditButton, RegenerateButton } from "../ui/Buttons"
 import Editor from "../ui/Editor"
 import { useChat } from "../../context/ChatProvider"
-import { getMessages } from "../../utils/api"
 
 export default function Messages() {
     const { chatUUID } = useParams()
@@ -30,16 +29,6 @@ export default function Messages() {
     }
 
     useEffect(() => {
-        if (chatUUID) {
-            getMessages(chatUUID).then(response => {
-                if (response.ok) {
-                    response.json().then(data => setMessages(data))
-                } else {
-                    alert("Failed to get messages")
-                }
-            })
-        }
-
         if (!webSocket.current) {
             webSocket.current = new WebSocket(`ws://${location.host}/ws/chat/`)
 

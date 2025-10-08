@@ -1,9 +1,7 @@
 import { Cross1Icon, FileIcon } from "@radix-ui/react-icons"
-import { useEffect, useRef, useState } from "react"
-import { useParams } from "react-router"
+import { useEffect, useState } from "react"
 
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
-import { getMessageFileContent } from "../../utils/api"
 import { getFileSize, getFileType } from "../../utils/file"
 import type { MessageFile } from "../../types"
 
@@ -55,25 +53,21 @@ function Attachment({ file, onRemove }: { file: MessageFile, onRemove?: (file: M
 }
 
 function ImageIcon({ file }: { file: MessageFile }) {
-    const { chatUUID } = useParams()
-
-    const [data, setData] = useState<Blob | null>(file.content)
-    const shouldLoadContent = useRef(true)
+    const [src, setSrc] = useState<string | null>(() => file.content ? URL.createObjectURL(file.content) : null)
 
     useEffect(() => {
-        if (chatUUID && data === null && shouldLoadContent.current) {
-            shouldLoadContent.current = false
-            getMessageFileContent(chatUUID, file.id).then(response => {
-                if (response.ok) {
-                    response.blob().then(data => setData(data))
-                }
-            })
+        if (!file.content) {
+            setSrc(null)
+            return
         }
-    }, [])
+        const objectUrl = URL.createObjectURL(file.content)
+        setSrc(objectUrl)
+        return () => URL.revokeObjectURL(objectUrl)
+    }, [file.content])
 
     return (
-        data !== null ? (
-            <img className="size-14 object-cover rounded-md" src={URL.createObjectURL(data || new Blob)} />
+        src ? (
+            <img className="size-14 object-cover rounded-md" src={src} />
         ) : (
             <svg className="size-14 object-cover rounded-md animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
