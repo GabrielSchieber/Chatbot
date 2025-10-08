@@ -1,9 +1,9 @@
 [
     {
         "model": "chat.user",
-        "pk": 2,
+        "pk": 1,
         "fields": {
-            "password": "pbkdf2_sha256$1000000$7EW1XOhxvl4mZliWOLtFCd$dyxvOmPA/lllPXhHzVBSpmGqO/9lFy1COSmukebOwp4=",
+            "password": "pbkdf2_sha256$1000000$L4ywoNGqIWo1rNz7qKSNyl$BnOFqpCvab9hCr7JyLgABEtKJ8yoD0QwX8W/yFkn3os=",
             "last_login": null,
             "is_superuser": false,
             "email": "test@example.com",
@@ -11,117 +11,765 @@
             "is_staff": false,
             "theme": "System",
             "has_sidebar_open": true,
-            "created_at": "2025-09-18T14:58:55.502Z",
+            "created_at": "2025-10-08T23:04:38.168Z",
             "groups": [],
             "user_permissions": []
         }
     },
     {
         "model": "chat.chat",
-        "pk": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
+        "pk": "171f7349-77d7-4c8c-ae8a-68112cefc188",
         "fields": {
-            "user": 2,
-            "title": "Math Project",
+            "user": 1,
+            "title": "Greetings",
             "pending_message": null,
-            "created_at": "2025-09-18T14:59:09.145Z"
-        }
-    },
-    {
-        "model": "chat.chat",
-        "pk": "d5139198-cbf2-489a-9ff4-111f08989712",
-        "fields": {
-            "user": 2,
-            "title": "Weather Inquiry",
-            "pending_message": null,
-            "created_at": "2025-09-18T15:03:05.374Z"
+            "created_at": "2025-10-08T23:04:38.830Z"
         }
     },
     {
         "model": "chat.message",
         "pk": 1,
         "fields": {
-            "chat": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
+            "chat": "171f7349-77d7-4c8c-ae8a-68112cefc188",
             "text": "Hello!",
             "is_from_user": true,
             "model": null,
-            "created_at": "2025-09-18T14:59:09.159Z"
+            "created_at": "2025-10-08T23:04:38.839Z"
         }
     },
     {
         "model": "chat.message",
         "pk": 2,
         "fields": {
-            "chat": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
-            "text": "Hello! I'm here to help you with your math homework. What's the topic you're working on?",
+            "chat": "171f7349-77d7-4c8c-ae8a-68112cefc188",
+            "text": "Hello! How are you?",
             "is_from_user": false,
             "model": "SmolLM2-135M",
-            "created_at": "2025-09-18T14:59:09.167Z"
+            "created_at": "2025-10-08T23:04:38.848Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "b6ad8fba-b9a5-4cd7-987a-c69f7facf7c4",
+        "fields": {
+            "user": 1,
+            "title": "Weather Inquiry",
+            "pending_message": null,
+            "created_at": "2025-10-08T23:04:38.854Z"
         }
     },
     {
         "model": "chat.message",
         "pk": 3,
         "fields": {
-            "chat": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
-            "text": "I'm working on learning math.",
+            "chat": "b6ad8fba-b9a5-4cd7-987a-c69f7facf7c4",
+            "text": "What's the weather like today?",
             "is_from_user": true,
             "model": null,
-            "created_at": "2025-09-18T15:00:08.920Z"
+            "created_at": "2025-10-08T23:04:38.863Z"
         }
     },
     {
         "model": "chat.message",
         "pk": 4,
         "fields": {
-            "chat": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
-            "text": "That sounds like a great project. Let me see if I can assist you in any way. Can you tell me what you've been trying to do and what kind of problems you're struggling with?",
+            "chat": "b6ad8fba-b9a5-4cd7-987a-c69f7facf7c4",
+            "text": "It's sunny with a high of 28°C.",
             "is_from_user": false,
             "model": "SmolLM2-135M",
-            "created_at": "2025-09-18T15:00:08.927Z"
+            "created_at": "2025-10-08T23:04:38.869Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "3b672be4-770b-45aa-8a7c-b655093e34af",
+        "fields": {
+            "user": 1,
+            "title": "Joke Request",
+            "pending_message": null,
+            "created_at": "2025-10-08T23:04:38.874Z"
         }
     },
     {
         "model": "chat.message",
         "pk": 5,
         "fields": {
-            "chat": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
-            "text": "What are derivatives and how are they used in Applied Mathematics?",
+            "chat": "3b672be4-770b-45aa-8a7c-b655093e34af",
+            "text": "Tell me a joke.",
             "is_from_user": true,
             "model": null,
-            "created_at": "2025-09-18T15:00:58.229Z"
+            "created_at": "2025-10-08T23:04:38.879Z"
         }
     },
     {
         "model": "chat.message",
         "pk": 6,
         "fields": {
-            "chat": "3c21c413-f01e-4ef5-8a02-3c670f9c737c",
-            "text": "Derivatives are a fundamental concept in calculus, and they play a crucial role in many areas of mathematics. In applied mathematics, derivatives are used to model and analyze complex systems, particularly those that involve rates of change or accumulation.\n\nIn physics and engineering, derivatives help us understand the behavior of physical systems, such as motion, collisions, and heat transfer. For example, in thermodynamics, derivatives describe how energy is transferred between particles, which is essential for understanding the behavior of systems at the molecular level.\n\nIn economics, derivatives are used to model economic systems, including supply and demand curves, inflation, and interest rates. They help economists understand the relationships between variables and make predictions about future outcomes.\n\nDerivatives also appear in computer graphics, where they are used to create realistic animations and simulations of complex systems. In signal processing, derivatives are used to analyze and filter signals, which is essential for understanding how signals behave over time or space.\n\nIn summary, derivatives are a powerful tool in applied mathematics that helps us understand the behavior of complex systems, model real-world phenomena, and make predictions about future outcomes.",
+            "chat": "3b672be4-770b-45aa-8a7c-b655093e34af",
+            "text": "Why don’t skeletons fight each other? They don’t have the guts.",
             "is_from_user": false,
             "model": "SmolLM2-135M",
-            "created_at": "2025-09-18T15:00:58.238Z"
+            "created_at": "2025-10-08T23:04:38.885Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "d8ec6ceb-e251-4435-9987-215f8435f1e3",
+        "fields": {
+            "user": 1,
+            "title": "Math Help",
+            "pending_message": null,
+            "created_at": "2025-10-08T23:04:38.890Z"
         }
     },
     {
         "model": "chat.message",
         "pk": 7,
         "fields": {
-            "chat": "d5139198-cbf2-489a-9ff4-111f08989712",
-            "text": "What's the weather like today?",
+            "chat": "d8ec6ceb-e251-4435-9987-215f8435f1e3",
+            "text": "Can you solve 12 * 8?",
             "is_from_user": true,
             "model": null,
-            "created_at": "2025-09-18T15:03:05.380Z"
+            "created_at": "2025-10-08T23:04:38.896Z"
         }
     },
     {
         "model": "chat.message",
         "pk": 8,
         "fields": {
-            "chat": "d5139198-cbf2-489a-9ff4-111f08989712",
-            "text": "It's a beautiful day here in the mountains. The sun is shining brightly and the air is crisp and clean. We've had some rain showers so far this week, but it's been mostly light drizzle. The temperature has been around 70 degrees Fahrenheit, which is perfect for hiking or exploring the trails.\n\nThe trail we're on is a beautiful loop of dirt and gravel, with some nice views of the surrounding mountains. It's a great spot to take in the scenery and enjoy the fresh air. We've also had some interesting wildlife sightings today - a few deer grazing on the grasses, and a few birds flying overhead.\n\nOverall, it's going to be a wonderful day for hiking and exploring the trails here in the mountains.",
+            "chat": "d8ec6ceb-e251-4435-9987-215f8435f1e3",
+            "text": "Sure! 12 times 8 is 96.",
             "is_from_user": false,
             "model": "SmolLM2-135M",
-            "created_at": "2025-09-18T15:03:05.388Z"
+            "created_at": "2025-10-08T23:04:38.901Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "3d9e7b3c-e0c3-4921-a8ca-ffb4106da321",
+        "fields": {
+            "user": 1,
+            "title": "Travel Advice",
+            "pending_message": null,
+            "created_at": "2025-10-08T23:04:38.907Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 9,
+        "fields": {
+            "chat": "3d9e7b3c-e0c3-4921-a8ca-ffb4106da321",
+            "text": "What's the best time to visit Japan?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:38.913Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 10,
+        "fields": {
+            "chat": "3d9e7b3c-e0c3-4921-a8ca-ffb4106da321",
+            "text": "Spring and autumn are ideal for pleasant weather and beautiful scenery.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:38.918Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 11,
+        "fields": {
+            "chat": "3d9e7b3c-e0c3-4921-a8ca-ffb4106da321",
+            "text": "Thanks! I'll plan for April.",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:38.924Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 12,
+        "fields": {
+            "chat": "3d9e7b3c-e0c3-4921-a8ca-ffb4106da321",
+            "text": "Great choice! Cherry blossoms are stunning that time of year.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:38.929Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "dd6d1059-6194-4c46-be9d-c46fd8c42b31",
+        "fields": {
+            "user": 1,
+            "title": "Recipe Suggestion",
+            "pending_message": null,
+            "created_at": "2025-10-08T23:04:38.935Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 13,
+        "fields": {
+            "chat": "dd6d1059-6194-4c46-be9d-c46fd8c42b31",
+            "text": "I have eggs and spinach. What can I make?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:38.940Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 14,
+        "fields": {
+            "chat": "dd6d1059-6194-4c46-be9d-c46fd8c42b31",
+            "text": "You could make a spinach omelette. Want the recipe?",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:38.946Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 15,
+        "fields": {
+            "chat": "dd6d1059-6194-4c46-be9d-c46fd8c42b31",
+            "text": "Yes, please.",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:38.952Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 16,
+        "fields": {
+            "chat": "dd6d1059-6194-4c46-be9d-c46fd8c42b31",
+            "text": "Beat eggs, sauté spinach, then cook together in a pan. Simple and tasty!",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:38.957Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "2ae2ef1c-684a-4b86-917f-34435e168e68",
+        "fields": {
+            "user": 1,
+            "title": "Motivation",
+            "pending_message": null,
+            "created_at": "2025-10-08T23:04:38.962Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 17,
+        "fields": {
+            "chat": "2ae2ef1c-684a-4b86-917f-34435e168e68",
+            "text": "I'm feeling unmotivated.",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:38.967Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 18,
+        "fields": {
+            "chat": "2ae2ef1c-684a-4b86-917f-34435e168e68",
+            "text": "Remember why you started, and take one small step forward today.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:38.973Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "f31115f3-b40f-48bf-9834-a8c6c4a71a49",
+        "fields": {
+            "user": 1,
+            "title": "Book Recommendation",
+            "pending_message": null,
+            "created_at": "2025-10-08T23:04:38.978Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 19,
+        "fields": {
+            "chat": "f31115f3-b40f-48bf-9834-a8c6c4a71a49",
+            "text": "Can you recommend a good sci-fi book?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:38.984Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 20,
+        "fields": {
+            "chat": "f31115f3-b40f-48bf-9834-a8c6c4a71a49",
+            "text": "Sure! 'Dune' by Frank Herbert is a classic with rich world-building.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:38.989Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "8dd5af6e-3813-455f-92b7-b20d3e93fb20",
+        "fields": {
+            "user": 1,
+            "title": "Language Learning",
+            "pending_message": null,
+            "created_at": "2025-10-08T23:04:38.995Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 21,
+        "fields": {
+            "chat": "8dd5af6e-3813-455f-92b7-b20d3e93fb20",
+            "text": "How do you say 'thank you' in Japanese?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.001Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 22,
+        "fields": {
+            "chat": "8dd5af6e-3813-455f-92b7-b20d3e93fb20",
+            "text": "You say 'Arigatou' (ありがとう).",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.005Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 23,
+        "fields": {
+            "chat": "8dd5af6e-3813-455f-92b7-b20d3e93fb20",
+            "text": "And 'good morning'?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.011Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 24,
+        "fields": {
+            "chat": "8dd5af6e-3813-455f-92b7-b20d3e93fb20",
+            "text": "That's 'Ohayou gozaimasu' (おはようございます).",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.017Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "c815db50-8e18-44ab-aab8-28b8051baa48",
+        "fields": {
+            "user": 1,
+            "title": "Tech Support",
+            "pending_message": null,
+            "created_at": "2025-10-08T23:04:39.023Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 25,
+        "fields": {
+            "chat": "c815db50-8e18-44ab-aab8-28b8051baa48",
+            "text": "My laptop is running slow. Any tips?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.028Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 26,
+        "fields": {
+            "chat": "c815db50-8e18-44ab-aab8-28b8051baa48",
+            "text": "Try closing unused programs, clearing temporary files, and restarting.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.034Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 27,
+        "fields": {
+            "chat": "c815db50-8e18-44ab-aab8-28b8051baa48",
+            "text": "Okay, I'll try that now.",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.040Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 28,
+        "fields": {
+            "chat": "c815db50-8e18-44ab-aab8-28b8051baa48",
+            "text": "Let me know if it helps or if you need more advanced troubleshooting.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.046Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "50ffca67-eb2a-44a0-9a30-dd43e1796b82",
+        "fields": {
+            "user": 1,
+            "title": "Paragraph About Math",
+            "pending_message": null,
+            "created_at": "2025-10-08T23:04:39.051Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 29,
+        "fields": {
+            "chat": "50ffca67-eb2a-44a0-9a30-dd43e1796b82",
+            "text": "What is math? Describe it in a short paragraph.",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.056Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 30,
+        "fields": {
+            "chat": "50ffca67-eb2a-44a0-9a30-dd43e1796b82",
+            "text": "Math is the study of numbers and their operations, which can be expressed using symbols such as 1 for one, 2 for two, or 3 for three. It involves mathematical concepts like addition, subtraction, multiplication, division, and more, often with algebraic expressions to represent these operations mathematically. The core idea behind math lies in understanding patterns, relationships, and structures within numbers, which are essential in various aspects of life, from arithmetic and algebra to geometry and calculus.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.062Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "bc148bd4-ea18-4844-a720-3e60c9dba43f",
+        "fields": {
+            "user": 1,
+            "title": "Fitness Goals",
+            "pending_message": null,
+            "created_at": "2025-10-08T23:04:39.068Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 31,
+        "fields": {
+            "chat": "bc148bd4-ea18-4844-a720-3e60c9dba43f",
+            "text": "I want to start working out. Any tips?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.074Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 32,
+        "fields": {
+            "chat": "bc148bd4-ea18-4844-a720-3e60c9dba43f",
+            "text": "Start with small goals. What’s your main objective—weight loss, strength, or endurance?",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.079Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 33,
+        "fields": {
+            "chat": "bc148bd4-ea18-4844-a720-3e60c9dba43f",
+            "text": "Mostly weight loss, but I’d like to build some muscle too.",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.085Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 34,
+        "fields": {
+            "chat": "bc148bd4-ea18-4844-a720-3e60c9dba43f",
+            "text": "Great! Try combining cardio with resistance training. Three days a week is a good start.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.091Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 35,
+        "fields": {
+            "chat": "bc148bd4-ea18-4844-a720-3e60c9dba43f",
+            "text": "Should I join a gym or work out at home?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.096Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 36,
+        "fields": {
+            "chat": "bc148bd4-ea18-4844-a720-3e60c9dba43f",
+            "text": "Either works! Gyms offer equipment, but home workouts can be effective with bodyweight exercises.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.101Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 37,
+        "fields": {
+            "chat": "bc148bd4-ea18-4844-a720-3e60c9dba43f",
+            "text": "Thanks! I’ll start with home workouts.",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.107Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 38,
+        "fields": {
+            "chat": "bc148bd4-ea18-4844-a720-3e60c9dba43f",
+            "text": "Awesome! Let me know if you want a sample routine.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.112Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "23d19cf2-8a59-42da-867e-2eab9d5fdbdb",
+        "fields": {
+            "user": 1,
+            "title": "Job Interview Prep",
+            "pending_message": null,
+            "created_at": "2025-10-08T23:04:39.118Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 39,
+        "fields": {
+            "chat": "23d19cf2-8a59-42da-867e-2eab9d5fdbdb",
+            "text": "I have a job interview tomorrow. Can you help me prepare?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.123Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 40,
+        "fields": {
+            "chat": "23d19cf2-8a59-42da-867e-2eab9d5fdbdb",
+            "text": "Absolutely! What role is it for?",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.129Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 41,
+        "fields": {
+            "chat": "23d19cf2-8a59-42da-867e-2eab9d5fdbdb",
+            "text": "Marketing Manager at a tech startup.",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.134Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 42,
+        "fields": {
+            "chat": "23d19cf2-8a59-42da-867e-2eab9d5fdbdb",
+            "text": "Nice! Brush up on digital marketing trends and prepare examples of past campaigns you led.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.139Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 43,
+        "fields": {
+            "chat": "23d19cf2-8a59-42da-867e-2eab9d5fdbdb",
+            "text": "What kind of questions should I expect?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.145Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 44,
+        "fields": {
+            "chat": "23d19cf2-8a59-42da-867e-2eab9d5fdbdb",
+            "text": "Expect behavioral questions like 'Tell me about a time you handled a tight deadline.'",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.151Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 45,
+        "fields": {
+            "chat": "23d19cf2-8a59-42da-867e-2eab9d5fdbdb",
+            "text": "Should I ask questions at the end?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.157Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 46,
+        "fields": {
+            "chat": "23d19cf2-8a59-42da-867e-2eab9d5fdbdb",
+            "text": "Definitely. Ask about team structure, growth opportunities, and how success is measured.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.162Z"
+        }
+    },
+    {
+        "model": "chat.chat",
+        "pk": "a8b37e85-76b9-412c-b8d1-ef4c057c801b",
+        "fields": {
+            "user": 1,
+            "title": "Pet Advice",
+            "pending_message": null,
+            "created_at": "2025-10-08T23:04:39.167Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 47,
+        "fields": {
+            "chat": "a8b37e85-76b9-412c-b8d1-ef4c057c801b",
+            "text": "I'm thinking of adopting a dog. Any advice?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.173Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 48,
+        "fields": {
+            "chat": "a8b37e85-76b9-412c-b8d1-ef4c057c801b",
+            "text": "That’s exciting! Do you have a breed or size in mind?",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.178Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 49,
+        "fields": {
+            "chat": "a8b37e85-76b9-412c-b8d1-ef4c057c801b",
+            "text": "I’d prefer a medium-sized dog, something friendly and good with kids.",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.184Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 50,
+        "fields": {
+            "chat": "a8b37e85-76b9-412c-b8d1-ef4c057c801b",
+            "text": "Consider breeds like Labrador Retrievers or Beagles. They’re great family dogs.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.190Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 51,
+        "fields": {
+            "chat": "a8b37e85-76b9-412c-b8d1-ef4c057c801b",
+            "text": "How much time should I expect to spend on care?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.196Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 52,
+        "fields": {
+            "chat": "a8b37e85-76b9-412c-b8d1-ef4c057c801b",
+            "text": "Daily walks, feeding, grooming, and playtime—about 1–2 hours a day depending on the dog.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.202Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 53,
+        "fields": {
+            "chat": "a8b37e85-76b9-412c-b8d1-ef4c057c801b",
+            "text": "What about training?",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.207Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 54,
+        "fields": {
+            "chat": "a8b37e85-76b9-412c-b8d1-ef4c057c801b",
+            "text": "Start with basic commands and positive reinforcement. Puppy classes can be helpful too.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.213Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 55,
+        "fields": {
+            "chat": "a8b37e85-76b9-412c-b8d1-ef4c057c801b",
+            "text": "Thanks! I’ll look into local shelters.",
+            "is_from_user": true,
+            "model": null,
+            "created_at": "2025-10-08T23:04:39.219Z"
+        }
+    },
+    {
+        "model": "chat.message",
+        "pk": 56,
+        "fields": {
+            "chat": "a8b37e85-76b9-412c-b8d1-ef4c057c801b",
+            "text": "Wonderful! Let me know if you need help choosing or preparing your home.",
+            "is_from_user": false,
+            "model": "SmolLM2-135M",
+            "created_at": "2025-10-08T23:04:39.224Z"
         }
     }
 ]
