@@ -25,9 +25,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def receive_json(self, content):
         if self.chat_uuid == "":
             self.chat_uuid = str(content.get("chat_uuid", ""))
-            if await database_sync_to_async(self.user.chats.filter(uuid = self.chat_uuid).exists)():
-                await self.channel_layer.group_add(f"chat_{self.chat_uuid}", self.channel_name)
-                opened_chats.add(self.chat_uuid)
+            try:
+                if await database_sync_to_async(self.user.chats.filter(uuid = self.chat_uuid).exists)():
+                    await self.channel_layer.group_add(f"chat_{self.chat_uuid}", self.channel_name)
+                    opened_chats.add(self.chat_uuid)
+            except:
+                await self.close()
 
     async def send_token(self, event):
         await self.send_json({"token": event["token"], "message_index": event["message_index"]})
