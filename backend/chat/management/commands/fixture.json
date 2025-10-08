@@ -1,0 +1,186 @@
+{
+    "users": [
+        {
+            "email": "test@example.com",
+            "password": "testpassword",
+            "chats": [
+                {
+                    "title": "Greetings",
+                    "messages": [
+                        {
+                            "text": "Hello!",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "Hello! How are you?",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        }
+                    ]
+                },
+                {
+                    "title": "Weather Inquiry",
+                    "messages": [
+                        {
+                            "text": "What's the weather like today?",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "It's sunny with a high of 28°C.",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        }
+                    ]
+                },
+                {
+                    "title": "Joke Request",
+                    "messages": [
+                        {
+                            "text": "Tell me a joke.",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "Why don’t skeletons fight each other? They don’t have the guts.",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        }
+                    ]
+                },
+                {
+                    "title": "Math Help",
+                    "messages": [
+                        {
+                            "text": "Can you solve 12 * 8?",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "Sure! 12 times 8 is 96.",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        }
+                    ]
+                },
+                {
+                    "title": "Travel Advice",
+                    "messages": [
+                        {
+                            "text": "What's the best time to visit Japan?",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "Spring and autumn are ideal for pleasant weather and beautiful scenery.",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        },
+                        {
+                            "text": "Thanks! I'll plan for April.",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "Great choice! Cherry blossoms are stunning that time of year.",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        }
+                    ]
+                },
+                {
+                    "title": "Recipe Suggestion",
+                    "messages": [
+                        {
+                            "text": "I have eggs and spinach. What can I make?",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "You could make a spinach omelette. Want the recipe?",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        },
+                        {
+                            "text": "Yes, please.",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "Beat eggs, sauté spinach, then cook together in a pan. Simple and tasty!",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        }
+                    ]
+                },
+                {
+                    "title": "Motivation",
+                    "messages": [
+                        {
+                            "text": "I'm feeling unmotivated.",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "Remember why you started, and take one small step forward today.",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        }
+                    ]
+                },
+                {
+                    "title": "Book Recommendation",
+                    "messages": [
+                        {
+                            "text": "Can you recommend a good sci-fi book?",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "Sure! 'Dune' by Frank Herbert is a classic with rich world-building.",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        }
+                    ]
+                },
+                {
+                    "title": "Language Learning",
+                    "messages": [
+                        {
+                            "text": "How do you say 'thank you' in Japanese?",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "You say 'Arigatou' (ありがとう).",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        },
+                        {
+                            "text": "And 'good morning'?",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "That's 'Ohayou gozaimasu' (おはようございます).",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        }
+                    ]
+                },
+                {
+                    "title": "Tech Support",
+                    "messages": [
+                        {
+                            "text": "My laptop is running slow. Any tips?",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "Try closing unused programs, clearing temporary files, and restarting.",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        },
+                        {
+                            "text": "Okay, I'll try that now.",
+                            "is_from_user": true
+                        },
+                        {
+                            "text": "Let me know if it helps or if you need more advanced troubleshooting.",
+                            "is_from_user": false,
+                            "model": "SmolLM2-135M"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
