@@ -29,7 +29,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique = True)
     is_active = models.BooleanField(default = True)
     is_staff = models.BooleanField(default = False)
-    theme = models.CharField(max_length = 6, choices = [["System", "System"], ["Light", "Light"], ["Dark", "Dark"]], default = "System")
+    theme = models.CharField(choices = [[c, c] for c in ["System", "Light", "Dark"]], default = "System")
     has_sidebar_open = models.BooleanField(default = True)
     created_at = models.DateTimeField(default = timezone.now)
 
@@ -56,17 +56,7 @@ class Message(models.Model):
     chat = models.ForeignKey(Chat, models.CASCADE, related_name = "messages")
     text = models.TextField()
     is_from_user = models.BooleanField()
-    model = models.CharField(
-        max_length = 12,
-        choices = [
-            ["SmolLM2-135M", "SmolLM2-135M"],
-            ["SmolLM2-360M", "SmolLM2-360M"],
-            ["SmolLM2-1.7B", "SmolLM2-1.7B"],
-            ["Moondream", "Moondream"]
-        ],
-        blank = True,
-        null = True
-    )
+    model = models.CharField(choices = [[c, c] for c in ["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]], blank = True, null = True)
     created_at = models.DateTimeField(auto_now_add = True)
 
     def __str__(self):
@@ -76,7 +66,7 @@ class Message(models.Model):
 class MessageFile(models.Model):
     message = models.ForeignKey(Message, models.CASCADE, related_name = "files")
     name = models.CharField(max_length = 200)
-    content = models.BinaryField()
+    content = models.BinaryField(max_length = 5_000_000)
     content_type = models.TextField(max_length = 100)
     created_at = models.DateTimeField(auto_now_add = True)
 
