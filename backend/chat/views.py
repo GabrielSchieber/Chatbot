@@ -436,7 +436,7 @@ class RegenerateMessage(APIView):
         chat.pending_message = bot_message
         chat.save()
 
-        generate_pending_message_in_chat(chat)
+        generate_pending_message_in_chat(chat, True)
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, status.HTTP_200_OK)

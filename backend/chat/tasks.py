@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import random
 import threading
 from concurrent.futures import CancelledError
 
@@ -25,9 +26,9 @@ threading.Thread(target = start_background_loop, args = [event_loop], daemon = T
 chat_futures: dict[str, asyncio.Future[None]] = {}
 opened_chats: set[str] = set()
 
-def generate_pending_message_in_chat(chat: Chat):
+def generate_pending_message_in_chat(chat: Chat, should_randomize: bool = False):
     if chat.pending_message is not None:
-        future = asyncio.run_coroutine_threadsafe(sample_model(chat), event_loop)
+        future = asyncio.run_coroutine_threadsafe(sample_model(chat, should_randomize), event_loop)
         future.add_done_callback(lambda f: task_done_callback(f, str(chat.uuid)))
         chat_futures[str(chat.uuid)] = future
 
@@ -42,14 +43,21 @@ def task_done_callback(future: asyncio.Future[None], chat_uuid: str):
     if exception:
         logger.exception("Task failed", exc_info = exception)
 
-async def sample_model(chat: Chat):
+async def sample_model(chat: Chat, should_randomize: bool):
     model = get_ollama_model(chat.pending_message.model)
     if model not in str(ollama.list()):
         raise ValueError(f"Model {model} not installed")
-    options = {"num_predict": 256, "temperature": 0.1, "top_p": 0.1}
+
+    options = {
+        "num_predict": 256,
+        "temperature": random.randint(100, 1000) / 1000 if should_randomize else 0.1,
+        "top_p": random.randint(100, 1000) / 1000 if should_randomize else 0.1
+    }
 
     if os.getenv("PLAYWRIGHT_TEST") == "True":
         options["seed"] = 0
+    elif should_randomize:
+        options["seed"] = random.randint(-(10 ** 10), 10 ** 10)
 
     messages: list[dict[str, str]] = await get_messages(chat.pending_message)
     message_index = len(messages)
