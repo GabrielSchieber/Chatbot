@@ -1,5 +1,10 @@
 import { useState } from "react"
-import { login, signup } from "../utils/api"
+
+import { login, signup, verifyTOTPLogin } from "../utils/api"
+
+export const formClassNames = "flex flex-col gap-3 p-4 items-center justify-center rounded-xl bg-gray-800 light:bg-gray-100"
+export const inputClassNames = "outline-none w-full bg-gray-700 light:bg-gray-200 rounded-xl px-3 py-2"
+export const buttonClassNames = "bg-gray-700 light:bg-gray-300 hover:bg-gray-600 light:hover:bg-gray-400 rounded-xl px-6 py-1 cursor-pointer"
 
 export default function Auth({ type }: { type: "Signup" | "Login" }) {
     const submitFunction = type === "Signup" ? signup : login
@@ -10,6 +15,10 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [error, setError] = useState("")
+
+    const [showTOTP, setShowTOTP] = useState(false)
+    const [preAuthToken, setPreAuthToken] = useState<string | null>(null)
+    const [totpCode, setTotpCode] = useState("")
 
     async function handleSubmit(event: React.FormEvent) {
         event.preventDefault()
@@ -25,55 +34,81 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
                     alert("Error logging in after sign up")
                 }
             } else {
-                location.href = "/"
+                const data = await response.json().catch(() => ({}))
+                if (data?.twofa_required) {
+                    setPreAuthToken(data.preauth_token)
+                    setShowTOTP(true)
+                    return
+                }
+                if (response.ok) location.href = "/"
+                else setError(submitError)
             }
         } else {
             setError(submitError)
         }
     }
 
+    async function handleVerifyTOTP(event: React.FormEvent) {
+        event.preventDefault()
+        if (!preAuthToken) return
+
+        const response = await verifyTOTPLogin(preAuthToken, totpCode)
+        if (response.ok) {
+            location.href = "/"
+        } else {
+            setError("Invalid 2FA code")
+        }
+    }
+
     return (
-        <div className="flex flex-col w-screen h-screen bg-gray-900 light:bg-gray-300 items-center justify-center">
-            <form
-                className="flex flex-col gap-3 w-[500px] p-4 items-center justify-center rounded-xl bg-gray-800 light:bg-gray-100"
-                onSubmit={handleSubmit}
-            >
-                <h1 className="text-white light:text-black text-2xl pb-4">{headerText}</h1>
-                <input
-                    className="text-white light:text-black text-xl outline-none w-full bg-gray-700 light:bg-gray-200 rounded-xl px-3 py-2"
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    onKeyDown={_ => setError("")}
-                    required
-                />
-                {type === "Signup" && error && <p className="text-red-600 text-lg">{error}</p>}
-                <input
-                    className="text-white light:text-black text-xl outline-none w-full bg-gray-700 light:bg-gray-200 rounded-xl px-3 py-2"
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    minLength={type === "Signup" ? 12 : undefined}
-                    onChange={e => setPassword(e.target.value)}
-                    required
-                />
-                {type === "Login" && error && <p className="text-red-600 text-lg">{error}</p>}
-                <button
-                    className="
-                        text-white light:text-black text-xl bg-gray-700 light:bg-gray-300
-                        hover:bg-gray-600 light:hover:bg-gray-400 rounded-xl px-6 py-1 cursor-pointer
-                    "
-                >
-                    {headerText}
-                </button>
-                <p className="text-white light:text-black text-xl">
-                    {recommendationText + " "}
-                    <a className="text-white light:text-black text-xl underline" href={type === "Signup" ? "/login" : "/signup"}>
-                        {type === "Signup" ? "Log in!" : "Sign up!"}
-                    </a>
-                </p>
-            </form>
+        <div className="flex flex-col w-screen h-screen items-center justify-center text-xl text-white light:text-black bg-gray-900 light:bg-gray-300">
+            {!showTOTP ? (
+                <form className={formClassNames + " w-[500px]"} onSubmit={handleSubmit}>
+                    <h1 className="text-2xl pb-4">{headerText}</h1>
+                    <input
+                        className={inputClassNames}
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        onKeyDown={_ => setError("")}
+                        required
+                    />
+                    {type === "Signup" && error && <p className="text-red-600 text-lg">{error}</p>}
+                    <input
+                        className={inputClassNames}
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        minLength={type === "Signup" ? 12 : undefined}
+                        onChange={e => setPassword(e.target.value)}
+                        required
+                    />
+                    {type === "Login" && error && <p className="text-red-600 text-lg">{error}</p>}
+                    <button className={buttonClassNames}>
+                        {headerText}
+                    </button>
+                    <p className="text-xl">
+                        {recommendationText + " "}
+                        <a className="underline" href={type === "Signup" ? "/login" : "/signup"}>
+                            {type === "Signup" ? "Log in!" : "Sign up!"}
+                        </a>
+                    </p>
+                </form>
+            ) : (
+                <form className={formClassNames} onSubmit={handleVerifyTOTP}>
+                    <h2 className="mb-2">Two-factor authentication</h2>
+                    <input
+                        className={inputClassNames}
+                        placeholder="Enter 6-digit code"
+                        value={totpCode}
+                        onChange={e => setTotpCode(e.target.value)}
+                        required
+                    />
+                    <button className={buttonClassNames}>Verify</button>
+                    {error && <p className="text-red-600">{error}</p>}
+                </form>
+            )}
         </div>
     )
 }

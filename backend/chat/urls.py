@@ -19,15 +19,23 @@ from .views import (
     SearchChats,
     Signup,
     StopPendingChats,
+    TOTPDisable,
+    TOTPEnable,
+    TOTPSetup,
+    VerifyTOTPLogin,
     index
 )
 
 urlpatterns = [
     path("api/signup/", Signup.as_view()),
     path("api/login/", Login.as_view()),
+    path("api/verify-totp-login/", VerifyTOTPLogin.as_view()),
     path("api/logout/", Logout.as_view()),
     path("api/me/", Me.as_view()),
     path("api/refresh/", Refresh.as_view()),
+    path("api/2fa/setup/", TOTPSetup.as_view()),
+    path("api/2fa/enable/", TOTPEnable.as_view()),
+    path("api/2fa/disable/", TOTPDisable.as_view()),
     path("api/delete-account/", DeleteAccount.as_view()),
     path("api/get-chats/", GetChats.as_view()),
     path("api/search-chats/", SearchChats.as_view()),

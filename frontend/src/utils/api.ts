@@ -33,6 +33,26 @@ export function me(theme?: Theme, hasSidebarOpen?: boolean) {
     }
 }
 
+export async function verifyTOTPLogin(preauthToken: string, code: string) {
+    return fetch("/api/verify-totp-login/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preauth_token: preauthToken, code })
+    })
+}
+
+export async function totpSetup() {
+    return apiFetch("2fa/setup/")
+}
+
+export async function totpEnable(code: string) {
+    return apiFetch("2fa/enable/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code })
+    })
+}
+
 export function deleteAccount() {
     return apiFetch("delete-account/", { method: "DELETE" })
 }

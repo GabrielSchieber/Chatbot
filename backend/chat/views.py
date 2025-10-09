@@ -14,8 +14,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .serializers import ChatSerializer, MessageSerializer, RegisterSerializer, UserSerializer
-from .models import Chat, Message, MessageFile, User
+from .models import Chat, Message, MessageFile, PreAuthToken, User
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
+from .totp_utils import build_otpauth_url, generate_totp_secret, verify_totp
 
 class Signup(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -33,13 +34,51 @@ class Login(APIView):
 
         user = authenticate(request, email = email, password = password)
         if user is not None:
+            if user.is_2fa_enabled:
+                pre = PreAuthToken.objects.create(user = user)
+                return Response({"twofa_required": True, "preauth_token": str(pre.token)}, status.HTTP_200_OK)
+            else:
+                refresh = RefreshToken.for_user(user)
+                response = Response({"success": True}, status.HTTP_200_OK)
+                response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
+                response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+                return response
+        else:
+            return Response({"error": "Invalid credentials"}, status.HTTP_400_BAD_REQUEST)
+
+class VerifyTOTPLogin(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        token = request.data.get("preauth_token")
+        code = request.data.get("code")
+
+        try:
+            pre = PreAuthToken.objects.get(token = token)
+        except PreAuthToken.DoesNotExist:
+            return Response({"error": "Invalid or expired preauth token"}, status.HTTP_401_UNAUTHORIZED)
+
+        if pre.is_expired():
+            pre.delete()
+            return Response({"error": "Preauth token expired"}, status.HTTP_401_UNAUTHORIZED)
+
+        user = pre.user
+
+        if (verify_totp(user.totp_secret, code) or code in user.backup_codes):
+            if code in (user.backup_codes or []):
+                user.backup_codes = [c for c in user.backup_codes if c != code]
+                user.save(update_fields=["backup_codes"])
+
             refresh = RefreshToken.for_user(user)
             response = Response({"success": True}, status.HTTP_200_OK)
             response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
             response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+
+            pre.delete()
             return response
         else:
-            return Response({"error": "Invalid credentials"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid TOTP code"}, status.HTTP_401_UNAUTHORIZED)
 
 class Logout(APIView):
     permission_classes = [IsAuthenticated]
@@ -54,13 +93,13 @@ class Refresh(TokenRefreshView):
     def post(self, request: Request):
         refresh_token = request.COOKIES.get("refresh_token")
         if not refresh_token:
-            return Response({"error": "No refresh token"}, status = status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "No refresh token"}, status.HTTP_401_UNAUTHORIZED)
 
         serializer = self.get_serializer(data = {"refresh": refresh_token})
         try:
             serializer.is_valid(raise_exception = True)
         except Exception:
-            return Response({"error": "Invalid refresh token"}, status = status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid refresh token"}, status.HTTP_401_UNAUTHORIZED)
 
         access = serializer.validated_data["access"]
         new_refresh = serializer.validated_data.get("refresh")
@@ -94,6 +133,50 @@ class Me(APIView):
 
         user.save()
         return Response(status = status.HTTP_200_OK)
+
+class TOTPSetup(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        secret = generate_totp_secret()
+        user.set_totp_secret(secret)
+        otpauth = build_otpauth_url(secret, user.email, issuer = "YourChatApp")
+        return Response({"otpauth_url": otpauth, "secret": secret})
+
+class TOTPEnable(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        code = request.data.get("code")
+        user = request.user
+        if not user.totp_secret:
+            return Response({"error": "No TOTP setup in progress"}, status.HTTP_400_BAD_REQUEST)
+
+        if verify_totp(user.totp_secret, code):
+            user.is_2fa_enabled = True
+            backup_codes = user.generate_backup_codes()
+            user.save()
+            return Response({"success": True, "backup_codes": backup_codes}, status.HTTP_200_OK)
+        else:
+            return Response({"error": "Invalid code"}, status.HTTP_400_BAD_REQUEST)
+
+class TOTPDisable(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        code = request.data.get("code")
+        user = request.user
+        if not user.is_2fa_enabled:
+            return Response({"error": "2FA not enabled"}, status.HTTP_400_BAD_REQUEST)
+        if verify_totp(user.totp_secret, code) or (code in (user.backup_codes or [])):
+            user.is_2fa_enabled = False
+            user.totp_secret = None
+            user.backup_codes = []
+            user.save()
+            return Response({"success": True}, status.HTTP_200_OK)
+        else:
+            return Response({"error": "Invalid code"}, status.HTTP_400_BAD_REQUEST)
 
 class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]

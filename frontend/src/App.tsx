@@ -1,6 +1,7 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router"
 
 import { useAuth } from "./context/AuthProvider"
+import Enable2FA from "./pages/Enable2FA"
 import Index from "./pages/Index"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
@@ -19,6 +20,7 @@ export default function App() {
                 <Route path="/chat/:chatUUID" element={isLoggedIn ? <Index /> : <Navigate to="/login" replace />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/2fa" element={<Enable2FA />} />
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
         </Router>

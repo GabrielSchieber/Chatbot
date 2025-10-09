@@ -1,6 +1,10 @@
+import secrets
 import uuid
+from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 
@@ -29,8 +33,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique = True)
     is_active = models.BooleanField(default = True)
     is_staff = models.BooleanField(default = False)
+
     theme = models.CharField(choices = [[c, c] for c in ["System", "Light", "Dark"]], default = "System")
     has_sidebar_open = models.BooleanField(default = True)
+
+    totp_secret = models.CharField(max_length = 32, null = True, blank = True)
+    is_2fa_enabled = models.BooleanField(default = False)
+    backup_codes = ArrayField(models.CharField(max_length = 32), default = list, blank = True)
+    totp_created_at = models.DateTimeField(null = True, blank = True)
+
     created_at = models.DateTimeField(default = timezone.now)
 
     objects = UserManager()
@@ -38,8 +49,27 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
+    def generate_backup_codes(self, n = 8):
+        codes = [secrets.token_hex(4) for _ in range(n)]
+        self.backup_codes = codes
+        self.save(update_fields = ["backup_codes"])
+        return codes
+
+    def set_totp_secret(self, secret):
+        self.totp_secret = secret
+        self.totp_created_at = timezone.now()
+        self.save(update_fields = ["totp_secret", "totp_created_at"])
+
     def __str__(self):
         return self.email
+
+class PreAuthToken(models.Model):
+    token = models.UUIDField(default = uuid.uuid4, unique = True, editable = False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE)
+    created_at = models.DateTimeField(default = timezone.now)
+
+    def is_expired(self):
+        return timezone.now() - self.created_at > timedelta(minutes = 5)
 
 class Chat(models.Model):
     user = models.ForeignKey(User, models.CASCADE, related_name = "chats")
