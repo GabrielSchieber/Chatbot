@@ -1,5 +1,5 @@
 import { Locator, expect } from "@playwright/test"
-import { Chat, test } from "./utils"
+import { Chat, Message, test, User } from "./utils"
 
 test.describe.configure({ mode: "parallel" })
 
@@ -21,6 +21,129 @@ test("user can open search", async ({ page, user }) => {
             await expect(entry).toContainText(message.text.slice(0, 100) + "...")
         }
     }
+})
+
+test("user can search chats", async ({ page, user }) => {
+    function findChatByTitle(title: string) {
+        return user.chats.find(c => c.title === title)
+    }
+
+    type Entry = { chat: Chat, matches: [number, string][] }
+
+    async function search(search: string, entries: Entry[]) {
+        async function type(text: string) {
+            await input.click()
+            await input.fill(text)
+            await input.press("Enter")
+        }
+
+        await input.fill("")
+        const entryLinks = page.getByRole("link")
+        await expect(entryLinks).toHaveCount(Math.min(user.chats.length, 10))
+
+        await type(search)
+        await expect(entryLinks).toHaveCount(entries.length)
+
+        for (const [entry, i] of entries.map<[Entry, number]>((e, i) => [e, i])) {
+            const entryLink = entryLinks.nth(i)
+            expect(await entryLink.getAttribute("href")).toEqual(`/chat/${entry.chat.uuid}`)
+
+            const entryContent = entryLink.locator("div")
+            await expect(entryContent).toBeVisible()
+            await expect(entryContent).toContainText("")
+            await expect(entryContent.locator("p")).toHaveText(entry.chat.title)
+
+            const matches = entryContent.locator("ul")
+            for (const [i, text] of entry.matches) {
+                await expect(matches.nth(i)).toContainText(text)
+            }
+        }
+    }
+
+    const mathParagraphChat = findChatByTitle("Paragraph About Math")!
+    const mathHelpChat = findChatByTitle("Math Help")!
+    const bookChat = findChatByTitle("Book Recommendation")!
+    const petAdviceChat = findChatByTitle("Pet Advice")!
+    const travelAdviceChat = findChatByTitle("Travel Advice")!
+    const jobInterviewChat = findChatByTitle("Job Interview Prep")!
+    const techSupportChat = findChatByTitle("Tech Support")!
+    const motivationChat = findChatByTitle("Motivation")!
+    const weatherInquiryChat = findChatByTitle("Weather Inquiry")!
+
+    await page.getByRole("button", { name: "Search Chats", exact: true }).click()
+    const input = page.getByPlaceholder("Search chats...", { exact: true })
+    await expect(input).toBeVisible()
+
+    await search(
+        "math",
+        [
+            {
+                chat: mathParagraphChat,
+                matches:
+                    [
+                        [0, mathParagraphChat.messages[0].text.slice(0, 100) + "..."],
+                        [0, mathParagraphChat.messages[1].text.slice(0, 100) + "..."]
+                    ]
+            },
+            {
+
+                chat: mathHelpChat,
+                matches: []
+            }
+        ]
+    )
+
+    await search(
+        "book",
+        [
+            {
+                chat: bookChat,
+                matches: [[0, bookChat.messages[0].text.slice(0, 100) + "..."]]
+            }
+        ]
+    )
+
+    await search(
+        "advice",
+        [
+            {
+                chat: petAdviceChat,
+                matches: [[0, petAdviceChat.messages[0].text.slice(0, 100) + "..."]]
+            },
+            {
+                chat: travelAdviceChat,
+                matches: []
+            }
+        ]
+    )
+
+    await search(
+        "tech",
+        [
+            {
+                chat: jobInterviewChat,
+                matches: [[0, jobInterviewChat.messages[2].text.slice(0, 100) + "..."]]
+            },
+            {
+                chat: techSupportChat,
+                matches: []
+            }
+        ]
+    )
+
+    await search(
+        "today",
+        [
+            {
+                chat: motivationChat,
+                matches: [[0, motivationChat.messages[1].text.slice(0, 100) + "..."]]
+            },
+            {
+                chat: weatherInquiryChat,
+                matches: [[0, weatherInquiryChat.messages[0].text.slice(0, 100) + "..."]]
+            }
+        ]
+    )
 })
 
 test("search filters by title", async ({ page, user }) => {
