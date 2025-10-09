@@ -28,7 +28,7 @@ export function PlusDropdown({ fileInputRef, model, setModel }: {
                     <UploadIcon className="size-5" /> Add files
                 </DropdownMenu.Item>
 
-                <DropdownMenu.Item asChild>
+                <DropdownMenu.Item>
                     <Select.Root value={model} onValueChange={v => setModel(v as Model)}>
                         <Select.Trigger
                             className={`
