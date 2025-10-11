@@ -33,20 +33,28 @@ export function me(theme?: Theme, hasSidebarOpen?: boolean) {
     }
 }
 
-export async function verifyTOTPLogin(preauthToken: string, code: string) {
-    return fetch("/api/verify-totp-login/", {
+export async function verifyMFA(preAuthToken: string, code: string) {
+    return fetch("/api/mfa/verify/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ preauth_token: preauthToken, code })
+        body: JSON.stringify({ pre_auth_token: preAuthToken, code })
     })
 }
 
-export async function totpSetup() {
-    return apiFetch("2fa/setup/")
+export async function setupMFA() {
+    return apiFetch("mfa/setup/")
 }
 
-export async function totpEnable(code: string) {
-    return apiFetch("2fa/enable/", {
+export async function enableMFA(code: string) {
+    return apiFetch("mfa/enable/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code })
+    })
+}
+
+export async function disableMFA(code: string) {
+    return apiFetch("mfa/disable/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code })

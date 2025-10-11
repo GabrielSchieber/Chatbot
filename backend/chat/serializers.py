@@ -15,7 +15,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["email", "theme", "has_sidebar_open"]
+        fields = ["email", "theme", "has_sidebar_open", "has_mfa_enabled"]
 
 class ChatSerializer(serializers.ModelSerializer):
     pending_message_id = serializers.SerializerMethodField()

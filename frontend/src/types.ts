@@ -5,6 +5,7 @@ export type User = {
     email: string
     theme: Theme
     has_sidebar_open: boolean
+    has_mfa_enabled: boolean
 }
 
 export type Chat = {

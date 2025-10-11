@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-import { login, signup, verifyTOTPLogin } from "../utils/api"
+import { login, signup, verifyMFA } from "../utils/api"
 
 export const formClassNames = "flex flex-col gap-3 p-4 items-center justify-center rounded-xl bg-gray-800 light:bg-gray-100"
 export const inputClassNames = "outline-none w-full bg-gray-700 light:bg-gray-200 rounded-xl px-3 py-2"
@@ -16,9 +16,9 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
     const [password, setPassword] = useState("")
     const [error, setError] = useState("")
 
-    const [showTOTP, setShowTOTP] = useState(false)
+    const [showMFA, setShowMFA] = useState(false)
     const [preAuthToken, setPreAuthToken] = useState<string | null>(null)
-    const [totpCode, setTotpCode] = useState("")
+    const [mFACode, setMFACode] = useState("")
 
     async function handleSubmit(event: React.FormEvent) {
         event.preventDefault()
@@ -35,9 +35,9 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
                 }
             } else {
                 const data = await response.json().catch(() => ({}))
-                if (data?.twofa_required) {
-                    setPreAuthToken(data.preauth_token)
-                    setShowTOTP(true)
+                if (data.is_mfa_required) {
+                    setPreAuthToken(data.pre_auth_token)
+                    setShowMFA(true)
                     return
                 }
                 if (response.ok) location.href = "/"
@@ -48,11 +48,11 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
         }
     }
 
-    async function handleVerifyTOTP(event: React.FormEvent) {
+    async function handleVerifyMFA(event: React.FormEvent) {
         event.preventDefault()
         if (!preAuthToken) return
 
-        const response = await verifyTOTPLogin(preAuthToken, totpCode)
+        const response = await verifyMFA(preAuthToken, mFACode)
         if (response.ok) {
             location.href = "/"
         } else {
@@ -62,7 +62,7 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
 
     return (
         <div className="flex flex-col w-screen h-screen items-center justify-center text-xl text-white light:text-black bg-gray-900 light:bg-gray-300">
-            {!showTOTP ? (
+            {!showMFA ? (
                 <form className={formClassNames + " w-[500px]"} onSubmit={handleSubmit}>
                     <h1 className="text-2xl pb-4">{headerText}</h1>
                     <input
@@ -96,13 +96,13 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
                     </p>
                 </form>
             ) : (
-                <form className={formClassNames} onSubmit={handleVerifyTOTP}>
+                <form className={formClassNames} onSubmit={handleVerifyMFA}>
                     <h2 className="mb-2">Two-factor authentication</h2>
                     <input
                         className={inputClassNames}
                         placeholder="Enter 6-digit code"
-                        value={totpCode}
-                        onChange={e => setTotpCode(e.target.value)}
+                        value={mFACode}
+                        onChange={e => setMFACode(e.target.value)}
                         required
                     />
                     <button className={buttonClassNames}>Verify</button>

@@ -1,4 +1,5 @@
 import json
+import secrets
 
 from django.contrib.auth import authenticate
 from django.db.models import Prefetch, Q
@@ -16,7 +17,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .serializers import ChatSerializer, MessageSerializer, RegisterSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
-from .totp_utils import build_otpauth_url, generate_totp_secret, verify_totp
+from .totp_utils import build_mfa_auth_url, generate_mfa_secret, verify_mfa
 
 class Signup(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -32,11 +33,11 @@ class Login(APIView):
         email = request.data.get("email")
         password = request.data.get("password")
 
-        user = authenticate(request, email = email, password = password)
+        user: User | None = authenticate(request, email = email, password = password)
         if user is not None:
-            if user.is_2fa_enabled:
+            if user.has_mfa_enabled:
                 pre = PreAuthToken.objects.create(user = user)
-                return Response({"twofa_required": True, "preauth_token": str(pre.token)}, status.HTTP_200_OK)
+                return Response({"is_mfa_required": True, "pre_auth_token": str(pre.token)}, status.HTTP_200_OK)
             else:
                 refresh = RefreshToken.for_user(user)
                 response = Response({"success": True}, status.HTTP_200_OK)
@@ -46,39 +47,39 @@ class Login(APIView):
         else:
             return Response({"error": "Invalid credentials"}, status.HTTP_400_BAD_REQUEST)
 
-class VerifyTOTPLogin(APIView):
+class VerifyMFA(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
-        token = request.data.get("preauth_token")
+        token = request.data.get("pre_auth_token")
         code = request.data.get("code")
 
         try:
-            pre = PreAuthToken.objects.get(token = token)
+            pre_auth_token = PreAuthToken.objects.get(token = token)
         except PreAuthToken.DoesNotExist:
             return Response({"error": "Invalid or expired preauth token"}, status.HTTP_401_UNAUTHORIZED)
 
-        if pre.is_expired():
-            pre.delete()
-            return Response({"error": "Preauth token expired"}, status.HTTP_401_UNAUTHORIZED)
+        if pre_auth_token.is_expired():
+            pre_auth_token.delete()
+            return Response({"error": "Pre auth token expired"}, status.HTTP_401_UNAUTHORIZED)
 
-        user = pre.user
+        user: User = pre_auth_token.user
 
-        if (verify_totp(user.totp_secret, code) or code in user.backup_codes):
-            if code in (user.backup_codes or []):
+        if (verify_mfa(user.secret, code) or code in user.backup_codes):
+            if code in user.backup_codes:
                 user.backup_codes = [c for c in user.backup_codes if c != code]
-                user.save(update_fields=["backup_codes"])
+                user.save()
 
             refresh = RefreshToken.for_user(user)
             response = Response({"success": True}, status.HTTP_200_OK)
             response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
             response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
 
-            pre.delete()
+            pre_auth_token.delete()
             return response
         else:
-            return Response({"error": "Invalid TOTP code"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid MFA code"}, status.HTTP_401_UNAUTHORIZED)
 
 class Logout(APIView):
     permission_classes = [IsAuthenticated]
@@ -134,44 +135,51 @@ class Me(APIView):
         user.save()
         return Response(status = status.HTTP_200_OK)
 
-class TOTPSetup(APIView):
+class SetupMFA(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
-        secret = generate_totp_secret()
-        user.set_totp_secret(secret)
-        otpauth = build_otpauth_url(secret, user.email, issuer = "YourChatApp")
-        return Response({"otpauth_url": otpauth, "secret": secret})
+        user: User = request.user
 
-class TOTPEnable(APIView):
+        secret = generate_mfa_secret()
+        user.secret = secret
+        user.save()
+
+        mfa_auth_url = build_mfa_auth_url(secret, user.email, "YourChatApp")
+        return Response({"mfa_auth_url": mfa_auth_url, "secret": secret})
+
+class EnableMFA(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        user: User = request.user
         code = request.data.get("code")
-        user = request.user
-        if not user.totp_secret:
-            return Response({"error": "No TOTP setup in progress"}, status.HTTP_400_BAD_REQUEST)
 
-        if verify_totp(user.totp_secret, code):
-            user.is_2fa_enabled = True
-            backup_codes = user.generate_backup_codes()
+        if user.secret == "":
+            return Response({"error": "No MFA setup in progress"}, status.HTTP_400_BAD_REQUEST)
+
+        if verify_mfa(user.secret, code):
+            user.has_mfa_enabled = True
+            backup_codes = [secrets.token_hex(4) for _ in range(8)]
+            user.backup_codes = backup_codes
             user.save()
             return Response({"success": True, "backup_codes": backup_codes}, status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid code"}, status.HTTP_400_BAD_REQUEST)
 
-class TOTPDisable(APIView):
+class DisableMFA(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        user: User = request.user
         code = request.data.get("code")
-        user = request.user
-        if not user.is_2fa_enabled:
-            return Response({"error": "2FA not enabled"}, status.HTTP_400_BAD_REQUEST)
-        if verify_totp(user.totp_secret, code) or (code in (user.backup_codes or [])):
-            user.is_2fa_enabled = False
-            user.totp_secret = None
+
+        if user.secret == "":
+            return Response({"error": "MFA is not enabled"}, status.HTTP_400_BAD_REQUEST)
+
+        if verify_mfa(user.secret, code) or code in user.backup_codes:
+            user.has_mfa_enabled = False
+            user.secret = ""
             user.backup_codes = []
             user.save()
             return Response({"success": True}, status.HTTP_200_OK)

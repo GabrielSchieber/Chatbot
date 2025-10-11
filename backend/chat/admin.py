@@ -14,7 +14,7 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ["email"]
 
     fieldsets = (
-        (None, {"fields": ["email", "password", "theme", "has_sidebar_open"]}),
+        (None, {"fields": ["email", "password", "theme", "has_sidebar_open", "has_mfa_enabled", "secret", "backup_codes"]}),
         (
             "Permissions",
             {
