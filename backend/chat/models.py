@@ -1,9 +1,7 @@
 import uuid
 from datetime import timedelta
 
-from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 
@@ -38,8 +36,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     has_sidebar_open = models.BooleanField(default = True)
 
     has_mfa_enabled = models.BooleanField(default = False)
-    secret = models.CharField(max_length = 32)
-    backup_codes = ArrayField(models.CharField(max_length = 32), default = list)
+    secret = models.BinaryField(max_length = 32, db_column = "encrypted_secret")
+    backup_codes = models.JSONField(default = list)
 
     created_at = models.DateTimeField(default = timezone.now)
 
@@ -53,7 +51,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class PreAuthToken(models.Model):
     token = models.UUIDField(default = uuid.uuid4, unique = True, editable = False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE)
+    user = models.ForeignKey(User, models.CASCADE)
     created_at = models.DateTimeField(default = timezone.now)
 
     def is_expired(self):

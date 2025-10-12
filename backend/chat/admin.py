@@ -12,6 +12,7 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ["email", "is_staff", "is_active"]
     ordering = ["email"]
     search_fields = ["email"]
+    readonly_fields = ["secret"]
 
     fieldsets = (
         (None, {"fields": ["email", "password", "theme", "has_sidebar_open", "has_mfa_enabled", "secret", "backup_codes"]}),

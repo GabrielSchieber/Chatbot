@@ -1,5 +1,4 @@
 import json
-import secrets
 
 from django.contrib.auth import authenticate
 from django.db.models import Prefetch, Q
@@ -17,7 +16,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .serializers import ChatSerializer, MessageSerializer, RegisterSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
-from .totp_utils import build_mfa_auth_url, generate_mfa_secret, verify_mfa
+from .totp_utils import build_mfa_auth_url, encrypt_totp_secret, decrypt_totp_secret, generate_backup_codes, generate_mfa_secret, verify_mfa
 
 class Signup(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -66,16 +65,11 @@ class VerifyMFA(APIView):
 
         user: User = pre_auth_token.user
 
-        if (verify_mfa(user.secret, code) or code in user.backup_codes):
-            if code in user.backup_codes:
-                user.backup_codes = [c for c in user.backup_codes if c != code]
-                user.save()
-
+        if verify_mfa(user, code):
             refresh = RefreshToken.for_user(user)
             response = Response({"success": True}, status.HTTP_200_OK)
             response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
             response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
-
             pre_auth_token.delete()
             return response
         else:
@@ -142,7 +136,7 @@ class SetupMFA(APIView):
         user: User = request.user
 
         secret = generate_mfa_secret()
-        user.secret = secret
+        user.secret = encrypt_totp_secret(secret)
         user.save()
 
         mfa_auth_url = build_mfa_auth_url(secret, user.email, "YourChatApp")
@@ -155,13 +149,13 @@ class EnableMFA(APIView):
         user: User = request.user
         code = request.data.get("code")
 
-        if user.secret == "":
+        if len(user.secret) == 0:
             return Response({"error": "No MFA setup in progress"}, status.HTTP_400_BAD_REQUEST)
 
-        if verify_mfa(user.secret, code):
+        if verify_mfa(user, code):
             user.has_mfa_enabled = True
-            backup_codes = [secrets.token_hex(4) for _ in range(8)]
-            user.backup_codes = backup_codes
+            backup_codes, hashed_backup_codes = generate_backup_codes(10)
+            user.backup_codes = hashed_backup_codes
             user.save()
             return Response({"success": True, "backup_codes": backup_codes}, status.HTTP_200_OK)
         else:
@@ -174,12 +168,12 @@ class DisableMFA(APIView):
         user: User = request.user
         code = request.data.get("code")
 
-        if user.secret == "":
+        if not user.has_mfa_enabled:
             return Response({"error": "MFA is not enabled"}, status.HTTP_400_BAD_REQUEST)
 
-        if verify_mfa(user.secret, code) or code in user.backup_codes:
+        if verify_mfa(user, code):
             user.has_mfa_enabled = False
-            user.secret = ""
+            user.secret = bytes()
             user.backup_codes = []
             user.save()
             return Response({"success": True}, status.HTTP_200_OK)

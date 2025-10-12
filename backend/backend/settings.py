@@ -5,6 +5,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+TOTP_ENCRYPTION_KEY = os.environ.get("TOTP_ENCRYPTION_KEY")
 
 DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
 

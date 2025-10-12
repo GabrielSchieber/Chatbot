@@ -204,15 +204,20 @@ function DisableDialog({ setStep }: { setStep: Dispatch<SetStateAction<Step>> })
         }
     }
 
+    function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setError("")
+        setCode(e.target.value)
+    }
+
     return (
         <div className="flex flex-col gap-2">
             <p>Are you sure you want to disable multi-factor authentication?</p>
             <p>Enter below the 6-digit code from your authenticator to confirm.</p>
             <form className="flex flex-col gap-2 w-fit items-center self-center" onSubmit={handleDisable}>
-                <input className={inputClassNames} value={code} onChange={e => setCode(e.target.value)} placeholder="6-digit code" required />
+                <input className={inputClassNames} value={code} onChange={handleInputChange} placeholder="6-digit code" required />
                 <button className={buttonClassNames}>Disable</button>
             </form>
-            {error && <p className="text-red-600">{error}</p>}
+            {error && <p className="text-red-600 self-center">{error}</p>}
         </div>
     )
 }
