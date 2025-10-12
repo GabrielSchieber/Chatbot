@@ -51,7 +51,7 @@ class VerifyMFA(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
-    def post(self, request):
+    def post(self, request: Request):
         token = request.data.get("pre_auth_token")
         code = request.data.get("code")
 
@@ -138,7 +138,7 @@ class Me(APIView):
 class SetupMFA(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def post(self, request: Request):
         user: User = request.user
 
         secret = generate_mfa_secret()
@@ -151,7 +151,7 @@ class SetupMFA(APIView):
 class EnableMFA(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def post(self, request: Request):
         user: User = request.user
         code = request.data.get("code")
 
@@ -170,7 +170,7 @@ class EnableMFA(APIView):
 class DisableMFA(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def post(self, request: Request):
         user: User = request.user
         code = request.data.get("code")
 

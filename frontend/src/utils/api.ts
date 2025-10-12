@@ -42,7 +42,7 @@ export async function verifyMFA(preAuthToken: string, code: string) {
 }
 
 export async function setupMFA() {
-    return apiFetch("mfa/setup/")
+    return apiFetch("mfa/setup/", { method: "POST" })
 }
 
 export async function enableMFA(code: string) {
