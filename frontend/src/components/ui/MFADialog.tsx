@@ -96,11 +96,7 @@ function SetupDialog({ setMFAAuthURL, setSecret, setStep }: {
 
     return (
         <div className="flex flex-col gap-1 items-center">
-            <button
-                className={buttonClassNames + " disabled:opacity-50 disabled:cursor-not-allowed"}
-                onClick={handleSetup}
-                disabled={isSettingUp}
-            >
+            <button className={buttonClassNames} onClick={handleSetup} disabled={isSettingUp}>
                 {isSettingUp ? "Generating" : "Generate"} QR and secret codes
             </button>
             {error && <p>{error}</p>}
@@ -168,10 +164,7 @@ function EnableDialog({ mFAAuthURL, secret, setBackupCodes, setStep }: {
                     placeholder="6-digit code"
                     required
                 />
-                <button
-                    className={buttonClassNames + " disabled:opacity-50 disabled:cursor-not-allowed"}
-                    disabled={isEnabling}
-                >
+                <button className={buttonClassNames} disabled={isEnabling}>
                     {isEnabling ? "Enabling" : "Enable"}
                 </button>
             </form>
@@ -209,10 +202,7 @@ function EnabledDialog({ backupCodes }: { backupCodes: string[] }) {
                 </div>
                 <p>I have backed up the codes.</p>
             </button>
-            <Dialog.Close
-                className={buttonClassNames + " disabled:opacity-50 disabled:cursor-not-allowed"}
-                disabled={!hasConfirmedBackup}
-            >
+            <Dialog.Close className={buttonClassNames} disabled={!hasConfirmedBackup}>
                 Close
             </Dialog.Close>
         </div>
@@ -250,10 +240,7 @@ function DisableDialog({ setStep }: { setStep: Dispatch<SetStateAction<Step>> })
             <p>Enter below the 6-digit code from your authenticator to confirm.</p>
             <form className="flex flex-col gap-2 w-fit items-center self-center" onSubmit={handleDisable}>
                 <input className={inputClassNames} value={code} onChange={handleInputChange} placeholder="6-digit code" required />
-                <button
-                    className={buttonClassNames + " disabled:opacity-50 disabled:cursor-not-allowed"}
-                    disabled={isDisabling}
-                >
+                <button className={buttonClassNames} disabled={isDisabling}>
                     {isDisabling ? "Disabling" : "Disable"}
                 </button>
             </form>

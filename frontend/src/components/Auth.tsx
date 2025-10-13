@@ -3,8 +3,11 @@ import { useState } from "react"
 import { login, signup, verifyMFA } from "../utils/api"
 
 export const formClassNames = "flex flex-col gap-3 p-4 items-center justify-center rounded-xl bg-gray-800 light:bg-gray-100"
-export const inputClassNames = "outline-none w-full bg-gray-700 light:bg-gray-200 rounded-xl px-3 py-2"
-export const buttonClassNames = "bg-gray-700 light:bg-gray-300 hover:bg-gray-600 light:hover:bg-gray-400 rounded-xl px-6 py-1 cursor-pointer"
+export const inputClassNames = "w-full px-3 py-2 rounded-xl outline-none bg-gray-700 light:bg-gray-300"
+export const buttonClassNames = `
+    px-6 py-1 rounded-xl cursor-pointer bg-gray-700 light:bg-gray-300 hover:bg-gray-600
+    light:hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed
+`
 
 export default function Auth({ type }: { type: "Signup" | "Login" }) {
     const submitFunction = type === "Signup" ? signup : login
@@ -19,6 +22,7 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
     const [showMFA, setShowMFA] = useState(false)
     const [preAuthToken, setPreAuthToken] = useState<string | null>(null)
     const [mFACode, setMFACode] = useState("")
+    const [isVerifying, setIsVerifying] = useState(false)
 
     async function handleSubmit(event: React.FormEvent) {
         event.preventDefault()
@@ -52,11 +56,14 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
         event.preventDefault()
         if (!preAuthToken) return
 
+        setIsVerifying(true)
+
         const response = await verifyMFA(preAuthToken, mFACode)
         if (response.ok) {
             location.href = "/"
         } else {
             setError("Invalid 2FA code")
+            setIsVerifying(false)
         }
     }
 
@@ -108,7 +115,9 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
                         placeholder="Enter 6-digit code"
                         required
                     />
-                    <button className={buttonClassNames}>Verify</button>
+                    <button className={buttonClassNames} disabled={isVerifying}>
+                        {isVerifying ? "Verifying" : "Verify"}
+                    </button>
                     {error && <p className="text-red-600">{error}</p>}
                 </form>
             )}
