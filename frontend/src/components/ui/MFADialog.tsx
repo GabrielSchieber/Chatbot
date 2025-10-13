@@ -16,6 +16,7 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
     const [mFAAuthURL, setMFAAuthURL] = useState("")
     const [secret, setSecret] = useState("")
     const [backupCodes, setBackupCodes] = useState<string[]>([])
+    const [isLocked, setIsLocked] = useState(false)
 
     useEffect(() => {
         setUser(previous =>
@@ -39,13 +40,15 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
                         fixed flex flex-col gap-3 p-4 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
                         rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
                     "
+                    onEscapeKeyDown={e => isLocked && e.preventDefault()}
+                    onInteractOutside={e => isLocked && e.preventDefault()}
                 >
                     <div className="flex flex-col items-center gap-2">
                         <div className="flex items-center justify-between gap-2">
                             <Dialog.Title className="text-xl font-bold">
                                 Manage multi-factor authentication
                             </Dialog.Title>
-                            {step !== "enabled" &&
+                            {!isLocked &&
                                 <Dialog.Close className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
                                     <Cross1Icon />
                                 </Dialog.Close>
@@ -72,13 +75,13 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
                     {(() => {
                         switch (step) {
                             case "setup":
-                                return <SetupDialog setMFAAuthURL={setMFAAuthURL} setSecret={setSecret} setStep={setStep} />
+                                return <SetupDialog setMFAAuthURL={setMFAAuthURL} setSecret={setSecret} setStep={setStep} setIsLocked={setIsLocked} />
                             case "enable":
-                                return <EnableDialog mFAAuthURL={mFAAuthURL} secret={secret} setBackupCodes={setBackupCodes} setStep={setStep} />
+                                return <EnableDialog mFAAuthURL={mFAAuthURL} secret={secret} setBackupCodes={setBackupCodes} setStep={setStep} setIsLocked={setIsLocked} />
                             case "enabled":
-                                return <EnabledDialog backupCodes={backupCodes} />
+                                return <EnabledDialog backupCodes={backupCodes} setIsLocked={setIsLocked} />
                             case "disable":
-                                return <DisableDialog setStep={setStep} />
+                                return <DisableDialog setStep={setStep} setIsLocked={setIsLocked} />
                             case "disabled":
                                 return <DisabledDialog />
                         }
@@ -91,16 +94,19 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
 
 type Step = "setup" | "enable" | "enabled" | "disable" | "disabled"
 
-function SetupDialog({ setMFAAuthURL, setSecret, setStep }: {
+function SetupDialog({ setMFAAuthURL, setSecret, setStep, setIsLocked }: {
     setMFAAuthURL: Dispatch<SetStateAction<string>>
     setSecret: Dispatch<SetStateAction<string>>
     setStep: Dispatch<SetStateAction<Step>>
+    setIsLocked: Dispatch<SetStateAction<boolean>>
 }) {
     const [error, setError] = useState("")
     const [isSettingUp, setIsSettingUp] = useState(false)
 
     async function handleSetup() {
+        setIsLocked(true)
         setIsSettingUp(true)
+
         const response = await setupMFA()
         if (response.ok) {
             const data = await response.json()
@@ -111,6 +117,8 @@ function SetupDialog({ setMFAAuthURL, setSecret, setStep }: {
             setIsSettingUp(false)
             setError("There was an error generating QR and secret codes")
         }
+
+        setIsLocked(false)
     }
 
     return (
@@ -123,11 +131,12 @@ function SetupDialog({ setMFAAuthURL, setSecret, setStep }: {
     )
 }
 
-function EnableDialog({ mFAAuthURL, secret, setBackupCodes, setStep }: {
+function EnableDialog({ mFAAuthURL, secret, setBackupCodes, setStep, setIsLocked }: {
     mFAAuthURL: string
     secret: string
     setBackupCodes: Dispatch<SetStateAction<string[]>>
     setStep: Dispatch<SetStateAction<Step>>
+    setIsLocked: Dispatch<SetStateAction<boolean>>
 }) {
     const notify = useNotify()
 
@@ -139,6 +148,7 @@ function EnableDialog({ mFAAuthURL, secret, setBackupCodes, setStep }: {
     async function handleEnable(e: React.FormEvent) {
         e.preventDefault()
 
+        setIsLocked(true)
         setIsEnabling(true)
         setError("")
 
@@ -152,6 +162,8 @@ function EnableDialog({ mFAAuthURL, secret, setBackupCodes, setStep }: {
             setIsEnabling(false)
             setError("Invalid code")
         }
+
+        setIsLocked(false)
     }
 
     function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -195,7 +207,7 @@ function EnableDialog({ mFAAuthURL, secret, setBackupCodes, setStep }: {
     )
 }
 
-function EnabledDialog({ backupCodes }: { backupCodes: string[] }) {
+function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], setIsLocked: Dispatch<SetStateAction<boolean>> }) {
     const [isCopyButtonChecked, setIsCopyButtonChecked] = useState(false)
     const [hasConfirmedBackup, setHasConfirmedBackup] = useState(false)
 
@@ -210,6 +222,8 @@ function EnabledDialog({ backupCodes }: { backupCodes: string[] }) {
 
         URL.revokeObjectURL(url)
     }
+
+    useEffect(() => setIsLocked(!hasConfirmedBackup), [hasConfirmedBackup])
 
     return (
         <div className="flex flex-col gap-2 p-2 items-center rounded-xl bg-gray-700/30 light:bg-gray-300/30">
@@ -250,7 +264,7 @@ function EnabledDialog({ backupCodes }: { backupCodes: string[] }) {
     )
 }
 
-function DisableDialog({ setStep }: { setStep: Dispatch<SetStateAction<Step>> }) {
+function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAction<Step>>, setIsLocked: Dispatch<SetStateAction<boolean>> }) {
     const notify = useNotify()
 
     const [code, setCode] = useState("")
@@ -260,6 +274,7 @@ function DisableDialog({ setStep }: { setStep: Dispatch<SetStateAction<Step>> })
     async function handleDisable(e: React.FormEvent) {
         e.preventDefault()
 
+        setIsLocked(true)
         setIsDisabling(true)
         setError("")
 
@@ -271,6 +286,8 @@ function DisableDialog({ setStep }: { setStep: Dispatch<SetStateAction<Step>> })
             setIsDisabling(false)
             setError("Invalid code")
         }
+
+        setIsLocked(false)
     }
 
     function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
