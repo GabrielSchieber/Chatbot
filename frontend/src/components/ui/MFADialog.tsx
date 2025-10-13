@@ -39,15 +39,33 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
                         rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
                     "
                 >
-                    <div className="flex items-center justify-between gap-2">
-                        <Dialog.Title className="text-xl font-bold">
-                            Manage multi-factor authentication
-                        </Dialog.Title>
-                        {step !== "enabled" &&
-                            <Dialog.Close className="p-1 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
-                                <Cross1Icon />
-                            </Dialog.Close>
-                        }
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                            <Dialog.Title className="text-xl font-bold">
+                                Manage multi-factor authentication
+                            </Dialog.Title>
+                            {step !== "enabled" &&
+                                <Dialog.Close className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
+                                    <Cross1Icon />
+                                </Dialog.Close>
+                            }
+                        </div>
+                        <Dialog.Description className="text-lg font-semibold">
+                            {(() => {
+                                switch (step) {
+                                    case "setup":
+                                        return "Step 1: Setup"
+                                    case "enable":
+                                        return "Step 2: Verify"
+                                    case "enabled":
+                                        return "Step 3: Backup"
+                                    case "disable":
+                                        return "Step 1: Disable"
+                                    case "disabled":
+                                        return "Step 2: Disabled"
+                                }
+                            })()}
+                        </Dialog.Description>
                     </div>
 
                     {(() => {
