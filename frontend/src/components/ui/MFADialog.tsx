@@ -222,13 +222,19 @@ function EnabledDialog({ backupCodes }: { backupCodes: string[] }) {
 function DisableDialog({ setStep }: { setStep: Dispatch<SetStateAction<Step>> }) {
     const [code, setCode] = useState("")
     const [error, setError] = useState("")
+    const [isDisabling, setIsDisabling] = useState(false)
 
     async function handleDisable(e: React.FormEvent) {
         e.preventDefault()
+
+        setIsDisabling(true)
+        setError("")
+
         const response = await disableMFA(code)
         if (response.ok) {
             setStep("disabled")
         } else {
+            setIsDisabling(false)
             setError("Invalid code")
         }
     }
@@ -244,7 +250,12 @@ function DisableDialog({ setStep }: { setStep: Dispatch<SetStateAction<Step>> })
             <p>Enter below the 6-digit code from your authenticator to confirm.</p>
             <form className="flex flex-col gap-2 w-fit items-center self-center" onSubmit={handleDisable}>
                 <input className={inputClassNames} value={code} onChange={handleInputChange} placeholder="6-digit code" required />
-                <button className={buttonClassNames}>Disable</button>
+                <button
+                    className={buttonClassNames + " disabled:opacity-50 disabled:cursor-not-allowed"}
+                    disabled={isDisabling}
+                >
+                    {isDisabling ? "Disabling" : "Disable"}
+                </button>
             </form>
             {error && <p className="text-red-600 self-center">{error}</p>}
         </div>
