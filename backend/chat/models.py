@@ -32,9 +32,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default = True)
     is_staff = models.BooleanField(default = False)
 
-    theme = models.CharField(choices = [[c, c] for c in ["System", "Light", "Dark"]], default = "System")
-    has_sidebar_open = models.BooleanField(default = True)
-
     has_mfa_enabled = models.BooleanField(default = False)
     secret = models.BinaryField(max_length = 32, db_column = "encrypted_secret")
     backup_codes = models.JSONField(default = list)
@@ -48,6 +45,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+class UserPreferences(models.Model):
+    user = models.OneToOneField(User, models.CASCADE, related_name = "preferences")
+    theme = models.CharField(choices = [[c, c] for c in ["System", "Light", "Dark"]], default = "System")
+    has_sidebar_open = models.BooleanField(default = True)
 
 class PreAuthToken(models.Model):
     token = models.UUIDField(default = uuid.uuid4, unique = True, editable = False)

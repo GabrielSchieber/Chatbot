@@ -51,7 +51,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
 
 function ThemeEntryItem() {
     const { user } = useAuth()
-    const [theme, setTheme] = useState(user?.theme || "System")
+    const [theme, setTheme] = useState(user?.preferences.theme || "System")
 
     function isTheme(value: unknown): value is Theme {
         return value === "System" || value === "Light" || value === "Dark"

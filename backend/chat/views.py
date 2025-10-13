@@ -118,15 +118,15 @@ class Me(APIView):
         if theme != None: 
             if theme not in ["System", "Light", "Dark"]:
                 return Response({"error": "Invalid theme"}, status.HTTP_400_BAD_REQUEST)
-            user.theme = theme
+            user.preferences.theme = theme
 
         has_sidebar_open = request.data.get("has_sidebar_open")
         if has_sidebar_open != None:
             if type(has_sidebar_open) != bool:
                 return Response({"error": "Invalid data type for has_sidebar_open"}, status.HTTP_400_BAD_REQUEST)
-            user.has_sidebar_open = has_sidebar_open
+            user.preferences.has_sidebar_open = has_sidebar_open
 
-        user.save()
+        user.preferences.save()
         return Response(status = status.HTTP_200_OK)
 
 class SetupMFA(APIView):

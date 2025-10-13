@@ -10,7 +10,7 @@ import "./App.css"
 export default function App() {
     const { user, loading, isLoggedIn } = useAuth()
     if (loading) return <></>
-    if (user) applyTheme(user?.theme)
+    if (user) applyTheme(user?.preferences.theme)
 
     return (
         <Router>
