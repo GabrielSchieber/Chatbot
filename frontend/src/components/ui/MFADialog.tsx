@@ -117,17 +117,28 @@ function EnableDialog({ mFAAuthURL, secret, setBackupCodes, setStep }: {
     const [code, setCode] = useState("")
     const [error, setError] = useState("")
     const [isCopyButtonChecked, setIsCopyButtonChecked] = useState(false)
+    const [isEnabling, setIsEnabling] = useState(false)
 
     async function handleEnable(e: React.FormEvent) {
         e.preventDefault()
+
+        setIsEnabling(true)
+        setError("")
+
         const response = await enableMFA(code)
         if (response.ok) {
             const data = await response.json()
             setBackupCodes(data.backup_codes)
             setStep("enabled")
         } else {
+            setIsEnabling(false)
             setError("Invalid code")
         }
+    }
+
+    function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setError("")
+        setCode(e.target.value)
     }
 
     return (
@@ -150,8 +161,19 @@ function EnableDialog({ mFAAuthURL, secret, setBackupCodes, setStep }: {
                 </button>
             </div>
             <form className="flex flex-col gap-2 items-center" onSubmit={handleEnable}>
-                <input className={inputClassNames} value={code} onChange={e => setCode(e.target.value)} required placeholder="6-digit code" />
-                <button className={buttonClassNames}>Enable</button>
+                <input
+                    className={inputClassNames}
+                    value={code}
+                    onChange={handleInputChange}
+                    placeholder="6-digit code"
+                    required
+                />
+                <button
+                    className={buttonClassNames + " disabled:opacity-50 disabled:cursor-not-allowed"}
+                    disabled={isEnabling}
+                >
+                    {isEnabling ? "Enabling" : "Enable"}
+                </button>
             </form>
             {error && <p className="text-red-600">{error}</p>}
         </div>
