@@ -13,7 +13,7 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
     if (!user) return <></>
 
     const [step, setStep] = useState<Step>(user.mfa.is_enabled ? "disable" : "setup")
-    const [mFAAuthURL, setMFAAuthURL] = useState("")
+    const [authURL, setAuthURL] = useState("")
     const [secret, setSecret] = useState("")
     const [backupCodes, setBackupCodes] = useState<string[]>([])
     const [isLocked, setIsLocked] = useState(false)
@@ -75,9 +75,9 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
                     {(() => {
                         switch (step) {
                             case "setup":
-                                return <SetupDialog setMFAAuthURL={setMFAAuthURL} setSecret={setSecret} setStep={setStep} setIsLocked={setIsLocked} />
+                                return <SetupDialog setAuthURL={setAuthURL} setSecret={setSecret} setStep={setStep} setIsLocked={setIsLocked} />
                             case "enable":
-                                return <EnableDialog mFAAuthURL={mFAAuthURL} secret={secret} setBackupCodes={setBackupCodes} setStep={setStep} setIsLocked={setIsLocked} />
+                                return <EnableDialog authURL={authURL} secret={secret} setBackupCodes={setBackupCodes} setStep={setStep} setIsLocked={setIsLocked} />
                             case "enabled":
                                 return <EnabledDialog backupCodes={backupCodes} setIsLocked={setIsLocked} />
                             case "disable":
@@ -94,8 +94,8 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
 
 type Step = "setup" | "enable" | "enabled" | "disable" | "disabled"
 
-function SetupDialog({ setMFAAuthURL, setSecret, setStep, setIsLocked }: {
-    setMFAAuthURL: Dispatch<SetStateAction<string>>
+function SetupDialog({ setAuthURL, setSecret, setStep, setIsLocked }: {
+    setAuthURL: Dispatch<SetStateAction<string>>
     setSecret: Dispatch<SetStateAction<string>>
     setStep: Dispatch<SetStateAction<Step>>
     setIsLocked: Dispatch<SetStateAction<boolean>>
@@ -110,7 +110,7 @@ function SetupDialog({ setMFAAuthURL, setSecret, setStep, setIsLocked }: {
         const response = await setupMFA()
         if (response.ok) {
             const data = await response.json()
-            setMFAAuthURL(data.mfa_auth_url)
+            setAuthURL(data.auth_url)
             setSecret(data.secret)
             setStep("enable")
         } else {
@@ -131,8 +131,8 @@ function SetupDialog({ setMFAAuthURL, setSecret, setStep, setIsLocked }: {
     )
 }
 
-function EnableDialog({ mFAAuthURL, secret, setBackupCodes, setStep, setIsLocked }: {
-    mFAAuthURL: string
+function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }: {
+    authURL: string
     secret: string
     setBackupCodes: Dispatch<SetStateAction<string[]>>
     setStep: Dispatch<SetStateAction<Step>>
@@ -175,7 +175,7 @@ function EnableDialog({ mFAAuthURL, secret, setBackupCodes, setStep, setIsLocked
         <div className="flex flex-col gap-2 items-center">
             <p>Scan this QR in your authenticator app (or use the secret below):</p>
             <div className="my-3">
-                <QRCodeCanvas value={mFAAuthURL} />
+                <QRCodeCanvas value={authURL} />
             </div>
             <div className="flex gap-2 px-2 py-0.5 items-center justify-center rounded bg-gray-700 light:bg-gray-300">
                 <p>Secret: {secret}</p>
