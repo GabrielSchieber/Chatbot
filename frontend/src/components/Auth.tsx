@@ -100,9 +100,12 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
                     <h2 className="mb-2">Two-factor authentication</h2>
                     <input
                         className={inputClassNames}
-                        placeholder="Enter 6-digit code"
                         value={mFACode}
-                        onChange={e => setMFACode(e.target.value)}
+                        onChange={e => {
+                            setError("")
+                            setMFACode(e.target.value)
+                        }}
+                        placeholder="Enter 6-digit code"
                         required
                     />
                     <button className={buttonClassNames}>Verify</button>
