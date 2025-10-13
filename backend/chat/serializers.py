@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Chat, Message, MessageFile, User, UserPreferences
+from .models import Chat, Message, MessageFile, User, UserMFA, UserPreferences
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only = True)
@@ -10,21 +10,25 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ["email", "password"]
 
     def create(self, validated_data):
-        user = User.objects.create_user(email = validated_data["email"], password = validated_data["password"])
-        UserPreferences.objects.create(user = user)
-        return user
+        return User.objects.create_user(email = validated_data["email"], password = validated_data["password"])
 
 class UserPreferencesSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserPreferences
         fields = ["theme", "has_sidebar_open"]
 
+class UserMFASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserMFA
+        fields = ["is_enabled"]
+
 class UserSerializer(serializers.ModelSerializer):
     preferences = UserPreferencesSerializer(many = False, read_only = True)
+    mfa = UserMFASerializer(many = False, read_only = True)
 
     class Meta:
         model = User
-        fields = ["email", "preferences", "has_mfa_enabled"]
+        fields = ["email", "preferences", "mfa"]
 
 class ChatSerializer(serializers.ModelSerializer):
     pending_message_id = serializers.SerializerMethodField()

@@ -16,7 +16,6 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .serializers import ChatSerializer, MessageSerializer, RegisterSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
-from .totp_utils import build_mfa_auth_url, encrypt_totp_secret, decrypt_totp_secret, generate_backup_codes, generate_mfa_secret, verify_mfa
 
 class Signup(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -34,7 +33,7 @@ class Login(APIView):
 
         user: User | None = authenticate(request, email = email, password = password)
         if user is not None:
-            if user.has_mfa_enabled:
+            if user.mfa.is_enabled:
                 pre = PreAuthToken.objects.create(user = user)
                 return Response({"is_mfa_required": True, "pre_auth_token": str(pre.token)}, status.HTTP_200_OK)
             else:
@@ -57,7 +56,7 @@ class VerifyMFA(APIView):
         try:
             pre_auth_token = PreAuthToken.objects.get(token = token)
         except PreAuthToken.DoesNotExist:
-            return Response({"error": "Invalid or expired preauth token"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid or expired pre auth token"}, status.HTTP_401_UNAUTHORIZED)
 
         if pre_auth_token.is_expired():
             pre_auth_token.delete()
@@ -65,7 +64,7 @@ class VerifyMFA(APIView):
 
         user: User = pre_auth_token.user
 
-        if verify_mfa(user, code):
+        if user.mfa.verify(code):
             refresh = RefreshToken.for_user(user)
             response = Response({"success": True}, status.HTTP_200_OK)
             response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
@@ -133,13 +132,7 @@ class SetupMFA(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request):
-        user: User = request.user
-
-        secret = generate_mfa_secret()
-        user.secret = encrypt_totp_secret(secret)
-        user.save()
-
-        mfa_auth_url = build_mfa_auth_url(secret, user.email, "YourChatApp")
+        secret, mfa_auth_url = request.user.mfa.setup()
         return Response({"mfa_auth_url": mfa_auth_url, "secret": secret})
 
 class EnableMFA(APIView):
@@ -149,14 +142,8 @@ class EnableMFA(APIView):
         user: User = request.user
         code = request.data.get("code")
 
-        if len(user.secret) == 0:
-            return Response({"error": "No MFA setup in progress"}, status.HTTP_400_BAD_REQUEST)
-
-        if verify_mfa(user, code):
-            user.has_mfa_enabled = True
-            backup_codes, hashed_backup_codes = generate_backup_codes(10)
-            user.backup_codes = hashed_backup_codes
-            user.save()
+        if user.mfa.verify(code):
+            backup_codes = user.mfa.enable()
             return Response({"success": True, "backup_codes": backup_codes}, status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid code"}, status.HTTP_400_BAD_REQUEST)
@@ -168,14 +155,11 @@ class DisableMFA(APIView):
         user: User = request.user
         code = request.data.get("code")
 
-        if not user.has_mfa_enabled:
+        if not user.mfa.is_enabled:
             return Response({"error": "MFA is not enabled"}, status.HTTP_400_BAD_REQUEST)
 
-        if verify_mfa(user, code):
-            user.has_mfa_enabled = False
-            user.secret = bytes()
-            user.backup_codes = []
-            user.save()
+        if user.mfa.verify(code):
+            user.mfa.disable()
             return Response({"success": True}, status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid code"}, status.HTTP_400_BAD_REQUEST)
