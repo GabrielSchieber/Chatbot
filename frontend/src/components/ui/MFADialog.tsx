@@ -5,6 +5,7 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from "react"
 
 import { buttonClassNames, inputClassNames } from "../Auth"
 import { useAuth } from "../../context/AuthProvider"
+import { useNotify } from "../../context/NotificationProvider"
 import { disableMFA, enableMFA, setupMFA } from "../../utils/api"
 
 export default function MFADialog({ triggerClassName }: { triggerClassName: string }) {
@@ -128,6 +129,8 @@ function EnableDialog({ mFAAuthURL, secret, setBackupCodes, setStep }: {
     setBackupCodes: Dispatch<SetStateAction<string[]>>
     setStep: Dispatch<SetStateAction<Step>>
 }) {
+    const notify = useNotify()
+
     const [code, setCode] = useState("")
     const [error, setError] = useState("")
     const [isCopyButtonChecked, setIsCopyButtonChecked] = useState(false)
@@ -144,6 +147,7 @@ function EnableDialog({ mFAAuthURL, secret, setBackupCodes, setStep }: {
             const data = await response.json()
             setBackupCodes(data.backup_codes)
             setStep("enabled")
+            notify("Multi-factor authentication enabled successfully!", "success")
         } else {
             setIsEnabling(false)
             setError("Invalid code")
@@ -247,6 +251,8 @@ function EnabledDialog({ backupCodes }: { backupCodes: string[] }) {
 }
 
 function DisableDialog({ setStep }: { setStep: Dispatch<SetStateAction<Step>> }) {
+    const notify = useNotify()
+
     const [code, setCode] = useState("")
     const [error, setError] = useState("")
     const [isDisabling, setIsDisabling] = useState(false)
@@ -260,6 +266,7 @@ function DisableDialog({ setStep }: { setStep: Dispatch<SetStateAction<Step>> })
         const response = await disableMFA(code)
         if (response.ok) {
             setStep("disabled")
+            notify("Multi-factor authentication disabled successfully!", "success")
         } else {
             setIsDisabling(false)
             setError("Invalid code")
