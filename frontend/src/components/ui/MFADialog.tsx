@@ -11,7 +11,7 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
     const { user, setUser } = useAuth()
     if (!user) return <></>
 
-    const [step, setStep] = useState<Step>(user.has_mfa_enabled ? "disable" : "generate")
+    const [step, setStep] = useState<Step>(user.has_mfa_enabled ? "disable" : "setup")
     const [mFAAuthURL, setMFAAuthURL] = useState("")
     const [secret, setSecret] = useState("")
     const [backupCodes, setBackupCodes] = useState<string[]>([])
@@ -25,7 +25,7 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
     }, [step])
 
     return (
-        <Dialog.Root onOpenChange={_ => setStep(user.has_mfa_enabled ? "disable" : "generate")}>
+        <Dialog.Root onOpenChange={_ => setStep(user.has_mfa_enabled ? "disable" : "setup")}>
             <Dialog.Trigger className={triggerClassName}>
                 {user.has_mfa_enabled ? "Disable" : "Enable"}
             </Dialog.Trigger>
@@ -52,8 +52,8 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
 
                     {(() => {
                         switch (step) {
-                            case "generate":
-                                return <GenerateDialog setMFAAuthURL={setMFAAuthURL} setSecret={setSecret} setStep={setStep} />
+                            case "setup":
+                                return <SetupDialog setMFAAuthURL={setMFAAuthURL} setSecret={setSecret} setStep={setStep} />
                             case "enable":
                                 return <EnableDialog mFAAuthURL={mFAAuthURL} secret={secret} setBackupCodes={setBackupCodes} setStep={setStep} />
                             case "enabled":
@@ -70,16 +70,18 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
     )
 }
 
-type Step = "generate" | "enable" | "enabled" | "disable" | "disabled"
+type Step = "setup" | "enable" | "enabled" | "disable" | "disabled"
 
-function GenerateDialog({ setMFAAuthURL, setSecret, setStep }: {
+function SetupDialog({ setMFAAuthURL, setSecret, setStep }: {
     setMFAAuthURL: Dispatch<SetStateAction<string>>
     setSecret: Dispatch<SetStateAction<string>>
     setStep: Dispatch<SetStateAction<Step>>
 }) {
     const [error, setError] = useState("")
+    const [isSettingUp, setIsSettingUp] = useState(false)
 
     async function handleSetup() {
+        setIsSettingUp(true)
         const response = await setupMFA()
         if (response.ok) {
             const data = await response.json()
@@ -87,14 +89,19 @@ function GenerateDialog({ setMFAAuthURL, setSecret, setStep }: {
             setSecret(data.secret)
             setStep("enable")
         } else {
+            setIsSettingUp(false)
             setError("There was an error generating QR and secret codes")
         }
     }
 
     return (
         <div className="flex flex-col gap-1 items-center">
-            <button className={buttonClassNames} onClick={handleSetup}>
-                Generate QR and secret codes
+            <button
+                className={buttonClassNames + " disabled:opacity-50 disabled:cursor-not-allowed"}
+                onClick={handleSetup}
+                disabled={isSettingUp}
+            >
+                {isSettingUp ? "Generating" : "Generate"} QR and secret codes
             </button>
             {error && <p>{error}</p>}
         </div>
