@@ -94,7 +94,7 @@ test("user can enable multi-factor authentication", async ({ page }) => {
 })
 
 test("user can log in with multi-factor authentication", async ({ page }) => {
-    const user = await signupWithMFAEnabled(page)
+    const { user } = await signupWithMFAEnabled(page)
 
     await page.goto("/")
     await page.waitForURL("/login")
@@ -119,7 +119,7 @@ test("user can log in with multi-factor authentication", async ({ page }) => {
 })
 
 test("user can disable multi-factor authentication", async ({ page }) => {
-    const user = await signupWithMFAEnabledAndLogin(page)
+    const { user } = await signupWithMFAEnabledAndLogin(page)
 
     await page.getByTestId("open-settings").click()
 
@@ -139,7 +139,28 @@ test("user can disable multi-factor authentication", async ({ page }) => {
     await page.getByRole("button", { name: "Close" }).click()
 })
 
+test("user can login with multi-factor authentication backup codes", async ({ page }) => {
+    const { user, backupCodes } = await signupWithMFAEnabled(page)
+
+    await page.goto("/")
+    await page.waitForURL("/login")
+
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+
+    await page.click("button")
+
+    await expect(page.getByRole("heading", { name: "Two-factor authentication", exact: true })).toBeVisible()
+
+    await page.getByPlaceholder("Enter 6-digit code").fill(backupCodes[0])
+    await page.getByRole("button", { name: "Verify" }).click()
+
+    await page.waitForURL("/")
+})
+
 async function signupWithMFAEnabledAndLogin(page: Page) {
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"])
+
     const user = await signupAndLogin(page)
 
     await page.getByTestId("open-settings").click()
@@ -161,12 +182,20 @@ async function signupWithMFAEnabledAndLogin(page: Page) {
     await expect(page.getByText("Enabling")).toBeVisible()
     await expect(page.getByText("Step 3: Backup")).toBeVisible({ timeout: 15000 })
 
+    await page.getByRole("list").getByRole("button").first().click()
+
+    const clipboard = await page.evaluate(_ => navigator.clipboard.readText())
+    expect(clipboard.length).toEqual(6 * 2 * 10 + 9)
+
+    const backupCodes = clipboard.split("\n")
+    expect(backupCodes.length).toEqual(10)
+
     await page.getByText("I have backed up the codes").click()
     await page.getByRole("button", { name: "Close" }).click()
 
     await page.reload()
 
-    return user
+    return { user, backupCodes }
 }
 
 async function signupWithMFAEnabled(page: Page) {
