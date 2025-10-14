@@ -190,6 +190,21 @@ test("user cannot login with an already used multi-factor authentication backup 
     await expect(page.getByText("Invalid 2FA code")).toBeVisible({ timeout: 15_000 })
 })
 
+test("user can disable multi-factor authentication with a backup code", async ({ page }) => {
+    const { backupCodes } = await signupWithMFAEnabledAndLogin(page)
+
+    await page.getByTestId("open-settings").click()
+
+    await page.getByText("Multi-factor authentication").locator("..").getByRole("button").click()
+    await expect(page.getByText("Step 1: Disable")).toBeVisible()
+
+    await page.getByPlaceholder("6-digit code").fill(backupCodes[0])
+    await page.getByRole("button", { name: "Disable" }).click()
+    await expect(page.getByText("Step 2: Disabled")).toBeVisible()
+
+    await page.getByRole("button", { name: "Close" }).click()
+})
+
 async function signupWithMFAEnabledAndLogin(page: Page) {
     await page.context().grantPermissions(["clipboard-read", "clipboard-write"])
 
