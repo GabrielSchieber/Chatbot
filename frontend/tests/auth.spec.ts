@@ -118,6 +118,27 @@ test("user can log in with multi-factor authentication", async ({ page }) => {
     await page.waitForURL("/")
 })
 
+test("user can disable multi-factor authentication", async ({ page }) => {
+    const user = await signupWithMFAEnabledAndLogin(page)
+
+    await page.getByTestId("open-settings").click()
+
+    await page.getByText("Multi-factor authentication").locator("..").getByRole("button").click()
+    await expect(page.getByText("Step 1: Disable")).toBeVisible()
+
+    const response = await apiFetch(`/test/get-mfa-secret/?email=${user.email}`, {})
+    expect(response.status).toBe(200)
+
+    const secret = await response.json()
+    const code = authenticator.generate(secret)
+
+    await page.getByPlaceholder("6-digit code").fill(code)
+    await page.getByRole("button", { name: "Disable" }).click()
+    await expect(page.getByText("Step 2: Disabled")).toBeVisible()
+
+    await page.getByRole("button", { name: "Close" }).click()
+})
+
 async function signupWithMFAEnabledAndLogin(page: Page) {
     const user = await signupAndLogin(page)
 
@@ -143,12 +164,15 @@ async function signupWithMFAEnabledAndLogin(page: Page) {
     await page.getByText("I have backed up the codes").click()
     await page.getByRole("button", { name: "Close" }).click()
 
+    await page.reload()
+
     return user
 }
 
 async function signupWithMFAEnabled(page: Page) {
     const user = await signupWithMFAEnabledAndLogin(page)
 
+    await page.getByTestId("open-settings").click()
     await page.getByRole("button", { name: "Log out" }).click()
     await page.waitForURL("/login")
 
