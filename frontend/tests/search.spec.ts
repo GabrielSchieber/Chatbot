@@ -1,9 +1,9 @@
-import { Locator, expect } from "@playwright/test"
-import { Chat, Message, test, User } from "./utils"
+import { Locator, expect, test } from "@playwright/test"
+import { Chat, signupAndLogin } from "./utils"
 
-test.describe.configure({ mode: "parallel" })
+test("user can open search", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
 
-test("user can open search", async ({ page, user }) => {
     await page.getByRole("button", { name: "Search Chats", exact: true }).click()
 
     await expect(page.getByPlaceholder("Search chats...", { exact: true })).toBeVisible()
@@ -23,7 +23,9 @@ test("user can open search", async ({ page, user }) => {
     }
 })
 
-test("user can search chats", async ({ page, user }) => {
+test("user can search chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+
     function findChatByTitle(title: string) {
         return user.chats.find(c => c.title === title)
     }
@@ -146,7 +148,8 @@ test("user can search chats", async ({ page, user }) => {
     )
 })
 
-test("search filters by title", async ({ page, user }) => {
+test("search filters by title", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
     const target = user.chats[0]
 
     await page.getByRole("button", { name: "Search Chats", exact: true }).click()
@@ -167,7 +170,9 @@ test("search filters by title", async ({ page, user }) => {
     expect(await entry.getAttribute("href")).toEqual(`/chat/${target.uuid}`)
 })
 
-test("search shows no results message when nothing matches", async ({ page, user }) => {
+test("search shows no results message when nothing matches", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+
     await page.getByRole("button", { name: "Search Chats", exact: true }).click()
     const input = page.getByPlaceholder("Search chats...", { exact: true })
     await expect(input).toBeVisible()
@@ -183,7 +188,9 @@ test("search shows no results message when nothing matches", async ({ page, user
     await expect(page.getByText("No chats found.", { exact: true })).toBeVisible({ timeout: 5000 })
 })
 
-test("infinite scroll loads more search entries", async ({ page, user }) => {
+test("infinite scroll loads more search entries", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+
     await page.getByRole("button", { name: "Search Chats", exact: true }).click()
     const dialog = page.getByRole("dialog")
 
@@ -205,7 +212,9 @@ test("infinite scroll loads more search entries", async ({ page, user }) => {
     expect(newCount).toBeGreaterThanOrEqual(initialCount + 1)
 })
 
-test("clicking a search entry navigates to the chat", async ({ page, user }) => {
+test("clicking a search entry navigates to the chat", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+
     await page.getByRole("button", { name: "Search Chats", exact: true }).click()
     const dialog = page.getByRole("dialog")
     const entries = dialog.getByRole("link")

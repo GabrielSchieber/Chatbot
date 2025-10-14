@@ -1,8 +1,6 @@
 import { Page, expect, test } from "@playwright/test"
 import { signupAndLogin } from "./utils"
 
-test.describe.configure({ mode: "parallel" })
-
 test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
         const store = { text: "" }

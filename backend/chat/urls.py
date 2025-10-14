@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 from django.urls import path, re_path
 
@@ -49,6 +51,10 @@ urlpatterns = [
     path("api/edit-message/", EditMessage.as_view()),
     path("api/regenerate-message/", RegenerateMessage.as_view())
 ]
+
+if settings.DEBUG and os.getenv("PLAYWRIGHT_TEST") == "True":
+    from .views_test import CreateChats
+    urlpatterns.append(path("test/create-chats/", CreateChats.as_view()))
 
 if not settings.DEBUG:
     urlpatterns.append(re_path(".*", index))

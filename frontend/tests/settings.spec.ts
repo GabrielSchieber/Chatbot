@@ -1,13 +1,11 @@
 import { expect, test } from "@playwright/test"
 import { signupAndLogin } from "./utils"
 
-test.describe.configure({ mode: "parallel" })
-
 test("user can open settings", async ({ page }) => {
-    const [email] = await signupAndLogin(page)
+    const user = await signupAndLogin(page)
 
     await page.getByText("Settings").click()
-    await expect(page.getByText(`Email: ${email}`, { exact: true })).toBeVisible()
+    await expect(page.getByText(`Email: ${user.email}`, { exact: true })).toBeVisible()
 
     async function checkEntry(label: string, button: string) {
         await expect(page.locator("label").getByText(label, { exact: true })).toBeVisible()
@@ -93,7 +91,7 @@ test("user can change theme", async ({ page }) => {
 })
 
 test("user can delete account", async ({ page }) => {
-    const [email, password] = await signupAndLogin(page)
+    const user = await signupAndLogin(page)
 
     await page.getByText("Settings").click()
 
@@ -109,8 +107,8 @@ test("user can delete account", async ({ page }) => {
     await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
     await page.waitForURL("/login")
 
-    await page.fill("input[type='email']", email)
-    await page.fill("input[type='password']", password)
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
 
     await page.click("button")
 
