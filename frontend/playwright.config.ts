@@ -1,13 +1,14 @@
 import { defineConfig } from "@playwright/test"
 
 export default defineConfig({
+    fullyParallel: true,
     use: {
         baseURL: "http://localhost:5173"
     },
     webServer: [
         {
             name: "Backend",
-            command: "python ../backend/manage.py testserver --no-input tests/fixture.json",
+            command: "cd ../backend && python manage.py flush --no-input && python manage.py runserver",
             port: 8000,
             reuseExistingServer: true,
             env: { "PLAYWRIGHT_TEST": "True" }
