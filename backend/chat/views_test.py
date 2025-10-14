@@ -7,6 +7,7 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from .models import Chat, Message, User
+from .totp_utils import decrypt_secret
 
 if not settings.DEBUG or os.getenv("PLAYWRIGHT_TEST") != "True":
     raise Exception("Django DEBUG and PLAYWRIGHT_TEST variables must be both True for using test views")
@@ -29,3 +30,17 @@ class CreateChats(APIView):
             ])
 
         return Response([str(c.uuid) for c in chats], status.HTTP_200_OK)
+
+class GetMFASecret(APIView):
+    def get(self, request: Request):
+        email = request.GET.get("email")
+
+        try:
+            user = User.objects.get(email = email)
+        except User.DoesNotExist:
+            return Response({"error": "User does not exist"}, status.HTTP_400_BAD_REQUEST)
+
+        if not user.mfa.is_enabled:
+            return Response({"error": "MFA is not enabled"}, status.HTTP_400_BAD_REQUEST)
+
+        return Response(decrypt_secret(user.mfa.secret), status.HTTP_200_OK)

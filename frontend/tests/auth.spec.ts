@@ -1,6 +1,6 @@
-import { expect, test } from "@playwright/test"
+import { Page, expect, test } from "@playwright/test"
 import { authenticator } from "otplib"
-import { getRandomEmail, signup, signupAndLogin } from "./utils"
+import { apiFetch, getRandomEmail, signup, signupAndLogin } from "./utils"
 
 test("user can sign up", async ({ page }) => {
     await page.goto("/")
@@ -92,3 +92,65 @@ test("user can enable multi-factor authentication", async ({ page }) => {
     await page.getByText("I have backed up the codes").click()
     await page.getByRole("button", { name: "Close" }).click()
 })
+
+test("user can log in with multi-factor authentication", async ({ page }) => {
+    const user = await signupWithMFAEnabled(page)
+
+    await page.goto("/")
+    await page.waitForURL("/login")
+
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+
+    await page.click("button")
+
+    await expect(page.getByRole("heading", { name: "Two-factor authentication", exact: true })).toBeVisible()
+
+    const response = await apiFetch(`/test/get-mfa-secret/?email=${user.email}`, {})
+    expect(response.status).toBe(200)
+
+    const secret = await response.json()
+    const code = authenticator.generate(secret)
+
+    await page.getByPlaceholder("Enter 6-digit code").fill(code)
+    await page.getByRole("button", { name: "Verify" }).click()
+
+    await page.waitForURL("/")
+})
+
+async function signupWithMFAEnabledAndLogin(page: Page) {
+    const user = await signupAndLogin(page)
+
+    await page.getByTestId("open-settings").click()
+
+    await page.getByText("Multi-factor authentication").locator("..").getByRole("button").click()
+    await expect(page.getByText("Step 1: Setup")).toBeVisible()
+
+    await page.getByText("Generate QR and secret codes").click()
+    await expect(page.getByText("Step 2: Verify")).toBeVisible()
+
+    const secretText = await page.getByText(/Secret:/).textContent()
+    const secret = secretText?.split("Secret:")[1].trim()!
+
+    const code = authenticator.generate(secret)
+
+    await page.getByPlaceholder("6-digit code").fill(code)
+    await page.getByRole("button", { name: "Enable" }).click()
+
+    await expect(page.getByText("Enabling")).toBeVisible()
+    await expect(page.getByText("Step 3: Backup")).toBeVisible({ timeout: 15000 })
+
+    await page.getByText("I have backed up the codes").click()
+    await page.getByRole("button", { name: "Close" }).click()
+
+    return user
+}
+
+async function signupWithMFAEnabled(page: Page) {
+    const user = await signupWithMFAEnabledAndLogin(page)
+
+    await page.getByRole("button", { name: "Log out" }).click()
+    await page.waitForURL("/login")
+
+    return user
+}

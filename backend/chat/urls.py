@@ -53,8 +53,12 @@ urlpatterns = [
 ]
 
 if settings.DEBUG and os.getenv("PLAYWRIGHT_TEST") == "True":
-    from .views_test import CreateChats
-    urlpatterns.append(path("test/create-chats/", CreateChats.as_view()))
+    from .views_test import CreateChats, GetMFASecret
+
+    urlpatterns.extend([
+        path("test/create-chats/", CreateChats.as_view()),
+        path("test/get-mfa-secret/", GetMFASecret.as_view())
+    ])
 
 if not settings.DEBUG:
     urlpatterns.append(re_path(".*", index))
