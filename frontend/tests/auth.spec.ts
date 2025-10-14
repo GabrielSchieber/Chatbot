@@ -158,6 +158,38 @@ test("user can login with multi-factor authentication backup codes", async ({ pa
     await page.waitForURL("/")
 })
 
+test("user cannot login with an already used multi-factor authentication backup code", async ({ page }) => {
+    test.setTimeout(60_000)
+
+    const { user, backupCodes } = await signupWithMFAEnabled(page)
+
+    async function tryToLoginWithCode(code: string) {
+        await page.goto("/")
+        await page.waitForURL("/login")
+
+        await page.fill("input[type='email']", user.email)
+        await page.fill("input[type='password']", user.password)
+
+        await page.click("button")
+
+        await expect(page.getByRole("heading", { name: "Two-factor authentication", exact: true })).toBeVisible()
+
+        await page.getByPlaceholder("Enter 6-digit code").fill(code)
+        await page.getByRole("button", { name: "Verify" }).click()
+        await expect(page.getByText("Verifying")).toBeVisible()
+    }
+
+    await tryToLoginWithCode(backupCodes[0])
+    await page.waitForURL("/")
+
+    await page.getByTestId("open-settings").click()
+    await page.getByRole("button", { name: "Log out" }).click()
+    await page.waitForURL("/login")
+
+    await tryToLoginWithCode(backupCodes[0])
+    await expect(page.getByText("Invalid 2FA code")).toBeVisible({ timeout: 15_000 })
+})
+
 async function signupWithMFAEnabledAndLogin(page: Page) {
     await page.context().grantPermissions(["clipboard-read", "clipboard-write"])
 
