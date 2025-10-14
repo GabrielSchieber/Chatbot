@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test"
-import { apiFetch, getRandomEmail } from "./utils"
+import { authenticator } from "otplib"
+import { apiFetch, getRandomEmail, signupAndLogin } from "./utils"
 
 test.describe.configure({ mode: "parallel" })
 
@@ -66,6 +67,32 @@ test("user cannot login with invalid password", async ({ page }) => {
 
     await page.click("button")
     await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
+})
+
+test("user can enable multi-factor authentication", async ({ page }) => {
+    await signupAndLogin(page)
+
+    await page.getByTestId("open-settings").click()
+
+    await page.getByText("Multi-factor authentication").locator("..").getByRole("button").click()
+    await expect(page.getByText("Step 1: Setup")).toBeVisible()
+
+    await page.getByText("Generate QR and secret codes").click()
+    await expect(page.getByText("Step 2: Verify")).toBeVisible()
+
+    const secretText = await page.getByText(/Secret:/).textContent()
+    const secret = secretText?.split("Secret:")[1].trim()!
+
+    const code = authenticator.generate(secret)
+
+    await page.getByPlaceholder("6-digit code").fill(code)
+    await page.getByRole("button", { name: "Enable" }).click()
+
+    await expect(page.getByText("Enabling")).toBeVisible()
+    await expect(page.getByText("Step 3: Backup")).toBeVisible({ timeout: 15000 })
+
+    await page.getByText("I have backed up the codes").click()
+    await page.getByRole("button", { name: "Close" }).click()
 })
 
 const password = "testpassword"

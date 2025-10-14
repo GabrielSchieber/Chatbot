@@ -9,8 +9,6 @@
             "email": "test@example.com",
             "is_active": true,
             "is_staff": false,
-            "theme": "System",
-            "has_sidebar_open": true,
             "created_at": "2025-10-08T23:04:38.168Z",
             "groups": [],
             "user_permissions": []
