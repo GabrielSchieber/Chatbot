@@ -5,6 +5,7 @@ import type { User } from "../types"
 
 interface AuthContextValue {
     user: User | null
+    setUser: React.Dispatch<React.SetStateAction<User | null>>
     loading: boolean
     isLoggedIn: boolean
 }
@@ -30,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     return (
-        <AuthContext.Provider value={{ user, loading, isLoggedIn: user !== null }}>
+        <AuthContext.Provider value={{ user, setUser, loading, isLoggedIn: user !== null }}>
             {children}
         </AuthContext.Provider>
     )

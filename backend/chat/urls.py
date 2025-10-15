@@ -7,7 +7,9 @@ from .views import (
     DeleteAccount,
     DeleteChat,
     DeleteChats,
+    DisableMFA,
     EditMessage,
+    EnableMFA,
     GetChats,
     GetMessageFileContent,
     GetMessages,
@@ -19,17 +21,23 @@ from .views import (
     RegenerateMessage,
     RenameChat,
     SearchChats,
+    SetupMFA,
     Signup,
     StopPendingChats,
+    VerifyMFA,
     index
 )
 
 urlpatterns = [
     path("api/signup/", Signup.as_view()),
     path("api/login/", Login.as_view()),
+    path("api/mfa/verify/", VerifyMFA.as_view()),
     path("api/logout/", Logout.as_view()),
     path("api/me/", Me.as_view()),
     path("api/refresh/", Refresh.as_view()),
+    path("api/mfa/setup/", SetupMFA.as_view()),
+    path("api/mfa/enable/", EnableMFA.as_view()),
+    path("api/mfa/disable/", DisableMFA.as_view()),
     path("api/delete-account/", DeleteAccount.as_view()),
     path("api/get-chats/", GetChats.as_view()),
     path("api/search-chats/", SearchChats.as_view()),
@@ -45,8 +53,12 @@ urlpatterns = [
 ]
 
 if settings.DEBUG and os.getenv("PLAYWRIGHT_TEST") == "True":
-    from .views_test import CreateChats
-    urlpatterns.append(path("test/create-chats/", CreateChats.as_view()))
+    from .views_test import CreateChats, GetMFASecret
+
+    urlpatterns.extend([
+        path("test/create-chats/", CreateChats.as_view()),
+        path("test/get-mfa-secret/", GetMFASecret.as_view())
+    ])
 
 if not settings.DEBUG:
     urlpatterns.append(re_path(".*", index))

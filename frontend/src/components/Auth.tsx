@@ -1,5 +1,13 @@
 import { useState } from "react"
-import { login, signup } from "../utils/api"
+
+import { login, signup, verifyMFA } from "../utils/api"
+
+export const formClassNames = "flex flex-col gap-3 p-4 items-center justify-center rounded-xl bg-gray-800 light:bg-gray-100"
+export const inputClassNames = "w-full px-3 py-2 rounded-xl outline-none bg-gray-700 light:bg-gray-300"
+export const buttonClassNames = `
+    px-6 py-1 rounded-xl cursor-pointer bg-gray-700 light:bg-gray-300 hover:bg-gray-600
+    light:hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed
+`
 
 export default function Auth({ type }: { type: "Signup" | "Login" }) {
     const submitFunction = type === "Signup" ? signup : login
@@ -10,6 +18,11 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [error, setError] = useState("")
+
+    const [showMFA, setShowMFA] = useState(false)
+    const [preAuthToken, setPreAuthToken] = useState<string | null>(null)
+    const [mFACode, setMFACode] = useState("")
+    const [isVerifying, setIsVerifying] = useState(false)
 
     async function handleSubmit(event: React.FormEvent) {
         event.preventDefault()
@@ -25,55 +38,89 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
                     alert("Error logging in after sign up")
                 }
             } else {
-                location.href = "/"
+                const data = await response.json().catch(() => ({}))
+                if (data.is_mfa_required) {
+                    setPreAuthToken(data.pre_auth_token)
+                    setShowMFA(true)
+                    return
+                }
+                if (response.ok) location.href = "/"
+                else setError(submitError)
             }
         } else {
             setError(submitError)
         }
     }
 
+    async function handleVerifyMFA(event: React.FormEvent) {
+        event.preventDefault()
+        if (!preAuthToken) return
+
+        setIsVerifying(true)
+
+        const response = await verifyMFA(preAuthToken, mFACode)
+        if (response.ok) {
+            location.href = "/"
+        } else {
+            setError("Invalid code")
+            setIsVerifying(false)
+        }
+    }
+
     return (
-        <div className="flex flex-col w-screen h-screen bg-gray-900 light:bg-gray-300 items-center justify-center">
-            <form
-                className="flex flex-col gap-3 w-[500px] p-4 items-center justify-center rounded-xl bg-gray-800 light:bg-gray-100"
-                onSubmit={handleSubmit}
-            >
-                <h1 className="text-white light:text-black text-2xl pb-4">{headerText}</h1>
-                <input
-                    className="text-white light:text-black text-xl outline-none w-full bg-gray-700 light:bg-gray-200 rounded-xl px-3 py-2"
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    onKeyDown={_ => setError("")}
-                    required
-                />
-                {type === "Signup" && error && <p className="text-red-600 text-lg">{error}</p>}
-                <input
-                    className="text-white light:text-black text-xl outline-none w-full bg-gray-700 light:bg-gray-200 rounded-xl px-3 py-2"
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    minLength={type === "Signup" ? 12 : undefined}
-                    onChange={e => setPassword(e.target.value)}
-                    required
-                />
-                {type === "Login" && error && <p className="text-red-600 text-lg">{error}</p>}
-                <button
-                    className="
-                        text-white light:text-black text-xl bg-gray-700 light:bg-gray-300
-                        hover:bg-gray-600 light:hover:bg-gray-400 rounded-xl px-6 py-1 cursor-pointer
-                    "
-                >
-                    {headerText}
-                </button>
-                <p className="text-white light:text-black text-xl">
-                    {recommendationText + " "}
-                    <a className="text-white light:text-black text-xl underline" href={type === "Signup" ? "/login" : "/signup"}>
-                        {type === "Signup" ? "Log in!" : "Sign up!"}
-                    </a>
-                </p>
-            </form>
+        <div className="flex flex-col w-screen h-screen items-center justify-center text-xl text-white light:text-black bg-gray-900 light:bg-gray-300">
+            {!showMFA ? (
+                <form className={formClassNames + " w-[500px]"} onSubmit={handleSubmit}>
+                    <h1 className="text-2xl pb-4">{headerText}</h1>
+                    <input
+                        className={inputClassNames}
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        onKeyDown={_ => setError("")}
+                        required
+                    />
+                    {type === "Signup" && error && <p className="text-red-600 text-lg">{error}</p>}
+                    <input
+                        className={inputClassNames}
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        minLength={type === "Signup" ? 12 : undefined}
+                        onChange={e => setPassword(e.target.value)}
+                        required
+                    />
+                    {type === "Login" && error && <p className="text-red-600 text-lg">{error}</p>}
+                    <button className={buttonClassNames}>
+                        {headerText}
+                    </button>
+                    <p className="text-xl">
+                        {recommendationText + " "}
+                        <a className="underline" href={type === "Signup" ? "/login" : "/signup"}>
+                            {type === "Signup" ? "Log in!" : "Sign up!"}
+                        </a>
+                    </p>
+                </form>
+            ) : (
+                <form className={formClassNames + " min-w-95"} onSubmit={handleVerifyMFA}>
+                    <p>Verify multi-factor authentication</p>
+                    <input
+                        className={inputClassNames}
+                        value={mFACode}
+                        onChange={e => {
+                            setError("")
+                            setMFACode(e.target.value)
+                        }}
+                        placeholder="Enter 6-digit code or recovery code"
+                        required
+                    />
+                    <button className={buttonClassNames} disabled={isVerifying}>
+                        {isVerifying ? "Verifying" : "Verify"}
+                    </button>
+                    {error && <p className="text-red-600">{error}</p>}
+                </form>
+            )}
         </div>
     )
 }

@@ -14,7 +14,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .serializers import ChatSerializer, MessageSerializer, RegisterSerializer, UserSerializer
-from .models import Chat, Message, MessageFile, User
+from .models import Chat, Message, MessageFile, PreAuthToken, User
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 
 class Signup(generics.CreateAPIView):
@@ -31,15 +31,48 @@ class Login(APIView):
         email = request.data.get("email")
         password = request.data.get("password")
 
-        user = authenticate(request, email = email, password = password)
+        user: User | None = authenticate(request, email = email, password = password)
         if user is not None:
+            if user.mfa.is_enabled:
+                pre = PreAuthToken.objects.create(user = user)
+                return Response({"is_mfa_required": True, "pre_auth_token": str(pre.token)}, status.HTTP_200_OK)
+            else:
+                refresh = RefreshToken.for_user(user)
+                response = Response({"success": True}, status.HTTP_200_OK)
+                response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
+                response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+                return response
+        else:
+            return Response({"error": "Invalid credentials"}, status.HTTP_400_BAD_REQUEST)
+
+class VerifyMFA(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request):
+        token = request.data.get("pre_auth_token")
+        code = request.data.get("code")
+
+        try:
+            pre_auth_token = PreAuthToken.objects.get(token = token)
+        except PreAuthToken.DoesNotExist:
+            return Response({"error": "Invalid or expired pre auth token"}, status.HTTP_401_UNAUTHORIZED)
+
+        if pre_auth_token.is_expired():
+            pre_auth_token.delete()
+            return Response({"error": "Pre auth token expired"}, status.HTTP_401_UNAUTHORIZED)
+
+        user: User = pre_auth_token.user
+
+        if user.mfa.verify(code):
             refresh = RefreshToken.for_user(user)
             response = Response({"success": True}, status.HTTP_200_OK)
             response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
             response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+            pre_auth_token.delete()
             return response
         else:
-            return Response({"error": "Invalid credentials"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid MFA code"}, status.HTTP_401_UNAUTHORIZED)
 
 class Logout(APIView):
     permission_classes = [IsAuthenticated]
@@ -54,13 +87,13 @@ class Refresh(TokenRefreshView):
     def post(self, request: Request):
         refresh_token = request.COOKIES.get("refresh_token")
         if not refresh_token:
-            return Response({"error": "No refresh token"}, status = status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "No refresh token"}, status.HTTP_401_UNAUTHORIZED)
 
         serializer = self.get_serializer(data = {"refresh": refresh_token})
         try:
             serializer.is_valid(raise_exception = True)
         except Exception:
-            return Response({"error": "Invalid refresh token"}, status = status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid refresh token"}, status.HTTP_401_UNAUTHORIZED)
 
         access = serializer.validated_data["access"]
         new_refresh = serializer.validated_data.get("refresh")
@@ -84,16 +117,52 @@ class Me(APIView):
         if theme != None: 
             if theme not in ["System", "Light", "Dark"]:
                 return Response({"error": "Invalid theme"}, status.HTTP_400_BAD_REQUEST)
-            user.theme = theme
+            user.preferences.theme = theme
 
         has_sidebar_open = request.data.get("has_sidebar_open")
         if has_sidebar_open != None:
             if type(has_sidebar_open) != bool:
                 return Response({"error": "Invalid data type for has_sidebar_open"}, status.HTTP_400_BAD_REQUEST)
-            user.has_sidebar_open = has_sidebar_open
+            user.preferences.has_sidebar_open = has_sidebar_open
 
-        user.save()
+        user.preferences.save()
         return Response(status = status.HTTP_200_OK)
+
+class SetupMFA(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request):
+        secret, auth_url = request.user.mfa.setup()
+        return Response({"auth_url": auth_url, "secret": secret})
+
+class EnableMFA(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request):
+        user: User = request.user
+        code = request.data.get("code")
+
+        if user.mfa.verify(code):
+            backup_codes = user.mfa.enable()
+            return Response({"success": True, "backup_codes": backup_codes}, status.HTTP_200_OK)
+        else:
+            return Response({"error": "Invalid code"}, status.HTTP_400_BAD_REQUEST)
+
+class DisableMFA(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request):
+        user: User = request.user
+        code = request.data.get("code")
+
+        if not user.mfa.is_enabled:
+            return Response({"error": "MFA is not enabled"}, status.HTTP_400_BAD_REQUEST)
+
+        if user.mfa.verify(code):
+            user.mfa.disable()
+            return Response({"success": True}, status.HTTP_200_OK)
+        else:
+            return Response({"error": "Invalid code"}, status.HTTP_400_BAD_REQUEST)
 
 class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]

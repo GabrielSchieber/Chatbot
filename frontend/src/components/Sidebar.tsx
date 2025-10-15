@@ -14,7 +14,7 @@ export default function Sidebar() {
     const topButtonsRef = useRef<HTMLDivElement | null>(null)
     const settingsButtonRef = useRef<HTMLDivElement | null>(null)
 
-    const [isOpen, setIsOpen] = useState(user ? user.has_sidebar_open : true)
+    const [isOpen, setIsOpen] = useState(user ? user.preferences.has_sidebar_open : true)
 
     const itemClassNames = "flex gap-1 p-2 items-center rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"
 

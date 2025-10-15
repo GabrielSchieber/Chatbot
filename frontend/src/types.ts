@@ -3,8 +3,17 @@ export type Model = "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondrea
 
 export type User = {
     email: string
+    preferences: UserPreferences
+    mfa: UserMFA
+}
+
+export type UserPreferences = {
     theme: Theme
     has_sidebar_open: boolean
+}
+
+export type UserMFA = {
+    is_enabled: boolean
 }
 
 export type Chat = {
