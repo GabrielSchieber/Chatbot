@@ -43,8 +43,8 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
                     onEscapeKeyDown={e => isLocked && e.preventDefault()}
                     onInteractOutside={e => isLocked && e.preventDefault()}
                 >
-                    <div className="flex flex-col items-center gap-2">
-                        <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col gap-2">
+                        <div className="flex gap-2 justify-between">
                             <Dialog.Title className="text-xl font-bold">
                                 Manage multi-factor authentication
                             </Dialog.Title>
@@ -54,7 +54,7 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
                                 </Dialog.Close>
                             }
                         </div>
-                        <Dialog.Description className="text-lg font-semibold">
+                        <Dialog.Description className="text-center text-lg font-semibold">
                             {(() => {
                                 switch (step) {
                                     case "setup":
@@ -126,7 +126,7 @@ function SetupDialog({ setAuthURL, setSecret, setStep, setIsLocked }: {
             <button className={buttonClassNames} onClick={handleSetup} disabled={isSettingUp}>
                 {isSettingUp ? "Generating" : "Generate"} QR and secret codes
             </button>
-            {error && <p>{error}</p>}
+            {error && <p className={errorParagraphClassName}>{error}</p>}
         </div>
     )
 }
@@ -173,11 +173,13 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
 
     return (
         <div className="flex flex-col gap-2 items-center">
-            <p>Scan this QR in your authenticator app (or use the secret below):</p>
-            <div className="my-3">
-                <QRCodeCanvas value={authURL} />
+            <p className={paragraphClassName}>
+                Scan this QR in your authenticator app (or use the secret below):
+            </p>
+            <div className="my-2">
+                <QRCodeCanvas value={authURL} size={200} />
             </div>
-            <div className="flex gap-2 px-2 py-0.5 items-center justify-center rounded bg-gray-700 light:bg-gray-300">
+            <div className="flex gap-2 px-2 py-0.5 rounded bg-gray-700 light:bg-gray-300">
                 <p>Secret: {secret}</p>
                 <button
                     className="p-1 rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"
@@ -202,7 +204,7 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
                     {isEnabling ? "Enabling" : "Enable"}
                 </button>
             </form>
-            {error && <p className="text-red-600">{error}</p>}
+            {error && <p className={errorParagraphClassName}>{error}</p>}
         </div>
     )
 }
@@ -227,11 +229,13 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
 
     return (
         <div className="flex flex-col gap-2 p-2 items-center rounded-xl bg-gray-700/30 light:bg-gray-300/30">
-            <p>Make sure to backup the following 10 recovery codes (each one can only be used once):</p>
+            <p className={paragraphClassName}>
+                Make sure to backup the following 10 recovery codes in a safe place (each one can only be used once):
+            </p>
             <ul className="relative flex flex-col w-sm px-4 py-2 rounded-xl bg-gray-700 light:bg-gray-300">
                 <div className="absolute right-0 flex flex-col mr-2 gap-1">
                     <button
-                        className="p-1.5 rounded items-center justify-center cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"
+                        className="p-1.5 rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"
                         onClick={_ => {
                             navigator.clipboard.writeText(backupCodes.join("\n"))
                             setIsCopyButtonChecked(true)
@@ -241,7 +245,7 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
                         {isCopyButtonChecked ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />}
                     </button>
                     <button
-                        className="p-1.5 rounded items-center justify-center cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"
+                        className="p-1.5 rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"
                         onClick={handleDownload}
                     >
                         <DownloadIcon className="size-4.5" />
@@ -251,8 +255,8 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
                     <li key={c} className="font-mono">{c}</li>
                 )}
             </ul>
-            <button className="flex gap-3 cursor-pointer outline-none" onClick={_ => setHasConfirmedBackup(!hasConfirmedBackup)}>
-                <div className="flex items-center justify-center size-6 rounded bg-gray-600 hover:bg-gray-500 light:bg-gray-400">
+            <button className="flex gap-2 items-center cursor-pointer outline-none" onClick={_ => setHasConfirmedBackup(!hasConfirmedBackup)}>
+                <div className="flex size-6 rounded bg-gray-600 hover:bg-gray-500 light:bg-gray-400">
                     {hasConfirmedBackup && <CheckIcon className="size-6" />}
                 </div>
                 <p>I have backed up the codes.</p>
@@ -296,10 +300,14 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
     }
 
     return (
-        <div className="flex flex-col gap-2 max-w-[30vw]">
-            <p>Are you sure you want to disable multi-factor authentication?</p>
-            <p>Enter below the 6-digit code from your authenticator or recovery code to confirm.</p>
-            <form className="flex flex-col gap-2 w-fit items-center self-center" onSubmit={handleDisable}>
+        <div className="flex flex-col gap-2 max-w-[30vw] items-center">
+            <p className={paragraphClassName}>
+                Are you sure you want to disable multi-factor authentication?
+            </p>
+            <p className={paragraphClassName}>
+                Enter below the 6-digit code from your authenticator or recovery code to confirm.
+            </p>
+            <form className="flex flex-col gap-2 items-center" onSubmit={handleDisable}>
                 <input
                     className={inputClassNames}
                     value={code}
@@ -311,7 +319,7 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
                     {isDisabling ? "Disabling" : "Disable"}
                 </button>
             </form>
-            {error && <p className="text-red-600 self-center">{error}</p>}
+            {error && <p className={errorParagraphClassName}>{error}</p>}
         </div>
     )
 }
@@ -319,8 +327,12 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
 function DisabledDialog() {
     return (
         <div className="flex flex-col gap-1 items-center">
-            <p>Multi-factor authentication disabled successfully</p>
+            <p className={paragraphClassName}>Multi-factor authentication disabled successfully</p>
             <Dialog.Close className={buttonClassNames}>Close</Dialog.Close>
         </div>
     )
 }
+
+const paragraphBaseClassName = "w-fit px-2 py-1 text-center rounded-lg"
+const paragraphClassName = paragraphBaseClassName + " bg-gray-700 light:bg-gray-300"
+const errorParagraphClassName = paragraphBaseClassName + " text-white bg-red-500/60 light:bg-red-500"
