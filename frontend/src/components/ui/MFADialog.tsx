@@ -296,11 +296,17 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
     }
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 max-w-[30vw]">
             <p>Are you sure you want to disable multi-factor authentication?</p>
-            <p>Enter below the 6-digit code from your authenticator to confirm.</p>
+            <p>Enter below the 6-digit code from your authenticator or recovery code to confirm.</p>
             <form className="flex flex-col gap-2 w-fit items-center self-center" onSubmit={handleDisable}>
-                <input className={inputClassNames} value={code} onChange={handleInputChange} placeholder="6-digit code" required />
+                <input
+                    className={inputClassNames}
+                    value={code}
+                    onChange={handleInputChange}
+                    placeholder="Enter code"
+                    required
+                />
                 <button className={buttonClassNames} disabled={isDisabling}>
                     {isDisabling ? "Disabling" : "Disable"}
                 </button>

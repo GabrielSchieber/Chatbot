@@ -103,8 +103,8 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
                     </p>
                 </form>
             ) : (
-                <form className={formClassNames} onSubmit={handleVerifyMFA}>
-                    <h2 className="mb-2">Two-factor authentication</h2>
+                <form className={formClassNames + " min-w-95"} onSubmit={handleVerifyMFA}>
+                    <p>Verify multi-factor authentication</p>
                     <input
                         className={inputClassNames}
                         value={mFACode}
@@ -112,7 +112,7 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
                             setError("")
                             setMFACode(e.target.value)
                         }}
-                        placeholder="Enter 6-digit code"
+                        placeholder="Enter 6-digit code or recovery code"
                         required
                     />
                     <button className={buttonClassNames} disabled={isVerifying}>
