@@ -62,7 +62,7 @@ export default function Auth({ type }: { type: "Signup" | "Login" }) {
         if (response.ok) {
             location.href = "/"
         } else {
-            setError("Invalid 2FA code")
+            setError("Invalid code")
             setIsVerifying(false)
         }
     }
