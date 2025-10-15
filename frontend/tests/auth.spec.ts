@@ -72,11 +72,11 @@ test("user can enable multi-factor authentication", async ({ page }) => {
 
     await page.getByTestId("open-settings").click()
 
-    await page.getByText("Multi-factor authentication").locator("..").getByRole("button").click()
-    await expect(page.getByText("Step 1: Setup")).toBeVisible()
+    await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
+    await expect(page.getByText("Step 1: Setup", { exact: true })).toBeVisible()
 
-    await page.getByText("Generate QR and secret codes").click()
-    await expect(page.getByText("Step 2: Verify")).toBeVisible()
+    await page.getByText("Generate QR and secret codes", { exact: true }).click()
+    await expect(page.getByText("Step 2: Verify", { exact: true })).toBeVisible()
 
     const secretText = await page.getByText(/Secret:/).textContent()
     const secret = secretText?.split("Secret:")[1].trim()!
@@ -84,13 +84,14 @@ test("user can enable multi-factor authentication", async ({ page }) => {
     const code = authenticator.generate(secret)
 
     await page.getByPlaceholder("6-digit code", { exact: true }).fill(code)
-    await page.getByRole("button", { name: "Enable" }).click()
+    await page.getByRole("button", { name: "Enable", exact: true }).click()
+    await expect(page.getByText("Enabling", { exact: true })).toBeVisible()
 
-    await expect(page.getByText("Enabling")).toBeVisible()
-    await expect(page.getByText("Step 3: Backup")).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText("Step 3: Backup", { exact: true })).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText("Multi-factor authentication enabled successfully!", { exact: true })).toBeVisible()
 
-    await page.getByText("I have backed up the codes").click()
-    await page.getByRole("button", { name: "Close" }).click()
+    await page.getByText("I have backed up the codes.", { exact: true }).click()
+    await page.getByRole("button", { name: "Close", exact: true }).click()
 })
 
 test("user can log in with multi-factor authentication", async ({ page }) => {
@@ -113,7 +114,7 @@ test("user can log in with multi-factor authentication", async ({ page }) => {
     const code = authenticator.generate(secret)
 
     await page.getByPlaceholder("Enter 6-digit code or recovery code", { exact: true }).fill(code)
-    await page.getByRole("button", { name: "Verify" }).click()
+    await page.getByRole("button", { name: "Verify", exact: true }).click()
 
     await page.waitForURL("/")
 })
@@ -123,8 +124,8 @@ test("user can disable multi-factor authentication", async ({ page }) => {
 
     await page.getByTestId("open-settings").click()
 
-    await page.getByText("Multi-factor authentication").locator("..").getByRole("button").click()
-    await expect(page.getByText("Step 1: Disable")).toBeVisible()
+    await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
+    await expect(page.getByText("Step 1: Disable", { exact: true })).toBeVisible()
 
     const response = await apiFetch(`/test/get-mfa-secret/?email=${user.email}`, {})
     expect(response.status).toBe(200)
@@ -133,10 +134,11 @@ test("user can disable multi-factor authentication", async ({ page }) => {
     const code = authenticator.generate(secret)
 
     await page.getByPlaceholder("Enter code", { exact: true }).fill(code)
-    await page.getByRole("button", { name: "Disable" }).click()
-    await expect(page.getByText("Step 2: Disabled")).toBeVisible()
+    await page.getByRole("button", { name: "Disable", exact: true }).click()
+    await expect(page.getByText("Multi-factor authentication disabled successfully!", { exact: true })).toBeVisible()
+    await expect(page.getByText("Step 2: Disabled", { exact: true })).toBeVisible()
 
-    await page.getByRole("button", { name: "Close" }).click()
+    await page.getByRole("button", { name: "Close", exact: true }).click()
 })
 
 test("user can login with multi-factor authentication backup codes", async ({ page }) => {
@@ -153,7 +155,7 @@ test("user can login with multi-factor authentication backup codes", async ({ pa
     await expect(page.getByText("Verify multi-factor authentication", { exact: true })).toBeVisible()
 
     await page.getByPlaceholder("Enter 6-digit code or recovery code", { exact: true }).fill(backupCodes[0])
-    await page.getByRole("button", { name: "Verify" }).click()
+    await page.getByRole("button", { name: "Verify", exact: true }).click()
 
     await page.waitForURL("/")
 })
@@ -175,19 +177,19 @@ test("user cannot login with an already used multi-factor authentication backup 
         await expect(page.getByText("Verify multi-factor authentication", { exact: true })).toBeVisible()
 
         await page.getByPlaceholder("Enter 6-digit code or recovery code", { exact: true }).fill(code)
-        await page.getByRole("button", { name: "Verify" }).click()
-        await expect(page.getByText("Verifying")).toBeVisible()
+        await page.getByRole("button", { name: "Verify", exact: true }).click()
+        await expect(page.getByText("Verifying", { exact: true })).toBeVisible()
     }
 
     await tryToLoginWithCode(backupCodes[0])
     await page.waitForURL("/")
 
     await page.getByTestId("open-settings").click()
-    await page.getByRole("button", { name: "Log out" }).click()
+    await page.getByRole("button", { name: "Log out", exact: true }).click()
     await page.waitForURL("/login")
 
     await tryToLoginWithCode(backupCodes[0])
-    await expect(page.getByText("Invalid code")).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText("Invalid code", { exact: true })).toBeVisible({ timeout: 15_000 })
 })
 
 test("user can disable multi-factor authentication with a backup code", async ({ page }) => {
@@ -195,14 +197,14 @@ test("user can disable multi-factor authentication with a backup code", async ({
 
     await page.getByTestId("open-settings").click()
 
-    await page.getByText("Multi-factor authentication").locator("..").getByRole("button").click()
-    await expect(page.getByText("Step 1: Disable")).toBeVisible()
+    await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
+    await expect(page.getByText("Step 1: Disable", { exact: true })).toBeVisible()
 
     await page.getByPlaceholder("Enter code", { exact: true }).fill(backupCodes[0])
-    await page.getByRole("button", { name: "Disable" }).click()
-    await expect(page.getByText("Step 2: Disabled")).toBeVisible()
+    await page.getByRole("button", { name: "Disable", exact: true }).click()
+    await expect(page.getByText("Step 2: Disabled", { exact: true })).toBeVisible()
 
-    await page.getByRole("button", { name: "Close" }).click()
+    await page.getByRole("button", { name: "Close", exact: true }).click()
 })
 
 async function signupWithMFAEnabledAndLogin(page: Page) {
@@ -212,11 +214,11 @@ async function signupWithMFAEnabledAndLogin(page: Page) {
 
     await page.getByTestId("open-settings").click()
 
-    await page.getByText("Multi-factor authentication").locator("..").getByRole("button").click()
-    await expect(page.getByText("Step 1: Setup")).toBeVisible()
+    await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
+    await expect(page.getByText("Step 1: Setup", { exact: true })).toBeVisible()
 
-    await page.getByText("Generate QR and secret codes").click()
-    await expect(page.getByText("Step 2: Verify")).toBeVisible()
+    await page.getByText("Generate QR and secret codes", { exact: true }).click()
+    await expect(page.getByText("Step 2: Verify", { exact: true })).toBeVisible()
 
     const secretText = await page.getByText(/Secret:/).textContent()
     const secret = secretText?.split("Secret:")[1].trim()!
@@ -224,10 +226,10 @@ async function signupWithMFAEnabledAndLogin(page: Page) {
     const code = authenticator.generate(secret)
 
     await page.getByPlaceholder("6-digit code", { exact: true }).fill(code)
-    await page.getByRole("button", { name: "Enable" }).click()
+    await page.getByRole("button", { name: "Enable", exact: true }).click()
 
-    await expect(page.getByText("Enabling")).toBeVisible()
-    await expect(page.getByText("Step 3: Backup")).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText("Enabling", { exact: true })).toBeVisible()
+    await expect(page.getByText("Step 3: Backup", { exact: true })).toBeVisible({ timeout: 15000 })
 
     await page.getByRole("list").getByRole("button").first().click()
 
@@ -237,8 +239,8 @@ async function signupWithMFAEnabledAndLogin(page: Page) {
     const backupCodes = clipboard.split("\n")
     expect(backupCodes.length).toEqual(10)
 
-    await page.getByText("I have backed up the codes").click()
-    await page.getByRole("button", { name: "Close" }).click()
+    await page.getByText("I have backed up the codes.", { exact: true }).click()
+    await page.getByRole("button", { name: "Close", exact: true }).click()
 
     await page.reload()
 
@@ -249,7 +251,7 @@ async function signupWithMFAEnabled(page: Page) {
     const user = await signupWithMFAEnabledAndLogin(page)
 
     await page.getByTestId("open-settings").click()
-    await page.getByRole("button", { name: "Log out" }).click()
+    await page.getByRole("button", { name: "Log out", exact: true }).click()
     await page.waitForURL("/login")
 
     return user
