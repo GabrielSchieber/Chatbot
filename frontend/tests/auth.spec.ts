@@ -207,6 +207,36 @@ test("user can disable multi-factor authentication with a backup code", async ({
     await page.getByRole("button", { name: "Close", exact: true }).click()
 })
 
+test("user cannot disable multi-factor authentication with an already used backup code", async ({ page }) => {
+    const { user, backupCodes } = await signupWithMFAEnabled(page)
+
+    await page.goto("/")
+    await page.waitForURL("/login")
+
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+
+    await page.click("button")
+
+    await expect(page.getByText("Verify multi-factor authentication", { exact: true })).toBeVisible()
+
+    await page.getByPlaceholder("Enter 6-digit code or recovery code", { exact: true }).fill(backupCodes[0])
+    await page.getByRole("button", { name: "Verify", exact: true }).click()
+
+    await page.waitForURL("/")
+
+    await page.getByTestId("open-settings").click()
+
+    await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
+    await expect(page.getByText("Step 1: Disable", { exact: true })).toBeVisible()
+
+    await page.getByPlaceholder("Enter code", { exact: true }).fill(backupCodes[0])
+    await page.getByRole("button", { name: "Disable", exact: true }).click()
+    await expect(page.getByText("Disabling", { exact: true })).toBeVisible()
+
+    await expect(page.getByText("Invalid code", { exact: true })).toBeVisible({ timeout: 10_000 })
+})
+
 async function signupWithMFAEnabledAndLogin(page: Page) {
     await page.context().grantPermissions(["clipboard-read", "clipboard-write"])
 
