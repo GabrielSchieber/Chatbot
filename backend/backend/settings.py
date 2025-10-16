@@ -105,12 +105,12 @@ REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.a
 
 REST_FRAMEWORK.update({
     "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.AnonRateThrottle",
-        "rest_framework.throttling.UserRateThrottle"
+        "chat.throttles.PerUserRateThrottle",
+        "rest_framework.throttling.AnonRateThrottle"
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "10/minute",
-        "user": "1000/day",
+        "per_user": "100/minute",
         "signup": "3/minute",
         "refresh": "20/minute",
         "ip_email": "5/minute" 

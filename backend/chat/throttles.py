@@ -1,4 +1,4 @@
-from rest_framework.throttling import AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 class SignupRateThrottle(AnonRateThrottle):
     scope = "signup"
@@ -29,3 +29,12 @@ class IPEmailRateThrottle(AnonRateThrottle):
         else:
             # fallback to IP-only throttling
             return f"throttle_{self.scope}_{ident}"
+
+class PerUserRateThrottle(UserRateThrottle):
+    scope = "per_user"
+
+    def allow_request(self, request, view):
+        # Only throttle authenticated users; skip anonymous requests
+        if not request.user.is_authenticated:
+            return True
+        return super().allow_request(request, view)
