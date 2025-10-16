@@ -49,9 +49,9 @@ export default function Composer({
             layout
             transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
             className={`
-                flex flex-col w-[60vw] mb-5 rounded-4xl bg-gray-800 light:bg-gray-200
+                flex flex-col w-[60vw] rounded-4xl bg-gray-800 light:bg-gray-200
                 ${hasFiles ? "gap-2 px-4 pt-3 pb-1" : "px-3 py-1"}
-                ${withBorderAndShadow && "border-t-4 border-gray-600 light:border-gray-400 shadow-xl/50"}
+                ${withBorderAndShadow ? "mb-5 border-t-4 border-gray-600 light:border-gray-400 shadow-xl/50" : "mt-10 mb-5"}
             `}
             onClick={e => {
                 if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
@@ -62,7 +62,7 @@ export default function Composer({
         >
             <input ref={fileInputRef} type="file" className="hidden" onChange={onFileChange} multiple />
 
-            <div className="flex flex-col max-h-100 gap-1 overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
+            <div className="flex flex-col max-h-100 gap-1 overflow-x-hidden overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
                 {filesArea}
                 {isExtended &&
                     <TextArea
@@ -76,8 +76,8 @@ export default function Composer({
                 }
             </div>
 
-            <div className="flex gap-2 items-center justify-between">
-                <PlusDropdown fileInputRef={fileInputRef} model={model} setModel={setModel} />
+            <div className={`flex gap-2 items-center justify-between ${isExtended && "pb-1"}`}>
+                <PlusDropdown fileInputRef={fileInputRef} model={model} setModel={setModel} selectClassName={withBorderAndShadow ? undefined : ""} />
                 {!isExtended &&
                     <TextArea
                         ref={textAreaRef}

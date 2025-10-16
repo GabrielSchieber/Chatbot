@@ -7,10 +7,11 @@ import { useChat } from "../../context/ChatProvider"
 import { regenerateMessage, stopPendingChats } from "../../utils/api"
 import type { Model } from "../../types"
 
-export function PlusDropdown({ fileInputRef, model, setModel }: {
+export function PlusDropdown({ fileInputRef, model, setModel, selectClassName = "-translate-y-15" }: {
     fileInputRef: RefObject<HTMLInputElement | null>
     model: Model
     setModel: React.Dispatch<React.SetStateAction<Model>>
+    selectClassName?: string
 }) {
     const itemClassNames = `
         flex gap-2 items-center cursor-pointer outline-none hover:bg-gray-700
@@ -23,12 +24,18 @@ export function PlusDropdown({ fileInputRef, model, setModel }: {
                 <TooltipButton trigger={<PlusIcon className="size-6" />} tooltip="Add files and more..." sideOffset={10} asChild />
             </DropdownMenu.Trigger>
 
-            <DropdownMenu.Content className="flex flex-col gap-1 p-2 rounded-lg translate-x-20 bg-gray-800 light:bg-gray-200" sideOffset={12}>
+            <DropdownMenu.Content
+                className="
+                    flex flex-col gap-1 p-2 rounded-lg translate-x-20 shadow-xl/50
+                    border-2 border-gray-900 light:border-gray-100 bg-gray-800 light:bg-gray-200
+                "
+                sideOffset={8}
+            >
                 <DropdownMenu.Item className={itemClassNames + " px-2.5 py-1.5 rounded-lg"} onClick={_ => fileInputRef.current?.click()}>
                     <UploadIcon className="size-5" /> Add files
                 </DropdownMenu.Item>
 
-                <DropdownMenu.Item>
+                <DropdownMenu.Item className="outline-none">
                     <Select.Root value={model} onValueChange={v => setModel(v as Model)}>
                         <Select.Trigger
                             className={`
@@ -48,12 +55,17 @@ export function PlusDropdown({ fileInputRef, model, setModel }: {
                         </Select.Trigger>
 
                         <Select.Portal>
-                            <Select.Content position="popper" side="right" sideOffset={10} className="-translate-y-17">
+                            <Select.Content position="popper" side="right" sideOffset={14} className={selectClassName}>
                                 <Select.ScrollUpButton>
                                     <ChevronUpIcon />
                                 </Select.ScrollUpButton>
 
-                                <Select.Viewport className="flex flex-col gap-1 p-2 rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200">
+                                <Select.Viewport
+                                    className="
+                                        flex flex-col gap-1 p-2 rounded-xl text-white light:text-black shadow-xl/50
+                                        border-2 border-gray-900 light:border-gray-100 bg-gray-800 light:bg-gray-200
+                                    "
+                                >
                                     {[(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
                                         <Select.Item
                                             key={m}
@@ -196,7 +208,7 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
     }, [pendingChat])
 
     return (
-        <Tooltip.Provider delayDuration={200}>
+        <Tooltip.Provider delayDuration={0}>
             <DropdownMenu.Root>
                 <Tooltip.Root>
                     <Tooltip.Trigger asChild>
@@ -225,7 +237,10 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
 
                 <DropdownMenu.Portal>
                     <DropdownMenu.Content
-                        className="flex flex-col gap-1 p-2 rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200"
+                        className="
+                            flex flex-col gap-1 p-2 rounded-xl text-white light:text-black shadow-xl/50
+                            border-2 border-gray-900 light:border-gray-100 bg-gray-800 light:bg-gray-200
+                        "
                         sideOffset={5}
                         data-testid="regenerate-dropdown"
                     >
@@ -262,7 +277,7 @@ export function TooltipButton({ trigger, tooltip, onClick, className = "", isDis
     dataTestID?: string
 }) {
     return (
-        <Tooltip.Provider delayDuration={200}>
+        <Tooltip.Provider delayDuration={0}>
             <Tooltip.Root>
                 <Tooltip.Trigger className={className} onClick={onClick} disabled={isDisabled} asChild={asChild} data-testid={dataTestID}>
                     {trigger}
