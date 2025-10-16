@@ -20,7 +20,7 @@ export function PlusDropdown({ fileInputRef, model, setModel }: {
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger className={itemClassNames + " p-1.5 rounded-full"}>
-                <TooltipButton trigger={<PlusIcon className="size-6" />} tooltip="Add files and more..." asChild />
+                <TooltipButton trigger={<PlusIcon className="size-6" />} tooltip="Add files and more..." sideOffset={10} asChild />
             </DropdownMenu.Trigger>
 
             <DropdownMenu.Content className="flex flex-col gap-1 p-2 rounded-lg translate-x-20 bg-gray-800 light:bg-gray-200" sideOffset={12}>
@@ -251,12 +251,13 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
     )
 }
 
-export function TooltipButton({ trigger, tooltip, onClick, className = "", isDisabled = false, asChild = false, dataTestID }: {
+export function TooltipButton({ trigger, tooltip, onClick, className = "", isDisabled = false, sideOffset = 3, asChild = false, dataTestID }: {
     trigger: ReactNode
     tooltip: ReactNode
     className?: string
     onClick?: () => void
     isDisabled?: boolean
+    sideOffset?: number
     asChild?: boolean
     dataTestID?: string
 }) {
@@ -267,7 +268,7 @@ export function TooltipButton({ trigger, tooltip, onClick, className = "", isDis
                     {trigger}
                 </Tooltip.Trigger>
                 <Tooltip.Portal>
-                    <Tooltip.Content className="px-2 py-1 rounded-lg text-white text-sm bg-black" side="bottom" sideOffset={3}>
+                    <Tooltip.Content className="px-2 py-1 rounded-lg text-white text-sm bg-black" side="bottom" sideOffset={sideOffset}>
                         {tooltip}
                     </Tooltip.Content>
                 </Tooltip.Portal>
