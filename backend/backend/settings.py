@@ -112,9 +112,8 @@ REST_FRAMEWORK.update({
         "anon": "10/minute",
         "user": "1000/day",
         "signup": "3/minute",
-        "login": "5/minute",
-        "verify_mfa": "5/minute",
-        "refresh": "20/minute"
+        "refresh": "20/minute",
+        "ip_email": "5/minute" 
     }
 })
 

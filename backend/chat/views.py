@@ -16,7 +16,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .serializers import ChatSerializer, MessageSerializer, RegisterSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
-from .throttles import LoginRateThrottle, RefreshRateThrottle, SignupRateThrottle, VerifyMFARateThrottle
+from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
 
 class Signup(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -28,7 +28,7 @@ class Signup(generics.CreateAPIView):
 class Login(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
-    throttle_classes = [LoginRateThrottle] 
+    throttle_classes = [IPEmailRateThrottle]
 
     def post(self, request: Request):
         email = request.data.get("email")
@@ -51,7 +51,7 @@ class Login(APIView):
 class VerifyMFA(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
-    throttle_classes = [VerifyMFARateThrottle]
+    throttle_classes = [IPEmailRateThrottle]
 
     def post(self, request: Request):
         token = request.data.get("pre_auth_token")
