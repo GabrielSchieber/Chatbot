@@ -38,3 +38,17 @@ class PerUserRateThrottle(UserRateThrottle):
         if not request.user.is_authenticated:
             return True
         return super().allow_request(request, view)
+
+class PerUserIPRateThrottle(UserRateThrottle):
+    """
+    Throttle keyed by both user ID and IP address.
+    Prevents users from bypassing limits using multiple IPs or sessions.
+    """
+    scope = "per_user_ip"
+
+    def get_cache_key(self, request, view):
+        if request.user and request.user.is_authenticated:
+            ident = self.get_ident(request)  # IP detection (uses X-Forwarded-For if available)
+            user_id = request.user.pk
+            return f"throttle_{self.scope}_user_{user_id}_ip_{ident}"
+        return None  # only throttles authenticated users
