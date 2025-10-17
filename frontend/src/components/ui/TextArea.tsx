@@ -29,6 +29,7 @@ export default function TextArea({ ref, text, setText, sendMessageWithEvent, sel
                     if (selectionEnd) selectionEnd.current = e.target.selectionEnd
                 }}
                 onKeyDown={sendMessageWithEvent}
+                tabIndex={1}
                 rows={1}
                 autoFocus
             />

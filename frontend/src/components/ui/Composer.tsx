@@ -77,7 +77,7 @@ export default function Composer({
             </div>
 
             <div className={`flex gap-2 items-center justify-between ${isExtended && "pb-1"}`}>
-                <PlusDropdown fileInputRef={fileInputRef} model={model} setModel={setModel} selectClassName={withBorderAndShadow ? undefined : ""} />
+                <PlusDropdown fileInputRef={fileInputRef} model={model} setModel={setModel} />
                 {!isExtended &&
                     <TextArea
                         ref={textAreaRef}
