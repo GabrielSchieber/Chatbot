@@ -1,13 +1,14 @@
 import { motion } from "motion/react"
 import { useEffect } from "react"
 
-export default function TextArea({ ref, text, setText, sendMessageWithEvent, selectionStart, selectionEnd }: {
+export default function TextArea({ ref, text, setText, sendMessageWithEvent, selectionStart, selectionEnd, tabIndex = 1 }: {
     ref: React.RefObject<HTMLTextAreaElement | null>
     text: string
     setText: React.Dispatch<React.SetStateAction<string>>
     sendMessageWithEvent: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
     selectionStart?: React.RefObject<number>
     selectionEnd?: React.RefObject<number>
+    tabIndex?: number
 }) {
     useEffect(() => {
         if (ref.current) {
@@ -29,7 +30,7 @@ export default function TextArea({ ref, text, setText, sendMessageWithEvent, sel
                     if (selectionEnd) selectionEnd.current = e.target.selectionEnd
                 }}
                 onKeyDown={sendMessageWithEvent}
-                tabIndex={1}
+                tabIndex={tabIndex}
                 rows={1}
                 autoFocus
             />

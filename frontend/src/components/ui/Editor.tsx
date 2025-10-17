@@ -201,6 +201,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
             sendMessageWithEvent={() => { }}
             isSendDisabled={(text.trim() === "" && getCurrentFiles().length === 0) || pendingChat !== null}
             setIndex={setIndex}
+            tabIndex={3}
         />
     )
 }

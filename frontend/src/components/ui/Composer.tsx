@@ -23,7 +23,8 @@ export default function Composer({
     sendMessageWithEvent,
     isSendDisabled,
     setIndex,
-    pendingChat
+    pendingChat,
+    tabIndex = 1
 }: {
     fileInputRef: RefObject<HTMLInputElement | null>
     textAreaRef: RefObject<HTMLTextAreaElement | null>
@@ -43,6 +44,7 @@ export default function Composer({
     isSendDisabled: boolean
     setIndex?: Dispatch<SetStateAction<number>>
     pendingChat?: Chat | null
+    tabIndex?: number
 }) {
     return (
         <motion.div
@@ -72,12 +74,13 @@ export default function Composer({
                         sendMessageWithEvent={sendMessageWithEvent as any}
                         selectionStart={selectionStart}
                         selectionEnd={selectionEnd}
+                        tabIndex={tabIndex}
                     />
                 }
             </div>
 
             <div className={`flex gap-2 items-center justify-between ${isExtended && "pb-1"}`}>
-                <PlusDropdown fileInputRef={fileInputRef} model={model} setModel={setModel} />
+                <PlusDropdown fileInputRef={fileInputRef} model={model} setModel={setModel} tabIndex={tabIndex + 1} />
                 {!isExtended &&
                     <TextArea
                         ref={textAreaRef}
@@ -86,14 +89,15 @@ export default function Composer({
                         sendMessageWithEvent={sendMessageWithEvent as any}
                         selectionStart={selectionStart}
                         selectionEnd={selectionEnd}
+                        tabIndex={tabIndex}
                     />
                 }
                 <div className="flex gap-1">
-                    {setIndex && <CancelButton setIndex={setIndex} />}
+                    {setIndex && <CancelButton setIndex={setIndex} tabIndex={tabIndex + 1} />}
                     {pendingChat !== undefined && pendingChat !== null ? (
-                        <StopButton />
+                        <StopButton tabIndex={tabIndex + 1} />
                     ) : (
-                        <SendButton sendMessage={sendMessage} isDisabled={isSendDisabled} />
+                        <SendButton sendMessage={sendMessage} isDisabled={isSendDisabled} tabIndex={tabIndex + 1} />
                     )}
                 </div>
             </div>

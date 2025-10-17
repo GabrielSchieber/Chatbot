@@ -7,10 +7,11 @@ import { useChat } from "../../context/ChatProvider"
 import { regenerateMessage, stopPendingChats } from "../../utils/api"
 import type { Model } from "../../types"
 
-export function PlusDropdown({ fileInputRef, model, setModel }: {
+export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
     fileInputRef: RefObject<HTMLInputElement | null>
     model: Model
     setModel: Dispatch<SetStateAction<Model>>
+    tabIndex?: number
 }) {
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false)
 
@@ -25,7 +26,7 @@ export function PlusDropdown({ fileInputRef, model, setModel }: {
 
     return (
         <DropdownMenu.Root>
-            <DropdownMenu.Trigger className={promptBarButtonClassNames} tabIndex={2}>
+            <DropdownMenu.Trigger className={promptBarButtonClassNames} tabIndex={tabIndex}>
                 <PlusIcon className="size-6" />
             </DropdownMenu.Trigger>
 
@@ -74,21 +75,21 @@ export function PlusDropdown({ fileInputRef, model, setModel }: {
     )
 }
 
-export function SendButton({ sendMessage, isDisabled }: { sendMessage: () => void, isDisabled: boolean }) {
+export function SendButton({ sendMessage, isDisabled, tabIndex = 2 }: { sendMessage: () => void, isDisabled: boolean, tabIndex?: number }) {
     return (
         <TooltipButton
             trigger={<ArrowUpIcon className="size-6" />}
             tooltip="Send"
             onClick={sendMessage}
             className={promptBarButtonClassNames}
-            tabIndex={2}
             isDisabled={isDisabled}
+            tabIndex={tabIndex}
             dataTestID="send"
         />
     )
 }
 
-export function StopButton() {
+export function StopButton({ tabIndex = 2 }: { tabIndex?: number }) {
     const { setPendingChat } = useChat()
 
     return (
@@ -96,7 +97,7 @@ export function StopButton() {
             trigger={<PauseIcon className="size-6" />}
             tooltip="Stop"
             className={promptBarButtonClassNames}
-            tabIndex={2}
+            tabIndex={tabIndex}
             onClick={() => {
                 stopPendingChats()
                 setPendingChat(null)
@@ -105,12 +106,13 @@ export function StopButton() {
     )
 }
 
-export function CancelButton({ setIndex }: { setIndex: React.Dispatch<React.SetStateAction<number>> }) {
+export function CancelButton({ setIndex, tabIndex = 2 }: { setIndex: React.Dispatch<React.SetStateAction<number>>, tabIndex?: number }) {
     return (
         <TooltipButton
             trigger={<Cross2Icon className="size-6" />}
             tooltip="Cancel"
             className={promptBarButtonClassNames}
+            tabIndex={tabIndex}
             onClick={() => setIndex(-1)}
             dataTestID="cancel"
         />
