@@ -38,7 +38,7 @@ class MessageInline(admin.StackedInline):
     extra = 0
     can_delete = False
     readonly_fields = ["message_files_summary"]
-    fields = ["text", "is_from_user", "message_files_summary", "model", "created_at"]
+    fields = ["text", "is_from_user", "message_files_summary", "model", "last_modified_at", "created_at"]
 
     def has_add_permission(self, request, obj):
         return False

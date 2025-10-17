@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import { getChats, searchChats } from "../../utils/api"
 
 export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
-    type SearchEntry = { title: string, matches: string[], uuid: string }
+    type SearchEntry = { uuid: string, title: string, matches: string[], last_modified_at: string }
 
     const loaderRef = useRef<HTMLDivElement | null>(null)
     const isLoadingRef = useRef(false)
@@ -17,6 +17,7 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
     const [offset, setOffset] = useState(0)
     const [hasMore, setHasMore] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
+    const [hoveringEntryIndex, setHoveringEntryIndex] = useState(-1)
 
     const limit = 10
 
@@ -28,9 +29,9 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
 
         searchChats(search, reset ? 0 : offset, limit).then(response => {
             if (response.ok) {
-                response.json().then((data: { chats: SearchEntry[], has_more: boolean }) => {
+                response.json().then((data: { entries: SearchEntry[], has_more: boolean }) => {
                     setEntries(previous => {
-                        const combined = reset ? data.chats : [...previous, ...data.chats]
+                        const combined = reset ? data.entries : [...previous, ...data.entries]
                         const unique = Array.from(new Map(combined.map(c => [c.uuid, c])).values())
                         return unique
                     })
@@ -119,14 +120,16 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
                             <p className="text-gray-400 light:text-gray-600 px-3 py-2">No chats found.</p>
                         ) : (
                             <>
-                                {entries.map(e => (
+                                {entries.map((e, i) => (
                                     <a
                                         key={e.uuid}
                                         className="flex gap-5 px-2 py-1 items-center rounded-lg hover:bg-gray-600 light:hover:bg-gray-300"
                                         href={`/chat/${e.uuid}`}
+                                        onMouseEnter={_ => setHoveringEntryIndex(i)}
+                                        onMouseLeave={_ => setHoveringEntryIndex(-1)}
                                     >
                                         <ChatBubbleIcon className="size-10" />
-                                        <div className="flex flex-col">
+                                        <div className="flex flex-1 flex-col justify-between">
                                             <p>{e.title}</p>
                                             {e.matches.length > 0 && (
                                                 <ul>
@@ -136,6 +139,9 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
                                                 </ul>
                                             )}
                                         </div>
+                                        <p className={`text-nowrap transition ${hoveringEntryIndex !== i && "opacity-0"}`}>
+                                            {e.last_modified_at}
+                                        </p>
                                     </a>
                                 ))}
 

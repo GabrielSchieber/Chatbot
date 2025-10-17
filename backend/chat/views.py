@@ -1,8 +1,10 @@
 import json
+from datetime import timedelta
 
 from django.contrib.auth import authenticate
 from django.db.models import Prefetch, Q
 from django.shortcuts import render
+from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -213,13 +215,28 @@ class SearchChats(APIView):
 
         chats = chats.prefetch_related(Prefetch("messages", queryset = matched_messages, to_attr = "matched_messages"))
 
-        chats = [{
-            "title": chat.title,
+        def format_month(month: int) -> str:
+            months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            return months[month - 1]
+
+        def get_last_modified_at(chat: Chat):
+            message = Message.objects.filter(chat = chat).order_by("-last_modified_at").first()
+            last_modified_at = timezone.now() - message.created_at
+            if last_modified_at < timedelta(days = 1):
+                return "Today"
+            elif last_modified_at < timedelta(days = 2):
+                return "Yesterday"
+            else:
+                return f"{message.created_at.day} {format_month(message.created_at.month)}"
+
+        entries = [{
             "uuid": chat.uuid,
-            "matches": [m.text for m in getattr(chat, "matched_messages", [])]
+            "title": chat.title,
+            "matches": [m.text for m in getattr(chat, "matched_messages", [])],
+            "last_modified_at": get_last_modified_at(chat)
         } for chat in chats]
 
-        return Response({"chats": chats, "has_more": offset + limit < total})
+        return Response({"entries": entries, "has_more": offset + limit < total}, status.HTTP_200_OK)
 
 class RenameChat(APIView):
     permission_classes = [IsAuthenticated]
@@ -448,10 +465,12 @@ class EditMessage(APIView):
         MessageFile.objects.bulk_create(
             [MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type) for file in added_files]
         )
+        user_message.last_modified_at = timezone.now()
         user_message.save()
 
         bot_message.text = ""
         bot_message.model = model
+        bot_message.last_modified_at = timezone.now()
         bot_message.save()
 
         chat.pending_message = bot_message
@@ -500,6 +519,7 @@ class RegenerateMessage(APIView):
 
         bot_message.text = ""
         bot_message.model = model
+        bot_message.last_modified_at = timezone.now()
         bot_message.save()
 
         chat.pending_message = bot_message

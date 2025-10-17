@@ -117,6 +117,7 @@ class Message(models.Model):
     text = models.TextField()
     is_from_user = models.BooleanField()
     model = models.CharField(choices = [[c, c] for c in ["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]], blank = True, null = True)
+    last_modified_at = models.DateTimeField(default = timezone.now)
     created_at = models.DateTimeField(auto_now_add = True)
 
     def __str__(self):
