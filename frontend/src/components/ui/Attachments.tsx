@@ -22,7 +22,7 @@ export default function Attachments({ files, onRemove, onRemoveAll }: { files: M
                 </div>
             }
             {onRemoveAll && files.length > 0 &&
-                <button className="absolute right-0 p-1 rounded-3xl cursor-pointer hover:bg-red-500/40" onClick={onRemoveAll}>
+                <button className="absolute right-0 p-1 rounded-3xl cursor-pointer hover:bg-red-500/40" onClick={onRemoveAll} tabIndex={3}>
                     <Cross1Icon className="size-3.5" />
                 </button>
             }
@@ -44,7 +44,7 @@ function Attachment({ file, onRemove }: { file: MessageFile, onRemove?: (file: M
                 Size: {getFileSize(file.content_size)}
             </div>
             {onRemove &&
-                <button className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/40" onClick={() => onRemove(file)}>
+                <button className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/40" onClick={() => onRemove(file)} tabIndex={3}>
                     <Cross1Icon className="size-3.5" />
                 </button>
             }
