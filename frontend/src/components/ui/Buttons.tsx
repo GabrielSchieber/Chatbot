@@ -26,9 +26,15 @@ export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
 
     return (
         <DropdownMenu.Root>
-            <DropdownMenu.Trigger className={promptBarButtonClassNames} tabIndex={tabIndex}>
-                <PlusIcon className="size-6" />
-            </DropdownMenu.Trigger>
+            <TooltipButton
+                trigger={
+                    <DropdownMenu.Trigger className={promptBarButtonClassNames} tabIndex={tabIndex}>
+                        <PlusIcon className="size-6" />
+                    </DropdownMenu.Trigger>
+                }
+                tooltip="Add files and more..."
+                asChild
+            />
 
             <DropdownMenu.Portal>
                 <DropdownMenu.Content className={contentClassName}>
@@ -39,7 +45,10 @@ export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
                     <DropdownMenu.Sub open={isModelDropdownOpen}>
                         <DropdownMenu.SubTrigger
                             className={itemClassName}
-                            onClick={_ => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                            onClick={e => {
+                                e.stopPropagation()
+                                setIsModelDropdownOpen(!isModelDropdownOpen)
+                            }}
                             onKeyDown={e => e.key === "Enter" && setIsModelDropdownOpen(!isModelDropdownOpen)}
                         >
                             <BoxModelIcon className="size-6" />
@@ -52,10 +61,11 @@ export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
                         </DropdownMenu.SubTrigger>
 
                         <DropdownMenu.Portal>
-                            <DropdownMenu.SubContent className={contentClassName + " -translate-y-15"} sideOffset={12}>
+                            <DropdownMenu.SubContent className={contentClassName + " -translate-y-15"} sideOffset={12} onClick={e => e.stopPropagation()}>
                                 {(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
                                     <DropdownMenu.Item
-                                        key={m} className={itemClassName + " w-45 justify-between"}
+                                        key={m}
+                                        className={itemClassName + " w-45 justify-between"}
                                         onClick={e => {
                                             e.preventDefault()
                                             e.stopPropagation()
