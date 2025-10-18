@@ -1,13 +1,15 @@
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon, Cross1Icon, GearIcon } from "@radix-ui/react-icons"
 import { Dialog, Select } from "radix-ui"
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 
 import ConfirmDialog from "../ui/ConfirmDialog"
-import { useAuth } from "../../context/AuthProvider"
-import { deleteAccount, deleteChats, logout, me } from "../../utils/api"
-import { applyTheme } from "../../utils/theme"
-import type { Theme } from "../../types"
 import MFADialog from "../ui/MFADialog"
+import { TooltipButton } from "../ui/Buttons"
+import { useAuth } from "../../context/AuthProvider"
+import { useChat } from "../../context/ChatProvider"
+import { archiveOrUnarchiveChat, deleteAccount, deleteChats, getArchivedChats, logout, me } from "../../utils/api"
+import { applyTheme } from "../../utils/theme"
+import type { Chat, Theme } from "../../types"
 
 export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
     const { user } = useAuth()
@@ -29,6 +31,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                 >
                     <div className="flex justify-between items-center">
                         <Dialog.Title className="text-lg font-semibold">Settings</Dialog.Title>
+                        <Dialog.Description hidden>Manage settings</Dialog.Description>
                         <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-200" data-testid="close-settings">
                             <Cross1Icon className="size-5" />
                         </Dialog.Close>
@@ -39,6 +42,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                     <div className="flex flex-col border-t-2">
                         <Entry name="Theme" item={<ThemeEntryItem />} />
                         <Entry name="Multi-factor authentication" item={<MFADialog triggerClassName={entryClasses} />} />
+                        <Entry name="Archived chats" item={<ManageArchivedChatsEntryItem />} />
                         <Entry name="Delete chats" item={<DeleteChatsEntryItem />} />
                         <Entry name="Delete account" item={<DeleteAccountEntryItem />} />
                         <Entry name="Log out" item={<LogoutEntryItem />} />
@@ -105,6 +109,81 @@ function ThemeEntryItem() {
                 </Select.Content>
             </Select.Portal>
         </Select.Root>
+    )
+}
+
+function ManageArchivedChatsEntryItem() {
+    const { setChats } = useChat()
+
+    const [archivedChats, setArchivedChats] = useState<Chat[]>([])
+
+    function handleUnarchive(chat: Chat) {
+        archiveOrUnarchiveChat(chat.uuid, false)
+        setArchivedChats(previous => previous.filter(p => p.uuid !== chat.uuid))
+        setChats(previous => [...previous.slice(0, chat.index), chat, ...previous.slice(chat.index)])
+    }
+
+    useEffect(() => {
+        getArchivedChats().then(response => {
+            if (response.ok) {
+                response.json().then(data => {
+                    setArchivedChats(data.chats)
+                })
+            }
+        })
+    }, [])
+
+    return (
+        <Dialog.Root>
+            <Dialog.Trigger className={entryClasses}>
+                Manage
+            </Dialog.Trigger>
+
+            <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+
+                <Dialog.Content
+                    className="
+                        fixed flex flex-col gap-1 w-100 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                        p-6 rounded-xl bg-gray-800 light:bg-gray-300 text-white light:text-black
+                    "
+                >
+                    <div className="flex items-center justify-between">
+                        <Dialog.Title className="text-lg font-semibold">Archived Chats</Dialog.Title>
+                        <Dialog.Description hidden>Manage archived chats</Dialog.Description>
+                        <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-200" data-testid="close-settings">
+                            <Cross1Icon className="size-5" />
+                        </Dialog.Close>
+                    </div>
+
+                    {archivedChats.length > 0 ? (
+                        <div className="flex-1 gap-1">
+                            {archivedChats.map(c => (
+                                <a
+                                    key={c.uuid}
+                                    className="flex gap-2 px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-700 light:bg-gray-300"
+                                    href={`/chat/${c.uuid}`}
+                                >
+                                    {c.title}
+                                    <TooltipButton
+                                        trigger={<Cross1Icon className="size-4" />}
+                                        tooltip="Unarchive"
+                                        className="p-1 rounded-3xl cursor-pointer hover:bg-gray-500/40"
+                                        onClick={e => {
+                                            e.preventDefault()
+                                            handleUnarchive(c)
+                                        }}
+                                        tooltipSize="xs"
+                                    />
+                                </a>
+                            ))}
+                        </div>
+                    ) : (
+                        <p>You don't have any archived chats.</p>
+                    )}
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
     )
 }
 

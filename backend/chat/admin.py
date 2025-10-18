@@ -77,7 +77,7 @@ class MessageInline(admin.StackedInline):
 
 class ChatAdmin(admin.ModelAdmin):
     inlines = [MessageInline]
-    list_display = ["user", "uuid", "title", "pending_message", "created_at"]
+    list_display = ["user", "uuid", "title", "pending_message", "is_archived", "created_at"]
 
     def get_readonly_fields(self, request, obj = None):
         return [f.name for f in self.model._meta.fields]

@@ -185,11 +185,13 @@ class GetChats(APIView):
             chats = Chat.objects.filter(user = request.user).exclude(pending_message = None).order_by("created_at")
             serializer = ChatSerializer(chats, many = True)
             return Response(serializer.data, status.HTTP_200_OK)
+        
+        archived = bool(request.GET.get("archived", False))
 
         limit = int(request.GET.get("limit", 20))
         offset = int(request.GET.get("offset", 0))
 
-        chats = Chat.objects.filter(user = request.user).order_by("-created_at")
+        chats = Chat.objects.filter(user = request.user, is_archived = archived).order_by("-created_at")
         total = chats.count()
         chats = chats[offset:offset + limit]
 
@@ -251,6 +253,26 @@ class RenameChat(APIView):
 
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
             chat.title = new_title
+            chat.save()
+            return Response(status = status.HTTP_200_OK)
+        except Chat.DoesNotExist:
+            return Response({"error": "Chat not found"}, status.HTTP_404_NOT_FOUND)
+        except Exception:
+            return Response(status = status.HTTP_400_BAD_REQUEST)
+
+class ArchiveOrUnarchiveChat(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request: Request):
+        try:
+            chat_uuid = request.data.get("chat_uuid")
+            value = bool(request.data.get("value"))
+
+            if chat_uuid is None or value is None:
+                return Response({"error": "'chat_uuid' and 'value' fields are required"}, status.HTTP_400_BAD_REQUEST)
+
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            chat.is_archived = value
             chat.save()
             return Response(status = status.HTTP_200_OK)
         except Chat.DoesNotExist:

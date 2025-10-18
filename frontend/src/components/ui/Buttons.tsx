@@ -228,25 +228,33 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
     )
 }
 
-export function TooltipButton({ trigger, tooltip, onClick, className = "", isDisabled = false, sideOffset = 3, tabIndex, asChild = false, dataTestID }: {
+export function TooltipButton({ trigger, tooltip, onClick, className = "", isDisabled = false, sideOffset = 3, tabIndex, asChild = false, tooltipSize = "sm", dataTestID }: {
     trigger: ReactNode
     tooltip: ReactNode
     className?: string
-    onClick?: () => void
+    onClick?: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void
     isDisabled?: boolean
     sideOffset?: number
     tabIndex?: number
     asChild?: boolean
+    tooltipSize?: string
     dataTestID?: string
 }) {
+    const [isOpen, setIsOpen] = useState(false)
+
     return (
         <Tooltip.Provider delayDuration={0}>
-            <Tooltip.Root>
+            <Tooltip.Root open={isOpen} onOpenChange={setIsOpen}>
                 <Tooltip.Trigger className={className} tabIndex={tabIndex} onClick={onClick} disabled={isDisabled} asChild={asChild} data-testid={dataTestID}>
                     {trigger}
                 </Tooltip.Trigger>
                 <Tooltip.Portal>
-                    <Tooltip.Content className="px-2 py-1 text-sm text-white rounded-lg bg-black" side="bottom" sideOffset={sideOffset}>
+                    <Tooltip.Content
+                        className={`px-2 py-1 text-${tooltipSize} text-white rounded-lg bg-black`}
+                        side="bottom"
+                        sideOffset={sideOffset}
+                        onMouseEnter={_ => setIsOpen(false)}
+                    >
                         {tooltip}
                     </Tooltip.Content>
                 </Tooltip.Portal>

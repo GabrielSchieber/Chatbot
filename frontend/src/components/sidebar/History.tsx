@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type RefObject } from "react"
 
 import ConfirmDialog from "../ui/ConfirmDialog"
 import { useChat } from "../../context/ChatProvider"
-import { deleteChat, getChats, renameChat } from "../../utils/api"
+import { archiveOrUnarchiveChat, deleteChat, getChats, renameChat } from "../../utils/api"
 import type { Chat } from "../../types"
 
 export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }: {
@@ -29,6 +29,7 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
     const [selectedDropdownIndex, setSelectedDropdownIndex] = useState(-1)
 
     const dropdowmItemClassNames = "px-3 py-2 text-center cursor-pointer outline-none rounded-lg"
+    const baseDropdowmItemClassNames = dropdowmItemClassNames + " hover:bg-gray-600 light:hover:bg-gray-400 focus:bg-gray-600 light:focus:bg-gray-400"
 
     async function loadMoreChats() {
         if (isLoading || !hasMore || !isLoadingRef.current) return
@@ -74,6 +75,14 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
             })
         }
         setRenameUUID("")
+        setHoveringEntryIndex(-1)
+        setSelectedDropdownIndex(-1)
+        setHoveringDropdownIndex(-1)
+    }
+
+    function handleArchiveChat(uuid: string) {
+        archiveOrUnarchiveChat(uuid, true)
+        setChats(previous => previous.filter(p => p.uuid !== uuid))
         setHoveringEntryIndex(-1)
         setSelectedDropdownIndex(-1)
         setHoveringDropdownIndex(-1)
@@ -188,11 +197,12 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
                                         onMouseLeave={_ => setHoveringDropdownIndex(-1)}
                                         sideOffset={4}
                                     >
-                                        <DropdownMenu.Item
-                                            className={dropdowmItemClassNames + " hover:bg-gray-600 light:hover:bg-gray-400 focus:bg-gray-600 light:focus:bg-gray-400"}
-                                            onSelect={_ => startRename(c)}
-                                        >
+                                        <DropdownMenu.Item className={baseDropdowmItemClassNames} onSelect={_ => startRename(c)}>
                                             Rename
+                                        </DropdownMenu.Item>
+
+                                        <DropdownMenu.Item className={baseDropdowmItemClassNames} onSelect={_ => handleArchiveChat(c.uuid)}>
+                                            Archive
                                         </DropdownMenu.Item>
 
                                         <ConfirmDialog

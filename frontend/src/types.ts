@@ -20,6 +20,7 @@ export type Chat = {
     uuid: string
     title: string
     pending_message_id: number | null
+    index: number
 }
 
 export type MessageFile = {

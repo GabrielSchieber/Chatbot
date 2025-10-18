@@ -73,6 +73,10 @@ export function getPendingChats() {
     return apiFetch(`get-chats/?pending=true`)
 }
 
+export function getArchivedChats() {
+    return apiFetch(`get-chats/?archived=true`)
+}
+
 export function searchChats(search: string, offset = 0, limit = 20) {
     return apiFetch(`search-chats/?search=${search}&offset=${offset}&limit=${limit}`)
 }
@@ -82,6 +86,14 @@ export function renameChat(chatUUID: string, newTitle: string) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_uuid: chatUUID, new_title: newTitle })
+    })
+}
+
+export function archiveOrUnarchiveChat(chatUUID: string, value: boolean) {
+    return apiFetch("archive-or-unarchive-chat/", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_uuid: chatUUID, value })
     })
 }
 

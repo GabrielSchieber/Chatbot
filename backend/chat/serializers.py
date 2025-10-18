@@ -32,13 +32,19 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ChatSerializer(serializers.ModelSerializer):
     pending_message_id = serializers.SerializerMethodField()
+    index = serializers.SerializerMethodField()
 
     class Meta:
         model = Chat
-        fields = ["uuid", "title", "pending_message_id"]
+        fields = ["uuid", "title", "pending_message_id", "index"]
 
     def get_pending_message_id(self, chat: Chat):
         return chat.pending_message.id if chat.pending_message is not None else None
+
+    def get_index(self, chat: Chat):
+        for i, c in enumerate(chat.user.chats.order_by("-created_at")):
+            if c == chat:
+                return i
 
 class MessageFileSerializer(serializers.ModelSerializer):
     content = serializers.SerializerMethodField()
