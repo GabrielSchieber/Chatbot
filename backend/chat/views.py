@@ -272,6 +272,7 @@ class ArchiveOrUnarchiveChat(APIView):
                 return Response({"error": "'chat_uuid' and 'value' fields are required"}, status.HTTP_400_BAD_REQUEST)
 
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            stop_pending_chat(chat)
             chat.is_archived = value
             chat.save()
             return Response(status = status.HTTP_200_OK)
@@ -292,6 +293,17 @@ class DeleteChat(APIView):
             return Response(status = status.HTTP_204_NO_CONTENT)
         except Chat.DoesNotExist:
             return Response({"error": "Chat not found"}, status.HTTP_404_NOT_FOUND)
+        except Exception:
+            return Response(status = status.HTTP_400_BAD_REQUEST)
+
+class ArchiveChats(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request: Request):
+        try:
+            stop_user_pending_chats(request.user)
+            Chat.objects.filter(user = request.user).update(is_archived = True)
+            return Response(status = status.HTTP_204_NO_CONTENT)
         except Exception:
             return Response(status = status.HTTP_400_BAD_REQUEST)
 

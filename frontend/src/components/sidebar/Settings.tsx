@@ -7,7 +7,7 @@ import MFADialog from "../ui/MFADialog"
 import { TooltipButton } from "../ui/Buttons"
 import { useAuth } from "../../context/AuthProvider"
 import { useChat } from "../../context/ChatProvider"
-import { archiveOrUnarchiveChat, deleteAccount, deleteChats, getArchivedChats, logout, me } from "../../utils/api"
+import { archiveChats, archiveOrUnarchiveChat, deleteAccount, deleteChats, getArchivedChats, logout, me } from "../../utils/api"
 import { applyTheme } from "../../utils/theme"
 import type { Chat, Theme } from "../../types"
 
@@ -43,6 +43,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                         <Entry name="Theme" item={<ThemeEntryItem />} />
                         <Entry name="Multi-factor authentication" item={<MFADialog triggerClassName={entryClasses} />} />
                         <Entry name="Archived chats" item={<ManageArchivedChatsEntryItem />} />
+                        <Entry name="Archive chats" item={<ArchiveChatsEntryItem />} />
                         <Entry name="Delete chats" item={<DeleteChatsEntryItem />} />
                         <Entry name="Delete account" item={<DeleteAccountEntryItem />} />
                         <Entry name="Log out" item={<LogoutEntryItem />} />
@@ -184,6 +185,27 @@ function ManageArchivedChatsEntryItem() {
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
+    )
+}
+
+function ArchiveChatsEntryItem() {
+    function handleArchiveChats() {
+        archiveChats().then(response => {
+            if (response.ok) {
+                const historyEntries = document.querySelector(".history-entries")
+                if (historyEntries) {
+                    historyEntries.innerHTML = ""
+                }
+            } else {
+                alert("Archival of chats was not possible")
+            }
+        })
+    }
+
+    return (
+        <button className={entryClasses} onClick={handleArchiveChats}>
+            Archive all
+        </button>
     )
 }
 

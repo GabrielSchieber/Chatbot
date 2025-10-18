@@ -4,6 +4,7 @@ from django.conf import settings
 from django.urls import path, re_path
 
 from .views import (
+    ArchiveChats,
     ArchiveOrUnarchiveChat,
     DeleteAccount,
     DeleteChat,
@@ -44,6 +45,7 @@ urlpatterns = [
     path("api/search-chats/", SearchChats.as_view()),
     path("api/rename-chat/", RenameChat.as_view()),
     path("api/archive-or-unarchive-chat/", ArchiveOrUnarchiveChat.as_view()),
+    path("api/archive-chats/", ArchiveChats.as_view()),
     path("api/delete-chat/", DeleteChat.as_view()),
     path("api/delete-chats/", DeleteChats.as_view()),
     path("api/stop-pending-chats/", StopPendingChats.as_view()),

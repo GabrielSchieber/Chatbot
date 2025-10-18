@@ -105,6 +105,10 @@ export function deleteChat(chatUUID: string) {
     })
 }
 
+export function archiveChats() {
+    return apiFetch("archive-chats/", { method: "PATCH" })
+}
+
 export function deleteChats() {
     return apiFetch("delete-chats/", { method: "DELETE" })
 }
