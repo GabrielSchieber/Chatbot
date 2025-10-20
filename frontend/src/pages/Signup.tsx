@@ -10,13 +10,17 @@ export default function Signup() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
+
     const [error, setError] = useState("")
+    const [isVerifying, setIsVerifying] = useState(false)
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
+        setIsVerifying(true)
 
         if (password !== confirmPassword) {
             setError("Passwords do not match.")
+            setIsVerifying(false)
             return
         }
 
@@ -27,10 +31,12 @@ export default function Signup() {
                 location.href = "/"
             } else {
                 notify("An error occurred. Please try again later.", "error")
+                setIsVerifying(false)
             }
         } else {
             const data = await response.json()
             setError(data.error)
+            setIsVerifying(false)
         }
     }
 
@@ -53,7 +59,7 @@ export default function Signup() {
                 id="confirm-password"
             />
             {error && <Error text={error} />}
-            <Button text="Sign up" />
+            <Button text={isVerifying ? "Signing up" : "Sign up"} isDisabled={isVerifying} />
             <Recommendation text="Already have an account?" url="/login" urlText="Log in!" />
         </Form>
     )

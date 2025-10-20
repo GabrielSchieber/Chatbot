@@ -109,12 +109,13 @@ export function MFA({ code, setCode, setError }: {
     )
 }
 
-export function MFAStepSwitch({ text, switchStep, setStep, setCode, setError }: {
+export function MFAStepSwitch({ text, switchStep, setStep, setCode, setError, isDisabled }: {
     text: string
     switchStep: Step
     setStep: Dispatch<SetStateAction<Step>>
     setCode: Dispatch<SetStateAction<string>>
     setError: Dispatch<SetStateAction<string>>
+    isDisabled: boolean
 }) {
     function handleClick(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         e.preventDefault()
@@ -124,7 +125,14 @@ export function MFAStepSwitch({ text, switchStep, setStep, setCode, setError }: 
     }
 
     return (
-        <button className="w-full text-center text-gray-400 light:text-gray-600 cursor-pointer hover:underline" onClick={handleClick}>
+        <button
+            className="
+                w-full text-center text-gray-400 light:text-gray-600 cursor-pointer
+                disabled:cursor-not-allowed enabled:hover:underline disabled:text-gray-600 light:disabled:text-gray-400
+            "
+            onClick={handleClick}
+            disabled={isDisabled}
+        >
             {text}
         </button>
     )
@@ -162,14 +170,15 @@ export function Error({ text }: { text: string }) {
     return <p className="text-sm text-red-400 light:text-red-600">{text}</p>
 }
 
-export function Button({ text }: { text: string }) {
+export function Button({ text, isDisabled }: { text: string, isDisabled: boolean }) {
     return (
         <button
             className="
-                w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md
-                cursor-pointer hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500
+                w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md cursor-pointer disabled:bg-indigo-600/30
+                disabled:cursor-not-allowed disabled:text-gray-200 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500
             "
             type="submit"
+            disabled={isDisabled}
         >
             {text}
         </button>
