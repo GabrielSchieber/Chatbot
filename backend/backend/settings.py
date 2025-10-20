@@ -93,15 +93,37 @@ STATIC_URL = "assets/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CHANNEL_LAYERS = {
-  "default": {
+    "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [["redis","6379"]]}
+        "CONFIG": {"hosts": [["redis", "6379"]]}
     }
 }
 
 AUTH_USER_MODEL = "chat.User"
 
-REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"]}
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://redis:6379"
+    }
+}
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "chat.throttles.PerUserRateThrottle",
+        "chat.throttles.PerUserIPRateThrottle",
+        "rest_framework.throttling.AnonRateThrottle"
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "10/minute",
+        "per_user": "100/minute",
+        "per_user_ip": "60/minute",
+        "signup": "3/minute",
+        "refresh": "20/minute",
+        "ip_email": "5/minute" 
+    }
+}
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours = 1),

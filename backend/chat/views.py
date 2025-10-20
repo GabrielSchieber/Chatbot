@@ -19,8 +19,11 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .serializers import ChatSerializer, MessageSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
+from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
 
 class Signup(APIView):
+    throttle_classes = [SignupRateThrottle]
+
     def post(self, request: Request):
         email = request.data.get("email")
         password = request.data.get("password")
@@ -45,6 +48,7 @@ class Signup(APIView):
 
 class Login(APIView):
     authentication_classes = []
+    throttle_classes = [IPEmailRateThrottle]
 
     def post(self, request: Request):
         email = request.data.get("email")
@@ -68,6 +72,8 @@ class Login(APIView):
             return response
 
 class VerifyMFA(APIView):
+    throttle_classes = [IPEmailRateThrottle]
+
     def post(self, request: Request):
         token = request.data.get("token")
         code = request.data.get("code")
@@ -104,6 +110,8 @@ class Logout(APIView):
         return response
 
 class Refresh(TokenRefreshView):
+    throttle_classes = [RefreshRateThrottle]
+
     def post(self, request: Request):
         refresh_token = request.COOKIES.get("refresh_token")
         if not refresh_token:
