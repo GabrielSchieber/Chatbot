@@ -109,11 +109,9 @@ test("user can delete account", async ({ page }) => {
 
     await page.fill("input[type='email']", user.email)
     await page.fill("input[type='password']", user.password)
-
     await page.click("button")
 
-    await page.click("button")
-    await expect(page.getByRole("paragraph"), { message: "Email and/or password are invalid." }).toBeVisible()
+    await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
 })
 
 test("user can log out", async ({ page }) => {
