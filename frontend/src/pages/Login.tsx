@@ -9,8 +9,8 @@ export default function Login() {
     const [email, setEmail] = useState("user1@example.com")
     const [password, setPassword] = useState("user1password")
 
-    const [mfaToken, setMFAToken] = useState("")
-    const [mfaCode, setMFACode] = useState("")
+    const [token, setToken] = useState("")
+    const [code, setCode] = useState("")
 
     const [error, setError] = useState("")
     const [isVerifying, setIsVerifying] = useState(false)
@@ -21,10 +21,10 @@ export default function Login() {
 
         const response = await login(email, password)
         if (response.ok) {
-            const data = await response.json()
+            const data = await response.json().catch(() => { return {} })
             if (data.is_mfa_required) {
                 setStep("mfa")
-                setMFAToken(data.pre_auth_token)
+                setToken(data.pre_auth_token)
                 setIsVerifying(false)
             } else {
                 location.href = "/"
@@ -40,7 +40,7 @@ export default function Login() {
         e.preventDefault()
         setIsVerifying(true)
 
-        const response = await verifyMFA(mfaToken, mfaCode)
+        const response = await verifyMFA(token, code)
         if (response.ok) {
             location.href = "/"
         } else {
@@ -64,14 +64,14 @@ export default function Login() {
             <Form handleSubmit={handleMFASubmit}>
                 <Header text="Multi-Factor Authentication" />
                 <p className="text-center text-gray-400 light:text-gray-600">Enter the 6-digit code from your authenticator app</p>
-                <MFA code={mfaCode} setCode={setMFACode} setError={setError} />
+                <MFA code={code} setCode={setCode} setError={setError} />
                 {error && <Error text={error} />}
                 <Button text={isVerifying ? "Verifying" : "Verify"} isDisabled={isVerifying} />
                 <MFAStepSwitch
                     text="Use recovery code"
                     switchStep="mfa-recovery"
                     setStep={setStep}
-                    setCode={setMFACode}
+                    setCode={setCode}
                     setError={setError}
                     isDisabled={isVerifying}
                 />
@@ -80,14 +80,14 @@ export default function Login() {
             <Form handleSubmit={handleMFASubmit}>
                 <Header text="Recover Multi-Factor Authentication" />
                 <p className="text-center text-gray-400 light:text-gray-600">Enter one of your recovery code</p>
-                <MFARecovery code={mfaCode} setCode={setMFACode} setError={setError} />
+                <MFARecovery code={code} setCode={setCode} setError={setError} />
                 {error && <Error text={error} />}
                 <Button text={isVerifying ? "Verifying" : "Verify"} isDisabled={isVerifying} />
                 <MFAStepSwitch
                     text="Use authenticator code"
                     switchStep="mfa"
                     setStep={setStep}
-                    setCode={setMFACode}
+                    setCode={setCode}
                     setError={setError}
                     isDisabled={isVerifying}
                 />

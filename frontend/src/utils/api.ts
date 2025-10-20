@@ -33,11 +33,11 @@ export function me(theme?: Theme, hasSidebarOpen?: boolean) {
     }
 }
 
-export async function verifyMFA(preAuthToken: string, code: string) {
+export async function verifyMFA(token: string, code: string) {
     return fetch("/api/mfa/verify/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pre_auth_token: preAuthToken, code })
+        body: JSON.stringify({ token, code })
     })
 }
 
