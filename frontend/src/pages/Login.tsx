@@ -1,13 +1,17 @@
 import React, { useState } from "react"
 
-import { Button, Email, Error, Form, Header, MFA, Password, Recommendation } from "../components/Auth"
+import { Button, Email, Error, Form, Header, MFA, MFARecovery, MFAStepSwitch, Password, Recommendation, type Step } from "../components/Auth"
 import { login, verifyMFA } from "../utils/api"
 
 export default function Login() {
+    const [step, setStep] = useState<Step>("login")
+
     const [email, setEmail] = useState("user1@example.com")
     const [password, setPassword] = useState("user1password")
-    const [preAuthToken, setPreAuthToken] = useState("")
-    const [code, setCode] = useState("")
+
+    const [mfaToken, setMFAToken] = useState("")
+    const [mfaCode, setMFACode] = useState("")
+
     const [error, setError] = useState("")
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -17,7 +21,8 @@ export default function Login() {
         if (response.ok) {
             const data = await response.json()
             if (data.is_mfa_required) {
-                setPreAuthToken(data.pre_auth_token)
+                setStep("mfa")
+                setMFAToken(data.pre_auth_token)
             } else {
                 location.href = "/"
             }
@@ -30,7 +35,7 @@ export default function Login() {
     async function handleMFASubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
 
-        const response = await verifyMFA(preAuthToken, code)
+        const response = await verifyMFA(mfaToken, mfaCode)
         if (response.ok) {
             location.href = "/"
         } else {
@@ -40,7 +45,7 @@ export default function Login() {
     }
 
     return (
-        !preAuthToken ? (
+        step === "login" ? (
             <Form handleSubmit={handleSubmit}>
                 <Header text="Welcome back" />
                 <Email email={email} setEmail={setEmail} />
@@ -49,19 +54,23 @@ export default function Login() {
                 <Button text="Log in" />
                 <Recommendation text="Don't have an account?" url="/signup" urlText="Sign up!" />
             </Form>
-        ) : (
+        ) : step === "mfa" ? (
             <Form handleSubmit={handleMFASubmit}>
                 <Header text="Multi-Factor Authentication" />
                 <p className="text-center text-gray-400 light:text-gray-600">Enter the 6-digit code from your authenticator app</p>
-                <MFA
-                    code={code}
-                    onChange={e => {
-                        setError("")
-                        setCode(e.target.value)
-                    }}
-                />
+                <MFA code={mfaCode} setCode={setMFACode} setError={setError} />
                 {error && <Error text={error} />}
                 <Button text="Verify" />
+                <MFAStepSwitch text="Use recovery code" switchStep="mfa-recovery" setStep={setStep} setCode={setMFACode} setError={setError} />
+            </Form>
+        ) : (
+            <Form handleSubmit={handleMFASubmit}>
+                <Header text="Recover Multi-Factor Authentication" />
+                <p className="text-center text-gray-400 light:text-gray-600">Enter one of your recovery code</p>
+                <MFARecovery code={mfaCode} setCode={setMFACode} setError={setError} />
+                {error && <Error text={error} />}
+                <Button text="Verify" />
+                <MFAStepSwitch text="Use authenticator code" switchStep="mfa" setStep={setStep} setCode={setMFACode} setError={setError} />
             </Form>
         )
     )

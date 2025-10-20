@@ -8,6 +8,8 @@ export const buttonClassNames = `
     light:hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed
 `
 
+export type Step = "login" | "mfa" | "mfa-recovery"
+
 export function Form({ children, handleSubmit }: { children: ReactNode, handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void }) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-900 light:bg-gray-100">
@@ -77,10 +79,19 @@ export function Password({ password, setPassword, label, id, minLength, maxLengt
     )
 }
 
-export function MFA({ code, onChange }: { code: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
+export function MFA({ code, setCode, setError }: {
+    code: string
+    setCode: Dispatch<SetStateAction<string>>
+    setError: Dispatch<SetStateAction<string>>
+}) {
+    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setCode(e.target.value)
+        setError("")
+    }
+
     return (
         <div className="flex flex-col space-y-2">
-            <Label.Root htmlFor="code" className="text font-medium text-gray-200 light:text-gray-700">
+            <Label.Root htmlFor="code" className="font-medium text-gray-200 light:text-gray-700">
                 Authentication Code
             </Label.Root>
             <input
@@ -90,7 +101,56 @@ export function MFA({ code, onChange }: { code: string, onChange: (e: React.Chan
                 pattern="\d{6}"
                 maxLength={6}
                 value={code}
-                onChange={onChange}
+                onChange={handleChange}
+                className="tracking-widest text-center text-lg w-full px-3 py-2 border rounded-md bg-gray-700 text-gray-100 light:bg-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
+            />
+        </div>
+    )
+}
+
+export function MFAStepSwitch({ text, switchStep, setStep, setCode, setError }: {
+    text: string
+    switchStep: Step
+    setStep: Dispatch<SetStateAction<Step>>
+    setCode: Dispatch<SetStateAction<string>>
+    setError: Dispatch<SetStateAction<string>>
+}) {
+    function handleClick(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        e.preventDefault()
+        setStep(switchStep)
+        setCode("")
+        setError("")
+    }
+
+    return (
+        <button className="w-full text-center text-gray-400 light:text-gray-600 cursor-pointer hover:underline" onClick={handleClick}>
+            {text}
+        </button>
+    )
+}
+
+export function MFARecovery({ code, setCode, setError }: {
+    code: string
+    setCode: Dispatch<SetStateAction<string>>
+    setError: Dispatch<SetStateAction<string>>
+}) {
+    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setCode(e.target.value)
+        setError("")
+    }
+
+    return (
+        <div className="flex flex-col space-y-2">
+            <Label.Root htmlFor="code" className="font-medium text-gray-200 light:text-gray-700">
+                Recovery Code
+            </Label.Root>
+            <input
+                id="code"
+                type="text"
+                maxLength={12}
+                value={code}
+                onChange={handleChange}
                 className="tracking-widest text-center text-lg w-full px-3 py-2 border rounded-md bg-gray-700 text-gray-100 light:bg-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
             />
@@ -118,7 +178,7 @@ export function Button({ text }: { text: string }) {
 
 export function Recommendation({ text, url, urlText }: { text: string, url: string, urlText: string }) {
     return (
-        <p className="text-sm text-center text-gray-300 light:text-gray-600">
+        <p className="text-center text-gray-300 light:text-gray-600">
             {text}{" "}
             <a href={url} className="text-indigo-400 light:text-indigo-600 hover:underline">
                 {urlText}
