@@ -36,7 +36,10 @@ export function Email({ email, setEmail }: { email: string, setEmail: Dispatch<S
                 placeholder="you@example.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-700 text-gray-100 light:bg-white light:text-gray-900"
+                className="
+                    w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2
+                    focus:ring-indigo-500 bg-gray-700 text-gray-100 light:bg-white light:text-gray-900
+                "
                 required
             />
         </div>
@@ -64,7 +67,10 @@ export function Password({ password, setPassword, label, id, minLength, maxLengt
                 placeholder="••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-700 text-gray-100 light:bg-white light:text-gray-900"
+                className="
+                    w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2
+                    focus:ring-indigo-500 bg-gray-700 text-gray-100 light:bg-white light:text-gray-900
+                "
                 required
             />
         </div>
@@ -78,7 +84,10 @@ export function Error({ text }: { text: string }) {
 export function Button({ text }: { text: string }) {
     return (
         <button
-            className="w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="
+                w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md
+                cursor-pointer hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500
+            "
             type="submit"
         >
             {text}
