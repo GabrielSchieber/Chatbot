@@ -1,6 +1,7 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router"
 
 import { useAuth } from "./context/AuthProvider"
+import { NotificationProvider } from "./context/NotificationProvider"
 import Index from "./pages/Index"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
@@ -13,14 +14,16 @@ export default function App() {
     applyTheme(user?.preferences.theme || "System")
 
     return (
-        <Router>
-            <Routes>
-                <Route path="/" element={isLoggedIn ? <Index /> : <Navigate to="/login" replace />} />
-                <Route path="/chat/:chatUUID" element={isLoggedIn ? <Index /> : <Navigate to="/login" replace />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-        </Router>
+        <NotificationProvider>
+            <Router>
+                <Routes>
+                    <Route path="/" element={isLoggedIn ? <Index /> : <Navigate to="/login" replace />} />
+                    <Route path="/chat/:chatUUID" element={isLoggedIn ? <Index /> : <Navigate to="/login" replace />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+            </Router>
+        </NotificationProvider>
     )
 }
