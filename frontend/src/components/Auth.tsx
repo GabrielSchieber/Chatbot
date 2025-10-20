@@ -77,6 +77,27 @@ export function Password({ password, setPassword, label, id, minLength, maxLengt
     )
 }
 
+export function MFA({ code, onChange }: { code: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
+    return (
+        <div className="flex flex-col space-y-2">
+            <Label.Root htmlFor="code" className="text font-medium text-gray-200 light:text-gray-700">
+                Authentication Code
+            </Label.Root>
+            <input
+                id="code"
+                type="text"
+                inputMode="numeric"
+                pattern="\d{6}"
+                maxLength={6}
+                value={code}
+                onChange={onChange}
+                className="tracking-widest text-center text-lg w-full px-3 py-2 border rounded-md bg-gray-700 text-gray-100 light:bg-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
+            />
+        </div>
+    )
+}
+
 export function Error({ text }: { text: string }) {
     return <p className="text-sm text-red-400 light:text-red-600">{text}</p>
 }
