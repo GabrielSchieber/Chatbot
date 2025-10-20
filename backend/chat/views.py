@@ -57,7 +57,7 @@ class Login(APIView):
 
         if user.mfa.is_enabled:
             pre_auth_token = PreAuthToken.objects.create(user = user)
-            return Response({"is_mfa_required": True, "pre_auth_token": str(pre_auth_token.token)}, status.HTTP_200_OK)
+            return Response({"token": str(pre_auth_token.token)}, status.HTTP_200_OK)
 
         refresh = RefreshToken.for_user(user)
         response = Response(status = status.HTTP_200_OK)

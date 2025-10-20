@@ -22,9 +22,9 @@ export default function Login() {
         const response = await login(email, password)
         if (response.ok) {
             const data = await response.json().catch(() => { return {} })
-            if (data.is_mfa_required) {
+            if (data.token) {
                 setStep("mfa")
-                setToken(data.pre_auth_token)
+                setToken(data.token)
                 setIsVerifying(false)
             } else {
                 location.href = "/"
