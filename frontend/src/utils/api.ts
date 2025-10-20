@@ -11,7 +11,6 @@ export function signup(email: string, password: string) {
 export function login(email: string, password: string) {
     return fetch("/api/login/", {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
     })
@@ -33,20 +32,20 @@ export function me(theme?: Theme, hasSidebarOpen?: boolean) {
     }
 }
 
-export async function verifyMFA(preAuthToken: string, code: string) {
-    return fetch("/api/mfa/verify/", {
+export async function verifyMFA(token: string, code: string) {
+    return fetch("/api/verify-mfa/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pre_auth_token: preAuthToken, code })
+        body: JSON.stringify({ token, code })
     })
 }
 
 export async function setupMFA() {
-    return apiFetch("mfa/setup/", { method: "POST" })
+    return apiFetch("setup-mfa/", { method: "POST" })
 }
 
 export async function enableMFA(code: string) {
-    return apiFetch("mfa/enable/", {
+    return apiFetch("enable-mfa/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code })
@@ -54,7 +53,7 @@ export async function enableMFA(code: string) {
 }
 
 export async function disableMFA(code: string) {
-    return apiFetch("mfa/disable/", {
+    return apiFetch("disable-mfa/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code })

@@ -8,8 +8,9 @@ test("user can sign up", async ({ page }) => {
 
     await page.click("text=Sign up!")
 
-    await page.fill("input[type='email']", getRandomEmail())
-    await page.fill("input[type='password']", "testpassword")
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(getRandomEmail())
+    await page.getByRole("textbox", { name: "Password", exact: true }).fill("testpassword")
+    await page.getByRole("textbox", { name: "Confirm Password", exact: true }).fill("testpassword")
 
     await page.click("button")
     await page.waitForURL("/")
@@ -23,8 +24,9 @@ test("user cannot sign up with existing email", async ({ page }) => {
 
     await page.click("text=Sign up!")
 
-    await page.fill("input[type='email']", email)
-    await page.fill("input[type='password']", password)
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(email)
+    await page.getByRole("textbox", { name: "Password", exact: true }).fill(password)
+    await page.getByRole("textbox", { name: "Confirm Password", exact: true }).fill(password)
 
     await page.click("button")
     await expect(page.getByText("Email is already registered. Please choose another one.", { exact: true })).toBeVisible()
@@ -36,8 +38,8 @@ test("user can login", async ({ page }) => {
     await page.goto("/")
     await page.waitForURL("/login")
 
-    await page.fill("input[type='email']", email)
-    await page.fill("input[type='password']", password)
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(email)
+    await page.getByRole("textbox", { name: "Password", exact: true }).fill(password)
 
     await page.click("button")
     await page.waitForURL("/")
@@ -47,8 +49,8 @@ test("user cannot login with invalid email", async ({ page }) => {
     await page.goto("/")
     await page.waitForURL("/login")
 
-    await page.fill("input[type='email']", "invalid@example.com")
-    await page.fill("input[type='password']", "testpassword")
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill("invalid@example.com")
+    await page.getByRole("textbox", { name: "Password", exact: true }).fill("testpassword")
 
     await page.click("button")
     await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
@@ -60,8 +62,8 @@ test("user cannot login with invalid password", async ({ page }) => {
     await page.goto("/")
     await page.waitForURL("/login")
 
-    await page.fill("input[type='email']", email)
-    await page.fill("input[type='password']", "invalidpassword")
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(email)
+    await page.getByRole("textbox", { name: "Password", exact: true }).fill("invalidpassword")
 
     await page.click("button")
     await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
@@ -105,7 +107,8 @@ test("user can log in with multi-factor authentication", async ({ page }) => {
 
     await page.click("button")
 
-    await expect(page.getByText("Verify multi-factor authentication", { exact: true })).toBeVisible()
+    await expect(page.getByText("Multi-Factor Authentication", { exact: true })).toBeVisible()
+    await expect(page.getByText("Enter the 6-digit code from your authenticator app", { exact: true })).toBeVisible()
 
     const response = await apiFetch(`/test/get-mfa-secret/?email=${user.email}`, {})
     expect(response.status).toBe(200)
@@ -113,8 +116,9 @@ test("user can log in with multi-factor authentication", async ({ page }) => {
     const secret = await response.json()
     const code = authenticator.generate(secret)
 
-    await page.getByPlaceholder("Enter 6-digit code or recovery code", { exact: true }).fill(code)
+    await page.fill("input", code)
     await page.getByRole("button", { name: "Verify", exact: true }).click()
+    await expect(page.getByRole("button", { name: "Verifying", exact: true })).toBeVisible()
 
     await page.waitForURL("/")
 })
@@ -152,10 +156,17 @@ test("user can login with multi-factor authentication backup codes", async ({ pa
 
     await page.click("button")
 
-    await expect(page.getByText("Verify multi-factor authentication", { exact: true })).toBeVisible()
+    await expect(page.getByText("Multi-Factor Authentication", { exact: true })).toBeVisible()
+    await expect(page.getByText("Enter the 6-digit code from your authenticator app", { exact: true })).toBeVisible()
 
-    await page.getByPlaceholder("Enter 6-digit code or recovery code", { exact: true }).fill(backupCodes[0])
+    await page.getByRole("button", { name: "Use recovery code", exact: true }).click()
+
+    await expect(page.getByText("Recover Multi-Factor Authentication", { exact: true })).toBeVisible()
+    await expect(page.getByText("Enter one of your recovery code", { exact: true })).toBeVisible()
+
+    await page.fill("input", backupCodes[0])
     await page.getByRole("button", { name: "Verify", exact: true }).click()
+    await expect(page.getByRole("button", { name: "Verifying", exact: true })).toBeVisible()
 
     await page.waitForURL("/")
 })
@@ -165,7 +176,7 @@ test("user cannot login with an already used multi-factor authentication backup 
 
     const { user, backupCodes } = await signupWithMFAEnabled(page)
 
-    async function tryToLoginWithCode(code: string) {
+    async function tryToLoginWithCode(code: string, shouldSucceed: boolean) {
         await page.goto("/")
         await page.waitForURL("/login")
 
@@ -174,22 +185,33 @@ test("user cannot login with an already used multi-factor authentication backup 
 
         await page.click("button")
 
-        await expect(page.getByText("Verify multi-factor authentication", { exact: true })).toBeVisible()
+        await expect(page.getByText("Multi-Factor Authentication", { exact: true })).toBeVisible()
+        await expect(page.getByText("Enter the 6-digit code from your authenticator app", { exact: true })).toBeVisible()
 
-        await page.getByPlaceholder("Enter 6-digit code or recovery code", { exact: true }).fill(code)
+        await page.getByRole("button", { name: "Use recovery code", exact: true }).click()
+
+        await expect(page.getByText("Recover Multi-Factor Authentication", { exact: true })).toBeVisible()
+        await expect(page.getByText("Enter one of your recovery code", { exact: true })).toBeVisible()
+
+        await page.fill("input", code)
         await page.getByRole("button", { name: "Verify", exact: true }).click()
-        await expect(page.getByText("Verifying", { exact: true })).toBeVisible()
+        await expect(page.getByRole("button", { name: "Verifying", exact: true })).toBeVisible()
+
+        if (shouldSucceed) {
+            await page.waitForURL("/")
+        } else {
+            await expect(page.getByText("Invalid code.", { exact: true })).toBeVisible({ timeout: 15_000 })
+        }
     }
 
-    await tryToLoginWithCode(backupCodes[0])
+    await tryToLoginWithCode(backupCodes[0], true)
     await page.waitForURL("/")
 
     await page.getByTestId("open-settings").click()
     await page.getByRole("button", { name: "Log out", exact: true }).click()
     await page.waitForURL("/login")
 
-    await tryToLoginWithCode(backupCodes[0])
-    await expect(page.getByText("Invalid code", { exact: true })).toBeVisible({ timeout: 15_000 })
+    await tryToLoginWithCode(backupCodes[0], false)
 })
 
 test("user can disable multi-factor authentication with a backup code", async ({ page }) => {
@@ -218,10 +240,17 @@ test("user cannot disable multi-factor authentication with an already used backu
 
     await page.click("button")
 
-    await expect(page.getByText("Verify multi-factor authentication", { exact: true })).toBeVisible()
+    await expect(page.getByText("Multi-Factor Authentication", { exact: true })).toBeVisible()
+    await expect(page.getByText("Enter the 6-digit code from your authenticator app", { exact: true })).toBeVisible()
 
-    await page.getByPlaceholder("Enter 6-digit code or recovery code", { exact: true }).fill(backupCodes[0])
+    await page.getByRole("button", { name: "Use recovery code", exact: true }).click()
+
+    await expect(page.getByText("Recover Multi-Factor Authentication", { exact: true })).toBeVisible()
+    await expect(page.getByText("Enter one of your recovery code", { exact: true })).toBeVisible()
+
+    await page.fill("input", backupCodes[0])
     await page.getByRole("button", { name: "Verify", exact: true }).click()
+    await expect(page.getByRole("button", { name: "Verifying", exact: true })).toBeVisible()
 
     await page.waitForURL("/")
 

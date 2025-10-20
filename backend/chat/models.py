@@ -3,33 +3,38 @@ from datetime import timedelta
 
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.core.validators import validate_email
 from django.db import models
 from django.utils import timezone
 
 from .totp_utils import generate_auth_url, generate_backup_codes, generate_secret, verify_secret
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password, **extra_fields):
-        if not email or not password:
-            raise ValueError("Both Email and Password fields must be set")
-        email = self.normalize_email(email)
-        user = self.model(email = email, **extra_fields)
+    def create(self, email, password, is_staff = False, is_superuser = False):
+        if email is None or password is None:
+            raise ValueError("Both Email and Password fields must be set.")
+        if type(email) != str or type(password) != str:
+            raise ValueError("Both Email and Password fields must be of 'str' type.")
+
+        try:
+            validate_email(email)
+        except:
+            raise ValueError("Invalid email.")
+
+        if len(password) < 12 or len(password) > 100:
+            raise ValueError("Password must have between 12 and 100 characters.")
+
+        user: User = self.model(email = self.normalize_email(email), is_staff = is_staff, is_superuser = is_superuser)
         user.set_password(password)
         user.save(using = self._db)
+
         UserPreferences.objects.create(user = user)
         UserMFA.objects.create(user = user)
+
         return user
 
-    def create_superuser(self, email, password, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-
-        if extra_fields.get("is_staff") is not True:
-            raise ValueError("Superuser must have is_staff = True.")
-        if extra_fields.get("is_superuser") is not True:
-            raise ValueError("Superuser must have is_superuser = True.")
-
-        return self.create_user(email, password, **extra_fields)
+    def create_superuser(self, email, password):
+        return self.create(email, password, is_staff = True, is_superuser = True)
 
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique = True)
