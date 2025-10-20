@@ -8,7 +8,7 @@ from django.shortcuts import render
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.request import Request
@@ -66,33 +66,31 @@ class Login(APIView):
         return response
 
 class VerifyMFA(APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
-
     def post(self, request: Request):
-        token = request.data.get("pre_auth_token")
+        token = request.data.get("token")
         code = request.data.get("code")
+
+        if token is None or code is None:
+            return Response({"error": "Both 'token' and 'code' fields must be provided."}, status.HTTP_400_BAD_REQUEST)            
 
         try:
             pre_auth_token = PreAuthToken.objects.get(token = token)
         except PreAuthToken.DoesNotExist:
-            return Response({"error": "Invalid or expired pre auth token"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid or expired token."}, status.HTTP_401_UNAUTHORIZED)
 
         if pre_auth_token.is_expired():
             pre_auth_token.delete()
-            return Response({"error": "Pre auth token expired"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Token expired."}, status.HTTP_401_UNAUTHORIZED)
 
-        user: User = pre_auth_token.user
-
-        if user.mfa.verify(code):
-            refresh = RefreshToken.for_user(user)
-            response = Response({"success": True}, status.HTTP_200_OK)
+        if pre_auth_token.user.mfa.verify(code):
+            refresh = RefreshToken.for_user(pre_auth_token.user)
+            response = Response(status = status.HTTP_200_OK)
             response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
             response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
             pre_auth_token.delete()
             return response
         else:
-            return Response({"error": "Invalid MFA code"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid code."}, status.HTTP_401_UNAUTHORIZED)
 
 class Logout(APIView):
     permission_classes = [IsAuthenticated]
