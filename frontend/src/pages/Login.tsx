@@ -6,8 +6,8 @@ import { login, verifyMFA } from "../utils/api"
 export default function Login() {
     const [step, setStep] = useState<Step>("login")
 
-    const [email, setEmail] = useState("user1@example.com")
-    const [password, setPassword] = useState("user1password")
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
 
     const [token, setToken] = useState("")
     const [code, setCode] = useState("")
