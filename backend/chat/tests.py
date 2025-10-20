@@ -59,6 +59,21 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(User.objects.all().count(), 1)
 
+    def test_signup_with_invalid_email(self):
+        def test(email: str):
+            response = self.client.post("/api/signup/", {"email": email, "password": "testpassword"})
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json()["error"], "Email is not valid.")
+            self.assertEqual(User.objects.all().count(), 0)
+
+        test("test")
+        test("example.com")
+        test("test@example")
+        test("@example")
+        test("test@")
+        test("test@.com")
+        test("@.com")
+
     def test_login(self):
         _, response = self.create_and_login_user()
         self.assertEqual(response.status_code, 200)
