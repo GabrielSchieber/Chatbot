@@ -60,12 +60,12 @@ class Login(APIView):
         if user.mfa.is_enabled:
             pre_auth_token = PreAuthToken.objects.create(user = user)
             return Response({"token": str(pre_auth_token.token)}, status.HTTP_200_OK)
-
-        refresh = RefreshToken.for_user(user)
-        response = Response(status = status.HTTP_200_OK)
-        response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
-        response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
-        return response
+        else:
+            refresh = RefreshToken.for_user(user)
+            response = Response(status = status.HTTP_200_OK)
+            response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
+            response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+            return response
 
 class VerifyMFA(APIView):
     def post(self, request: Request):
@@ -98,7 +98,7 @@ class Logout(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request):
-        response = Response({"success": True}, status.HTTP_200_OK)
+        response = Response(status = status.HTTP_200_OK)
         response.delete_cookie("access_token")
         response.delete_cookie("refresh_token")
         return response
@@ -107,18 +107,18 @@ class Refresh(TokenRefreshView):
     def post(self, request: Request):
         refresh_token = request.COOKIES.get("refresh_token")
         if not refresh_token:
-            return Response({"error": "No refresh token"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "'refresh_token' field must be provided."}, status.HTTP_401_UNAUTHORIZED)
 
         serializer = self.get_serializer(data = {"refresh": refresh_token})
         try:
             serializer.is_valid(raise_exception = True)
         except Exception:
-            return Response({"error": "Invalid refresh token"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid refresh token."}, status.HTTP_401_UNAUTHORIZED)
 
         access = serializer.validated_data["access"]
         new_refresh = serializer.validated_data.get("refresh")
 
-        response = Response({"success": True}, status.HTTP_200_OK)
+        response = Response(status = status.HTTP_200_OK)
         response.set_cookie("access_token", access, httponly = True, samesite = "Lax")
         if new_refresh:
             response.set_cookie("refresh_token", new_refresh, httponly = True, samesite = "Lax")
@@ -128,7 +128,7 @@ class Me(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
-        return Response(UserSerializer(request.user, many = False).data)
+        return Response(UserSerializer(request.user, many = False).data, status.HTTP_200_OK)
 
     def patch(self, request: Request):
         user: User = request.user
@@ -136,13 +136,13 @@ class Me(APIView):
         theme = request.data.get("theme")
         if theme != None: 
             if theme not in ["System", "Light", "Dark"]:
-                return Response({"error": "Invalid theme"}, status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid theme."}, status.HTTP_400_BAD_REQUEST)
             user.preferences.theme = theme
 
         has_sidebar_open = request.data.get("has_sidebar_open")
         if has_sidebar_open != None:
             if type(has_sidebar_open) != bool:
-                return Response({"error": "Invalid data type for has_sidebar_open"}, status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid data type for 'has_sidebar_open' field."}, status.HTTP_400_BAD_REQUEST)
             user.preferences.has_sidebar_open = has_sidebar_open
 
         user.preferences.save()
@@ -164,9 +164,9 @@ class EnableMFA(APIView):
 
         if user.mfa.verify(code):
             backup_codes = user.mfa.enable()
-            return Response({"success": True, "backup_codes": backup_codes}, status.HTTP_200_OK)
+            return Response({"backup_codes": backup_codes}, status.HTTP_200_OK)
         else:
-            return Response({"error": "Invalid code"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid code."}, status.HTTP_400_BAD_REQUEST)
 
 class DisableMFA(APIView):
     permission_classes = [IsAuthenticated]
@@ -176,13 +176,13 @@ class DisableMFA(APIView):
         code = request.data.get("code")
 
         if not user.mfa.is_enabled:
-            return Response({"error": "MFA is not enabled"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "MFA is not enabled."}, status.HTTP_400_BAD_REQUEST)
 
         if user.mfa.verify(code):
             user.mfa.disable()
-            return Response({"success": True}, status.HTTP_200_OK)
+            return Response(status = status.HTTP_200_OK)
         else:
-            return Response({"error": "Invalid code"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid code."}, status.HTTP_400_BAD_REQUEST)
 
 class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]
@@ -192,7 +192,7 @@ class DeleteAccount(APIView):
             request.user.delete()
             return Response(status = status.HTTP_204_NO_CONTENT)
         except Exception:
-            return Response({"error": "Failed to delete account"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Failed to delete account."}, status.HTTP_400_BAD_REQUEST)
 
 class GetChats(APIView):
     permission_classes = [IsAuthenticated]
@@ -267,15 +267,15 @@ class RenameChat(APIView):
             chat_uuid = request.data.get("chat_uuid")
             new_title = request.data.get("new_title")
 
-            if not chat_uuid or not new_title:
-                return Response({"error": "'chat_uuid' and 'new_title' fields are required"}, status.HTTP_400_BAD_REQUEST)
+            if chat_uuid is None or new_title is None:
+                return Response({"error": "Both 'chat_uuid' and 'new_title' fields must be provided."}, status.HTTP_400_BAD_REQUEST)
 
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
             chat.title = new_title
             chat.save()
             return Response(status = status.HTTP_200_OK)
         except Chat.DoesNotExist:
-            return Response({"error": "Chat not found"}, status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
         except Exception:
             return Response(status = status.HTTP_400_BAD_REQUEST)
 
@@ -284,13 +284,17 @@ class DeleteChat(APIView):
 
     def delete(self, request: Request):
         chat_uuid = request.data.get("chat_uuid")
+
+        if chat_uuid is None:
+            return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_404_NOT_FOUND)
+
         try:
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
             stop_pending_chat(chat)
             chat.delete()
             return Response(status = status.HTTP_204_NO_CONTENT)
         except Chat.DoesNotExist:
-            return Response({"error": "Chat not found"}, status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
         except Exception:
             return Response(status = status.HTTP_400_BAD_REQUEST)
 
@@ -327,24 +331,24 @@ class GetMessageFileContent(APIView):
 
     def get(self, request: Request):
         chat_uuid = request.GET.get("chat_uuid")
-        if not chat_uuid:
-            return Response({"error": "'chat_uuid' is required"}, status.HTTP_400_BAD_REQUEST)
+        if chat_uuid is None:
+            return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
 
         message_file_id = request.GET.get("message_file_id")
-        if not message_file_id:
-            return Response({"error": "'message_file_id' is required"}, status.HTTP_400_BAD_REQUEST)
+        if message_file_id is None:
+            return Response({"error": "'message_file_id' field must be provided."}, status.HTTP_400_BAD_REQUEST)
         message_file_id = int(message_file_id)
 
         chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
-        if not chat:
-            return Response({"error": "Chat was not found"}, status.HTTP_404_NOT_FOUND)
+        if chat is None:
+            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
         message_file = MessageFile.objects.filter(message__chat = chat, id = message_file_id).first()
 
-        if message_file:
+        if message_file is not None:
             return Response(message_file.content, status.HTTP_200_OK, content_type = message_file.content_type)
         else:
-            return Response({"error": "File was not found"}, status.HTTP_404_NOT_FOUND)
+            return Response({"error": "File was not found."}, status.HTTP_404_NOT_FOUND)
 
 class GetMessages(APIView):
     permission_classes = [IsAuthenticated]
@@ -352,14 +356,14 @@ class GetMessages(APIView):
     def get(self, request: Request):
         chat_uuid = request.GET.get("chat_uuid")
         if not chat_uuid:
-            return Response({"error": "'chat_uuid' is required"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
 
         try:
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
         except Chat.DoesNotExist:
-            return Response({"error": "Chat was not found"}, status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
         except Exception:
-            return Response({"error": "Invalid chat UUID"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
         messages = Message.objects.filter(chat = chat).order_by("created_at").prefetch_related("files")
         serializer = MessageSerializer(messages, many = True)
@@ -371,7 +375,7 @@ class NewMessage(APIView):
 
     def post(self, request: Request):
         if is_any_user_chat_pending(request.user):
-            return Response({"error": "A chat is already pending"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
 
         chat_uuid = request.data.get("chat_uuid", "")
         if type(chat_uuid) == str:
@@ -380,29 +384,29 @@ class NewMessage(APIView):
             else:
                 chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
                 if not chat:
-                    return Response({"error": "Invalid chat UUID"}, status.HTTP_400_BAD_REQUEST)
+                    return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error": "Invalid data type for chat UUID"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid data type for 'chat_uuid' field."}, status.HTTP_400_BAD_REQUEST)
 
         text = request.data.get("text", "")
         if type(text) != str:
-            return Response({"error": "Invalid data type for message"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid data type for 'text' field."}, status.HTTP_400_BAD_REQUEST)
 
         model = request.data.get("model", "SmolLM2-135M")
         if type(model) != str:
-            return Response({"error": "Invalid data type for model"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid data type for 'model' field."}, status.HTTP_400_BAD_REQUEST)
         if model not in [c[0] for c in Message._meta.get_field("model").choices]:
-            return Response({"error": "Invalid model"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid model."}, status.HTTP_400_BAD_REQUEST)
 
         files = request.FILES.getlist("files")
         if type(files) != list:
-            return Response({"error": "Invalid data type for files"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid data type for 'files'."}, status.HTTP_400_BAD_REQUEST)
 
         total_size = 0
         for file in files:
             total_size += file.size
         if total_size > 5_000_000:
-            return Response({"error": "Total file size exceeds limit of 5 MB"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Total file size exceeds limit of 5 MB."}, status.HTTP_400_BAD_REQUEST)
 
         user_message = Message.objects.create(chat = chat, text = text, is_from_user = True)
         if len(files) > 0:
@@ -425,41 +429,41 @@ class EditMessage(APIView):
 
     def patch(self, request):
         if is_any_user_chat_pending(request.user):
-            return Response({"error": "A chat is already pending"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
 
         chat_uuid = request.data.get("chat_uuid")
         if chat_uuid:
             if type(chat_uuid) == str:
                 chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
                 if not chat:
-                    return Response({"error": "Invalid chat UUID"}, status.HTTP_400_BAD_REQUEST)
+                    return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
             else:
-                return Response({"error": "Invalid data type for chat UUID"}, status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid data type for 'chat_uuid' field."}, status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error": "A valid chat UUID is required"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "A valid chat UUID must be provided."}, status.HTTP_400_BAD_REQUEST)
 
         text = request.data.get("text", "")
         if type(text) != str:
-            return Response({"error": "Invalid data type for message"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid data type for 'text' field."}, status.HTTP_400_BAD_REQUEST)
 
         index = request.data.get("index")
         if not index:
-            return Response({"error": "Index is required"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Index field must be provided."}, status.HTTP_400_BAD_REQUEST)
         index = int(index)
 
         model = request.data.get("model", "SmolLM2-135M")
         if type(model) != str:
-            return Response({"error": "Invalid data type for model"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid data type for 'model' field."}, status.HTTP_400_BAD_REQUEST)
         if model not in [c[0] for c in Message._meta.get_field("model").choices]:
-            return Response({"error": "Invalid model"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid model."}, status.HTTP_400_BAD_REQUEST)
 
         added_files = request.FILES.getlist("added_files")
         if type(added_files) != list:
-            return Response({"error": "Invalid data type for added files"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid data type for 'added_files' field."}, status.HTTP_400_BAD_REQUEST)
 
         removed_file_ids = json.loads(request.data.get("removed_file_ids", []))
         if type(removed_file_ids) != list:
-            return Response({"error": "Invalid data type for removed files ids"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid data type for 'removed_files_ids' field."}, status.HTTP_400_BAD_REQUEST)
 
         messages = Message.objects.filter(chat = chat).order_by("created_at")
         user_message = messages[index]
@@ -476,7 +480,7 @@ class EditMessage(APIView):
         for file in removed_files:
             total_size -= len(file.content)
         if total_size > 5_000_000:
-            return Response({"error": "Total file size exceeds limit of 5 MB"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Total file size exceeds limit of 5 MB."}, status.HTTP_400_BAD_REQUEST)
 
         bot_message = messages[index + 1]
 
@@ -508,33 +512,29 @@ class RegenerateMessage(APIView):
 
     def patch(self, request: Request):
         if is_any_user_chat_pending(request.user):
-            return Response({"error": "A chat is already pending"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
 
         chat_uuid = request.data.get("chat_uuid")
         if chat_uuid:
             if type(chat_uuid) == str:
                 chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
                 if not chat:
-                    return Response({"error": "Invalid chat UUID"}, status.HTTP_400_BAD_REQUEST)
+                    return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
             else:
-                return Response({"error": "Invalid data type for chat UUID"}, status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid data type for 'chat_uuid'."}, status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error": "A valid chat UUID is required"}, status.HTTP_400_BAD_REQUEST)
-
-        text = request.data.get("text", "")
-        if type(text) != str:
-            return Response({"error": "Invalid data type for message"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "A valid chat UUID must be provided."}, status.HTTP_400_BAD_REQUEST)
 
         index = request.data.get("index")
         if not index:
-            return Response({"error": "Index is required"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Index is must be provided."}, status.HTTP_400_BAD_REQUEST)
         index = int(index)
 
         model = request.data.get("model", "SmolLM2-135M")
         if type(model) != str:
-            return Response({"error": "Invalid data type for model"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid data type for 'model' field."}, status.HTTP_400_BAD_REQUEST)
         if model not in [c[0] for c in Message._meta.get_field("model").choices]:
-            return Response({"error": "Invalid model"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid model."}, status.HTTP_400_BAD_REQUEST)
 
         bot_message = Message.objects.filter(chat = chat).order_by("created_at")[index]
 

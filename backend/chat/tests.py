@@ -83,7 +83,6 @@ class ViewTests(TestCase):
         self.create_and_login_user()
         response = self.client.post("/api/logout/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["success"], True)
 
     def test_logout_without_being_authenticated(self):
         response = self.client.post("/api/logout/")
