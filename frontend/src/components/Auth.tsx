@@ -1,6 +1,5 @@
-import { useState } from "react"
-
-import { login, signup, verifyMFA } from "../utils/api"
+import { Label } from "radix-ui"
+import type { Dispatch, ReactNode, SetStateAction } from "react"
 
 export const formClassNames = "flex flex-col gap-3 p-4 items-center justify-center rounded-xl bg-gray-800 light:bg-gray-100"
 export const inputClassNames = "w-full px-3 py-2 rounded-xl outline-none bg-gray-700 light:bg-gray-300"
@@ -9,118 +8,190 @@ export const buttonClassNames = `
     light:hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed
 `
 
-export default function Auth({ type }: { type: "Signup" | "Login" }) {
-    const submitFunction = type === "Signup" ? signup : login
-    const submitError = type === "Signup" ? "Email is already registered. Please choose another one." : "Email and/or password are invalid."
-    const headerText = type === "Signup" ? "Sign up" : "Log in"
-    const recommendationText = type === "Signup" ? "Already have an account?" : "Don't have an account?"
+export type Step = "login" | "mfa" | "mfa-recovery"
 
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-    const [error, setError] = useState("")
+export function Form({ children, handleSubmit }: { children: ReactNode, handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void }) {
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-gray-900 light:bg-gray-100">
+            <div className="w-full max-w-md p-8 space-y-6 bg-gray-800 light:bg-white rounded-lg shadow-md">
+                <form className="space-y-4" onSubmit={handleSubmit}>
+                    {children}
+                </form>
+            </div>
+        </div>
+    )
+}
 
-    const [showMFA, setShowMFA] = useState(false)
-    const [preAuthToken, setPreAuthToken] = useState<string | null>(null)
-    const [mFACode, setMFACode] = useState("")
-    const [isVerifying, setIsVerifying] = useState(false)
+export function Header({ text }: { text: string }) {
+    return <h2 className="text-2xl font-bold text-center text-gray-100 light:text-gray-800">{text}</h2>
+}
 
-    async function handleSubmit(event: React.FormEvent) {
-        event.preventDefault()
+export function Email({ email, setEmail }: { email: string, setEmail: Dispatch<SetStateAction<string>> }) {
+    return (
+        <div className="flex flex-col space-y-2">
+            <Label.Root htmlFor="email" className="text-sm font-medium text-gray-200 light:text-gray-700">
+                Email
+            </Label.Root>
+            <input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="
+                    w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2
+                    focus:ring-indigo-500 bg-gray-700 text-gray-100 light:bg-white light:text-gray-900
+                "
+                required
+            />
+        </div>
+    )
+}
+
+export function Password({ password, setPassword, label, id, minLength, maxLength }: {
+    password: string
+    setPassword: Dispatch<SetStateAction<string>>
+    label: string
+    id?: string
+    minLength?: number
+    maxLength?: number
+}) {
+    return (
+        <div className="flex flex-col space-y-2">
+            <Label.Root htmlFor={id} className="text-sm font-medium text-gray-200 light:text-gray-700">
+                {label}
+            </Label.Root>
+            <input
+                id={id}
+                type="password"
+                minLength={minLength}
+                maxLength={maxLength}
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="
+                    w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2
+                    focus:ring-indigo-500 bg-gray-700 text-gray-100 light:bg-white light:text-gray-900
+                "
+                required
+            />
+        </div>
+    )
+}
+
+export function MFA({ code, setCode, setError }: {
+    code: string
+    setCode: Dispatch<SetStateAction<string>>
+    setError: Dispatch<SetStateAction<string>>
+}) {
+    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setCode(e.target.value)
         setError("")
-
-        const response = await submitFunction(email, password)
-        if (response.ok) {
-            if (type === "Signup") {
-                const response = await login(email, password)
-                if (response.ok) {
-                    location.href = "/"
-                } else {
-                    alert("Error logging in after sign up")
-                }
-            } else {
-                const data = await response.json().catch(() => ({}))
-                if (data.is_mfa_required) {
-                    setPreAuthToken(data.pre_auth_token)
-                    setShowMFA(true)
-                    return
-                }
-                if (response.ok) location.href = "/"
-                else setError(submitError)
-            }
-        } else {
-            setError(submitError)
-        }
-    }
-
-    async function handleVerifyMFA(event: React.FormEvent) {
-        event.preventDefault()
-        if (!preAuthToken) return
-
-        setIsVerifying(true)
-
-        const response = await verifyMFA(preAuthToken, mFACode)
-        if (response.ok) {
-            location.href = "/"
-        } else {
-            setError("Invalid code")
-            setIsVerifying(false)
-        }
     }
 
     return (
-        <div className="flex flex-col w-screen h-screen items-center justify-center text-xl text-white light:text-black bg-gray-900 light:bg-gray-300">
-            {!showMFA ? (
-                <form className={formClassNames + " w-[500px]"} onSubmit={handleSubmit}>
-                    <h1 className="text-2xl pb-4">{headerText}</h1>
-                    <input
-                        className={inputClassNames}
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        onKeyDown={_ => setError("")}
-                        required
-                    />
-                    {type === "Signup" && error && <p className="text-red-600 text-lg">{error}</p>}
-                    <input
-                        className={inputClassNames}
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        minLength={type === "Signup" ? 12 : undefined}
-                        onChange={e => setPassword(e.target.value)}
-                        required
-                    />
-                    {type === "Login" && error && <p className="text-red-600 text-lg">{error}</p>}
-                    <button className={buttonClassNames}>
-                        {headerText}
-                    </button>
-                    <p className="text-xl">
-                        {recommendationText + " "}
-                        <a className="underline" href={type === "Signup" ? "/login" : "/signup"}>
-                            {type === "Signup" ? "Log in!" : "Sign up!"}
-                        </a>
-                    </p>
-                </form>
-            ) : (
-                <form className={formClassNames + " min-w-95"} onSubmit={handleVerifyMFA}>
-                    <p>Verify multi-factor authentication</p>
-                    <input
-                        className={inputClassNames}
-                        value={mFACode}
-                        onChange={e => {
-                            setError("")
-                            setMFACode(e.target.value)
-                        }}
-                        placeholder="Enter 6-digit code or recovery code"
-                        required
-                    />
-                    <button className={buttonClassNames} disabled={isVerifying}>
-                        {isVerifying ? "Verifying" : "Verify"}
-                    </button>
-                    {error && <p className="text-red-600">{error}</p>}
-                </form>
-            )}
+        <div className="flex flex-col space-y-2">
+            <Label.Root htmlFor="code" className="font-medium text-gray-200 light:text-gray-700">
+                Authentication Code
+            </Label.Root>
+            <input
+                id="code"
+                type="text"
+                inputMode="numeric"
+                pattern="\d{6}"
+                maxLength={6}
+                value={code}
+                onChange={handleChange}
+                className="tracking-widest text-center text-lg w-full px-3 py-2 border rounded-md bg-gray-700 text-gray-100 light:bg-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
+            />
         </div>
+    )
+}
+
+export function MFAStepSwitch({ text, switchStep, setStep, setCode, setError, isDisabled }: {
+    text: string
+    switchStep: Step
+    setStep: Dispatch<SetStateAction<Step>>
+    setCode: Dispatch<SetStateAction<string>>
+    setError: Dispatch<SetStateAction<string>>
+    isDisabled: boolean
+}) {
+    function handleClick(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        e.preventDefault()
+        setStep(switchStep)
+        setCode("")
+        setError("")
+    }
+
+    return (
+        <button
+            className="
+                w-full text-center text-gray-400 light:text-gray-600 cursor-pointer
+                disabled:cursor-not-allowed enabled:hover:underline disabled:text-gray-600 light:disabled:text-gray-400
+            "
+            onClick={handleClick}
+            disabled={isDisabled}
+        >
+            {text}
+        </button>
+    )
+}
+
+export function MFARecovery({ code, setCode, setError }: {
+    code: string
+    setCode: Dispatch<SetStateAction<string>>
+    setError: Dispatch<SetStateAction<string>>
+}) {
+    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setCode(e.target.value)
+        setError("")
+    }
+
+    return (
+        <div className="flex flex-col space-y-2">
+            <Label.Root htmlFor="code" className="font-medium text-gray-200 light:text-gray-700">
+                Recovery Code
+            </Label.Root>
+            <input
+                id="code"
+                type="text"
+                maxLength={12}
+                value={code}
+                onChange={handleChange}
+                className="tracking-widest text-center text-lg w-full px-3 py-2 border rounded-md bg-gray-700 text-gray-100 light:bg-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
+            />
+        </div>
+    )
+}
+
+export function Error({ text }: { text: string }) {
+    return <p className="text-sm text-red-400 light:text-red-600">{text}</p>
+}
+
+export function Button({ text, isDisabled }: { text: string, isDisabled: boolean }) {
+    return (
+        <button
+            className="
+                w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md cursor-pointer disabled:bg-indigo-600/30
+                disabled:cursor-not-allowed disabled:text-gray-200 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500
+            "
+            type="submit"
+            disabled={isDisabled}
+        >
+            {text}
+        </button>
+    )
+}
+
+export function Recommendation({ text, url, urlText }: { text: string, url: string, urlText: string }) {
+    return (
+        <p className="text-center text-gray-300 light:text-gray-600">
+            {text}{" "}
+            <a href={url} className="text-indigo-400 light:text-indigo-600 hover:underline">
+                {urlText}
+            </a>
+        </p>
     )
 }

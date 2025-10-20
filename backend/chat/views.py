@@ -2,12 +2,13 @@ import json
 from datetime import timedelta
 
 from django.contrib.auth import authenticate
+from django.core.validators import validate_email
 from django.db.models import Prefetch, Q
 from django.shortcuts import render
 from django.utils import timezone
-from rest_framework import generics, status
+from rest_framework import status
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.request import Request
@@ -15,66 +16,81 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, MessageSerializer, RegisterSerializer, UserSerializer
+from .serializers import ChatSerializer, MessageSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 
-class Signup(generics.CreateAPIView):
-    queryset = User.objects.all()
-    authentication_classes = []
-    permission_classes = [AllowAny]
-    serializer_class = RegisterSerializer
-
-class Login(APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
-
+class Signup(APIView):
     def post(self, request: Request):
         email = request.data.get("email")
         password = request.data.get("password")
 
+        if email is None or password is None:
+            return Response({"error": "Both 'email' and 'password' fields must be provided."}, status.HTTP_400_BAD_REQUEST)
+
+        try:
+            validate_email(email)
+        except:
+            return Response({"error": "Email is not valid."}, status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(email = email).exists():
+            return Response({"error": "Email is already registered. Please choose another one."}, status.HTTP_400_BAD_REQUEST)
+
+        if len(password) < 12 or len(password) > 100:
+            return Response({"error": "Password must have between 12 and 100 characters."}, status.HTTP_400_BAD_REQUEST)
+
+        User.objects.create_user(email = email, password = password)
+
+        return Response(status = status.HTTP_201_CREATED)
+
+class Login(APIView):
+    def post(self, request: Request):
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        if email is None or password is None:
+            return Response({"error": "Both 'email' and 'password' fields must be provided."}, status.HTTP_400_BAD_REQUEST)
+
         user: User | None = authenticate(request, email = email, password = password)
-        if user is not None:
-            if user.mfa.is_enabled:
-                pre = PreAuthToken.objects.create(user = user)
-                return Response({"is_mfa_required": True, "pre_auth_token": str(pre.token)}, status.HTTP_200_OK)
-            else:
-                refresh = RefreshToken.for_user(user)
-                response = Response({"success": True}, status.HTTP_200_OK)
-                response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
-                response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
-                return response
-        else:
-            return Response({"error": "Invalid credentials"}, status.HTTP_400_BAD_REQUEST)
+        if user is None:
+            return Response({"error": "Email and/or password are invalid."}, status.HTTP_400_BAD_REQUEST)
+
+        if user.mfa.is_enabled:
+            pre_auth_token = PreAuthToken.objects.create(user = user)
+            return Response({"token": str(pre_auth_token.token)}, status.HTTP_200_OK)
+
+        refresh = RefreshToken.for_user(user)
+        response = Response(status = status.HTTP_200_OK)
+        response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
+        response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+        return response
 
 class VerifyMFA(APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
-
     def post(self, request: Request):
-        token = request.data.get("pre_auth_token")
+        token = request.data.get("token")
         code = request.data.get("code")
+
+        if token is None or code is None:
+            return Response({"error": "Both 'token' and 'code' fields must be provided."}, status.HTTP_400_BAD_REQUEST)            
 
         try:
             pre_auth_token = PreAuthToken.objects.get(token = token)
         except PreAuthToken.DoesNotExist:
-            return Response({"error": "Invalid or expired pre auth token"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid or expired token."}, status.HTTP_401_UNAUTHORIZED)
 
         if pre_auth_token.is_expired():
             pre_auth_token.delete()
-            return Response({"error": "Pre auth token expired"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Token expired."}, status.HTTP_401_UNAUTHORIZED)
 
-        user: User = pre_auth_token.user
-
-        if user.mfa.verify(code):
-            refresh = RefreshToken.for_user(user)
-            response = Response({"success": True}, status.HTTP_200_OK)
+        if pre_auth_token.user.mfa.verify(code):
+            refresh = RefreshToken.for_user(pre_auth_token.user)
+            response = Response(status = status.HTTP_200_OK)
             response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
             response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
             pre_auth_token.delete()
             return response
         else:
-            return Response({"error": "Invalid MFA code"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid code."}, status.HTTP_401_UNAUTHORIZED)
 
 class Logout(APIView):
     permission_classes = [IsAuthenticated]
