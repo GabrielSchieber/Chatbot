@@ -74,6 +74,18 @@ class ViewTests(TestCase):
         test("test@.com")
         test("@.com")
 
+    def test_signup_with_invalid_password(self):
+        def test(password: str):
+            response = self.client.post("/api/signup/", {"email": "test@example.com", "password": password})
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json()["error"], "Password must have between 12 and 100 characters.")
+            self.assertEqual(User.objects.all().count(), 0)
+
+        test("")
+        test("test")
+        test("onepassword")
+        test("someverylongpasswordsomeverylongpasswordsomeverylongpasswordsomeverylongpasswordsomeverylongpassword1")
+
     def test_login(self):
         _, response = self.create_and_login_user()
         self.assertEqual(response.status_code, 200)
