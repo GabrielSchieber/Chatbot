@@ -8,8 +8,9 @@ test("user can sign up", async ({ page }) => {
 
     await page.click("text=Sign up!")
 
-    await page.fill("input[type='email']", getRandomEmail())
-    await page.fill("input[type='password']", "testpassword")
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(getRandomEmail())
+    await page.getByRole("textbox", { name: "Password", exact: true }).fill("testpassword")
+    await page.getByRole("textbox", { name: "Confirm Password", exact: true }).fill("testpassword")
 
     await page.click("button")
     await page.waitForURL("/")
@@ -23,8 +24,9 @@ test("user cannot sign up with existing email", async ({ page }) => {
 
     await page.click("text=Sign up!")
 
-    await page.fill("input[type='email']", email)
-    await page.fill("input[type='password']", password)
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(email)
+    await page.getByRole("textbox", { name: "Password", exact: true }).fill(password)
+    await page.getByRole("textbox", { name: "Confirm Password", exact: true }).fill(password)
 
     await page.click("button")
     await expect(page.getByText("Email is already registered. Please choose another one.", { exact: true })).toBeVisible()
@@ -36,8 +38,8 @@ test("user can login", async ({ page }) => {
     await page.goto("/")
     await page.waitForURL("/login")
 
-    await page.fill("input[type='email']", email)
-    await page.fill("input[type='password']", password)
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(email)
+    await page.getByRole("textbox", { name: "Password", exact: true }).fill(password)
 
     await page.click("button")
     await page.waitForURL("/")
@@ -47,8 +49,8 @@ test("user cannot login with invalid email", async ({ page }) => {
     await page.goto("/")
     await page.waitForURL("/login")
 
-    await page.fill("input[type='email']", "invalid@example.com")
-    await page.fill("input[type='password']", "testpassword")
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill("invalid@example.com")
+    await page.getByRole("textbox", { name: "Password", exact: true }).fill("testpassword")
 
     await page.click("button")
     await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
@@ -60,8 +62,8 @@ test("user cannot login with invalid password", async ({ page }) => {
     await page.goto("/")
     await page.waitForURL("/login")
 
-    await page.fill("input[type='email']", email)
-    await page.fill("input[type='password']", "invalidpassword")
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(email)
+    await page.getByRole("textbox", { name: "Password", exact: true }).fill("invalidpassword")
 
     await page.click("button")
     await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
