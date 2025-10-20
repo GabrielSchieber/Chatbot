@@ -39,11 +39,13 @@ class Signup(APIView):
         if len(password) < 12 or len(password) > 100:
             return Response({"error": "Password must have between 12 and 100 characters."}, status.HTTP_400_BAD_REQUEST)
 
-        User.objects.create_user(email = email, password = password)
+        User.objects.create(email = email, password = password)
 
         return Response(status = status.HTTP_201_CREATED)
 
 class Login(APIView):
+    authentication_classes = []
+
     def post(self, request: Request):
         email = request.data.get("email")
         password = request.data.get("password")
@@ -237,13 +239,16 @@ class SearchChats(APIView):
 
         def get_last_modified_at(chat: Chat):
             message = Message.objects.filter(chat = chat).order_by("-last_modified_at").first()
-            last_modified_at = timezone.now() - message.created_at
-            if last_modified_at < timedelta(days = 1):
-                return "Today"
-            elif last_modified_at < timedelta(days = 2):
-                return "Yesterday"
+            if message is not None:
+                last_modified_at = timezone.now() - message.created_at
+                if last_modified_at < timedelta(days = 1):
+                    return "Today"
+                elif last_modified_at < timedelta(days = 2):
+                    return "Yesterday"
+                else:
+                    return f"{message.created_at.day} {format_month(message.created_at.month)}"
             else:
-                return f"{message.created_at.day} {format_month(message.created_at.month)}"
+                return ""
 
         entries = [{
             "uuid": chat.uuid,
