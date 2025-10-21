@@ -114,7 +114,7 @@ function ThemeEntryItem() {
 }
 
 function ManageArchivedChatsEntryItem() {
-    const { setChats } = useChat()
+    const { setCurrentChat, setChats } = useChat()
 
     const [archivedChats, setArchivedChats] = useState<Chat[]>([])
 
@@ -122,6 +122,7 @@ function ManageArchivedChatsEntryItem() {
         archiveOrUnarchiveChat(chat.uuid, false)
         setArchivedChats(previous => previous.filter(p => p.uuid !== chat.uuid))
         setChats(previous => [...previous.slice(0, chat.index), chat, ...previous.slice(chat.index)])
+        setCurrentChat(previous => previous ? { ...previous, is_archived: false } : previous)
     }
 
     useEffect(() => {

@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
-import { getMessageFileContent, getMessages, getPendingChats } from "../utils/api"
+import { getChat, getMessageFileContent, getMessages, getPendingChats } from "../utils/api"
 import type { Chat, Message } from "../types"
 import { getFileType } from "../utils/file"
 
 interface ChatContextValue {
+    currentChat: Chat | null
+    setCurrentChat: React.Dispatch<React.SetStateAction<Chat | null>>
     chats: Chat[]
     setChats: React.Dispatch<React.SetStateAction<Chat[]>>
     messages: Message[]
@@ -22,6 +24,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     const shouldSet = useRef(true)
 
+    const [currentChat, setCurrentChat] = useState<Chat | null>(null)
     const [chats, setChats] = useState<Chat[]>([])
     const [messages, setMessages] = useState<Message[]>([])
     const [pendingChat, setPendingChat] = useState<Chat | null>(null)
@@ -32,6 +35,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         shouldSet.current = false
 
         if (chatUUID) {
+            getChat(chatUUID).then(response => {
+                if (response.ok) {
+                    response.json().then(chat => setCurrentChat(chat))
+                }
+            })
+
             getMessages(chatUUID).then(response => {
                 if (response.ok) {
                     response.json().then(data => {
@@ -75,7 +84,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     return (
-        <ChatContext.Provider value={{ chats, setChats, messages, setMessages, pendingChat, setPendingChat, isLoading }}>
+        <ChatContext.Provider value={{ currentChat, setCurrentChat, chats, setChats, messages, setMessages, pendingChat, setPendingChat, isLoading }}>
             {children}
         </ChatContext.Provider>
     )

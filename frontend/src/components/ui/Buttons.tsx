@@ -121,7 +121,7 @@ export function CancelButton({ setIndex, tabIndex = 2 }: { setIndex: React.Dispa
 }
 
 export function EditButton({ onClick }: { onClick: () => void }) {
-    const { pendingChat, isLoading } = useChat()
+    const { currentChat, pendingChat, isLoading } = useChat()
 
     return (
         <TooltipButton
@@ -129,7 +129,7 @@ export function EditButton({ onClick }: { onClick: () => void }) {
             tooltip="Edit"
             className={messageButtonClassNames}
             onClick={onClick}
-            isDisabled={pendingChat !== null || isLoading}
+            isDisabled={currentChat?.is_archived || pendingChat !== null || isLoading}
             dataTestID="edit"
         />
     )
@@ -156,7 +156,7 @@ export function CopyButton({ text }: { text: string }) {
 export function RegenerateButton({ index, model }: { index: number, model: Model | null }) {
     const { chatUUID } = useParams()
 
-    const { setMessages, pendingChat, setPendingChat, isLoading } = useChat()
+    const { currentChat, setMessages, pendingChat, setPendingChat, isLoading } = useChat()
 
     const [isRotating, setIsRotating] = useState(false)
 
@@ -195,7 +195,7 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
             <DropdownMenu.Root>
                 <Tooltip.Root>
                     <Tooltip.Trigger asChild>
-                        <DropdownMenu.Trigger className={messageButtonClassNames} disabled={pendingChat !== null || isLoading} data-testid="regenerate">
+                        <DropdownMenu.Trigger className={messageButtonClassNames} disabled={currentChat?.is_archived || pendingChat !== null || isLoading} data-testid="regenerate">
                             <UpdateIcon className={`size-4.5 ${isRotating && "animate-spin"}`} />
                         </DropdownMenu.Trigger>
                     </Tooltip.Trigger>

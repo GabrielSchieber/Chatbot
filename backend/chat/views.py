@@ -202,6 +202,24 @@ class DeleteAccount(APIView):
         except Exception:
             return Response({"error": "Failed to delete account."}, status.HTTP_400_BAD_REQUEST)
 
+class GetChat(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request):
+        chat_uuid = request.GET.get("chat_uuid")
+
+        if chat_uuid is None:
+            return Response("'chat_uuid' field must be provided.")
+
+        try:
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+        except Chat.DoesNotExist:
+            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+        except Exception:
+            return Response(status = status.HTTP_400_BAD_REQUEST)
+
+        return Response(ChatSerializer(chat, many = False).data, status.HTTP_200_OK)
+
 class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -298,7 +316,7 @@ class ArchiveOrUnarchiveChat(APIView):
             value = bool(request.data.get("value"))
 
             if chat_uuid is None or value is None:
-                return Response({"error": "'chat_uuid' and 'value' fields are required"}, status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Both 'chat_uuid' and 'value' fields must be provided."}, status.HTTP_400_BAD_REQUEST)
 
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
             stop_pending_chat(chat)
@@ -306,7 +324,7 @@ class ArchiveOrUnarchiveChat(APIView):
             chat.save()
             return Response(status = status.HTTP_200_OK)
         except Chat.DoesNotExist:
-            return Response({"error": "Chat not found"}, status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
         except Exception:
             return Response(status = status.HTTP_400_BAD_REQUEST)
 

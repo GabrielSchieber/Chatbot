@@ -64,6 +64,10 @@ export function deleteAccount() {
     return apiFetch("delete-account/", { method: "DELETE" })
 }
 
+export function getChat(chatUUID: string) {
+    return apiFetch(`get-chat/?chat_uuid=${chatUUID}`)
+}
+
 export function getChats(offset = 0, limit = 20) {
     return apiFetch(`get-chats/?offset=${offset}&limit=${limit}`)
 }

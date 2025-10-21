@@ -26,7 +26,7 @@ class ChatSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Chat
-        fields = ["uuid", "title", "pending_message_id", "index"]
+        fields = ["uuid", "title", "pending_message_id", "is_archived", "index"]
 
     def get_pending_message_id(self, chat: Chat):
         return chat.pending_message.id if chat.pending_message is not None else None
