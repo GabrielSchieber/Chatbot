@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon, Cross1Icon, GearIcon } from "@radix-ui/react-icons"
 import { Dialog, Select } from "radix-ui"
-import { useEffect, useState, type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 
 import ConfirmDialog from "../ui/ConfirmDialog"
 import MFADialog from "../ui/MFADialog"
@@ -118,6 +118,14 @@ function ManageArchivedChatsEntryItem() {
 
     const [archivedChats, setArchivedChats] = useState<Chat[]>([])
 
+    function loadArchivedChats() {
+        getArchivedChats().then(response => {
+            if (response.ok) {
+                response.json().then(data => setArchivedChats(data.chats))
+            }
+        })
+    }
+
     function handleUnarchive(chat: Chat) {
         archiveOrUnarchiveChat(chat.uuid, false)
         setArchivedChats(previous => previous.filter(p => p.uuid !== chat.uuid))
@@ -140,18 +148,8 @@ function ManageArchivedChatsEntryItem() {
         })
     }
 
-    useEffect(() => {
-        getArchivedChats().then(response => {
-            if (response.ok) {
-                response.json().then(data => {
-                    setArchivedChats(data.chats)
-                })
-            }
-        })
-    }, [])
-
     return (
-        <Dialog.Root>
+        <Dialog.Root onOpenChange={o => o && loadArchivedChats()}>
             <Dialog.Trigger className={entryClasses}>
                 Manage
             </Dialog.Trigger>
