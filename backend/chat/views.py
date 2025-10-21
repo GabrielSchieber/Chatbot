@@ -354,7 +354,7 @@ class ArchiveChats(APIView):
         try:
             stop_user_pending_chats(request.user)
             Chat.objects.filter(user = request.user).update(is_archived = True)
-            return Response(status = status.HTTP_204_NO_CONTENT)
+            return Response(status = status.HTTP_200_OK)
         except Exception:
             return Response(status = status.HTTP_400_BAD_REQUEST)
 

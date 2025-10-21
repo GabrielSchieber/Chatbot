@@ -18,6 +18,7 @@ urlpatterns = [
     path("search-chats/", views.SearchChats.as_view()),
     path("rename-chat/", views.RenameChat.as_view()),
     path("archive-or-unarchive-chat/", views.ArchiveOrUnarchiveChat.as_view()),
+    path("archive-chats/", views.ArchiveChats.as_view()),
     path("delete-chat/", views.DeleteChat.as_view()),
     path("delete-chats/", views.DeleteChats.as_view()),
     path("stop-pending-chats/", views.StopPendingChats.as_view()),
