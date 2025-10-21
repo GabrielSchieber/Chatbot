@@ -81,7 +81,7 @@ async def sample_model(chat: Chat, should_randomize: bool):
     await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": chat.pending_message.text, "message_index": message_index})
 
     chat.pending_message = None
-    await chat.asave()
+    await chat.asave(update_fields = ["pending_message"])
 
     await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_end"})
 
@@ -122,7 +122,7 @@ def stop_pending_chat(chat: Chat):
     if chat.pending_message is not None and str(chat.uuid) in chat_futures:
         chat_futures[str(chat.uuid)].cancel()
         chat.pending_message = None
-        chat.save()
+        chat.save(update_fields = ["pending_message"])
 
 def stop_user_pending_chats(user: User):
     pending_chats = Chat.objects.filter(user = user).exclude(pending_message = None)
@@ -140,7 +140,7 @@ def reset_stopped_pending_chats(user: User):
         for pending_chat in pending_chats:
             if str(pending_chat.uuid) not in chat_futures:
                 pending_chat.pending_message = None
-                pending_chat.save()
+                pending_chat.save(update_fields = ["pending_message"])
 
 def is_any_user_chat_pending(user: User) -> bool:
     reset_stopped_pending_chats(user)
@@ -167,5 +167,5 @@ async def safe_save_chat(chat: Chat):
     exists = await database_sync_to_async(Chat.objects.filter(pk = chat.pk).exists)()
     if not exists:
         return False
-    await chat.asave()
+    await chat.asave(update_fields = ["pending_message"])
     return True
