@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from "react"
 import { TooltipButton } from "./Buttons"
 import ConfirmDialog from "./ConfirmDialog"
 import { useChat } from "../../context/ChatProvider"
-import { archiveOrUnarchiveChat, deleteChat, getArchivedChats } from "../../utils/api"
+import { archiveOrUnarchiveChat, archiveOrUnarchiveChats, deleteChat, getArchivedChats, getChats } from "../../utils/api"
 import type { Chat } from "../../types"
 
-export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: string }) {
+export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: { triggerClassName: string, getSidebarChatsLimit: () => number }) {
     const { setCurrentChat, setChats } = useChat()
 
     const loaderRef = useRef<HTMLDivElement | null>(null)
@@ -50,6 +50,20 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
         setEntries(previous => previous.filter(p => p.uuid !== chat.uuid))
         setChats(previous => [...previous, chat].sort((a, b) => a.index - b.index))
         setCurrentChat(previous => previous?.uuid === chat.uuid ? { ...previous, is_archived: false } : previous)
+    }
+
+    function handleUnarchiveAll() {
+        archiveOrUnarchiveChats(false).then(response => {
+            if (response.ok) {
+                getChats(0, getSidebarChatsLimit()).then(response => {
+                    if (response.ok) {
+                        response.json().then(data => setChats(data.chats))
+                    }
+                })
+            }
+        })
+        setEntries([])
+        setCurrentChat(previous => previous ? { ...previous, is_archived: false } : previous)
     }
 
     function handleDelete(uuid: string) {
@@ -96,9 +110,17 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
                     <div className="flex p-4 items-center justify-between border-b">
                         <Dialog.Title className="text-lg font-semibold">Archived Chats</Dialog.Title>
                         <Dialog.Description hidden>Manage archived chats</Dialog.Description>
-                        <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-200" data-testid="close-settings">
-                            <Cross1Icon className="size-5" />
-                        </Dialog.Close>
+                        <div className="flex items-center gap-3">
+                            <button
+                                className="px-3 py-1 rounded-3xl cursor-pointer bg-gray-700/50 hover:bg-gray-700 light:bg-gray-200/50 light:hover:bg-gray-200"
+                                onClick={handleUnarchiveAll}
+                            >
+                                Unarchive all
+                            </button>
+                            <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-200" data-testid="close-settings">
+                                <Cross1Icon className="size-5" />
+                            </Dialog.Close>
+                        </div>
                     </div>
 
                     <div

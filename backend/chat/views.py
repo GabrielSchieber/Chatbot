@@ -347,13 +347,17 @@ class DeleteChat(APIView):
         except Exception:
             return Response(status = status.HTTP_400_BAD_REQUEST)
 
-class ArchiveChats(APIView):
+class ArchiveOrUnarchiveChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request: Request):
         try:
+            value = request.data.get("value")
+            if value is None:
+                return Response({"error": "'value' field must be provided."}, status.HTTP_400_BAD_REQUEST)
+
             stop_user_pending_chats(request.user)
-            Chat.objects.filter(user = request.user).update(is_archived = True)
+            Chat.objects.filter(user = request.user).update(is_archived = value)
             return Response(status = status.HTTP_200_OK)
         except Exception:
             return Response(status = status.HTTP_400_BAD_REQUEST)

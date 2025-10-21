@@ -7,13 +7,8 @@ import { useChat } from "../../context/ChatProvider"
 import { archiveOrUnarchiveChat, deleteChat, getChats, renameChat } from "../../utils/api"
 import type { Chat } from "../../types"
 
-export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }: {
-    sidebarRef: RefObject<HTMLDivElement | null>
-    topButtonsRef: RefObject<HTMLDivElement | null>
-    settingsButtonRef: RefObject<HTMLDivElement | null>
-}) {
+export default function History({ sidebarRef, getSidebarChatsLimit }: { sidebarRef: RefObject<HTMLDivElement | null>, getSidebarChatsLimit: () => number }) {
     const offset = useRef(0)
-    const limit = useRef(1)
     const isLoadingRef = useRef(true)
 
     const { setCurrentChat, chats, setChats } = useChat()
@@ -36,7 +31,7 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
         setIsLoading(true)
         isLoadingRef.current = false
 
-        const response = await getChats(offset.current, limit.current)
+        const response = await getChats(offset.current, getSidebarChatsLimit())
         if (response.ok) {
             response.json().then((data: { chats: Chat[], has_more: boolean }) => {
                 const newChats = data.chats
@@ -104,27 +99,13 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
         })
     }
 
-    function getFullHeightOfDiv(div: HTMLDivElement) {
-        const style = getComputedStyle(div)
-        return parseInt(style.paddingBottom) + div.offsetHeight + parseInt(style.paddingTop)
-    }
-
-    function updateLimit() {
-        if (sidebarRef.current && topButtonsRef.current && settingsButtonRef.current) {
-            const visibleHeight = getFullHeightOfDiv(sidebarRef.current) - getFullHeightOfDiv(topButtonsRef.current) - getFullHeightOfDiv(settingsButtonRef.current)
-            limit.current = Math.max(Math.round(visibleHeight / 30), 1)
-        }
-    }
-
     useEffect(() => {
-        updateLimit()
         loadMoreChats()
 
         let previousHeight = window.innerHeight
         window.addEventListener("resize", _ => {
             if (window.innerHeight > previousHeight) {
                 previousHeight = window.innerHeight
-                updateLimit()
                 loadMoreChats()
             }
         })

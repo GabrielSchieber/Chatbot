@@ -108,8 +108,12 @@ export function deleteChat(chatUUID: string) {
     })
 }
 
-export function archiveChats() {
-    return apiFetch("archive-chats/", { method: "PATCH" })
+export function archiveOrUnarchiveChats(value: boolean) {
+    return apiFetch("archive-or-unarchive-chats/", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value })
+    })
 }
 
 export function deleteChats() {

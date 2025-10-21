@@ -7,11 +7,11 @@ import ConfirmDialog from "../ui/ConfirmDialog"
 import MFADialog from "../ui/MFADialog"
 import { useAuth } from "../../context/AuthProvider"
 import { useChat } from "../../context/ChatProvider"
-import { archiveChats, deleteAccount, deleteChats, logout, me } from "../../utils/api"
+import { archiveOrUnarchiveChats, deleteAccount, deleteChats, logout, me } from "../../utils/api"
 import { applyTheme } from "../../utils/theme"
 import type { Theme } from "../../types"
 
-export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
+export default function Settings({ isSidebarOpen, itemClassNames, getSidebarChatsLimit }: { isSidebarOpen: boolean, itemClassNames: string, getSidebarChatsLimit: () => number }) {
     const { user } = useAuth()
 
     return (
@@ -42,7 +42,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                     <div className="flex flex-col border-t-2">
                         <Entry name="Theme" item={<ThemeEntryItem />} />
                         <Entry name="Multi-factor authentication" item={<MFADialog triggerClassName={entryClasses} />} />
-                        <Entry name="Archived chats" item={<ArchivedChatsDialog triggerClassName={entryClasses} />} />
+                        <Entry name="Archived chats" item={<ArchivedChatsDialog triggerClassName={entryClasses} getSidebarChatsLimit={getSidebarChatsLimit} />} />
                         <Entry name="Archive chats" item={<ArchiveChatsEntryItem />} />
                         <Entry name="Delete chats" item={<DeleteChatsEntryItem />} />
                         <Entry name="Delete account" item={<DeleteAccountEntryItem />} />
@@ -117,7 +117,7 @@ function ArchiveChatsEntryItem() {
     const { setCurrentChat, setChats } = useChat()
 
     function handleArchiveChats() {
-        archiveChats().then(response => {
+        archiveOrUnarchiveChats(true).then(response => {
             if (response.ok) {
                 setCurrentChat(previous => previous ? { ...previous, is_archived: true } : previous)
                 setChats([])
