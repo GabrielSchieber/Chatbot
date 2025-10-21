@@ -230,16 +230,13 @@ function ManageArchivedChatsEntryItem() {
 }
 
 function ArchiveChatsEntryItem() {
-    const { setCurrentChat } = useChat()
+    const { setCurrentChat, setChats } = useChat()
 
     function handleArchiveChats() {
         archiveChats().then(response => {
             if (response.ok) {
-                const historyEntries = document.querySelector(".history-entries")
-                if (historyEntries) {
-                    historyEntries.innerHTML = ""
-                }
                 setCurrentChat(previous => previous ? { ...previous, is_archived: true } : previous)
+                setChats([])
             } else {
                 alert("Archival of chats was not possible")
             }
@@ -254,16 +251,15 @@ function ArchiveChatsEntryItem() {
 }
 
 function DeleteChatsEntryItem() {
+    const { setChats } = useChat()
+
     function handleDeleteChats() {
         deleteChats().then(response => {
             if (response.ok) {
                 if (location.pathname.includes("chat")) {
                     location.href = "/"
                 } else {
-                    const historyEntries = document.querySelector(".history-entries")
-                    if (historyEntries) {
-                        historyEntries.innerHTML = ""
-                    }
+                    setChats([])
                 }
             } else {
                 alert("Deletion of chats was not possible")
