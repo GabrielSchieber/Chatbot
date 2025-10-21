@@ -130,7 +130,7 @@ function ManageArchivedChatsEntryItem() {
         archiveOrUnarchiveChat(chat.uuid, false)
         setArchivedChats(previous => previous.filter(p => p.uuid !== chat.uuid))
         setChats(previous => [...previous.slice(0, chat.index), chat, ...previous.slice(chat.index)])
-        setCurrentChat(previous => previous ? { ...previous, is_archived: false } : previous)
+        setCurrentChat(previous => previous?.uuid === chat.uuid ? { ...previous, is_archived: false } : previous)
     }
 
     function handleDelete(uuid: string) {
