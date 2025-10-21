@@ -123,18 +123,30 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
                         <Dialog.Title className="text-lg font-semibold">Archived Chats</Dialog.Title>
                         <Dialog.Description hidden>Manage archived chats</Dialog.Description>
                         <div className="flex items-center gap-3">
-                            <button
-                                className="px-3 py-1 rounded-3xl cursor-pointer bg-gray-700/50 hover:bg-gray-700 light:bg-gray-200/50 light:hover:bg-gray-200"
-                                onClick={handleArchiveAll}
-                            >
-                                Archive all
-                            </button>
-                            <button
-                                className="px-3 py-1 rounded-3xl cursor-pointer bg-gray-700/50 hover:bg-gray-700 light:bg-gray-200/50 light:hover:bg-gray-200"
-                                onClick={handleUnarchiveAll}
-                            >
-                                Unarchive all
-                            </button>
+                            <ConfirmDialog
+                                trigger={
+                                    <button className="px-3 py-1 rounded-3xl cursor-pointer bg-gray-700/50 hover:bg-gray-700 light:bg-gray-300/50 light:hover:bg-gray-300">
+                                        Archive all
+                                    </button>
+                                }
+                                title="Archive all chats"
+                                description="Are you sure you want to archive all of your chats?"
+                                confirmText="Archive all"
+                                onConfirm={handleArchiveAll}
+                                isDestructive={false}
+                            />
+                            <ConfirmDialog
+                                trigger={
+                                    <button className="px-3 py-1 rounded-3xl cursor-pointer bg-gray-700/50 hover:bg-gray-700 light:bg-gray-300/50 light:hover:bg-gray-300">
+                                        Unarchive all
+                                    </button>
+                                }
+                                title="Unarchive all chats"
+                                description="Are you sure you want to unarchive all of your chats?"
+                                confirmText="Unarchive all"
+                                onConfirm={handleUnarchiveAll}
+                                isDestructive={false}
+                            />
                             <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-200" data-testid="close-settings">
                                 <Cross1Icon className="size-5" />
                             </Dialog.Close>
