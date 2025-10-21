@@ -232,6 +232,8 @@ function ManageArchivedChatsEntryItem() {
 }
 
 function ArchiveChatsEntryItem() {
+    const { setCurrentChat } = useChat()
+
     function handleArchiveChats() {
         archiveChats().then(response => {
             if (response.ok) {
@@ -239,6 +241,7 @@ function ArchiveChatsEntryItem() {
                 if (historyEntries) {
                     historyEntries.innerHTML = ""
                 }
+                setCurrentChat(previous => previous ? { ...previous, is_archived: true } : previous)
             } else {
                 alert("Archival of chats was not possible")
             }
