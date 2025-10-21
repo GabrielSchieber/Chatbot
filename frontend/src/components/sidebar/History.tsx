@@ -83,7 +83,7 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
     function handleArchiveChat(uuid: string) {
         archiveOrUnarchiveChat(uuid, true)
         setChats(previous => previous.filter(p => p.uuid !== uuid))
-        setCurrentChat(previous => previous ? { ...previous, is_archived: true } : previous)
+        setCurrentChat(previous => previous?.uuid === uuid ? { ...previous, is_archived: true } : previous)
         setHoveringEntryIndex(-1)
         setSelectedDropdownIndex(-1)
         setHoveringDropdownIndex(-1)
