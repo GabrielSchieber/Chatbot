@@ -7,7 +7,7 @@ import MFADialog from "../ui/MFADialog"
 import { TooltipButton } from "../ui/Buttons"
 import { useAuth } from "../../context/AuthProvider"
 import { useChat } from "../../context/ChatProvider"
-import { archiveChats, archiveOrUnarchiveChat, deleteAccount, deleteChats, getArchivedChats, logout, me } from "../../utils/api"
+import { archiveChats, archiveOrUnarchiveChat, deleteAccount, deleteChat, deleteChats, getArchivedChats, logout, me } from "../../utils/api"
 import { applyTheme } from "../../utils/theme"
 import type { Chat, Theme } from "../../types"
 
@@ -125,6 +125,21 @@ function ManageArchivedChatsEntryItem() {
         setCurrentChat(previous => previous ? { ...previous, is_archived: false } : previous)
     }
 
+    function handleDelete(uuid: string) {
+        deleteChat(uuid).then(response => {
+            if (response.ok) {
+                setChats(previous => {
+                    let previousChats = [...previous]
+                    previousChats = previousChats.filter(c => c.uuid !== uuid)
+                    return previousChats
+                })
+                if (location.pathname.includes(uuid)) {
+                    location.href = "/"
+                }
+            }
+        })
+    }
+
     useEffect(() => {
         getArchivedChats().then(response => {
             if (response.ok) {
@@ -167,16 +182,43 @@ function ManageArchivedChatsEntryItem() {
                                     href={`/chat/${c.uuid}`}
                                 >
                                     {c.title}
-                                    <TooltipButton
-                                        trigger={<Cross1Icon className="size-4" />}
-                                        tooltip="Unarchive"
-                                        className="p-1 rounded-3xl cursor-pointer hover:bg-gray-500/40"
-                                        onClick={e => {
-                                            e.preventDefault()
-                                            handleUnarchive(c)
-                                        }}
-                                        tooltipSize="xs"
-                                    />
+                                    <div className="flex gap-1 items-center">
+                                        <TooltipButton
+                                            trigger={
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                                                    <rect width="20" height="5" x="2" y="3" rx="1" />
+                                                    <path d="M4 8v11a2 2 0 0 0 2 2h2" />
+                                                    <path d="M20 8v11a2 2 0 0 1-2 2h-2" />
+                                                    <path d="m9 15 3-3 3 3" />
+                                                    <path d="M12 12v9" />
+                                                </svg>}
+                                            tooltip="Unarchive"
+                                            className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-500/40"
+                                            onClick={e => {
+                                                e.preventDefault()
+                                                handleUnarchive(c)
+                                            }}
+                                            tooltipSize="xs"
+                                        />
+                                        <TooltipButton
+                                            trigger={
+                                                <ConfirmDialog
+                                                    trigger={
+                                                        <Cross1Icon className="size-4" />
+                                                    }
+                                                    title="Delete Archived Chat"
+                                                    description={`Are you sure you want to delete "${c.title}"? This action cannot be undone.`}
+                                                    confirmText="Delete"
+                                                    cancelText="Cancel"
+                                                    onConfirm={() => handleDelete(c.uuid)}
+                                                />
+                                            }
+                                            onClick={e => e.preventDefault()}
+                                            tooltip="Delete"
+                                            className="p-1.5 rounded-3xl text-red-500 cursor-pointer hover:bg-red-500/20"
+                                            tooltipSize="xs"
+                                        />
+                                    </div>
                                 </a>
                             ))}
                         </div>
