@@ -59,6 +59,7 @@ export default function Prompt() {
                 response.json().then(chat => {
                     if (!chatUUID) {
                         navigate(`/chat/${chat.uuid}`)
+                        setCurrentChat(chat)
                         setChats(previous => [chat, ...previous])
                     }
                     setPendingChat(chat)
