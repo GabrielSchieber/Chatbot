@@ -22,7 +22,7 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
 
     const limit = 15
 
-    function loadEntries(reset = false) {
+    function loadEntries(reset: boolean) {
         if (isLoadingRef.current || isLoading) return
 
         isLoadingRef.current = true
@@ -52,17 +52,29 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
         setCurrentChat(previous => previous?.uuid === chat.uuid ? { ...previous, is_archived: false } : previous)
     }
 
+    function handleArchiveAll() {
+        archiveOrUnarchiveChats(true).then(response => {
+            if (response.ok) {
+                loadEntries(true)
+            }
+        })
+        setChats([])
+        setCurrentChat(previous => previous ? { ...previous, is_archived: true } : previous)
+    }
+
     function handleUnarchiveAll() {
         archiveOrUnarchiveChats(false).then(response => {
             if (response.ok) {
                 getChats(0, getSidebarChatsLimit()).then(response => {
                     if (response.ok) {
-                        response.json().then(data => setChats(data.chats))
+                        response.json().then(data => {
+                            setChats(data.chats)
+                            setEntries([])
+                        })
                     }
                 })
             }
         })
-        setEntries([])
         setCurrentChat(previous => previous ? { ...previous, is_archived: false } : previous)
     }
 
@@ -111,6 +123,12 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
                         <Dialog.Title className="text-lg font-semibold">Archived Chats</Dialog.Title>
                         <Dialog.Description hidden>Manage archived chats</Dialog.Description>
                         <div className="flex items-center gap-3">
+                            <button
+                                className="px-3 py-1 rounded-3xl cursor-pointer bg-gray-700/50 hover:bg-gray-700 light:bg-gray-200/50 light:hover:bg-gray-200"
+                                onClick={handleArchiveAll}
+                            >
+                                Archive all
+                            </button>
                             <button
                                 className="px-3 py-1 rounded-3xl cursor-pointer bg-gray-700/50 hover:bg-gray-700 light:bg-gray-200/50 light:hover:bg-gray-200"
                                 onClick={handleUnarchiveAll}
