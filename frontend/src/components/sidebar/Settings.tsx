@@ -117,11 +117,15 @@ function ManageArchivedChatsEntryItem() {
     const { setCurrentChat, setChats } = useChat()
 
     const [archivedChats, setArchivedChats] = useState<Chat[]>([])
+    const [isLoading, setIsLoading] = useState(true)
 
     function loadArchivedChats() {
         getArchivedChats().then(response => {
             if (response.ok) {
-                response.json().then(data => setArchivedChats(data.chats))
+                response.json().then(data => {
+                    setArchivedChats(data.chats)
+                    setIsLoading(false)
+                })
             }
         })
     }
@@ -159,11 +163,11 @@ function ManageArchivedChatsEntryItem() {
 
                 <Dialog.Content
                     className="
-                        fixed flex flex-col gap-1 w-100 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                        p-6 rounded-xl bg-gray-800 light:bg-gray-300 text-white light:text-black
+                        fixed flex flex-col w-150 top-[20vh] left-1/2 -translate-x-1/2
+                        rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
                     "
                 >
-                    <div className="flex items-center justify-between">
+                    <div className="flex p-4 items-center justify-between border-b">
                         <Dialog.Title className="text-lg font-semibold">Archived Chats</Dialog.Title>
                         <Dialog.Description hidden>Manage archived chats</Dialog.Description>
                         <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-200" data-testid="close-settings">
@@ -172,7 +176,10 @@ function ManageArchivedChatsEntryItem() {
                     </div>
 
                     {archivedChats.length > 0 ? (
-                        <div className="flex-1 gap-1">
+                        <div
+                            className="flex-1 gap-1 px-4 py-2 max-h-[50vh] overflow-y-auto"
+                            style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
+                        >
                             {archivedChats.map(c => (
                                 <a
                                     key={c.uuid}
@@ -220,8 +227,10 @@ function ManageArchivedChatsEntryItem() {
                                 </a>
                             ))}
                         </div>
+                    ) : isLoading ? (
+                        <p className="text-gray-400 light:text-gray-600 px-4 py-2">Loading chats...</p>
                     ) : (
-                        <p>You don't have any archived chats.</p>
+                        <p className="text-gray-400 light:text-gray-600 px-4 py-2">You don't have any archived chats.</p>
                     )}
                 </Dialog.Content>
             </Dialog.Portal>
