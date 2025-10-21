@@ -131,7 +131,7 @@ export default function Prompt() {
                     onClick={_ => {
                         if (chatUUID) {
                             archiveOrUnarchiveChat(chatUUID, false)
-                            setChats(previous => [...previous.slice(0, currentChat.index), currentChat, ...previous.slice(currentChat.index)])
+                            setChats(previous => [...previous, currentChat].sort((a, b) => a.index - b.index))
                             setCurrentChat(previous => previous ? { ...previous, is_archived: false } : previous)
                         }
                     }}
