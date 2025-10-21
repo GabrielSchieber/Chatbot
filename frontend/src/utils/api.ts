@@ -76,8 +76,8 @@ export function getPendingChats() {
     return apiFetch(`get-chats/?pending=true`)
 }
 
-export function getArchivedChats() {
-    return apiFetch(`get-chats/?archived=true`)
+export function getArchivedChats(offset = 0, limit = 20) {
+    return apiFetch(`get-chats/?archived=true&offset=${offset}&limit=${limit}`)
 }
 
 export function searchChats(search: string, offset = 0, limit = 20) {
