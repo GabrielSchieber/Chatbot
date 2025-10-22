@@ -250,9 +250,9 @@ class SearchChats(APIView):
         limit = int(request.GET.get("limit", 20))
         offset = int(request.GET.get("offset", 0))
 
-        matched_messages = Message.objects.filter(text__icontains = search).order_by("created_at")
+        matched_messages = Message.objects.filter(chat__user = request.user, chat__is_archived = False, text__icontains = search).order_by("created_at")
 
-        chats = Chat.objects.filter(user = request.user).filter(
+        chats = Chat.objects.filter(user = request.user, is_archived = False).filter(
             Q(title__icontains = search) | Q(messages__text__icontains = search)
         ).distinct().order_by("-created_at")
 
