@@ -76,3 +76,29 @@ test("user can see and toggle sidebar with chats", async ({ page }) => {
         await expect(page.getByRole("link", { name: chat.title })).toBeVisible()
     }
 })
+
+test("user can rename chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+
+    const firstChat = user.chats[0]
+    const firstChatLink = page.getByRole("link", { name: firstChat.title, exact: true })
+
+    await firstChatLink.hover()
+    await firstChatLink.getByRole("button").click()
+
+    const renameButton = page.getByRole("menuitem", { name: "Rename", exact: true })
+    await renameButton.click()
+
+    const renameInput = page.locator("input[type='text']")
+    await expect(renameInput).toBeVisible()
+    await renameInput.fill("Renamed Chat")
+    await renameInput.press("Enter")
+    await expect(renameInput).not.toBeVisible()
+
+    const renamedChatLink = page.getByRole("link", { name: "Renamed Chat", exact: true })
+    await expect(renamedChatLink).toBeVisible()
+
+    page.reload()
+
+    await expect(renamedChatLink).toBeVisible()
+})
