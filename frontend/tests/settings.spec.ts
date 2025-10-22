@@ -128,6 +128,44 @@ test("user can unarchive specific chats", async ({ page }) => {
     await unarchive(2, user.chats[3], user.chats.length - 3, 3)
 })
 
+test("user can delete specific archived chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+    await archiveOrUnarchiveAllChats(page, user, "archive")
+
+    const archivedEntries = page.getByTestId("archived-chat-entry")
+    const historyEntries = page.getByTestId("history-entry")
+
+    async function deleteArchivedChat(index: number, chat: Chat, expectedArchivedEntries: number) {
+        await expect(archivedEntries).toHaveCount(expectedArchivedEntries)
+        await expect(historyEntries).toHaveCount(0)
+
+        await expect(archivedEntries.nth(index)).toHaveText(chat.title)
+        expect(await archivedEntries.nth(index).getAttribute("href")).toEqual(`/chat/${chat.uuid}`)
+
+        await archivedEntries.nth(index).getByRole("button").last().click()
+
+        const heading = page.getByRole("heading", { name: "Delete Archived Chat", exact: true })
+        await expect(heading).toBeVisible()
+
+        const dialog = heading.locator("..")
+        await expect(dialog.getByText(`Are you sure you want to delete "${chat.title}"? This action cannot be undone.`, { exact: true })).toBeVisible()
+
+        await expect(dialog.getByRole("button")).toHaveCount(2)
+        await expect(dialog.getByRole("button").first()).toHaveText("Cancel")
+        await dialog.getByRole("button", { name: "Delete", exact: true }).click()
+
+        await expect(heading).not.toBeVisible()
+
+        await expect(historyEntries).toHaveCount(0)
+        await expect(archivedEntries).toHaveCount(expectedArchivedEntries - 1)
+    }
+
+    await deleteArchivedChat(0, user.chats[0], user.chats.length)
+    await deleteArchivedChat(3, user.chats[4], user.chats.length - 1)
+    await deleteArchivedChat(7, user.chats[9], user.chats.length - 2)
+    await deleteArchivedChat(2, user.chats[3], user.chats.length - 3)
+})
+
 test("user can delete account", async ({ page }) => {
     const user = await signupAndLogin(page)
 

@@ -45,13 +45,6 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
         })
     }
 
-    function handleUnarchive(chat: Chat) {
-        archiveOrUnarchiveChat(chat.uuid, false)
-        setEntries(previous => previous.filter(p => p.uuid !== chat.uuid))
-        setChats(previous => [...previous, chat].sort((a, b) => a.index - b.index))
-        setCurrentChat(previous => previous?.uuid === chat.uuid ? { ...previous, is_archived: false } : previous)
-    }
-
     function handleArchiveAll() {
         archiveOrUnarchiveChats(true).then(response => {
             if (response.ok) {
@@ -78,14 +71,18 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
         setCurrentChat(previous => previous ? { ...previous, is_archived: false } : previous)
     }
 
+    function handleUnarchive(chat: Chat) {
+        archiveOrUnarchiveChat(chat.uuid, false)
+        setEntries(previous => previous.filter(p => p.uuid !== chat.uuid))
+        setChats(previous => [...previous, chat].sort((a, b) => a.index - b.index))
+        setCurrentChat(previous => previous?.uuid === chat.uuid ? { ...previous, is_archived: false } : previous)
+    }
+
     function handleDelete(uuid: string) {
         deleteChat(uuid).then(response => {
             if (response.ok) {
-                setChats(previous => {
-                    let previousChats = [...previous]
-                    previousChats = previousChats.filter(c => c.uuid !== uuid)
-                    return previousChats
-                })
+                setChats(previous => previous.filter(c => c.uuid !== uuid))
+                setEntries(previous => previous.filter(c => c.uuid !== uuid))
                 if (location.pathname.includes(uuid)) {
                     location.href = "/"
                 }
