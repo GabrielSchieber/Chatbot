@@ -146,6 +146,7 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
                                         key={c.uuid}
                                         className="flex gap-2 px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-700 light:hover:bg-gray-300"
                                         href={`/chat/${c.uuid}`}
+                                        data-testid="archived-chat-entry"
                                     >
                                         {c.title}
                                         <div className="flex gap-1 items-center">

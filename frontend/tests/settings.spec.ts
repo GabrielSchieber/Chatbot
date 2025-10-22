@@ -90,6 +90,29 @@ test("user can change theme", async ({ page }) => {
     expect(await html.getAttribute("class")).toEqual("Light")
 })
 
+test("user can archive all chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+
+    await expect(page.getByTestId("history-entry")).toHaveCount(user.chats.length)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("button", { name: "Manage", exact: true }).click()
+    await expect(page.getByTestId("archived-chat-entry")).toHaveCount(0)
+
+    await expect(page.getByRole("heading", { name: "Archived Chats", exact: true })).toBeVisible()
+    await expect(page.getByText("You don't have any archived chats.", { exact: true })).toBeVisible()
+
+    await page.getByRole("button", { name: "Archive all", exact: true }).click()
+    await expect(page.getByRole("heading", { name: "Archive all chats", exact: true })).toBeVisible()
+    await expect(page.getByText("Are you sure you want to archive all of your chats?", { exact: true })).toBeVisible()
+
+    await page.getByRole("button", { name: "Archive all", exact: true }).click()
+
+    await expect(page.getByTestId("history-entry")).toHaveCount(0)
+    await expect(page.getByTestId("archived-chat-entry")).toHaveCount(user.chats.length)
+})
+
 test("user can delete account", async ({ page }) => {
     const user = await signupAndLogin(page)
 
