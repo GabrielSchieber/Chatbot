@@ -4,19 +4,14 @@ import { useEffect, useRef, useState, type RefObject } from "react"
 
 import ConfirmDialog from "../ui/ConfirmDialog"
 import { useChat } from "../../context/ChatProvider"
-import { deleteChat, getChats, renameChat } from "../../utils/api"
+import { archiveOrUnarchiveChat, deleteChat, getChats, renameChat } from "../../utils/api"
 import type { Chat } from "../../types"
 
-export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }: {
-    sidebarRef: RefObject<HTMLDivElement | null>
-    topButtonsRef: RefObject<HTMLDivElement | null>
-    settingsButtonRef: RefObject<HTMLDivElement | null>
-}) {
+export default function History({ sidebarRef, getSidebarChatsLimit }: { sidebarRef: RefObject<HTMLDivElement | null>, getSidebarChatsLimit: () => number }) {
     const offset = useRef(0)
-    const limit = useRef(1)
     const isLoadingRef = useRef(true)
 
-    const { chats, setChats } = useChat()
+    const { setCurrentChat, chats, setChats } = useChat()
 
     const [isLoading, setIsLoading] = useState(false)
     const [hasMore, setHasMore] = useState(true)
@@ -29,13 +24,14 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
     const [selectedDropdownIndex, setSelectedDropdownIndex] = useState(-1)
 
     const dropdowmItemClassNames = "px-3 py-2 text-center cursor-pointer outline-none rounded-lg"
+    const baseDropdowmItemClassNames = dropdowmItemClassNames + " hover:bg-gray-600 light:hover:bg-gray-400 focus:bg-gray-600 light:focus:bg-gray-400"
 
     async function loadMoreChats() {
         if (isLoading || !hasMore || !isLoadingRef.current) return
         setIsLoading(true)
         isLoadingRef.current = false
 
-        const response = await getChats(offset.current, limit.current)
+        const response = await getChats(offset.current, getSidebarChatsLimit())
         if (response.ok) {
             response.json().then((data: { chats: Chat[], has_more: boolean }) => {
                 const newChats = data.chats
@@ -79,6 +75,15 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
         setHoveringDropdownIndex(-1)
     }
 
+    function handleArchiveChat(uuid: string) {
+        archiveOrUnarchiveChat(uuid, true)
+        setChats(previous => previous.filter(p => p.uuid !== uuid))
+        setCurrentChat(previous => previous?.uuid === uuid ? { ...previous, is_archived: true } : previous)
+        setHoveringEntryIndex(-1)
+        setSelectedDropdownIndex(-1)
+        setHoveringDropdownIndex(-1)
+    }
+
     function handleDelete(uuid: string) {
         deleteChat(uuid).then(response => {
             if (response.ok) {
@@ -94,27 +99,13 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
         })
     }
 
-    function getFullHeightOfDiv(div: HTMLDivElement) {
-        const style = getComputedStyle(div)
-        return parseInt(style.paddingBottom) + div.offsetHeight + parseInt(style.paddingTop)
-    }
-
-    function updateLimit() {
-        if (sidebarRef.current && topButtonsRef.current && settingsButtonRef.current) {
-            const visibleHeight = getFullHeightOfDiv(sidebarRef.current) - getFullHeightOfDiv(topButtonsRef.current) - getFullHeightOfDiv(settingsButtonRef.current)
-            limit.current = Math.max(Math.round(visibleHeight / 30), 1)
-        }
-    }
-
     useEffect(() => {
-        updateLimit()
         loadMoreChats()
 
         let previousHeight = window.innerHeight
         window.addEventListener("resize", _ => {
             if (window.innerHeight > previousHeight) {
                 previousHeight = window.innerHeight
-                updateLimit()
                 loadMoreChats()
             }
         })
@@ -138,7 +129,7 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
         <div className="flex-1 py-4">
             <p className="pl-3 text-sm text-gray-400">Chats</p>
 
-            <div className="history-entries flex flex-col gap-1 p-2">
+            <div className="flex flex-col gap-1 p-2">
                 {chats.map((c, i) => (
                     renameUUID === c.uuid ? (
                         <input
@@ -153,6 +144,7 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
                                 if (e.key === "Escape") setRenameUUID("")
                             }}
                             autoFocus
+                            data-testid="rename-input"
                         />
                     ) : (
                         <a
@@ -167,6 +159,7 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
                             }}
                             onMouseEnter={_ => setHoveringEntryIndex(i)}
                             onMouseLeave={_ => setHoveringEntryIndex(-1)}
+                            data-testid="history-entry"
                         >
                             {c.title}
 
@@ -188,11 +181,12 @@ export default function History({ sidebarRef, topButtonsRef, settingsButtonRef }
                                         onMouseLeave={_ => setHoveringDropdownIndex(-1)}
                                         sideOffset={4}
                                     >
-                                        <DropdownMenu.Item
-                                            className={dropdowmItemClassNames + " hover:bg-gray-600 light:hover:bg-gray-400 focus:bg-gray-600 light:focus:bg-gray-400"}
-                                            onSelect={_ => startRename(c)}
-                                        >
+                                        <DropdownMenu.Item className={baseDropdowmItemClassNames} onSelect={_ => startRename(c)}>
                                             Rename
+                                        </DropdownMenu.Item>
+
+                                        <DropdownMenu.Item className={baseDropdowmItemClassNames} onSelect={_ => handleArchiveChat(c.uuid)}>
+                                            Archive
                                         </DropdownMenu.Item>
 
                                         <ConfirmDialog

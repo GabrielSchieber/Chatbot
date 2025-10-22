@@ -64,12 +64,20 @@ export function deleteAccount() {
     return apiFetch("delete-account/", { method: "DELETE" })
 }
 
+export function getChat(chatUUID: string) {
+    return apiFetch(`get-chat/?chat_uuid=${chatUUID}`)
+}
+
 export function getChats(offset = 0, limit = 20) {
     return apiFetch(`get-chats/?offset=${offset}&limit=${limit}`)
 }
 
 export function getPendingChats() {
     return apiFetch(`get-chats/?pending=true`)
+}
+
+export function getArchivedChats(offset = 0, limit = 20) {
+    return apiFetch(`get-chats/?archived=true&offset=${offset}&limit=${limit}`)
 }
 
 export function searchChats(search: string, offset = 0, limit = 20) {
@@ -84,11 +92,27 @@ export function renameChat(chatUUID: string, newTitle: string) {
     })
 }
 
+export function archiveOrUnarchiveChat(chatUUID: string, value: boolean) {
+    return apiFetch("archive-or-unarchive-chat/", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_uuid: chatUUID, value })
+    })
+}
+
 export function deleteChat(chatUUID: string) {
     return apiFetch("delete-chat/", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_uuid: chatUUID })
+    })
+}
+
+export function archiveOrUnarchiveChats(value: boolean) {
+    return apiFetch("archive-or-unarchive-chats/", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value })
     })
 }
 

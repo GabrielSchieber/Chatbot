@@ -7,7 +7,7 @@ import Attachments from "../ui/Attachments"
 import Composer from "../ui/Composer"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
-import { newMessage } from "../../utils/api"
+import { archiveOrUnarchiveChat, newMessage } from "../../utils/api"
 import { getFileSize } from "../../utils/file"
 import type { Model } from "../../types"
 
@@ -15,7 +15,7 @@ export default function Prompt() {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
-    const { setChats, setMessages, pendingChat, setPendingChat, isLoading } = useChat()
+    const { currentChat, setCurrentChat, setChats, setMessages, pendingChat, setPendingChat, isLoading } = useChat()
 
     const fileInputRef = useRef<HTMLInputElement | null>(null)
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -59,6 +59,7 @@ export default function Prompt() {
                 response.json().then(chat => {
                     if (!chatUUID) {
                         navigate(`/chat/${chat.uuid}`)
+                        setCurrentChat(chat)
                         setChats(previous => [chat, ...previous])
                     }
                     setPendingChat(chat)
@@ -119,47 +120,68 @@ export default function Prompt() {
     }, [isExtended])
 
     return (
-        <>
-            <AnimatePresence>
-                {shouldShowPendingNotification && pendingChat && (
-                    <motion.div
-                        key="pending-notification"
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.25 }}
-                        className="flex items-center justify-between gap-3 px-4 py-2 m-2 rounded-xl bg-gray-700 light:bg-gray-300"
-                    >
-                        <div>
-                            A message is already being generated in <a className="underline" href={`/chat/${pendingChat.uuid}`}>{pendingChat.title}</a>
-                        </div>
-                        <button className="p-1 rounded-3xl cursor-pointer hover:bg-gray-800" onClick={() => setShouldShowPendingNotification?.(false)}>
-                            <Cross2Icon />
-                        </button>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+        currentChat && currentChat.is_archived ? (
+            <div className="flex flex-col gap-3 mb-10 items-center">
+                <p>This chat is archived. To continue, unarchive it first.</p>
+                <button
+                    className="
+                        px-3 py-1 rounded-3xl cursor-pointer text-black light:text-white
+                        bg-gray-100 light:bg-gray-900 hover:bg-gray-200 light:hover:bg-gray-800
+                    "
+                    onClick={_ => {
+                        if (chatUUID) {
+                            archiveOrUnarchiveChat(chatUUID, false)
+                            setChats(previous => [...previous, currentChat].sort((a, b) => a.index - b.index))
+                            setCurrentChat(previous => previous ? { ...previous, is_archived: false } : previous)
+                        }
+                    }}
+                >
+                    Unarchive
+                </button>
+            </div >
+        ) : (
+            <>
+                <AnimatePresence>
+                    {shouldShowPendingNotification && pendingChat && (
+                        <motion.div
+                            key="pending-notification"
+                            initial={{ opacity: 0, y: -6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.25 }}
+                            className="flex items-center justify-between gap-3 px-4 py-2 m-2 rounded-xl bg-gray-700 light:bg-gray-300"
+                        >
+                            <div>
+                                A message is already being generated in <a className="underline" href={`/chat/${pendingChat.uuid}`}>{pendingChat.title}</a>
+                            </div>
+                            <button className="p-1 rounded-3xl cursor-pointer hover:bg-gray-800" onClick={() => setShouldShowPendingNotification?.(false)}>
+                                <Cross2Icon />
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-            <Composer
-                fileInputRef={fileInputRef}
-                textAreaRef={textAreaRef}
-                selectionStart={selectionStart}
-                selectionEnd={selectionEnd}
-                text={text}
-                setText={setText}
-                isExtended={isExtended}
-                hasFiles={files.length > 0}
-                withBorderAndShadow={true}
-                filesArea={<Files files={files} setFiles={setFiles} />}
-                onFileChange={handleFileChange}
-                model={model}
-                setModel={setModel}
-                sendMessage={sendMessage}
-                sendMessageWithEvent={sendMessageWithEvent}
-                isSendDisabled={(text.trim() === "" && files.length === 0) || pendingChat !== null || isLoading}
-                pendingChat={pendingChat}
-            />
-        </>
+                <Composer
+                    fileInputRef={fileInputRef}
+                    textAreaRef={textAreaRef}
+                    selectionStart={selectionStart}
+                    selectionEnd={selectionEnd}
+                    text={text}
+                    setText={setText}
+                    isExtended={isExtended}
+                    hasFiles={files.length > 0}
+                    withBorderAndShadow={true}
+                    filesArea={<Files files={files} setFiles={setFiles} />}
+                    onFileChange={handleFileChange}
+                    model={model}
+                    setModel={setModel}
+                    sendMessage={sendMessage}
+                    sendMessageWithEvent={sendMessageWithEvent}
+                    isSendDisabled={(text.trim() === "" && files.length === 0) || pendingChat !== null || isLoading}
+                    pendingChat={pendingChat}
+                />
+            </>
+        )
     )
 }
 

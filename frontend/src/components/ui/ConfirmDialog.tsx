@@ -7,6 +7,7 @@ export default function ConfirmDialog({
     description,
     confirmText = "Confirm",
     cancelText = "Cancel",
+    isDestructive = true,
     onConfirm
 }: {
     trigger: ReactNode
@@ -14,6 +15,9 @@ export default function ConfirmDialog({
     description?: string
     confirmText?: string
     cancelText?: string
+    onConfirmClassName?: string
+    onCancelClassName?: string
+    isDestructive?: boolean
     onConfirm: () => void
 }) {
     return (
@@ -27,7 +31,7 @@ export default function ConfirmDialog({
                 <AlertDialog.Content
                     className="
                         fixed w-[90vw] max-w-sm p-6 rounded-xl shadow-xl top-1/2 left-1/2
-                        -translate-x-1/2 -translate-y-1/2 bg-gray-700 light:bg-gray-200
+                        -translate-x-1/2 -translate-y-1/2 bg-gray-800 light:bg-gray-200
                     "
                 >
                     <AlertDialog.Title className="text-lg font-semibold text-white light:text-black">
@@ -41,13 +45,21 @@ export default function ConfirmDialog({
 
                     <div className="mt-4 flex justify-end gap-2">
                         <AlertDialog.Cancel
-                            className="px-4 py-2 rounded cursor-pointer bg-gray-500 light:bg-gray-400 hover:bg-gray-400 light:hover:bg-gray-300"
+                            className="
+                                px-4 py-2 rounded cursor-pointer text-white light:text-black
+                                bg-gray-700 hover:bg-gray-500/50 light:bg-gray-300
+                            "
                         >
                             {cancelText}
                         </AlertDialog.Cancel>
 
                         <AlertDialog.Action
-                            className="px-4 py-2 rounded cursor-pointer bg-red-600 hover:bg-red-500 text-white"
+                            className={"px-4 py-2 rounded cursor-pointer " +
+                                (isDestructive ?
+                                    "text-white bg-red-600 hover:bg-red-700" :
+                                    "text-white light:text-black bg-gray-700 hover:bg-gray-500/50 light:bg-gray-300"
+                                )
+                            }
                             onClick={onConfirm}
                         >
                             {confirmText}

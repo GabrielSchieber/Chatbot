@@ -102,6 +102,30 @@ test("user can rename chats", async ({ page }) => {
     await expect(renamedChatLink).toBeVisible()
 })
 
+test("user can archive chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+
+    const chat = user.chats[0]
+    const link = page.getByRole("link", { name: chat.title, exact: true })
+
+    await link.hover()
+    await link.getByRole("button").click()
+    await page.getByRole("menuitem", { name: "Archive", exact: true }).click()
+
+    await expect(link).not.toBeVisible()
+
+    await page.reload()
+
+    await expect(link).not.toBeVisible()
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("button", { name: "Manage", exact: true }).click()
+
+    await expect(page.getByRole("heading", { name: "Archived Chats", exact: true })).toBeVisible()
+    await expect(page.getByRole("link", { name: chat.title, exact: true })).toBeVisible()
+})
+
 test("user can delete chats", async ({ page }) => {
     const user = await signupAndLogin(page, true)
 

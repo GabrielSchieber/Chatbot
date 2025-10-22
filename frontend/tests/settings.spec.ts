@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test"
-import { signupAndLogin } from "./utils"
+import { Page, expect, test } from "@playwright/test"
+import { Chat, User, signupAndLogin } from "./utils"
 
 test("user can open settings", async ({ page }) => {
     const user = await signupAndLogin(page)
@@ -90,6 +90,82 @@ test("user can change theme", async ({ page }) => {
     expect(await html.getAttribute("class")).toEqual("Light")
 })
 
+test("user can archive all chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+    await archiveOrUnarchiveAllChats(page, user, "archive")
+})
+
+test("user can unarchive all chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+    await archiveOrUnarchiveAllChats(page, user, "archive")
+    await page.reload()
+    await archiveOrUnarchiveAllChats(page, user, "unarchive")
+})
+
+test("user can unarchive specific chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+    await archiveOrUnarchiveAllChats(page, user, "archive")
+
+    const archivedEntries = page.getByTestId("archived-chat-entry")
+    const historyEntries = page.getByTestId("history-entry")
+
+    async function unarchive(index: number, chat: Chat, expectedArchivedEntries: number, expectedHistoryEntries: number) {
+        await expect(archivedEntries).toHaveCount(expectedArchivedEntries)
+        await expect(historyEntries).toHaveCount(expectedHistoryEntries)
+
+        await expect(archivedEntries.nth(index)).toHaveText(chat.title)
+        expect(await archivedEntries.nth(index).getAttribute("href")).toEqual(`/chat/${chat.uuid}`)
+
+        await archivedEntries.nth(index).getByRole("button").first().click()
+
+        await expect(historyEntries).toHaveCount(expectedHistoryEntries + 1)
+        await expect(archivedEntries).toHaveCount(expectedArchivedEntries - 1)
+    }
+
+    await unarchive(0, user.chats[0], user.chats.length, 0)
+    await unarchive(3, user.chats[4], user.chats.length - 1, 1)
+    await unarchive(7, user.chats[9], user.chats.length - 2, 2)
+    await unarchive(2, user.chats[3], user.chats.length - 3, 3)
+})
+
+test("user can delete specific archived chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+    await archiveOrUnarchiveAllChats(page, user, "archive")
+
+    const archivedEntries = page.getByTestId("archived-chat-entry")
+    const historyEntries = page.getByTestId("history-entry")
+
+    async function deleteArchivedChat(index: number, chat: Chat, expectedArchivedEntries: number) {
+        await expect(archivedEntries).toHaveCount(expectedArchivedEntries)
+        await expect(historyEntries).toHaveCount(0)
+
+        await expect(archivedEntries.nth(index)).toHaveText(chat.title)
+        expect(await archivedEntries.nth(index).getAttribute("href")).toEqual(`/chat/${chat.uuid}`)
+
+        await archivedEntries.nth(index).getByRole("button").last().click()
+
+        const heading = page.getByRole("heading", { name: "Delete Archived Chat", exact: true })
+        await expect(heading).toBeVisible()
+
+        const dialog = heading.locator("..")
+        await expect(dialog.getByText(`Are you sure you want to delete "${chat.title}"? This action cannot be undone.`, { exact: true })).toBeVisible()
+
+        await expect(dialog.getByRole("button")).toHaveCount(2)
+        await expect(dialog.getByRole("button").first()).toHaveText("Cancel")
+        await dialog.getByRole("button", { name: "Delete", exact: true }).click()
+
+        await expect(heading).not.toBeVisible()
+
+        await expect(historyEntries).toHaveCount(0)
+        await expect(archivedEntries).toHaveCount(expectedArchivedEntries - 1)
+    }
+
+    await deleteArchivedChat(0, user.chats[0], user.chats.length)
+    await deleteArchivedChat(3, user.chats[4], user.chats.length - 1)
+    await deleteArchivedChat(7, user.chats[9], user.chats.length - 2)
+    await deleteArchivedChat(2, user.chats[3], user.chats.length - 3)
+})
+
 test("user can delete account", async ({ page }) => {
     const user = await signupAndLogin(page)
 
@@ -122,3 +198,31 @@ test("user can log out", async ({ page }) => {
     await page.goto("/")
     await page.waitForURL("/login")
 })
+
+async function archiveOrUnarchiveAllChats(page: Page, user: User, action: "archive" | "unarchive") {
+    const label = action === "archive" ? "Archive" : "Unarchive"
+
+    const initialHistoryCount = action === "archive" ? user.chats.length : 0
+    const initialArchivedCount = action === "archive" ? 0 : user.chats.length
+
+    await expect(page.getByTestId("history-entry")).toHaveCount(initialHistoryCount)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("button", { name: "Manage", exact: true }).click()
+    await expect(page.getByTestId("archived-chat-entry")).toHaveCount(initialArchivedCount)
+
+    await expect(page.getByRole("heading", { name: "Archived Chats", exact: true })).toBeVisible()
+    if (initialArchivedCount === 0) {
+        await expect(page.getByText("You don't have any archived chats.", { exact: true })).toBeVisible()
+    }
+
+    await page.getByRole("button", { name: `${label} all`, exact: true }).click()
+    await expect(page.getByRole("heading", { name: `${label} all chats`, exact: true })).toBeVisible()
+    await expect(page.getByText(`Are you sure you want to ${label.toLowerCase()} all of your chats?`, { exact: true })).toBeVisible()
+
+    await page.getByRole("button", { name: label + " all", exact: true }).click()
+
+    await expect(page.getByTestId("history-entry")).toHaveCount(initialArchivedCount)
+    await expect(page.getByTestId("archived-chat-entry")).toHaveCount(initialHistoryCount)
+}

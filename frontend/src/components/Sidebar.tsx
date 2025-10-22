@@ -18,6 +18,20 @@ export default function Sidebar() {
 
     const itemClassNames = "flex gap-1 p-2 items-center rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"
 
+    function getFullHeightOfDiv(div: HTMLDivElement) {
+        const style = getComputedStyle(div)
+        return parseInt(style.paddingBottom) + div.offsetHeight + parseInt(style.paddingTop)
+    }
+
+    function getChatsLimit() {
+        if (ref.current && topButtonsRef.current && settingsButtonRef.current) {
+            const visibleHeight = getFullHeightOfDiv(ref.current) - getFullHeightOfDiv(topButtonsRef.current) - getFullHeightOfDiv(settingsButtonRef.current)
+            return Math.max(Math.round(visibleHeight / 30), 1)
+        } else {
+            return 1
+        }
+    }
+
     return (
         <div
             ref={ref}
@@ -50,10 +64,10 @@ export default function Sidebar() {
                 <Search isSidebarOpen={isOpen} itemClassNames={itemClassNames} />
             </div>
 
-            {isOpen && <History sidebarRef={ref} topButtonsRef={topButtonsRef} settingsButtonRef={settingsButtonRef} />}
+            {isOpen && <History sidebarRef={ref} getSidebarChatsLimit={getChatsLimit} />}
 
             <div ref={settingsButtonRef} className={`flex flex-col sticky bottom-0 p-2 bg-gray-800 light:bg-gray-200 ${isOpen && "border-t"}`}>
-                <Settings isSidebarOpen={isOpen} itemClassNames={itemClassNames} />
+                <Settings isSidebarOpen={isOpen} itemClassNames={itemClassNames} getSidebarChatsLimit={getChatsLimit} />
             </div>
         </div>
     )

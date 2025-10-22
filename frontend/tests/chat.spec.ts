@@ -184,13 +184,13 @@ async function sendExampleChat(page: Page, index: number, messagePairs?: number)
         i += 2
 
         if (index === 0) {
-            const chatsInHistory = await page.locator("div.history-entries > *").count()
+            const chatsInHistory = await page.getByTestId("history-entry").count()
             const chatAnchor = page.getByRole("link", { name: `Chat ${chatsInHistory}` })
             await expect(chatAnchor).toBeVisible()
             await chatAnchor.focus()
             await chatAnchor.locator("button").click()
             await page.getByText("Rename").click()
-            const input = page.locator("div[class~='history-entries']").locator("input")
+            const input = page.getByTestId("rename-input")
             await input.fill(chat.title)
             await input.press("Enter")
         }

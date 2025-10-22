@@ -202,6 +202,24 @@ class DeleteAccount(APIView):
         except Exception:
             return Response({"error": "Failed to delete account."}, status.HTTP_400_BAD_REQUEST)
 
+class GetChat(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request):
+        chat_uuid = request.GET.get("chat_uuid")
+
+        if chat_uuid is None:
+            return Response("'chat_uuid' field must be provided.")
+
+        try:
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+        except Chat.DoesNotExist:
+            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+        except Exception:
+            return Response(status = status.HTTP_400_BAD_REQUEST)
+
+        return Response(ChatSerializer(chat, many = False).data, status.HTTP_200_OK)
+
 class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -211,11 +229,13 @@ class GetChats(APIView):
             chats = Chat.objects.filter(user = request.user).exclude(pending_message = None).order_by("created_at")
             serializer = ChatSerializer(chats, many = True)
             return Response(serializer.data, status.HTTP_200_OK)
+        
+        archived = bool(request.GET.get("archived", False))
 
         limit = int(request.GET.get("limit", 20))
         offset = int(request.GET.get("offset", 0))
 
-        chats = Chat.objects.filter(user = request.user).order_by("-created_at")
+        chats = Chat.objects.filter(user = request.user, is_archived = archived).order_by("-created_at")
         total = chats.count()
         chats = chats[offset:offset + limit]
 
@@ -230,9 +250,9 @@ class SearchChats(APIView):
         limit = int(request.GET.get("limit", 20))
         offset = int(request.GET.get("offset", 0))
 
-        matched_messages = Message.objects.filter(text__icontains = search).order_by("created_at")
+        matched_messages = Message.objects.filter(chat__user = request.user, chat__is_archived = False, text__icontains = search).order_by("created_at")
 
-        chats = Chat.objects.filter(user = request.user).filter(
+        chats = Chat.objects.filter(user = request.user, is_archived = False).filter(
             Q(title__icontains = search) | Q(messages__text__icontains = search)
         ).distinct().order_by("-created_at")
 
@@ -287,6 +307,27 @@ class RenameChat(APIView):
         except Exception:
             return Response(status = status.HTTP_400_BAD_REQUEST)
 
+class ArchiveOrUnarchiveChat(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request: Request):
+        try:
+            chat_uuid = request.data.get("chat_uuid")
+            value = bool(request.data.get("value"))
+
+            if chat_uuid is None or value is None:
+                return Response({"error": "Both 'chat_uuid' and 'value' fields must be provided."}, status.HTTP_400_BAD_REQUEST)
+
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            stop_pending_chat(chat)
+            chat.is_archived = value
+            chat.save()
+            return Response(status = status.HTTP_200_OK)
+        except Chat.DoesNotExist:
+            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+        except Exception:
+            return Response(status = status.HTTP_400_BAD_REQUEST)
+
 class DeleteChat(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -303,6 +344,21 @@ class DeleteChat(APIView):
             return Response(status = status.HTTP_204_NO_CONTENT)
         except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+        except Exception:
+            return Response(status = status.HTTP_400_BAD_REQUEST)
+
+class ArchiveOrUnarchiveChats(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request: Request):
+        try:
+            value = request.data.get("value")
+            if value is None:
+                return Response({"error": "'value' field must be provided."}, status.HTTP_400_BAD_REQUEST)
+
+            stop_user_pending_chats(request.user)
+            Chat.objects.filter(user = request.user).update(is_archived = value)
+            return Response(status = status.HTTP_200_OK)
         except Exception:
             return Response(status = status.HTTP_400_BAD_REQUEST)
 

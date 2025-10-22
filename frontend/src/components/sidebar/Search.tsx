@@ -70,15 +70,15 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
     }, [hasMore, isLoading])
 
     return (
-        <Dialog.Root>
-            <Dialog.Trigger
-                className={itemClassNames}
-                onClick={_ => {
+        <Dialog.Root
+            onOpenChange={open => {
+                if (open) {
                     setOffset(0)
                     loadEntries(true)
-                }}
-                data-testid="search-chats"
-            >
+                }
+            }}
+        >
+            <Dialog.Trigger className={itemClassNames} data-testid="search-chats">
                 <MagnifyingGlassIcon className="size-5" /> {isSidebarOpen && "Search Chats"}
             </Dialog.Trigger>
 
