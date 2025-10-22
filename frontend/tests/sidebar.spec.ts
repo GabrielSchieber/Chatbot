@@ -86,8 +86,7 @@ test("user can rename chats", async ({ page }) => {
     await firstChatLink.hover()
     await firstChatLink.getByRole("button").click()
 
-    const renameButton = page.getByRole("menuitem", { name: "Rename", exact: true })
-    await renameButton.click()
+    await page.getByRole("menuitem", { name: "Rename", exact: true }).click()
 
     const renameInput = page.locator("input[type='text']")
     await expect(renameInput).toBeVisible()
@@ -98,7 +97,29 @@ test("user can rename chats", async ({ page }) => {
     const renamedChatLink = page.getByRole("link", { name: "Renamed Chat", exact: true })
     await expect(renamedChatLink).toBeVisible()
 
-    page.reload()
+    await page.reload()
 
     await expect(renamedChatLink).toBeVisible()
+})
+
+test("user can delete chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+
+    const firstChat = user.chats[0]
+    const firstChatLink = page.getByRole("link", { name: firstChat.title, exact: true })
+
+    await firstChatLink.hover()
+    await firstChatLink.getByRole("button").click()
+    await page.getByRole("menuitem", { name: "Delete", exact: true }).click()
+
+    await expect(page.getByRole("heading", { name: "Delete Chat", exact: true })).toBeVisible()
+    await expect(page.getByText(`Are you sure you want to delete "${firstChat.title}"? This action cannot be undone.`, { exact: true })).toBeVisible()
+    await expect(page.getByRole("button", { name: "Cancel", exact: true })).toBeVisible()
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+
+    await expect(firstChatLink).not.toBeVisible()
+
+    await page.reload()
+
+    await expect(firstChatLink).not.toBeVisible()
 })
