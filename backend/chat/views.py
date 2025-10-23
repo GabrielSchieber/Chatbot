@@ -261,28 +261,11 @@ class SearchChats(APIView):
 
         chats = chats.prefetch_related(Prefetch("messages", queryset = matched_messages, to_attr = "matched_messages"))
 
-        def format_month(month: int) -> str:
-            months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-            return months[month - 1]
-
-        def get_last_modified_at(chat: Chat):
-            message = Message.objects.filter(chat = chat).order_by("-last_modified_at").first()
-            if message is not None:
-                last_modified_at = timezone.now() - message.created_at
-                if last_modified_at < timedelta(days = 1):
-                    return "Today"
-                elif last_modified_at < timedelta(days = 2):
-                    return "Yesterday"
-                else:
-                    return f"{message.created_at.day} {format_month(message.created_at.month)}"
-            else:
-                return ""
-
         entries = [{
             "uuid": chat.uuid,
             "title": chat.title,
             "matches": [m.text for m in getattr(chat, "matched_messages", [])],
-            "last_modified_at": get_last_modified_at(chat)
+            "last_modified_at": chat.last_modified_at()
         } for chat in chats]
 
         return Response({"entries": entries, "has_more": offset + limit < total}, status.HTTP_200_OK)

@@ -114,6 +114,24 @@ class Chat(models.Model):
     is_archived = models.BooleanField(default = False)
     created_at = models.DateTimeField(auto_now_add = True)
 
+    def last_modified_at(self):
+        def format_month(month: int) -> str:
+            return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][month - 1]
+
+        message: Message | None = self.messages.order_by("-last_modified_at").first()
+
+        if message:
+            last_modified_at = timezone.now() - message.last_modified_at
+        else:
+            last_modified_at = timezone.now() - self.created_at
+
+        if last_modified_at < timedelta(days = 1):
+            return "Today"
+        elif last_modified_at < timedelta(days = 2):
+            return "Yesterday"
+        else:
+            return f"{message.created_at.day} {format_month(message.created_at.month)}"
+
     def __str__(self):
         title = self.title if len(self.title) <= 20 else f"{self.title[:20]}..."
         return f"Chat of {self.user} titled {title} created at {self.created_at}"
