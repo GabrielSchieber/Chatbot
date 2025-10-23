@@ -21,7 +21,7 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
 
     const [hoveringEntryIndex, setHoveringEntryIndex] = useState(-1)
 
-    function loadEntries(reset: boolean) {
+    async function loadEntries(reset: boolean) {
         if (isLoading) return
         setIsLoading(true)
 
@@ -29,35 +29,22 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
         const currentSearch = search
         const limit = Math.round((window.innerHeight / 2) / 50)
 
-        searchChats(currentSearch, reset ? 0 : offset, limit).then(response => {
-            if (requestIDRef.current !== localRequestID) {
-                setIsLoading(false)
-                return
-            }
-
-            if (response.ok) {
-                response.json().then((data: { entries: SearchEntry[], has_more: boolean }) => {
-                    if (requestIDRef.current !== localRequestID) {
-                        setIsLoading(false)
-                        return
-                    }
-
-                    setEntries(previous => {
-                        const combined = reset ? data.entries : [...previous, ...data.entries]
-                        const unique = Array.from(new Map(combined.map(c => [c.uuid, c])).values())
-                        return unique
-                    })
-                    setOffset(previous => (reset ? limit : previous + limit))
-                    setHasMore(data.has_more)
-                    setIsLoading(false)
+        const response = await searchChats(currentSearch, reset ? 0 : offset, limit)
+        if (requestIDRef.current === localRequestID && response.ok) {
+            const data: { entries: SearchEntry[], has_more: boolean } = await response.json()
+            if (requestIDRef.current === localRequestID) {
+                setEntries(previous => {
+                    const combined = reset ? data.entries : [...previous, ...data.entries]
+                    const unique = Array.from(new Map(combined.map(c => [c.uuid, c])).values())
+                    return unique
                 })
-            } else {
+                setOffset(previous => (reset ? limit : previous + limit))
+                setHasMore(data.has_more)
                 setIsLoading(false)
             }
-        }).catch(() => {
-            if (requestIDRef.current !== localRequestID) return
-            setIsLoading(false)
-        })
+        }
+
+        setIsLoading(false)
     }
 
     useEffect(() => {
