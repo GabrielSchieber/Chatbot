@@ -21,12 +21,12 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
 
     const [hoveringEntryIndex, setHoveringEntryIndex] = useState(-1)
 
-    async function loadEntries(reset: boolean) {
+    async function loadEntries(reset: boolean, searchOverride?: string) {
         if (isLoading) return
         setIsLoading(true)
 
         const localRequestID = ++requestIDRef.current
-        const currentSearch = search
+        const currentSearch = searchOverride ?? search
         const limit = Math.round((window.innerHeight / 2) / 50)
 
         const response = await searchChats(currentSearch, reset ? 0 : offset, limit)
@@ -121,6 +121,15 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
                             placeholder="Search chats..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
+                            onKeyDown={e => {
+                                if (e.key === "Enter") {
+                                    requestIDRef.current++
+                                    setOffset(0)
+                                    setEntries([])
+                                    setHasMore(true)
+                                    loadEntries(true, (e as any).currentTarget.value)
+                                }
+                            }}
                             autoFocus
                         />
                         <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">

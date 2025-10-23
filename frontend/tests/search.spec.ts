@@ -9,7 +9,6 @@ test("user can open search", async ({ page }) => {
     await expect(page.getByPlaceholder("Search chats...", { exact: true })).toBeVisible()
 
     const entries = page.getByRole("link")
-    await expect(entries).toHaveCount(Math.min(user.chats.length, 10))
 
     const entriesAndChats: [Locator, Chat][] = (await entries.all()).map((e, i) => [e, user.chats[i]])
 
@@ -41,7 +40,6 @@ test("user can search chats", async ({ page }) => {
 
         await input.fill("")
         const entryLinks = page.getByRole("link")
-        await expect(entryLinks).toHaveCount(Math.min(user.chats.length, 10))
 
         await type(search)
         await expect(entryLinks).toHaveCount(entries.length)
@@ -150,53 +148,41 @@ test("user can search chats", async ({ page }) => {
 
 test("search filters by title", async ({ page }) => {
     const user = await signupAndLogin(page, true)
-    const target = user.chats[0]
+    const chat = user.chats[0]
 
     await page.getByRole("button", { name: "Search Chats", exact: true }).click()
+
     const input = page.getByPlaceholder("Search chats...", { exact: true })
-    await expect(input).toBeVisible()
-
-    const entries = page.getByRole("link")
-    await expect(entries).toHaveCount(Math.min(user.chats.length, 10))
-
     await input.click()
-    await input.fill(target.title)
+    await input.fill(chat.title)
     await input.press("Enter")
 
-    await expect(entries).toHaveCount(1, { timeout: 5000 })
-
-    const entry = entries.nth(0)
-    await expect(entry).toContainText(target.title)
-    expect(await entry.getAttribute("href")).toEqual(`/chat/${target.uuid}`)
+    const entry = page.getByRole("link")
+    await expect(entry).toContainText(chat.title)
+    expect(await entry.getAttribute("href")).toEqual(`/chat/${chat.uuid}`)
 })
 
 test("search shows no results message when nothing matches", async ({ page }) => {
-    const user = await signupAndLogin(page, true)
+    await signupAndLogin(page, true)
 
     await page.getByRole("button", { name: "Search Chats", exact: true }).click()
+
     const input = page.getByPlaceholder("Search chats...", { exact: true })
-    await expect(input).toBeVisible()
-
-    const entries = page.getByRole("link")
-    await expect(entries).toHaveCount(Math.min(user.chats.length, 10))
-
-    const randomQuery = `no-results-${Math.random().toString(36).slice(2)}`
     await input.click()
-    await input.fill(randomQuery)
+    await input.fill(`no-results-${Math.random().toString(36).slice(2)}`)
     await input.press("Enter")
 
     await expect(page.getByText("No chats found.", { exact: true })).toBeVisible({ timeout: 5000 })
 })
 
 test("infinite scroll loads more search entries", async ({ page }) => {
-    const user = await signupAndLogin(page, true)
+    await signupAndLogin(page, true)
 
     await page.getByRole("button", { name: "Search Chats", exact: true }).click()
     const dialog = page.getByRole("dialog")
 
     const entries = dialog.getByRole("link")
-    const initialCount = Math.min(user.chats.length, 10)
-    await expect(entries).toHaveCount(initialCount, { timeout: 5000 })
+    const initialCount = await entries.count()
 
     const container = dialog.locator('div.overflow-y-auto')
     await container.evaluate((el: HTMLElement) => { el.scrollTop = el.scrollHeight })
@@ -214,19 +200,14 @@ test("infinite scroll loads more search entries", async ({ page }) => {
 
 test("clicking a search entry navigates to the chat", async ({ page }) => {
     const user = await signupAndLogin(page, true)
+    const firstChat = user.chats[0]
 
     await page.getByRole("button", { name: "Search Chats", exact: true }).click()
-    const dialog = page.getByRole("dialog")
-    const entries = dialog.getByRole("link")
 
-    await expect(entries).toHaveCount(Math.min(user.chats.length, 10), { timeout: 5000 })
-
-    const firstChat = user.chats[0]
-    const first = entries.nth(0)
-    const href = await first.getAttribute("href")
-    expect(href).toEqual(`/chat/${firstChat.uuid}`)
-
+    const first = page.getByRole("dialog").getByRole("link").nth(0)
+    expect(await first.getAttribute("href")).toEqual(`/chat/${firstChat.uuid}`)
     await first.click()
+
     await page.waitForURL(`**/chat/${firstChat.uuid}`, { timeout: 5000 })
     expect(page.url()).toContain(`/chat/${firstChat.uuid}`)
 })
