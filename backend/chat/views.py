@@ -351,10 +351,9 @@ class DeleteChat(APIView):
             return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_404_NOT_FOUND)
 
         chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
-        if chat is not None:
+        if chat is None:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
-        chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
         stop_pending_chat(chat)
         chat.delete()
         return Response(status = status.HTTP_204_NO_CONTENT)
