@@ -10,6 +10,7 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
     const entriesRef = useRef<HTMLDivElement | null>(null)
     const loaderRef = useRef<HTMLDivElement | null>(null)
     const isLoadingRef = useRef(false)
+    const requestIDRef = useRef(0)
 
     const [search, setSearch] = useState("")
     const [entries, setEntries] = useState<SearchEntry[]>([])
@@ -25,12 +26,24 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
     function loadEntries(reset: boolean) {
         if (isLoadingRef.current || isLoading) return
 
+        const localRequestId = ++requestIDRef.current
         isLoadingRef.current = true
         setIsLoading(true)
+        const currentSearch = search
 
-        searchChats(search, reset ? 0 : offset, limit).then(response => {
+        searchChats(currentSearch, reset ? 0 : offset, limit).then(response => {
+            if (requestIDRef.current !== localRequestId) {
+                setIsLoading(false)
+                isLoadingRef.current = false
+                return
+            }
             if (response.ok) {
                 response.json().then((data: { entries: SearchEntry[], has_more: boolean }) => {
+                    if (requestIDRef.current !== localRequestId) {
+                        setIsLoading(false)
+                        isLoadingRef.current = false
+                        return
+                    }
                     setEntries(previous => {
                         const combined = reset ? data.entries : [...previous, ...data.entries]
                         const unique = Array.from(new Map(combined.map(c => [c.uuid, c])).values())
@@ -41,7 +54,14 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
                     setIsLoading(false)
                     isLoadingRef.current = false
                 })
+            } else {
+                setIsLoading(false)
+                isLoadingRef.current = false
             }
+        }).catch(() => {
+            if (requestIDRef.current !== localRequestId) return
+            setIsLoading(false)
+            isLoadingRef.current = false
         })
     }
 
@@ -55,7 +75,10 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
 
     useEffect(() => {
         if (!hasChats) return
+        requestIDRef.current++
         setOffset(0)
+        setEntries([])
+        setHasMore(true)
         loadEntries(true)
         if (entriesRef.current) {
             entriesRef.current.scrollTop = 0
@@ -77,7 +100,10 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
         <Dialog.Root
             onOpenChange={open => {
                 if (open) {
+                    requestIDRef.current++
                     setOffset(0)
+                    setEntries([])
+                    setHasMore(true)
                     loadEntries(true)
                 }
             }}
@@ -156,7 +182,7 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
                             </>
                         )}
 
-                        {hasMore && <div ref={loaderRef} className="h-6"></div>}
+                        {hasMore && !isLoading && <div ref={loaderRef} className="h-6"></div>}
                     </div>
                 </Dialog.Content>
             </Dialog.Portal>
