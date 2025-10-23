@@ -8,8 +8,7 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
     type SearchEntry = { uuid: string, title: string, matches: string[], last_modified_at: string }
 
     const entriesRef = useRef<HTMLDivElement | null>(null)
-    const loaderRef = useRef<HTMLDivElement | null>(null)
-    const isLoadingRef = useRef(false)
+    const sentinelRef = useRef<HTMLDivElement | null>(null)
     const requestIDRef = useRef(0)
 
     const [search, setSearch] = useState("")
@@ -19,31 +18,30 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
     const [offset, setOffset] = useState(0)
     const [hasMore, setHasMore] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
+
     const [hoveringEntryIndex, setHoveringEntryIndex] = useState(-1)
 
-    const limit = 10
-
     function loadEntries(reset: boolean) {
-        if (isLoadingRef.current || isLoading) return
-
-        const localRequestId = ++requestIDRef.current
-        isLoadingRef.current = true
+        if (isLoading) return
         setIsLoading(true)
+
+        const localRequestID = ++requestIDRef.current
         const currentSearch = search
+        const limit = Math.round((window.innerHeight / 2) / 50)
 
         searchChats(currentSearch, reset ? 0 : offset, limit).then(response => {
-            if (requestIDRef.current !== localRequestId) {
+            if (requestIDRef.current !== localRequestID) {
                 setIsLoading(false)
-                isLoadingRef.current = false
                 return
             }
+
             if (response.ok) {
                 response.json().then((data: { entries: SearchEntry[], has_more: boolean }) => {
-                    if (requestIDRef.current !== localRequestId) {
+                    if (requestIDRef.current !== localRequestID) {
                         setIsLoading(false)
-                        isLoadingRef.current = false
                         return
                     }
+
                     setEntries(previous => {
                         const combined = reset ? data.entries : [...previous, ...data.entries]
                         const unique = Array.from(new Map(combined.map(c => [c.uuid, c])).values())
@@ -52,16 +50,13 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
                     setOffset(previous => (reset ? limit : previous + limit))
                     setHasMore(data.has_more)
                     setIsLoading(false)
-                    isLoadingRef.current = false
                 })
             } else {
                 setIsLoading(false)
-                isLoadingRef.current = false
             }
         }).catch(() => {
-            if (requestIDRef.current !== localRequestId) return
+            if (requestIDRef.current !== localRequestID) return
             setIsLoading(false)
-            isLoadingRef.current = false
         })
     }
 
@@ -86,13 +81,21 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
     }, [search])
 
     useEffect(() => {
-        const observer = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && hasMore && !isLoading) {
-                loadEntries(false)
-            }
-        })
+        if (!sentinelRef.current || !entriesRef.current) return
 
-        if (loaderRef.current) observer.observe(loaderRef.current)
+        const observer = new IntersectionObserver(
+            entries => {
+                if (entries[0].isIntersecting) {
+                    loadEntries(false)
+                }
+            },
+            {
+                root: entriesRef.current,
+                rootMargin: "50px"
+            }
+        )
+
+        observer.observe(sentinelRef.current)
         return () => observer.disconnect()
     }, [hasMore, isLoading])
 
@@ -182,7 +185,7 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
                             </>
                         )}
 
-                        {hasMore && !isLoading && <div ref={loaderRef} className="h-6"></div>}
+                        {hasMore && !isLoading && <div ref={sentinelRef} className="h-6"></div>}
                     </div>
                 </Dialog.Content>
             </Dialog.Portal>
