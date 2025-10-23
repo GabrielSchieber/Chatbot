@@ -1,12 +1,20 @@
+from django.conf import settings
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
-class SignupRateThrottle(AnonRateThrottle):
+class DebugBypassThrottleMixin:
+    """Mixin that disables throttling when DEBUG = True."""
+    def allow_request(self, request, view):
+        if settings.DEBUG:
+            return True  # Always allow requests in DEBUG mode
+        return super().allow_request(request, view)
+
+class SignupRateThrottle(DebugBypassThrottleMixin, AnonRateThrottle):
     scope = "signup"
 
-class RefreshRateThrottle(AnonRateThrottle):
+class RefreshRateThrottle(DebugBypassThrottleMixin, AnonRateThrottle):
     scope = "refresh"
 
-class IPEmailRateThrottle(AnonRateThrottle):
+class IPEmailRateThrottle(DebugBypassThrottleMixin, AnonRateThrottle):
     """
     Rate limits based on both the client IP and a user-supplied email (if present).
     Prevents brute-forcing many accounts from one IP.
@@ -30,7 +38,7 @@ class IPEmailRateThrottle(AnonRateThrottle):
             # fallback to IP-only throttling
             return f"throttle_{self.scope}_{ident}"
 
-class PerUserRateThrottle(UserRateThrottle):
+class PerUserRateThrottle(DebugBypassThrottleMixin, UserRateThrottle):
     scope = "per_user"
 
     def allow_request(self, request, view):
@@ -39,7 +47,7 @@ class PerUserRateThrottle(UserRateThrottle):
             return True
         return super().allow_request(request, view)
 
-class PerUserIPRateThrottle(UserRateThrottle):
+class PerUserIPRateThrottle(DebugBypassThrottleMixin, UserRateThrottle):
     """
     Throttle keyed by both user ID and IP address.
     Prevents users from bypassing limits using multiple IPs or sessions.
