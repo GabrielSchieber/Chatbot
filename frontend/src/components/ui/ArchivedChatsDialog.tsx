@@ -5,11 +5,13 @@ import { useEffect, useRef, useState } from "react"
 import { TooltipButton } from "./Buttons"
 import ConfirmDialog from "./ConfirmDialog"
 import { useChat } from "../../context/ChatProvider"
+import { useNotify } from "../../context/NotificationProvider"
 import { archiveChats, deleteChat, getArchivedChats, getChats, unarchiveChat, unarchiveChats } from "../../utils/api"
 import type { Chat } from "../../types"
 
 export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: { triggerClassName: string, getSidebarChatsLimit: () => number }) {
     const { setCurrentChat, chats, setChats } = useChat()
+    const notify = useNotify()
 
     const entriesRef = useRef<HTMLDivElement | null>(null)
     const sentinelRef = useRef<HTMLDivElement | null>(null)
@@ -45,56 +47,66 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
         isLoadingRef.current = false
     }
 
-    function handleArchiveAll() {
-        if (chats.length > 0) {
-            setHasArchivedChats(true)
+    async function handleArchiveAll() {
+        const response = await archiveChats()
+        if (response.ok) {
+            if (chats.length > 0) {
+                setHasArchivedChats(true)
+            }
+            await loadEntries(true)
+            setChats([])
+            setCurrentChat(previous => previous ? { ...previous, is_archived: true } : previous)
+        } else {
+            notify("Archival of all chats was not possible. Please try again later.", "error")
         }
-        archiveChats().then(response => {
-            if (response.ok) {
-                loadEntries(true)
-            }
-        })
-        setChats([])
-        setCurrentChat(previous => previous ? { ...previous, is_archived: true } : previous)
     }
 
-    function handleUnarchiveAll() {
-        setHasArchivedChats(false)
-        unarchiveChats().then(response => {
-            if (response.ok) {
-                getChats(0, getSidebarChatsLimit()).then(response => {
-                    if (response.ok) {
-                        response.json().then(data => {
-                            setChats(data.chats)
-                            setEntries([])
-                        })
-                    }
-                })
-            }
-        })
-        setCurrentChat(previous => previous ? { ...previous, is_archived: false } : previous)
-    }
-
-    function handleUnarchive(chat: Chat) {
-        if (entries.length === 1) {
+    async function handleUnarchiveAll() {
+        const response = await unarchiveChats()
+        if (response.ok) {
             setHasArchivedChats(false)
+            setEntries([])
+            setCurrentChat(previous => previous ? { ...previous, is_archived: false } : previous)
+
+            const response = await getChats(0, getSidebarChatsLimit())
+            if (response.ok) {
+                const data = await response.json()
+                setChats(data.chats)
+            }
+        } else {
+            notify("Unarchival of all chats was not possible. Please try again later.", "error")
         }
-        unarchiveChat(chat.uuid)
-        setEntries(previous => previous.filter(p => p.uuid !== chat.uuid))
-        setChats(previous => [...previous, chat].sort((a, b) => a.index - b.index))
-        setCurrentChat(previous => previous?.uuid === chat.uuid ? { ...previous, is_archived: false } : previous)
     }
 
-    function handleDelete(uuid: string) {
-        deleteChat(uuid).then(response => {
-            if (response.ok) {
-                setChats(previous => previous.filter(c => c.uuid !== uuid))
-                setEntries(previous => previous.filter(c => c.uuid !== uuid))
-                if (location.pathname.includes(uuid)) {
-                    location.href = "/"
-                }
+    async function handleUnarchive(chat: Chat) {
+        const response = await unarchiveChat(chat.uuid)
+        if (response.ok) {
+            if (entries.length === 1) {
+                setHasArchivedChats(false)
             }
-        })
+            setEntries(previous => previous.filter(p => p.uuid !== chat.uuid))
+            setChats(previous => [...previous, chat].sort((a, b) => a.index - b.index))
+            setCurrentChat(previous => previous?.uuid === chat.uuid ? { ...previous, is_archived: false } : previous)
+        } else {
+            notify(`Unarchival of "${chat.title}" was not possible. Please try again later.`, "error")
+        }
+    }
+
+    async function handleDelete(chat: Chat) {
+        const response = await deleteChat(chat.uuid)
+        if (response.ok) {
+            if (entries.length === 1) {
+                setHasArchivedChats(false)
+            }
+            setEntries(previous => previous.filter(c => c.uuid !== chat.uuid))
+            setChats(previous => previous.filter(c => c.uuid !== chat.uuid))
+
+            if (location.pathname.includes(chat.uuid)) {
+                location.href = "/"
+            }
+        } else {
+            notify(`Deletion of "${chat.title}" was not possible. Please try again later.`, "error")
+        }
     }
 
     useEffect(() => {
@@ -110,9 +122,9 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
         if (!sentinelRef.current || !entriesRef.current) return
 
         const observer = new IntersectionObserver(
-            entries => {
+            async entries => {
                 if (entries[0].isIntersecting) {
-                    loadEntries(false)
+                    await loadEntries(false)
                 }
             },
             {
@@ -127,12 +139,12 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
 
     return (
         <Dialog.Root
-            onOpenChange={open => {
+            onOpenChange={async open => {
                 if (open) {
                     setOffset(0)
                     setEntries([])
                     setHasMore(true)
-                    loadEntries(true)
+                    await loadEntries(true)
                 }
             }}>
             <Dialog.Trigger className={triggerClassName}>
@@ -206,7 +218,7 @@ function ArchiveOrUnarchiveDialog({ action, onConfirm }: { action: "archive" | "
     )
 }
 
-function Entry({ chat, handleUnarchive, handleDelete }: { chat: Chat, handleUnarchive: (chat: Chat) => void, handleDelete: (uuid: string) => void }) {
+function Entry({ chat, handleUnarchive, handleDelete }: { chat: Chat, handleUnarchive: (chat: Chat) => void, handleDelete: (chat: Chat) => void }) {
     return (
         <a
             className="flex gap-2 px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-700 light:hover:bg-gray-300"
@@ -240,7 +252,7 @@ function Entry({ chat, handleUnarchive, handleDelete }: { chat: Chat, handleUnar
                             description={`Are you sure you want to delete "${chat.title}"? This action cannot be undone.`}
                             confirmText="Delete"
                             cancelText="Cancel"
-                            onConfirm={() => handleDelete(chat.uuid)}
+                            onConfirm={() => handleDelete(chat)}
                         />
                     }
                     onClick={e => e.preventDefault()}
