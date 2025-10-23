@@ -9,13 +9,14 @@ import { archiveChats, deleteChat, getArchivedChats, getChats, unarchiveChat, un
 import type { Chat } from "../../types"
 
 export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: { triggerClassName: string, getSidebarChatsLimit: () => number }) {
-    const { setCurrentChat, setChats } = useChat()
+    const { setCurrentChat, chats, setChats } = useChat()
 
     const entriesRef = useRef<HTMLDivElement | null>(null)
     const sentinelRef = useRef<HTMLDivElement | null>(null)
     const isLoadingRef = useRef(false)
 
     const [entries, setEntries] = useState<Chat[]>([])
+    const [hasArchivedChats, setHasArchivedChats] = useState(false)
 
     const [offset, setOffset] = useState(0)
     const [hasMore, setHasMore] = useState(true)
@@ -45,6 +46,9 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
     }
 
     function handleArchiveAll() {
+        if (chats.length > 0) {
+            setHasArchivedChats(true)
+        }
         archiveChats().then(response => {
             if (response.ok) {
                 loadEntries(true)
@@ -55,6 +59,7 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
     }
 
     function handleUnarchiveAll() {
+        setHasArchivedChats(false)
         unarchiveChats().then(response => {
             if (response.ok) {
                 getChats(0, getSidebarChatsLimit()).then(response => {
@@ -71,6 +76,9 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
     }
 
     function handleUnarchive(chat: Chat) {
+        if (entries.length === 1) {
+            setHasArchivedChats(false)
+        }
         unarchiveChat(chat.uuid)
         setEntries(previous => previous.filter(p => p.uuid !== chat.uuid))
         setChats(previous => [...previous, chat].sort((a, b) => a.index - b.index))
@@ -88,6 +96,15 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
             }
         })
     }
+
+    useEffect(() => {
+        getArchivedChats(0, 1).then(async response => {
+            if (response.ok) {
+                const data = await response.json()
+                setHasArchivedChats(data.chats.length > 0)
+            }
+        })
+    }, [])
 
     useEffect(() => {
         if (!sentinelRef.current || !entriesRef.current) return
@@ -148,65 +165,21 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
                         className="flex flex-col w-full max-h-[50vh] gap-3 p-3 overflow-y-auto"
                         style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
                     >
-                        {isLoading && entries.length === 0 ? (
-                            <p className="text-gray-400 light:text-gray-600 px-3 py-2">Loading...</p>
-                        ) : entries.length === 0 ? (
+                        {!hasArchivedChats ? (
                             <p className="text-gray-400 light:text-gray-600 px-3 py-2">You don't have any archived chats.</p>
+                        ) : isLoading && entries.length === 0 ? (
+                            <p className="text-gray-400 light:text-gray-600 px-3 py-2">Loading...</p>
                         ) : (
-                            <>
-                                {entries.map(c => (
-                                    <a
-                                        key={c.uuid}
-                                        className="flex gap-2 px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-700 light:hover:bg-gray-300"
-                                        href={`/chat/${c.uuid}`}
-                                        data-testid="archived-chat-entry"
-                                    >
-                                        {c.title}
-                                        <div className="flex gap-1 items-center">
-                                            <TooltipButton
-                                                trigger={
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
-                                                        <rect width="20" height="5" x="2" y="3" rx="1" />
-                                                        <path d="M4 8v11a2 2 0 0 0 2 2h2" />
-                                                        <path d="M20 8v11a2 2 0 0 1-2 2h-2" />
-                                                        <path d="m9 15 3-3 3 3" />
-                                                        <path d="M12 12v9" />
-                                                    </svg>}
-                                                tooltip="Unarchive"
-                                                className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-500/40"
-                                                onClick={e => {
-                                                    e.preventDefault()
-                                                    handleUnarchive(c)
-                                                }}
-                                                tooltipSize="xs"
-                                            />
-                                            <TooltipButton
-                                                trigger={
-                                                    <ConfirmDialog
-                                                        trigger={<Cross1Icon className="size-4" />}
-                                                        title="Delete Archived Chat"
-                                                        description={`Are you sure you want to delete "${c.title}"? This action cannot be undone.`}
-                                                        confirmText="Delete"
-                                                        cancelText="Cancel"
-                                                        onConfirm={() => handleDelete(c.uuid)}
-                                                    />
-                                                }
-                                                onClick={e => e.preventDefault()}
-                                                tooltip="Delete"
-                                                className="p-1.5 rounded-3xl text-red-500 cursor-pointer hover:bg-red-500/20"
-                                                tooltipSize="xs"
-                                            />
-                                        </div>
-                                    </a>
-                                ))}
-
-                                {isLoading && entries.length > 0 && (
-                                    <p className="text-gray-400 light:text-gray-600 px-3 py-2">Loading...</p>
-                                )}
-                            </>
+                            entries.map(c => (
+                                <Entry key={c.uuid} chat={c} handleUnarchive={handleUnarchive} handleDelete={handleDelete} />
+                            ))
                         )}
 
-                        {hasMore && <div ref={sentinelRef} className="h-6"></div>}
+                        {isLoading && entries.length > 0 && (
+                            <p className="text-gray-400 light:text-gray-600 px-3 py-2">Loading...</p>
+                        )}
+
+                        {hasMore && !isLoading && <div ref={sentinelRef} className="h-6"></div>}
                     </div>
                 </Dialog.Content>
             </Dialog.Portal>
@@ -230,5 +203,52 @@ function ArchiveOrUnarchiveDialog({ action, onConfirm }: { action: "archive" | "
             onConfirm={onConfirm}
             isDestructive={false}
         />
+    )
+}
+
+function Entry({ chat, handleUnarchive, handleDelete }: { chat: Chat, handleUnarchive: (chat: Chat) => void, handleDelete: (uuid: string) => void }) {
+    return (
+        <a
+            className="flex gap-2 px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-700 light:hover:bg-gray-300"
+            href={`/chat/${chat.uuid}`}
+            data-testid="archived-chat-entry"
+        >
+            {chat.title}
+            <div className="flex gap-1 items-center">
+                <TooltipButton
+                    trigger={
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                            <rect width="20" height="5" x="2" y="3" rx="1" />
+                            <path d="M4 8v11a2 2 0 0 0 2 2h2" />
+                            <path d="M20 8v11a2 2 0 0 1-2 2h-2" />
+                            <path d="m9 15 3-3 3 3" />
+                            <path d="M12 12v9" />
+                        </svg>}
+                    tooltip="Unarchive"
+                    className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-500/40"
+                    onClick={e => {
+                        e.preventDefault()
+                        handleUnarchive(chat)
+                    }}
+                    tooltipSize="xs"
+                />
+                <TooltipButton
+                    trigger={
+                        <ConfirmDialog
+                            trigger={<Cross1Icon className="size-4" />}
+                            title="Delete Archived Chat"
+                            description={`Are you sure you want to delete "${chat.title}"? This action cannot be undone.`}
+                            confirmText="Delete"
+                            cancelText="Cancel"
+                            onConfirm={() => handleDelete(chat.uuid)}
+                        />
+                    }
+                    onClick={e => e.preventDefault()}
+                    tooltip="Delete"
+                    className="p-1.5 rounded-3xl text-red-500 cursor-pointer hover:bg-red-500/20"
+                    tooltipSize="xs"
+                />
+            </div>
+        </a>
     )
 }
