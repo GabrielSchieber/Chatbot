@@ -92,19 +92,19 @@ test("user can change theme", async ({ page }) => {
 
 test("user can archive all chats", async ({ page }) => {
     const user = await signupAndLogin(page, true)
-    await archiveOrUnarchiveAllChats(page, user, "archive")
+    await archiveOrUnarchiveAllChats(page, user, "archive", false)
 })
 
 test("user can unarchive all chats", async ({ page }) => {
     const user = await signupAndLogin(page, true)
-    await archiveOrUnarchiveAllChats(page, user, "archive")
+    await archiveOrUnarchiveAllChats(page, user, "archive", false)
     await page.reload()
-    await archiveOrUnarchiveAllChats(page, user, "unarchive")
+    await archiveOrUnarchiveAllChats(page, user, "unarchive", true)
 })
 
 test("user can unarchive specific chats", async ({ page }) => {
     const user = await signupAndLogin(page, true)
-    await archiveOrUnarchiveAllChats(page, user, "archive")
+    await archiveOrUnarchiveAllChats(page, user, "archive", false)
 
     const archivedEntries = page.getByTestId("archived-chat-entry")
     const historyEntries = page.getByTestId("history-entry")
@@ -130,7 +130,7 @@ test("user can unarchive specific chats", async ({ page }) => {
 
 test("user can delete specific archived chats", async ({ page }) => {
     const user = await signupAndLogin(page, true)
-    await archiveOrUnarchiveAllChats(page, user, "archive")
+    await archiveOrUnarchiveAllChats(page, user, "archive", false)
 
     const archivedEntries = page.getByTestId("archived-chat-entry")
     const historyEntries = page.getByTestId("history-entry")
@@ -199,7 +199,7 @@ test("user can log out", async ({ page }) => {
     await page.waitForURL("/login")
 })
 
-async function archiveOrUnarchiveAllChats(page: Page, user: User, action: "archive" | "unarchive") {
+async function archiveOrUnarchiveAllChats(page: Page, user: User, action: "archive" | "unarchive", shouldHaveChats: boolean) {
     const label = action === "archive" ? "Archive" : "Unarchive"
 
     const initialHistoryCount = action === "archive" ? user.chats.length : 0
@@ -210,6 +210,13 @@ async function archiveOrUnarchiveAllChats(page: Page, user: User, action: "archi
     await page.getByText("Settings").click()
 
     await page.getByRole("button", { name: "Manage", exact: true }).click()
+
+    if (shouldHaveChats) {
+        await expect(page.getByText("You don't have any archived chats.")).not.toBeVisible()
+        await expect(page.getByText("Loading...")).not.toBeVisible()
+    }
+    await page.getByTestId("archived-chats").evaluate((element: HTMLElement) => element.scrollTop = element.scrollHeight)
+
     await expect(page.getByTestId("archived-chat-entry")).toHaveCount(initialArchivedCount)
 
     await expect(page.getByRole("heading", { name: "Archived Chats", exact: true })).toBeVisible()
@@ -222,6 +229,10 @@ async function archiveOrUnarchiveAllChats(page: Page, user: User, action: "archi
     await expect(page.getByText(`Are you sure you want to ${label.toLowerCase()} all of your chats?`, { exact: true })).toBeVisible()
 
     await page.getByRole("button", { name: label + " all", exact: true }).click()
+
+    await expect(page.getByText("You don't have any archived chats.")).not.toBeVisible()
+    await expect(page.getByText("Loading...")).not.toBeVisible()
+    await page.getByTestId("archived-chats").evaluate((element: HTMLElement) => element.scrollTop = element.scrollHeight)
 
     await expect(page.getByTestId("history-entry")).toHaveCount(initialArchivedCount)
     await expect(page.getByTestId("archived-chat-entry")).toHaveCount(initialHistoryCount)

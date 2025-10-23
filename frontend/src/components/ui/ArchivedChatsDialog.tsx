@@ -176,6 +176,7 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
                         ref={entriesRef}
                         className="flex flex-col w-full max-h-[50vh] gap-3 p-3 overflow-y-auto"
                         style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
+                        data-testid="archived-chats"
                     >
                         {!hasArchivedChats ? (
                             <p className="text-gray-400 light:text-gray-600 px-3 py-2">You don't have any archived chats.</p>
