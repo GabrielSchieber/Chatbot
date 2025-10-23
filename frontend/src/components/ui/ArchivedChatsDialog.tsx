@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import { TooltipButton } from "./Buttons"
 import ConfirmDialog from "./ConfirmDialog"
 import { useChat } from "../../context/ChatProvider"
-import { archiveOrUnarchiveChat, archiveOrUnarchiveChats, deleteChat, getArchivedChats, getChats } from "../../utils/api"
+import { archiveChats, deleteChat, getArchivedChats, getChats, unarchiveChat, unarchiveChats } from "../../utils/api"
 import type { Chat } from "../../types"
 
 export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: { triggerClassName: string, getSidebarChatsLimit: () => number }) {
@@ -46,7 +46,7 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
     }
 
     function handleArchiveAll() {
-        archiveOrUnarchiveChats(true).then(response => {
+        archiveChats().then(response => {
             if (response.ok) {
                 loadEntries(true)
             }
@@ -56,7 +56,7 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
     }
 
     function handleUnarchiveAll() {
-        archiveOrUnarchiveChats(false).then(response => {
+        unarchiveChats().then(response => {
             if (response.ok) {
                 getChats(0, getSidebarChatsLimit()).then(response => {
                     if (response.ok) {
@@ -72,7 +72,7 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
     }
 
     function handleUnarchive(chat: Chat) {
-        archiveOrUnarchiveChat(chat.uuid, false)
+        unarchiveChat(chat.uuid)
         setEntries(previous => previous.filter(p => p.uuid !== chat.uuid))
         setChats(previous => [...previous, chat].sort((a, b) => a.index - b.index))
         setCurrentChat(previous => previous?.uuid === chat.uuid ? { ...previous, is_archived: false } : previous)

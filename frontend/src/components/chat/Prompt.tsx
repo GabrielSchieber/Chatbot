@@ -7,7 +7,7 @@ import Attachments from "../ui/Attachments"
 import Composer from "../ui/Composer"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
-import { archiveOrUnarchiveChat, newMessage } from "../../utils/api"
+import { newMessage, unarchiveChat } from "../../utils/api"
 import { getFileSize } from "../../utils/file"
 import type { Model } from "../../types"
 
@@ -130,7 +130,7 @@ export default function Prompt() {
                     "
                     onClick={_ => {
                         if (chatUUID) {
-                            archiveOrUnarchiveChat(chatUUID, false)
+                            unarchiveChat(chatUUID)
                             setChats(previous => [...previous, currentChat].sort((a, b) => a.index - b.index))
                             setCurrentChat(previous => previous ? { ...previous, is_archived: false } : previous)
                         }

@@ -291,42 +291,55 @@ class RenameChat(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request: Request):
-        try:
-            chat_uuid = request.data.get("chat_uuid")
-            new_title = request.data.get("new_title")
+        chat_uuid = request.data.get("chat_uuid")
+        new_title = request.data.get("new_title")
 
-            if chat_uuid is None or new_title is None:
-                return Response({"error": "Both 'chat_uuid' and 'new_title' fields must be provided."}, status.HTTP_400_BAD_REQUEST)
+        if chat_uuid is None or new_title is None:
+            return Response({"error": "Both 'chat_uuid' and 'new_title' fields must be provided."}, status.HTTP_400_BAD_REQUEST)
 
-            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            chat.title = new_title
-            chat.save()
-            return Response(status = status.HTTP_200_OK)
-        except Chat.DoesNotExist:
+        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
+        if chat is None:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-        except Exception:
-            return Response(status = status.HTTP_400_BAD_REQUEST)
 
-class ArchiveOrUnarchiveChat(APIView):
+        chat.title = new_title
+        chat.save()
+        return Response(status = status.HTTP_200_OK)
+
+class ArchiveChat(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request: Request):
-        try:
-            chat_uuid = request.data.get("chat_uuid")
-            value = bool(request.data.get("value"))
+        chat_uuid = request.data.get("chat_uuid")
 
-            if chat_uuid is None or value is None:
-                return Response({"error": "Both 'chat_uuid' and 'value' fields must be provided."}, status.HTTP_400_BAD_REQUEST)
+        if chat_uuid is None:
+            return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
 
-            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            stop_pending_chat(chat)
-            chat.is_archived = value
-            chat.save()
-            return Response(status = status.HTTP_200_OK)
-        except Chat.DoesNotExist:
+        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
+        if chat is None:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-        except Exception:
-            return Response(status = status.HTTP_400_BAD_REQUEST)
+
+        stop_pending_chat(chat)
+        chat.is_archived = True
+        chat.save()
+        return Response(status = status.HTTP_200_OK)
+
+class UnarchiveChat(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request: Request):
+        chat_uuid = request.data.get("chat_uuid")
+
+        if chat_uuid is None:
+            return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
+
+        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
+        if chat is None:
+            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+
+        stop_pending_chat(chat)
+        chat.is_archived = False
+        chat.save()
+        return Response(status = status.HTTP_200_OK)
 
 class DeleteChat(APIView):
     permission_classes = [IsAuthenticated]
@@ -337,41 +350,38 @@ class DeleteChat(APIView):
         if chat_uuid is None:
             return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_404_NOT_FOUND)
 
-        try:
-            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            stop_pending_chat(chat)
-            chat.delete()
-            return Response(status = status.HTTP_204_NO_CONTENT)
-        except Chat.DoesNotExist:
+        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
+        if chat is not None:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-        except Exception:
-            return Response(status = status.HTTP_400_BAD_REQUEST)
 
-class ArchiveOrUnarchiveChats(APIView):
+        chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+        stop_pending_chat(chat)
+        chat.delete()
+        return Response(status = status.HTTP_204_NO_CONTENT)
+
+class ArchiveChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request: Request):
-        try:
-            value = request.data.get("value")
-            if value is None:
-                return Response({"error": "'value' field must be provided."}, status.HTTP_400_BAD_REQUEST)
+        stop_user_pending_chats(request.user)
+        Chat.objects.filter(user = request.user).update(is_archived = True)
+        return Response(status = status.HTTP_200_OK)
 
-            stop_user_pending_chats(request.user)
-            Chat.objects.filter(user = request.user).update(is_archived = value)
-            return Response(status = status.HTTP_200_OK)
-        except Exception:
-            return Response(status = status.HTTP_400_BAD_REQUEST)
+class UnarchiveChats(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request: Request):
+        stop_user_pending_chats(request.user)
+        Chat.objects.filter(user = request.user).update(is_archived = False)
+        return Response(status = status.HTTP_200_OK)
 
 class DeleteChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request: Request):
-        try:
-            stop_user_pending_chats(request.user)
-            Chat.objects.filter(user = request.user).delete()
-            return Response(status = status.HTTP_204_NO_CONTENT)
-        except Exception:
-            return Response(status = status.HTTP_400_BAD_REQUEST)
+        stop_user_pending_chats(request.user)
+        Chat.objects.filter(user = request.user).delete()
+        return Response(status = status.HTTP_204_NO_CONTENT)
 
 class StopPendingChats(APIView):
     permission_classes = [IsAuthenticated]

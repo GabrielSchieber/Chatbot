@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type RefObject } from "react"
 
 import ConfirmDialog from "../ui/ConfirmDialog"
 import { useChat } from "../../context/ChatProvider"
-import { archiveOrUnarchiveChat, deleteChat, getChats, renameChat } from "../../utils/api"
+import { archiveChat, deleteChat, getChats, renameChat } from "../../utils/api"
 import type { Chat } from "../../types"
 
 export default function History({ sidebarRef, getSidebarChatsLimit }: { sidebarRef: RefObject<HTMLDivElement | null>, getSidebarChatsLimit: () => number }) {
@@ -76,7 +76,7 @@ export default function History({ sidebarRef, getSidebarChatsLimit }: { sidebarR
     }
 
     function handleArchiveChat(uuid: string) {
-        archiveOrUnarchiveChat(uuid, true)
+        archiveChat(uuid)
         setChats(previous => previous.filter(p => p.uuid !== uuid))
         setCurrentChat(previous => previous?.uuid === uuid ? { ...previous, is_archived: true } : previous)
         setHoveringEntryIndex(-1)

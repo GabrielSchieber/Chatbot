@@ -92,11 +92,19 @@ export function renameChat(chatUUID: string, newTitle: string) {
     })
 }
 
-export function archiveOrUnarchiveChat(chatUUID: string, value: boolean) {
-    return apiFetch("archive-or-unarchive-chat/", {
+export function archiveChat(chatUUID: string) {
+    return apiFetch("archive-chat/", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_uuid: chatUUID, value })
+        body: JSON.stringify({ chat_uuid: chatUUID })
+    })
+}
+
+export function unarchiveChat(chatUUID: string) {
+    return apiFetch("unarchive-chat/", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_uuid: chatUUID })
     })
 }
 
@@ -108,12 +116,12 @@ export function deleteChat(chatUUID: string) {
     })
 }
 
-export function archiveOrUnarchiveChats(value: boolean) {
-    return apiFetch("archive-or-unarchive-chats/", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value })
-    })
+export function archiveChats() {
+    return apiFetch("archive-chats/", { method: "PATCH" })
+}
+
+export function unarchiveChats() {
+    return apiFetch("unarchive-chats/", { method: "PATCH" })
 }
 
 export function deleteChats() {
