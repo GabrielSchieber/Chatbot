@@ -7,6 +7,7 @@ import { getChats, searchChats } from "../../utils/api"
 export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
     type SearchEntry = { uuid: string, title: string, matches: string[], last_modified_at: string }
 
+    const entriesRef = useRef<HTMLDivElement | null>(null)
     const loaderRef = useRef<HTMLDivElement | null>(null)
     const isLoadingRef = useRef(false)
 
@@ -21,7 +22,7 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
 
     const limit = 10
 
-    function loadEntries(reset = false) {
+    function loadEntries(reset: boolean) {
         if (isLoadingRef.current || isLoading) return
 
         isLoadingRef.current = true
@@ -56,6 +57,9 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
         if (!hasChats) return
         setOffset(0)
         loadEntries(true)
+        if (entriesRef.current) {
+            entriesRef.current.scrollTop = 0
+        }
     }, [search])
 
     useEffect(() => {
@@ -109,6 +113,7 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
                     </div>
 
                     <div
+                        ref={entriesRef}
                         className="flex flex-col w-full max-h-[50vh] gap-3 p-3 overflow-y-auto"
                         style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
                     >
