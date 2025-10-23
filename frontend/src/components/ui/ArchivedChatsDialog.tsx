@@ -11,7 +11,8 @@ import type { Chat } from "../../types"
 export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: { triggerClassName: string, getSidebarChatsLimit: () => number }) {
     const { setCurrentChat, setChats } = useChat()
 
-    const loaderRef = useRef<HTMLDivElement | null>(null)
+    const entriesRef = useRef<HTMLDivElement | null>(null)
+    const sentinelRef = useRef<HTMLDivElement | null>(null)
     const isLoadingRef = useRef(false)
 
     const [entries, setEntries] = useState<Chat[]>([])
@@ -20,29 +21,27 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
     const [hasMore, setHasMore] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
 
-    const limit = 15
-
-    function loadEntries(reset: boolean) {
+    async function loadEntries(reset: boolean) {
         if (isLoadingRef.current || isLoading) return
-
         isLoadingRef.current = true
         setIsLoading(true)
 
-        getArchivedChats(reset ? 0 : offset, limit).then(response => {
-            if (response.ok) {
-                response.json().then((data: { chats: Chat[], has_more: boolean }) => {
-                    setEntries(previous => {
-                        const combined = reset ? data.chats : [...previous, ...data.chats]
-                        const unique = Array.from(new Map(combined.map(c => [c.uuid, c])).values())
-                        return unique
-                    })
-                    setOffset(previous => (reset ? limit : previous + limit))
-                    setHasMore(data.has_more)
-                    setIsLoading(false)
-                    isLoadingRef.current = false
-                })
-            }
-        })
+        const limit = Math.round((window.innerHeight / 2) / 30)
+
+        const response = await getArchivedChats(reset ? 0 : offset, limit)
+        if (response.ok) {
+            const data: { chats: Chat[], has_more: boolean } = await response.json()
+            setEntries(previous => {
+                const combined = reset ? data.chats : [...previous, ...data.chats]
+                const unique = Array.from(new Map(combined.map(c => [c.uuid, c])).values())
+                return unique
+            })
+            setOffset(previous => (reset ? limit : previous + limit))
+            setHasMore(data.has_more)
+        }
+
+        setIsLoading(false)
+        isLoadingRef.current = false
     }
 
     function handleArchiveAll() {
@@ -91,18 +90,34 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
     }
 
     useEffect(() => {
-        const observer = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && hasMore && !isLoading) {
-                loadEntries(false)
-            }
-        })
+        if (!sentinelRef.current || !entriesRef.current) return
 
-        if (loaderRef.current) observer.observe(loaderRef.current)
+        const observer = new IntersectionObserver(
+            entries => {
+                if (entries[0].isIntersecting) {
+                    loadEntries(false)
+                }
+            },
+            {
+                root: entriesRef.current,
+                rootMargin: "50px"
+            }
+        )
+
+        observer.observe(sentinelRef.current)
         return () => observer.disconnect()
     }, [hasMore, isLoading])
 
     return (
-        <Dialog.Root onOpenChange={o => o && loadEntries(true)}>
+        <Dialog.Root
+            onOpenChange={open => {
+                if (open) {
+                    setOffset(0)
+                    setEntries([])
+                    setHasMore(true)
+                    loadEntries(true)
+                }
+            }}>
             <Dialog.Trigger className={triggerClassName}>
                 Manage
             </Dialog.Trigger>
@@ -129,6 +144,7 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
                     </div>
 
                     <div
+                        ref={entriesRef}
                         className="flex flex-col w-full max-h-[50vh] gap-3 p-3 overflow-y-auto"
                         style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
                     >
@@ -190,7 +206,7 @@ export function ArchivedChatsDialog({ triggerClassName, getSidebarChatsLimit }: 
                             </>
                         )}
 
-                        {hasMore && <div ref={loaderRef} className="h-6"></div>}
+                        {hasMore && <div ref={sentinelRef} className="h-6"></div>}
                     </div>
                 </Dialog.Content>
             </Dialog.Portal>
