@@ -217,7 +217,7 @@ export default function History({ sidebarRef, getSidebarChatsLimit }: { sidebarR
                 <p className="text-center text-gray-400">Loading ...</p>
             ) : chats.length === 0 ? (
                 <p className="text-center text-gray-400">You don't have any chats</p>
-            ) : !hasMore && (
+            ) : (!hasMore && chats.length > getSidebarChatsLimit()) && (
                 <p className="text-center text-gray-400">No more chats</p>
             )}
         </div>
