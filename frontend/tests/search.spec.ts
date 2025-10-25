@@ -48,7 +48,7 @@ test("user can search chats", async ({ page }) => {
             const entryLink = entryLinks.nth(i)
             expect(await entryLink.getAttribute("href")).toEqual(`/chat/${entry.chat.uuid}`)
 
-            const entryContent = entryLink.locator("div")
+            const entryContent = entryLink.locator("div").last()
             await expect(entryContent).toBeVisible()
             await expect(entryContent).toContainText("")
             await expect(entryContent.locator("p")).toHaveText(entry.chat.title)
@@ -172,7 +172,7 @@ test("search shows no results message when nothing matches", async ({ page }) =>
     await input.fill(`no-results-${Math.random().toString(36).slice(2)}`)
     await input.press("Enter")
 
-    await expect(page.getByText("No chats found.", { exact: true })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText("No chats were found.", { exact: true })).toBeVisible({ timeout: 5000 })
 })
 
 test("infinite scroll loads more search entries", async ({ page }) => {
