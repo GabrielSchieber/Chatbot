@@ -8,68 +8,75 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
     const entriesRef = useRef<HTMLDivElement | null>(null)
     const sentinelRef = useRef<HTMLDivElement | null>(null)
     const requestIDRef = useRef(0)
+    const loadingCountRef = useRef(0)
 
     const [search, setSearch] = useState("")
     const [entries, setEntries] = useState<SearchEntry[]>([])
     const [hasChats, setHasChats] = useState(false)
 
-    const [offset, setOffset] = useState(0)
     const [hasMore, setHasMore] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
 
     async function loadEntries(reset: boolean, searchOverride?: string) {
-        if (isLoading) return
+        if (!reset && loadingCountRef.current > 0) return
+
+        loadingCountRef.current++
         setIsLoading(true)
 
-        const localRequestID = ++requestIDRef.current
+        const localRequestID = requestIDRef.current
         const currentSearch = searchOverride ?? search
+        const offset = reset ? 0 : entries.length
         const limit = Math.round((window.innerHeight / 2) / 50)
 
-        const response = await searchChats(currentSearch, reset ? 0 : offset, limit)
-        if (requestIDRef.current === localRequestID && response.ok) {
-            const data: { entries: SearchEntry[], has_more: boolean } = await response.json()
-            if (requestIDRef.current === localRequestID) {
-                setEntries(previous => {
-                    const combined = reset ? data.entries : [...previous, ...data.entries]
-                    const unique = Array.from(new Map(combined.map(c => [c.uuid, c])).values())
-                    return unique
-                })
-                setOffset(previous => (reset ? limit : previous + limit))
-                setHasMore(data.has_more)
-                setIsLoading(false)
+        try {
+            const response = await searchChats(currentSearch, offset, limit)
+            if (requestIDRef.current === localRequestID && response.ok) {
+                const data: { entries: SearchEntry[], has_more: boolean } = await response.json()
+                if (requestIDRef.current === localRequestID) {
+                    setEntries(previous => reset ? data.entries : [...previous, ...data.entries])
+                    setHasMore(data.has_more)
+                }
             }
+        } finally {
+            loadingCountRef.current = Math.max(0, loadingCountRef.current - 1)
+            setIsLoading(loadingCountRef.current > 0)
         }
-
-        setIsLoading(false)
     }
 
     useEffect(() => {
-        getChats(0, 1).then(response => {
+        getChats(0, 1).then(async response => {
             if (response.ok) {
-                response.json().then(data => setHasChats(data.chats.length > 0))
+                const data = await response.json()
+                setHasChats(data.chats.length > 0)
             }
         })
     }, [])
 
     useEffect(() => {
         if (!hasChats) return
-        requestIDRef.current++
-        setOffset(0)
-        setEntries([])
-        setHasMore(true)
-        loadEntries(true)
-        if (entriesRef.current) {
-            entriesRef.current.scrollTop = 0
-        }
-    }, [search])
+
+        const query = search
+        const debounceMs = 300
+        const timer = window.setTimeout(() => {
+            requestIDRef.current++
+            setEntries([])
+            setHasMore(true)
+            void loadEntries(true, query)
+            if (entriesRef.current) {
+                entriesRef.current.scrollTop = 0
+            }
+        }, debounceMs)
+
+        return () => window.clearTimeout(timer)
+    }, [search, hasChats])
 
     useEffect(() => {
         if (!sentinelRef.current || !entriesRef.current) return
 
         const observer = new IntersectionObserver(
-            entries => {
+            async entries => {
                 if (entries[0].isIntersecting) {
-                    loadEntries(false)
+                    await loadEntries(false)
                 }
             },
             {
@@ -84,13 +91,12 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
 
     return (
         <Dialog.Root
-            onOpenChange={open => {
+            onOpenChange={async open => {
                 if (open) {
                     requestIDRef.current++
-                    setOffset(0)
                     setEntries([])
                     setHasMore(true)
-                    loadEntries(true)
+                    await loadEntries(true)
                 }
             }}
         >
@@ -117,13 +123,12 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
                             placeholder="Search chats..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            onKeyDown={e => {
+                            onKeyDown={async e => {
                                 if (e.key === "Enter") {
                                     requestIDRef.current++
-                                    setOffset(0)
                                     setEntries([])
                                     setHasMore(true)
-                                    loadEntries(true, (e as any).currentTarget.value)
+                                    await loadEntries(true, (e as any).currentTarget.value)
                                 }
                             }}
                             autoFocus
@@ -163,7 +168,10 @@ function Entry({ entry }: { entry: SearchEntry }) {
 
     return (
         <a
-            className="flex w-full gap-3 px-3 py-2 items-center justify-between rounded-lg border border-gray-600 light:border-gray-400 hover:bg-gray-600/10 light:hover:bg-gray-300/10"
+            className="
+                flex w-full gap-3 px-3 py-2 items-center justify-between rounded-lg border
+                border-gray-600 light:border-gray-400 hover:bg-gray-600/10 light:hover:bg-gray-300/10
+            "
             href={`/chat/${entry.uuid}`}
             onMouseEnter={_ => setIsHovering(true)}
             onMouseLeave={_ => setIsHovering(false)}
