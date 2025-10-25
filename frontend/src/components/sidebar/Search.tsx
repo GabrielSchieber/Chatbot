@@ -5,8 +5,6 @@ import { useEffect, useRef, useState } from "react"
 import { getChats, searchChats } from "../../utils/api"
 
 export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
-    type SearchEntry = { uuid: string, title: string, matches: string[], last_modified_at: string }
-
     const entriesRef = useRef<HTMLDivElement | null>(null)
     const sentinelRef = useRef<HTMLDivElement | null>(null)
     const requestIDRef = useRef(0)
@@ -18,8 +16,6 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
     const [offset, setOffset] = useState(0)
     const [hasMore, setHasMore] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
-
-    const [hoveringEntryIndex, setHoveringEntryIndex] = useState(-1)
 
     async function loadEntries(reset: boolean, searchOverride?: string) {
         if (isLoading) return
@@ -78,7 +74,7 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
             },
             {
                 root: entriesRef.current,
-                rootMargin: "50px"
+                rootMargin: "10px"
             }
         )
 
@@ -139,52 +135,57 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
 
                     <div
                         ref={entriesRef}
-                        className="flex flex-col w-full max-h-[50vh] gap-3 p-3 overflow-y-auto"
+                        className="flex flex-col w-full max-h-[50vh] gap-2 px-2 py-4 items-center overflow-x-hidden overflow-y-auto"
                         style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
                     >
-                        {!hasChats ? (
-                            <p className="text-gray-400 light:text-gray-600 px-3 py-2">You have no chats to search.</p>
-                        ) : isLoading && entries.length === 0 ? (
-                            <p className="text-gray-400 light:text-gray-600 px-3 py-2">Loading...</p>
+                        {entries.map(e => <Entry key={e.uuid} entry={e} />)}
+
+                        {isLoading ? (
+                            <p className="text-gray-400 light:text-gray-600">Loading...</p>
+                        ) : !hasChats ? (
+                            <p className="text-gray-400 light:text-gray-600">You have no chats to search.</p>
                         ) : entries.length === 0 ? (
-                            <p className="text-gray-400 light:text-gray-600 px-3 py-2">No chats found.</p>
-                        ) : (
-                            <>
-                                {entries.map((e, i) => (
-                                    <a
-                                        key={e.uuid}
-                                        className="flex gap-5 px-2 py-1 items-center rounded-lg hover:bg-gray-600 light:hover:bg-gray-300"
-                                        href={`/chat/${e.uuid}`}
-                                        onMouseEnter={_ => setHoveringEntryIndex(i)}
-                                        onMouseLeave={_ => setHoveringEntryIndex(-1)}
-                                    >
-                                        <ChatBubbleIcon className="size-10" />
-                                        <div className="flex flex-1 flex-col justify-between">
-                                            <p>{e.title}</p>
-                                            {e.matches.length > 0 && (
-                                                <ul>
-                                                    {e.matches.slice(0, 10).map((m, i) => (
-                                                        <li key={i}>{m.slice(0, 100)}...</li>
-                                                    ))}
-                                                </ul>
-                                            )}
-                                        </div>
-                                        <p className={`text-nowrap transition ${hoveringEntryIndex !== i && "opacity-0"}`}>
-                                            {e.last_modified_at}
-                                        </p>
-                                    </a>
-                                ))}
-
-                                {isLoading && entries.length > 0 && (
-                                    <p className="text-gray-400 light:text-gray-600 px-3 py-2">Loading...</p>
-                                )}
-                            </>
+                            <p className="text-gray-400 light:text-gray-600">No chats were found.</p>
+                        ) : hasMore && (
+                            <div ref={sentinelRef} className="h-1"></div>
                         )}
-
-                        {hasMore && !isLoading && <div ref={sentinelRef} className="h-6"></div>}
                     </div>
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
+    )
+}
+
+type SearchEntry = { uuid: string, title: string, matches: string[], last_modified_at: string }
+
+function Entry({ entry }: { entry: SearchEntry }) {
+    const [isHovering, setIsHovering] = useState(false)
+
+    return (
+        <a
+            className="flex w-full gap-3 px-3 py-2 items-center justify-between rounded-lg border border-gray-600 light:border-gray-400 hover:bg-gray-600/10 light:hover:bg-gray-300/10"
+            href={`/chat/${entry.uuid}`}
+            onMouseEnter={_ => setIsHovering(true)}
+            onMouseLeave={_ => setIsHovering(false)}
+        >
+            <div className="flex flex-col gap-3 items-center">
+                <ChatBubbleIcon className="size-8" />
+                <p className={`text-sm text-nowrap transition ${!isHovering && "opacity-0"}`}>
+                    {entry.last_modified_at}
+                </p>
+            </div>
+
+            <div className="flex flex-1 flex-col gap-2 justify-between">
+                <p className="px-2 rounded text-lg font-semibold bg-gray-600/50 light:bg-gray-300/50">{entry.title}</p>
+
+                {entry.matches.length > 0 &&
+                    <ul className="flex flex-col gap-1">
+                        {entry.matches.slice(0, 5).map((m, i) =>
+                            <li key={i} className="px-2 rounded bg-gray-600/30 light:bg-gray-300/30">{m.slice(0, 100)}...</li>
+                        )}
+                    </ul>
+                }
+            </div>
+        </a>
     )
 }
