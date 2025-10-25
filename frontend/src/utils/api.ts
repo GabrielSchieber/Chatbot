@@ -68,16 +68,8 @@ export function getChat(chatUUID: string) {
     return apiFetch(`get-chat/?chat_uuid=${chatUUID}`)
 }
 
-export function getChats(offset = 0, limit = 20) {
-    return apiFetch(`get-chats/?offset=${offset}&limit=${limit}`)
-}
-
-export function getPendingChats() {
-    return apiFetch(`get-chats/?pending=true`)
-}
-
-export function getArchivedChats(offset = 0, limit = 20) {
-    return apiFetch(`get-chats/?archived=true&offset=${offset}&limit=${limit}`)
+export function getChats(offset = 0, limit = 20, pending = false, archived = false) {
+    return apiFetch(`get-chats/?offset=${offset}&limit=${limit}&pending=${pending}&archived=${archived}`)
 }
 
 export function searchChats(search: string, offset = 0, limit = 20) {

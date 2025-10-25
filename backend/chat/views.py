@@ -1,5 +1,5 @@
 import json
-from datetime import timedelta
+from typing import Any
 
 from django.contrib.auth import authenticate
 from django.core.validators import validate_email
@@ -16,7 +16,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, MessageSerializer, UserSerializer
+from .serializers import ChatSerializer, GetChatsGETSerializer, MessageSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -224,23 +224,22 @@ class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
-        pending = bool(request.GET.get("pending", False))
+        query_serializer = GetChatsGETSerializer(data = request.GET)
+        query_serializer.is_valid(raise_exception = True)
+        data: dict[str, Any] = query_serializer.validated_data
+
+        offset = data["offset"]
+        limit = data["limit"]
+        pending = data["pending"]
+        archived = data["archived"]
+
+        chats = Chat.objects.filter(user = request.user, is_archived = archived)
         if pending:
-            chats = Chat.objects.filter(user = request.user).exclude(pending_message = None).order_by("created_at")
-            serializer = ChatSerializer(chats, many = True)
-            return Response(serializer.data, status.HTTP_200_OK)
-        
-        archived = bool(request.GET.get("archived", False))
+            chats = chats.exclude(pending_message = None)
+        chats = chats.order_by("-created_at")
 
-        limit = int(request.GET.get("limit", 20))
-        offset = int(request.GET.get("offset", 0))
-
-        chats = Chat.objects.filter(user = request.user, is_archived = archived).order_by("-created_at")
-        total = chats.count()
-        chats = chats[offset:offset + limit]
-
-        serializer = ChatSerializer(chats, many = True)
-        return Response({"chats": serializer.data, "has_more": offset + limit < total}, status.HTTP_200_OK)
+        serializer = ChatSerializer(chats[offset:offset + limit], many = True)
+        return Response({"chats": serializer.data, "has_more": offset + limit < chats.count()}, status.HTTP_200_OK)
 
 class SearchChats(APIView):
     permission_classes = [IsAuthenticated]

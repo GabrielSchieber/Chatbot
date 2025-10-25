@@ -11,11 +11,7 @@ import { deleteAccount, deleteChats, logout, me } from "../../utils/api"
 import { applyTheme } from "../../utils/theme"
 import type { Theme } from "../../types"
 
-export default function Settings({ isSidebarOpen, itemClassNames, getSidebarChatsLimit }: {
-    isSidebarOpen: boolean
-    itemClassNames: string
-    getSidebarChatsLimit: () => number
-}) {
+export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
     const { user } = useAuth()
 
     return (
@@ -46,7 +42,7 @@ export default function Settings({ isSidebarOpen, itemClassNames, getSidebarChat
                     <div className="flex flex-col border-t-2">
                         <Entry name="Theme" item={<ThemeEntryItem />} />
                         <Entry name="Multi-factor authentication" item={<MFADialog triggerClassName={entryClasses} />} />
-                        <Entry name="Archived chats" item={<ArchivedChatsDialog triggerClassName={entryClasses} getSidebarChatsLimit={getSidebarChatsLimit} />} />
+                        <Entry name="Archived chats" item={<ArchivedChatsDialog triggerClassName={entryClasses} />} />
                         <Entry name="Delete chats" item={<DeleteChatsEntryItem />} />
                         <Entry name="Delete account" item={<DeleteAccountEntryItem />} />
                         <Entry name="Log out" item={<LogoutEntryItem />} />

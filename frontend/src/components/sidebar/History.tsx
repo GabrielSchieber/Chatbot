@@ -1,54 +1,58 @@
 import { DotsVerticalIcon } from "@radix-ui/react-icons"
 import { DropdownMenu } from "radix-ui"
-import { useEffect, useRef, useState, type RefObject } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import ConfirmDialog from "../ui/ConfirmDialog"
 import { useChat } from "../../context/ChatProvider"
+import { useNotify } from "../../context/NotificationProvider"
 import { archiveChat, deleteChat, getChats, renameChat } from "../../utils/api"
 import type { Chat } from "../../types"
 
-export default function History({ sidebarRef, getSidebarChatsLimit }: { sidebarRef: RefObject<HTMLDivElement | null>, getSidebarChatsLimit: () => number }) {
-    const offset = useRef(0)
-    const isLoadingRef = useRef(true)
-
+export default function History() {
     const { setCurrentChat, chats, setChats } = useChat()
+    const notify = useNotify()
 
-    const [isLoading, setIsLoading] = useState(false)
+    const entriesRef = useRef<HTMLDivElement | null>(null)
+    const sentinelRef = useRef<HTMLDivElement | null>(null)
+    const isLoadingRef = useRef(false)
+
+    const [offset, setOffset] = useState(0)
     const [hasMore, setHasMore] = useState(true)
+    const [isLoading, setIsLoading] = useState(false)
 
     const [renameUUID, setRenameUUID] = useState("")
     const [renameTitle, setRenameTitle] = useState("")
 
-    const [hoveringEntryIndex, setHoveringEntryIndex] = useState(-1)
-    const [hoveringDropdownIndex, setHoveringDropdownIndex] = useState(-1)
-    const [selectedDropdownIndex, setSelectedDropdownIndex] = useState(-1)
+    const [hoveringEntryUUID, setHoveringEntryUUID] = useState("")
+    const [hoveringDropdownUUID, setHoveringDropdownUUID] = useState("")
+    const [selectedDropdownUUID, setSelectedDropdownUUID] = useState("")
 
-    const dropdowmItemClassNames = "px-3 py-2 text-center cursor-pointer outline-none rounded-lg"
-    const baseDropdowmItemClassNames = dropdowmItemClassNames + " hover:bg-gray-600 light:hover:bg-gray-400 focus:bg-gray-600 light:focus:bg-gray-400"
+    const dropdownItemClassName = "px-3 py-2 rounded-xl cursor-pointer outline-none text-center"
+    const nonDestructiveDropdownItemClassName = dropdownItemClassName + " text-white light:text-black hover:bg-gray-600 light:hover:bg-gray-400"
+    const destructiveDropdownItemClassName = dropdownItemClassName + " text-red-500 hover:bg-red-500/20"
 
-    async function loadMoreChats() {
-        if (isLoading || !hasMore || !isLoadingRef.current) return
+    async function loadEntries(reset: boolean) {
+        if (isLoadingRef.current || isLoading) return
+        isLoadingRef.current = true
         setIsLoading(true)
-        isLoadingRef.current = false
 
-        const response = await getChats(offset.current, getSidebarChatsLimit())
+        const height = entriesRef.current?.clientHeight || 1
+        const limit = Math.max(Math.round(height / 30), 1)
+
+        const response = await getChats(reset ? 0 : offset, limit)
         if (response.ok) {
-            response.json().then((data: { chats: Chat[], has_more: boolean }) => {
-                const newChats = data.chats
-
-                if (newChats.length > 0) {
-                    setChats(previous => {
-                        const seen = new Set(previous.map(c => c.uuid))
-                        return [...previous, ...newChats.filter(c => !seen.has(c.uuid))]
-                    })
-                    offset.current += newChats.length
-                }
-
-                setHasMore(data.has_more)
-                setIsLoading(false)
-                isLoadingRef.current = true
+            const data: { chats: Chat[], has_more: boolean } = await response.json()
+            setChats(previous => {
+                const combined = reset ? data.chats : [...previous, ...data.chats]
+                const unique = Array.from(new Map(combined.map(c => [c.uuid, c])).values())
+                return unique
             })
+            setOffset(previous => (reset ? limit : previous + limit))
+            setHasMore(data.has_more)
         }
+
+        setIsLoading(false)
+        isLoadingRef.current = false
     }
 
     function startRename(chat: Chat) {
@@ -57,144 +61,140 @@ export default function History({ sidebarRef, getSidebarChatsLimit }: { sidebarR
         setTimeout(() => document.querySelector("input")?.focus(), 100)
     }
 
-    function confirmRename(chat: Chat) {
+    async function confirmRename(chat: Chat) {
         if (renameTitle.trim() && renameTitle !== chat.title) {
-            renameChat(chat.uuid, renameTitle.trim())
-            setChats(previous => {
-                const previousChats = [...previous]
-                const chatToRename = previousChats.find(c => c.uuid === chat.uuid)
-                if (chatToRename) {
-                    chatToRename.title = renameTitle.trim()
-                }
-                return previousChats
-            })
-        }
-        setRenameUUID("")
-        setHoveringEntryIndex(-1)
-        setSelectedDropdownIndex(-1)
-        setHoveringDropdownIndex(-1)
-    }
-
-    function handleArchiveChat(uuid: string) {
-        archiveChat(uuid)
-        setChats(previous => previous.filter(p => p.uuid !== uuid))
-        setCurrentChat(previous => previous?.uuid === uuid ? { ...previous, is_archived: true } : previous)
-        setHoveringEntryIndex(-1)
-        setSelectedDropdownIndex(-1)
-        setHoveringDropdownIndex(-1)
-    }
-
-    function handleDelete(uuid: string) {
-        deleteChat(uuid).then(response => {
+            const response = await renameChat(chat.uuid, renameTitle.trim())
             if (response.ok) {
                 setChats(previous => {
-                    let previousChats = [...previous]
-                    previousChats = previousChats.filter(c => c.uuid !== uuid)
-                    return previousChats
+                    previous = [...previous]
+                    const chatToRename = previous.find(c => c.uuid === chat.uuid)
+                    if (chatToRename) {
+                        chatToRename.title = renameTitle.trim()
+                    }
+                    return previous
                 })
-                if (location.pathname.includes(uuid)) {
-                    location.href = "/"
-                }
+                setRenameUUID("")
+                setHoveringEntryUUID("")
+                setSelectedDropdownUUID("")
+                setHoveringDropdownUUID("")
+            } else {
+                notify(`Renaming of "${chat.title}" was not possible.`)
             }
-        })
+        }
+    }
+
+    async function handleArchiveChat(chat: Chat) {
+        const response = await archiveChat(chat.uuid)
+        if (response.ok) {
+            setChats(previous => previous.filter(p => p.uuid !== chat.uuid))
+            setCurrentChat(previous => previous?.uuid === chat.uuid ? { ...previous, is_archived: true } : previous)
+            setHoveringEntryUUID("")
+            setSelectedDropdownUUID("")
+            setHoveringDropdownUUID("")
+        }
+        else {
+            notify(`Archival of "${chat.title}" was not possible.`)
+        }
+    }
+
+    async function handleDelete(chat: Chat) {
+        const response = await deleteChat(chat.uuid)
+        if (response.ok) {
+            setChats(previous => previous.filter(c => c.uuid !== chat.uuid))
+            if (location.pathname.includes(chat.uuid)) {
+                location.href = "/"
+            }
+        } else {
+            notify(`Deletion of "${chat.title}" was not possible.`)
+        }
     }
 
     useEffect(() => {
-        loadMoreChats()
-
-        let previousHeight = window.innerHeight
-        window.addEventListener("resize", _ => {
-            if (window.innerHeight > previousHeight) {
-                previousHeight = window.innerHeight
-                loadMoreChats()
-            }
-        })
+        setChats([])
+        setOffset(0)
+        setHasMore(true)
+        loadEntries(true)
     }, [])
 
     useEffect(() => {
-        const div = sidebarRef.current
-        if (!div) return
+        if (!sentinelRef.current || !entriesRef.current) return
 
-        function onScroll() {
-            if (div !== null && div.scrollTop + div.clientHeight >= div.scrollHeight - 50) {
-                loadMoreChats()
+        const observer = new IntersectionObserver(
+            async entries => {
+                if (entries[0].isIntersecting) {
+                    await loadEntries(false)
+                }
+            },
+            {
+                root: entriesRef.current,
+                rootMargin: "10px"
             }
-        }
+        )
 
-        div.addEventListener("scroll", onScroll)
-        return () => div.removeEventListener("scroll", onScroll)
-    }, [offset.current, isLoading])
+        observer.observe(sentinelRef.current)
+        return () => observer.disconnect()
+    }, [hasMore, isLoading])
 
     return (
-        <div className="flex-1 py-4">
-            <p className="pl-3 text-sm text-gray-400">Chats</p>
+        <div ref={entriesRef} className="flex flex-col size-full gap-1 px-2 py-4 items-center overflow-x-hidden overflow-y-auto" data-testid="history">
+            {chats.filter(c => !c.is_archived).map(c => (
+                renameUUID === c.uuid ? (
+                    <input
+                        key={`input-${c.uuid}`}
+                        className="w-full px-2 py-1 outline-none rounded-lg bg-gray-700 light:bg-gray-300"
+                        type="text"
+                        value={renameTitle}
+                        onChange={e => setRenameTitle(e.target.value)}
+                        onBlur={_ => confirmRename(c)}
+                        onKeyDown={e => {
+                            if (e.key === "Enter") confirmRename(c)
+                            if (e.key === "Escape") setRenameUUID("")
+                        }}
+                        autoFocus
+                    />
+                ) : (
+                    <a
+                        key={`a-${c.uuid}`}
+                        className="flex w-full px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-700 light:hover:bg-gray-300"
+                        href={(selectedDropdownUUID === c.uuid || hoveringDropdownUUID === c.uuid) ? undefined : `/chat/${c.uuid}`}
+                        onFocus={_ => setHoveringEntryUUID(c.uuid)}
+                        onBlur={e => {
+                            const related = (e as React.FocusEvent<HTMLAnchorElement>).relatedTarget as Node | null
+                            if (related && e.currentTarget.contains(related)) return
+                            setHoveringEntryUUID("")
+                        }}
+                        onMouseEnter={_ => setHoveringEntryUUID(c.uuid)}
+                        onMouseLeave={_ => setHoveringEntryUUID("")}
+                    >
+                        {c.title}
 
-            <div className="flex flex-col gap-1 p-2">
-                {chats.map((c, i) => (
-                    renameUUID === c.uuid ? (
-                        <input
-                            key={`input-${c.uuid}`}
-                            className="px-2 py-1 outline-none rounded-lg bg-gray-700 light:bg-gray-300 focus:bg-gray-700 light:focus:bg-gray-300"
-                            type="text"
-                            value={renameTitle}
-                            onChange={e => setRenameTitle(e.target.value)}
-                            onBlur={_ => confirmRename(c)}
-                            onKeyDown={e => {
-                                if (e.key === "Enter") confirmRename(c)
-                                if (e.key === "Escape") setRenameUUID("")
-                            }}
-                            autoFocus
-                            data-testid="rename-input"
-                        />
-                    ) : (
-                        <a
-                            key={`a-${c.uuid}`}
-                            className="flex px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-700 light:hover:bg-gray-300"
-                            href={(selectedDropdownIndex === i || hoveringDropdownIndex === i) ? undefined : `/chat/${c.uuid}`}
-                            onFocus={_ => setHoveringEntryIndex(i)}
-                            onBlur={e => {
-                                const related = (e as React.FocusEvent<HTMLAnchorElement>).relatedTarget as Node | null
-                                if (related && e.currentTarget.contains(related)) return
-                                setHoveringEntryIndex(-1)
-                            }}
-                            onMouseEnter={_ => setHoveringEntryIndex(i)}
-                            onMouseLeave={_ => setHoveringEntryIndex(-1)}
-                            data-testid="history-entry"
-                        >
-                            {c.title}
+                        {(hoveringEntryUUID === c.uuid || selectedDropdownUUID === c.uuid) &&
+                            <DropdownMenu.Root onOpenChange={o => setSelectedDropdownUUID(o ? c.uuid : "")} modal={false}>
+                                <DropdownMenu.Trigger
+                                    className="py-1 rounded cursor-pointer outline-none hover:bg-gray-600/70 light:hover:bg-gray-400/70"
+                                    onClick={e => e.preventDefault()}
+                                >
+                                    <DotsVerticalIcon />
+                                </DropdownMenu.Trigger>
 
-                            {(hoveringEntryIndex === i || selectedDropdownIndex === i) &&
-                                <DropdownMenu.Root onOpenChange={o => setSelectedDropdownIndex(o ? i : -1)} modal={false}>
-                                    <DropdownMenu.Trigger
-                                        className="
-                                            py-1 cursor-pointer rounded outline-none
-                                            hover:bg-gray-600 light:hover:bg-gray-400 focus:bg-gray-600 light:focus:bg-gray-400
-                                        "
-                                        onClick={e => e.preventDefault()}
-                                    >
-                                        <DotsVerticalIcon />
-                                    </DropdownMenu.Trigger>
-
+                                <DropdownMenu.Portal>
                                     <DropdownMenu.Content
-                                        className="flex flex-col gap-1 p-2 rounded-xl translate-x-8 bg-gray-700 light:bg-gray-300"
-                                        onMouseEnter={_ => setHoveringDropdownIndex(i)}
-                                        onMouseLeave={_ => setHoveringDropdownIndex(-1)}
+                                        className="flex flex-col p-2 rounded-xl bg-gray-700 light:bg-gray-300"
+                                        onMouseEnter={_ => setHoveringDropdownUUID(c.uuid)}
+                                        onMouseLeave={_ => setHoveringDropdownUUID("")}
                                         sideOffset={4}
                                     >
-                                        <DropdownMenu.Item className={baseDropdowmItemClassNames} onSelect={_ => startRename(c)}>
+                                        <DropdownMenu.Item className={nonDestructiveDropdownItemClassName} onSelect={_ => startRename(c)}>
                                             Rename
                                         </DropdownMenu.Item>
 
-                                        <DropdownMenu.Item className={baseDropdowmItemClassNames} onSelect={_ => handleArchiveChat(c.uuid)}>
+                                        <DropdownMenu.Item className={nonDestructiveDropdownItemClassName} onSelect={_ => handleArchiveChat(c)}>
                                             Archive
                                         </DropdownMenu.Item>
 
                                         <ConfirmDialog
                                             trigger={
-                                                <DropdownMenu.Item
-                                                    className={dropdowmItemClassNames + " text-red-400 hover:bg-red-400/20 focus:bg-red-400/20"}
-                                                    onSelect={e => e.preventDefault()}
-                                                >
+                                                <DropdownMenu.Item className={destructiveDropdownItemClassName} onSelect={e => e.preventDefault()}>
                                                     Delete
                                                 </DropdownMenu.Item>
                                             }
@@ -202,23 +202,22 @@ export default function History({ sidebarRef, getSidebarChatsLimit }: { sidebarR
                                             description={`Are you sure you want to delete "${c.title}"? This action cannot be undone.`}
                                             confirmText="Delete"
                                             cancelText="Cancel"
-                                            onConfirm={() => handleDelete(c.uuid)}
-
+                                            onConfirm={() => handleDelete(c)}
                                         />
                                     </DropdownMenu.Content>
-                                </DropdownMenu.Root>
-                            }
-                        </a>
-                    )
-                ))}
-            </div>
+                                </DropdownMenu.Portal>
+                            </DropdownMenu.Root>
+                        }
+                    </a>
+                )
+            ))}
 
-            {isLoading ? (
-                <p className="text-center text-gray-400">Loading ...</p>
-            ) : chats.length === 0 ? (
-                <p className="text-center text-gray-400">You don't have any chats</p>
-            ) : (!hasMore && chats.length > getSidebarChatsLimit()) && (
-                <p className="text-center text-gray-400">No more chats</p>
+            {isLoading && isLoadingRef.current ? (
+                <p className="text-gray-400 light:text-gray-600">Loading...</p>
+            ) : chats.filter(c => !c.is_archived).length === 0 ? (
+                <p className="text-gray-400 light:text-gray-600">You don't have any chats.</p>
+            ) : hasMore && (
+                <div ref={sentinelRef} className="h-1"></div>
             )}
         </div>
     )

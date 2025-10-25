@@ -106,8 +106,8 @@ test("user can unarchive specific chats", async ({ page }) => {
     const user = await signupAndLogin(page, true)
     await archiveOrUnarchiveAllChats(page, user, "archive", false)
 
-    const archivedEntries = page.getByTestId("archived-chat-entry")
-    const historyEntries = page.getByTestId("history-entry")
+    const archivedEntries = page.getByTestId("archived-chats").locator("a")
+    const historyEntries = page.getByTestId("history").locator("a")
 
     async function unarchive(index: number, chat: Chat, expectedArchivedEntries: number, expectedHistoryEntries: number) {
         await expect(archivedEntries).toHaveCount(expectedArchivedEntries)
@@ -205,7 +205,7 @@ async function archiveOrUnarchiveAllChats(page: Page, user: User, action: "archi
     const initialHistoryCount = action === "archive" ? user.chats.length : 0
     const initialArchivedCount = action === "archive" ? 0 : user.chats.length
 
-    await expect(page.getByTestId("history-entry")).toHaveCount(initialHistoryCount)
+    await expect(page.getByTestId("history").locator("a")).toHaveCount(initialHistoryCount)
 
     await page.getByText("Settings").click()
 
@@ -217,7 +217,7 @@ async function archiveOrUnarchiveAllChats(page: Page, user: User, action: "archi
     }
     await page.getByTestId("archived-chats").evaluate((element: HTMLElement) => element.scrollTop = element.scrollHeight)
 
-    await expect(page.getByTestId("archived-chat-entry")).toHaveCount(initialArchivedCount)
+    await expect(page.getByTestId("archived-chats").locator("a")).toHaveCount(initialArchivedCount)
 
     await expect(page.getByRole("heading", { name: "Archived Chats", exact: true })).toBeVisible()
     if (initialArchivedCount === 0) {
@@ -234,6 +234,6 @@ async function archiveOrUnarchiveAllChats(page: Page, user: User, action: "archi
     await expect(page.getByText("Loading...")).not.toBeVisible()
     await page.getByTestId("archived-chats").evaluate((element: HTMLElement) => element.scrollTop = element.scrollHeight)
 
-    await expect(page.getByTestId("history-entry")).toHaveCount(initialArchivedCount)
-    await expect(page.getByTestId("archived-chat-entry")).toHaveCount(initialHistoryCount)
+    await expect(page.getByTestId("history").locator("a")).toHaveCount(initialArchivedCount)
+    await expect(page.getByTestId("archived-chats").locator("a")).toHaveCount(initialHistoryCount)
 }

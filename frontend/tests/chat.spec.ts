@@ -184,13 +184,14 @@ async function sendExampleChat(page: Page, index: number, messagePairs?: number)
         i += 2
 
         if (index === 0) {
-            const chatsInHistory = await page.getByTestId("history-entry").count()
-            const chatAnchor = page.getByRole("link", { name: `Chat ${chatsInHistory}` })
+            const chatsInHistory = await page.getByTestId("history").getByRole("link").count()
+            const chatAnchor = page.getByRole("link", { name: `Chat ${chatsInHistory}`, exact: true })
             await expect(chatAnchor).toBeVisible()
-            await chatAnchor.focus()
-            await chatAnchor.locator("button").click()
-            await page.getByText("Rename").click()
-            const input = page.getByTestId("rename-input")
+            await chatAnchor.hover()
+            await chatAnchor.getByRole("button").click()
+            await page.getByRole("menuitem", { name: "Rename", exact: true }).click()
+            const input = page.locator("input[type='text']")
+            await input.fill("")
             await input.fill(chat.title)
             await input.press("Enter")
         }

@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
-import { getChat, getMessageFileContent, getMessages, getPendingChats } from "../utils/api"
-import type { Chat, Message } from "../types"
+import { getChat, getChats, getMessageFileContent, getMessages } from "../utils/api"
 import { getFileType } from "../utils/file"
+import type { Chat, Message } from "../types"
 
 interface ChatContextValue {
     currentChat: Chat | null
@@ -71,7 +71,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             })
         }
 
-        getPendingChats().then(response => {
+        getChats(0, 1, true).then(response => {
             if (response.ok) {
                 response.json().then(chats => {
                     if (chats.length > 0) {
