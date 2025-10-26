@@ -57,17 +57,11 @@ export default function History() {
     }
 
     async function confirmRename(chat: Chat) {
-        if (renameTitle.trim() && renameTitle !== chat.title) {
-            const response = await renameChat(chat.uuid, renameTitle.trim())
+        const newTitle = renameTitle.trim()
+        if (newTitle && renameTitle !== chat.title) {
+            const response = await renameChat(chat.uuid, newTitle)
             if (response.ok) {
-                setChats(previous => {
-                    previous = [...previous]
-                    const chatToRename = previous.find(c => c.uuid === chat.uuid)
-                    if (chatToRename) {
-                        chatToRename.title = renameTitle.trim()
-                    }
-                    return previous
-                })
+                setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, title: newTitle } : c))
             } else {
                 notify(`Renaming of "${chat.title}" was not possible.`)
             }
