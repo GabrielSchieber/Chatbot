@@ -15,7 +15,7 @@ export default function Prompt() {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
-    const { currentChat, setCurrentChat, setChats, setMessages, pendingChat, setPendingChat, isLoading } = useChat()
+    const { chats, setChats, setMessages, pendingChat, setPendingChat, isLoading } = useChat()
 
     const fileInputRef = useRef<HTMLInputElement | null>(null)
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -59,8 +59,7 @@ export default function Prompt() {
                 response.json().then(chat => {
                     if (!chatUUID) {
                         navigate(`/chat/${chat.uuid}`)
-                        setCurrentChat(chat)
-                        setChats(previous => [chat, ...previous])
+                        setChats(previous => !previous.find(c => c.uuid === chat.uuid) ? [chat, ...previous] : previous)
                     }
                     setPendingChat(chat)
                 })
@@ -120,7 +119,7 @@ export default function Prompt() {
     }, [isExtended])
 
     return (
-        currentChat && currentChat.is_archived ? (
+        chatUUID && chats.find(c => c.uuid === chatUUID)?.is_archived ? (
             <div className="flex flex-col gap-3 mb-10 items-center">
                 <p>This chat is archived. To continue, unarchive it first.</p>
                 <button
@@ -129,16 +128,13 @@ export default function Prompt() {
                         bg-gray-100 light:bg-gray-900 hover:bg-gray-200 light:hover:bg-gray-800
                     "
                     onClick={_ => {
-                        if (chatUUID) {
-                            unarchiveChat(chatUUID)
-                            setChats(previous => [...previous, currentChat].sort((a, b) => a.index - b.index))
-                            setCurrentChat(previous => previous ? { ...previous, is_archived: false } : previous)
-                        }
+                        unarchiveChat(chatUUID)
+                        setChats(previous => previous.map(c => c.uuid === chatUUID ? { ...c, is_archived: false } : c))
                     }}
                 >
                     Unarchive
                 </button>
-            </div >
+            </div>
         ) : (
             <>
                 <AnimatePresence>

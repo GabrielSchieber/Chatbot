@@ -10,7 +10,7 @@ import { archiveChats, deleteChat, getChats, unarchiveChat, unarchiveChats } fro
 import type { Chat } from "../../types"
 
 export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: string }) {
-    const { setCurrentChat, chats, setChats } = useChat()
+    const { chats, setChats } = useChat()
     const notify = useNotify()
 
     const entriesRef = useRef<HTMLDivElement | null>(null)
@@ -42,7 +42,6 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
     async function handleArchiveAll() {
         const response = await archiveChats()
         if (response.ok) {
-            setCurrentChat(previous => previous ? { ...previous, is_archived: true } : previous)
             setChats(previous => previous.map(c => ({ ...c, is_archived: true })))
         } else {
             notify("Archival of all chats was not possible.", "error")
@@ -52,7 +51,6 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
     async function handleUnarchiveAll() {
         const response = await unarchiveChats()
         if (response.ok) {
-            setCurrentChat(previous => previous ? { ...previous, is_archived: false } : previous)
             setChats(previous => previous.map(c => ({ ...c, is_archived: false })))
         } else {
             notify("Unarchival of all chats was not possible.", "error")
@@ -62,7 +60,6 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
     async function handleUnarchive(chat: Chat) {
         const response = await unarchiveChat(chat.uuid)
         if (response.ok) {
-            setCurrentChat(previous => previous?.uuid === chat.uuid ? { ...previous, is_archived: false } : previous)
             setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, is_archived: false } : c))
         } else {
             notify(`Unarchival of "${chat.title}" was not possible.`, "error")

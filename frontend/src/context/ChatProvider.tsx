@@ -6,8 +6,6 @@ import { getFileType } from "../utils/file"
 import type { Chat, Message } from "../types"
 
 interface ChatContextValue {
-    currentChat: Chat | null
-    setCurrentChat: React.Dispatch<React.SetStateAction<Chat | null>>
     chats: Chat[]
     setChats: React.Dispatch<React.SetStateAction<Chat[]>>
     messages: Message[]
@@ -24,7 +22,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     const shouldSet = useRef(true)
 
-    const [currentChat, setCurrentChat] = useState<Chat | null>(null)
     const [chats, setChats] = useState<Chat[]>([])
     const [messages, setMessages] = useState<Message[]>([])
     const [pendingChat, setPendingChat] = useState<Chat | null>(null)
@@ -37,7 +34,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         if (chatUUID) {
             getChat(chatUUID).then(response => {
                 if (response.ok) {
-                    response.json().then(chat => setCurrentChat(chat))
+                    response.json().then(chat => setChats(previous => !previous.find(c => c.uuid === chat.uuid) ? [...previous, chat] : previous))
                 }
             })
 
@@ -84,7 +81,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     return (
-        <ChatContext.Provider value={{ currentChat, setCurrentChat, chats, setChats, messages, setMessages, pendingChat, setPendingChat, isLoading }}>
+        <ChatContext.Provider value={{ chats, setChats, messages, setMessages, pendingChat, setPendingChat, isLoading }}>
             {children}
         </ChatContext.Provider>
     )

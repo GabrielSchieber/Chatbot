@@ -9,7 +9,7 @@ import { archiveChat, deleteChat, getChats, renameChat } from "../../utils/api"
 import type { Chat } from "../../types"
 
 export default function History() {
-    const { setCurrentChat, chats, setChats } = useChat()
+    const { chats, setChats } = useChat()
     const notify = useNotify()
 
     const entriesRef = useRef<HTMLDivElement | null>(null)
@@ -41,11 +41,7 @@ export default function History() {
         const response = await getChats(reset ? 0 : offset, limit)
         if (response.ok) {
             const data: { chats: Chat[], has_more: boolean } = await response.json()
-            setChats(previous => {
-                const combined = reset ? data.chats : [...previous, ...data.chats]
-                const unique = Array.from(new Map(combined.map(c => [c.uuid, c])).values())
-                return unique
-            })
+            setChats(previous => Array.from(new Map([...previous, ...data.chats].map(c => [c.uuid, c])).values()))
             setOffset(previous => (reset ? limit : previous + limit))
             setHasMore(data.has_more)
         }
@@ -84,8 +80,7 @@ export default function History() {
     async function handleArchiveChat(chat: Chat) {
         const response = await archiveChat(chat.uuid)
         if (response.ok) {
-            setChats(previous => previous.filter(p => p.uuid !== chat.uuid))
-            setCurrentChat(previous => previous?.uuid === chat.uuid ? { ...previous, is_archived: true } : previous)
+            setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, is_archived: true } : c))
         } else {
             notify(`Archival of "${chat.title}" was not possible.`)
         }
@@ -131,7 +126,7 @@ export default function History() {
 
     return (
         <div ref={entriesRef} className="flex flex-col size-full gap-1 px-2 py-4 items-center overflow-x-hidden overflow-y-auto" data-testid="history">
-            {chats.filter(c => !c.is_archived).map(c => (
+            {chats.filter(c => !c.is_archived).sort((a, b) => a.index - b.index).map(c => (
                 renameUUID === c.uuid ? (
                     <input
                         key={`input-${c.uuid}`}
