@@ -170,7 +170,7 @@ function Entry({ entry }: { entry: SearchEntry }) {
         <a
             className={`
                 flex w-full gap-3 px-3 py-2 items-center justify-between rounded-lg border
-                border-gray-600 light:border-gray-400 hover:bg-gray-600/10 light:hover:bg-gray-300/10
+                border-gray-600 light:border-gray-400 hover:bg-gray-600/10 light:hover:bg-gray-400/10
                 ${entry.is_archived && "text-white/60 light:text-black/60"}
             `}
             href={`/chat/${entry.uuid}`}
@@ -189,12 +189,12 @@ function Entry({ entry }: { entry: SearchEntry }) {
             </div>
 
             <div className="flex flex-1 flex-col gap-2 justify-between">
-                <p className="px-2 rounded text-lg font-semibold bg-gray-600/50 light:bg-gray-300/50">{entry.title}</p>
+                <p className="px-2 rounded text-lg font-semibold bg-gray-600/50 light:bg-gray-400/40">{entry.title}</p>
 
                 {entry.matches.length > 0 &&
                     <ul className="flex flex-col gap-1">
                         {entry.matches.slice(0, 5).map((m, i) =>
-                            <li key={i} className="px-2 rounded bg-gray-600/30 light:bg-gray-300/30">{m.slice(0, 100)}...</li>
+                            <li key={i} className="px-2 rounded bg-gray-600/30 light:bg-gray-300">{m.slice(0, 100)}...</li>
                         )}
                     </ul>
                 }
