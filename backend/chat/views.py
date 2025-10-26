@@ -249,9 +249,9 @@ class SearchChats(APIView):
         limit = int(request.GET.get("limit", 20))
         offset = int(request.GET.get("offset", 0))
 
-        matched_messages = Message.objects.filter(chat__user = request.user, chat__is_archived = False, text__icontains = search).order_by("created_at")
+        matched_messages = Message.objects.filter(chat__user = request.user, text__icontains = search).order_by("created_at")
 
-        chats = Chat.objects.filter(user = request.user, is_archived = False).filter(
+        chats = Chat.objects.filter(user = request.user).filter(
             Q(title__icontains = search) | Q(messages__text__icontains = search)
         ).distinct().order_by("-created_at")
 
@@ -263,6 +263,7 @@ class SearchChats(APIView):
         entries = [{
             "uuid": chat.uuid,
             "title": chat.title,
+            "is_archived": chat.is_archived,
             "matches": [m.text for m in getattr(chat, "matched_messages", [])],
             "last_modified_at": chat.last_modified_at()
         } for chat in chats]

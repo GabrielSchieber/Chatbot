@@ -1,4 +1,4 @@
-import { ChatBubbleIcon, Cross1Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons"
+import { ArchiveIcon, ChatBubbleIcon, Cross1Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons"
 import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
 
@@ -161,23 +161,28 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
     )
 }
 
-type SearchEntry = { uuid: string, title: string, matches: string[], last_modified_at: string }
+type SearchEntry = { uuid: string, title: string, is_archived: boolean, matches: string[], last_modified_at: string }
 
 function Entry({ entry }: { entry: SearchEntry }) {
     const [isHovering, setIsHovering] = useState(false)
 
     return (
         <a
-            className="
+            className={`
                 flex w-full gap-3 px-3 py-2 items-center justify-between rounded-lg border
                 border-gray-600 light:border-gray-400 hover:bg-gray-600/10 light:hover:bg-gray-300/10
-            "
+                ${entry.is_archived && "text-white/60 light:text-black/60"}
+            `}
             href={`/chat/${entry.uuid}`}
             onMouseEnter={_ => setIsHovering(true)}
             onMouseLeave={_ => setIsHovering(false)}
         >
             <div className="flex flex-col gap-3 items-center">
-                <ChatBubbleIcon className="size-8" />
+                {entry.is_archived ? (
+                    <ArchiveIcon className="size-8" />
+                ) : (
+                    <ChatBubbleIcon className="size-8" />
+                )}
                 <p className={`text-sm text-nowrap transition ${!isHovering && "opacity-0"}`}>
                     {entry.last_modified_at}
                 </p>
