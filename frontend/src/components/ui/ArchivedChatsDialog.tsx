@@ -31,7 +31,7 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
         const response = await getChats(offset, limit, false, true)
         if (response.ok) {
             const data: { chats: Chat[], has_more: boolean } = await response.json()
-            setChats(previous => [...previous, ...data.chats])
+            setChats(previous => Array.from(new Map([...previous, ...data.chats].map(c => [c.uuid, c])).values()))
             setHasMore(data.has_more)
         }
 
