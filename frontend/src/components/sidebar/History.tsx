@@ -1,6 +1,7 @@
-import { DotsVerticalIcon } from "@radix-ui/react-icons"
+import { ArchiveIcon, DotsVerticalIcon, Pencil1Icon, TrashIcon } from "@radix-ui/react-icons"
 import { DropdownMenu } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
+import { useParams } from "react-router"
 
 import ConfirmDialog from "../ui/ConfirmDialog"
 import { useChat } from "../../context/ChatProvider"
@@ -9,6 +10,8 @@ import { archiveChat, deleteChat, getChats, renameChat } from "../../utils/api"
 import type { Chat } from "../../types"
 
 export default function History() {
+    const { chatUUID } = useParams()
+
     const { chats, setChats } = useChat()
     const notify = useNotify()
 
@@ -26,9 +29,9 @@ export default function History() {
     const [isHoveringUUID, setIsHoveringUUID] = useState("")
     const [isOpenUUID, setIsOpenUUID] = useState("")
 
-    const dropdownItemClassName = "px-3 py-2 rounded-xl cursor-pointer outline-none text-center"
-    const nonDestructiveDropdownItemClassName = dropdownItemClassName + " text-white light:text-black hover:bg-gray-600 light:hover:bg-gray-400"
-    const destructiveDropdownItemClassName = dropdownItemClassName + " text-red-500 hover:bg-red-500/20"
+    const dropdownItemClassName = "flex gap-2 px-3 py-2 items-center rounded-xl cursor-pointer outline-none text-center"
+    const nonDestructiveDropdownItemClassName = dropdownItemClassName + " text-white light:text-black hover:bg-gray-600 light:hover:bg-gray-400/50"
+    const destructiveDropdownItemClassName = dropdownItemClassName + " text-red-500 hover:bg-red-400/20"
 
     async function loadEntries(reset: boolean) {
         if (isLoadingRef.current || isLoading) return
@@ -141,7 +144,10 @@ export default function History() {
                 ) : (
                     <a
                         key={`a-${c.uuid}`}
-                        className="flex w-full px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-700 light:hover:bg-gray-300"
+                        className={`
+                            flex w-full px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-600 light:hover:bg-gray-400/40
+                            ${c.uuid === chatUUID ? "bg-gray-700 light:bg-gray-300" : c.uuid === isOpenUUID && "bg-gray-600 light:bg-gray-400/40"}
+                        `}
                         href={`/chat/${c.uuid}`}
                         onMouseEnter={_ => setIsHoveringUUID(c.uuid)}
                         onMouseLeave={_ => setIsHoveringUUID("")}
@@ -150,7 +156,7 @@ export default function History() {
 
                         <DropdownMenu.Root open={isOpenUUID === c.uuid} onOpenChange={o => setIsOpenUUID(o ? c.uuid : "")} modal={false}>
                             <DropdownMenu.Trigger
-                                className={`${isHoveringUUID !== c.uuid && isOpenUUID !== c.uuid && "hidden"} py-1 rounded cursor-pointer outline-none hover:bg-gray-600/70 light:hover:bg-gray-400`}
+                                className={`${isHoveringUUID !== c.uuid && isOpenUUID !== c.uuid && "hidden"} py-1 rounded cursor-pointer outline-none hover:bg-gray-500/50 light:hover:bg-gray-400/60`}
                                 onClick={e => e.preventDefault()}
                             >
                                 <DotsVerticalIcon />
@@ -158,21 +164,21 @@ export default function History() {
 
                             <DropdownMenu.Portal>
                                 <DropdownMenu.Content
-                                    className="flex flex-col p-2 rounded-xl bg-gray-700 light:bg-gray-300"
+                                    className="flex flex-col p-2 rounded-xl translate-x-7 shadow-xl/50 border border-gray-500/50 bg-gray-700 light:bg-gray-300"
                                     sideOffset={4}
                                 >
                                     <DropdownMenu.Item className={nonDestructiveDropdownItemClassName} onSelect={_ => startRename(c)}>
-                                        Rename
+                                        <Pencil1Icon className="size-4.5" /> Rename
                                     </DropdownMenu.Item>
 
                                     <DropdownMenu.Item className={nonDestructiveDropdownItemClassName} onSelect={_ => handleArchiveChat(c)}>
-                                        Archive
+                                        <ArchiveIcon className="size-4.5" /> Archive
                                     </DropdownMenu.Item>
 
                                     <ConfirmDialog
                                         trigger={
                                             <DropdownMenu.Item className={destructiveDropdownItemClassName} onSelect={e => e.preventDefault()}>
-                                                Delete
+                                                <TrashIcon className="size-4.5" /> Delete
                                             </DropdownMenu.Item>
                                         }
                                         title="Delete Chat"
