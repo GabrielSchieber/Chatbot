@@ -199,22 +199,19 @@ class DeleteAccount(APIView):
         password = request.data.get("password")
         mfa_code = request.data.get("mfa_code")
 
-        if not password:
-            return Response({"error": "'password' must be provided."}, status.HTTP_400_BAD_REQUEST)
+        if password is None:
+            return Response({"error": "'password' field must be provided."}, status.HTTP_400_BAD_REQUEST)
 
-        # verify password
         if not request.user.check_password(password):
             return Response({"error": "Invalid password."}, status.HTTP_401_UNAUTHORIZED)
 
-        # if MFA is enabled, require and verify code
         if request.user.mfa.is_enabled:
-            if not mfa_code:
+            if mfa_code is None:
                 return Response({"error": "MFA code is required."}, status.HTTP_400_BAD_REQUEST)
             if not request.user.mfa.verify(mfa_code):
                 return Response({"error": "Invalid MFA code."}, status.HTTP_401_UNAUTHORIZED)
 
         try:
-            # delete user and clear cookies
             request.user.delete()
             response = Response(status = status.HTTP_204_NO_CONTENT)
             response.delete_cookie("access_token")
