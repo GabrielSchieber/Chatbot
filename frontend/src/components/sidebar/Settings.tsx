@@ -146,29 +146,41 @@ function DeleteChatsEntryItem() {
 }
 
 function DeleteAccountEntryItem() {
-    function handleDeleteAccount() {
-        deleteAccount().then(response => {
-            if (response.ok) {
-                location.reload()
-            } else {
-                alert("Deletion of account was not possible")
+    const { user } = useAuth()
+
+    async function handleDeleteAccount() {
+        const ok = confirm("Are you sure you want to delete your account? This action cannot be undone.")
+        if (!ok) return
+
+        const password = prompt("Enter your password to confirm deletion:")
+        if (!password) {
+            alert("Password is required to delete the account.")
+            return
+        }
+
+        let mfaCode: string | undefined | null = undefined
+        if (user?.mfa?.is_enabled) {
+            mfaCode = prompt("MFA is enabled for your account. Enter an MFA code:")
+            if (!mfaCode) {
+                alert("MFA code is required.")
+                return
             }
-        })
+        }
+
+        const response = await deleteAccount(password, mfaCode)
+        if (response.ok) {
+            // user deleted, clear session on client
+            location.reload()
+        } else {
+            const json = await response.json().catch(() => ({}))
+            alert(json.error || "Deletion of account was not possible")
+        }
     }
 
     return (
-        <ConfirmDialog
-            trigger={
-                <button className={destructiveEntryClasses}>
-                    Delete
-                </button>
-            }
-            title="Delete Account"
-            description="Are you sure you want to delete your account? This action cannot be undone."
-            confirmText="Delete Account"
-            cancelText="Cancel"
-            onConfirm={handleDeleteAccount}
-        />
+        <button className={destructiveEntryClasses} onClick={handleDeleteAccount}>
+            Delete
+        </button>
     )
 }
 
