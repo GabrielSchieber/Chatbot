@@ -9,13 +9,12 @@ import { useNotify } from "../../context/NotificationProvider"
 import { getChats, renameChat } from "../../utils/api"
 import type { Chat } from "../../types"
 
-export default function History() {
+export default function History({ sidebarRef }: { sidebarRef: React.RefObject<HTMLDivElement | null> }) {
     const { chatUUID } = useParams()
 
     const { chats, setChats } = useChat()
     const notify = useNotify()
 
-    const entriesRef = useRef<HTMLDivElement | null>(null)
     const sentinelRef = useRef<HTMLDivElement | null>(null)
     const isLoadingRef = useRef(false)
 
@@ -34,7 +33,7 @@ export default function History() {
         isLoadingRef.current = true
         setIsLoading(true)
 
-        const height = entriesRef.current?.clientHeight || 1
+        const height = sidebarRef.current?.clientHeight || 1
         const limit = Math.max(Math.round(height / 30), 1)
 
         const response = await getChats(reset ? 0 : offset, limit)
@@ -78,7 +77,7 @@ export default function History() {
     }, [])
 
     useEffect(() => {
-        if (!sentinelRef.current || !entriesRef.current) return
+        if (!sentinelRef.current || !sidebarRef.current) return
 
         const observer = new IntersectionObserver(
             async entries => {
@@ -87,7 +86,7 @@ export default function History() {
                 }
             },
             {
-                root: entriesRef.current,
+                root: sidebarRef.current,
                 rootMargin: "10px"
             }
         )
@@ -97,7 +96,7 @@ export default function History() {
     }, [hasMore, isLoading])
 
     return (
-        <div ref={entriesRef} className="flex flex-col size-full gap-1 px-2 py-4 items-center overflow-x-hidden overflow-y-auto" data-testid="history">
+        <div className="flex-1 gap-1 px-2 py-4 justify-items-center" data-testid="history">
             {chats.filter(c => !c.is_archived).sort((a, b) => a.index - b.index).map(c => (
                 renameUUID === c.uuid ? (
                     <input
