@@ -1,5 +1,6 @@
 import { Page, expect, test } from "@playwright/test"
-import { Chat, User, signupAndLogin } from "./utils"
+import { authenticator } from "otplib"
+import { Chat, User, signupAndLogin, signupWithMFAEnabledAndLogin, apiFetch } from "./utils"
 
 test("user can open settings", async ({ page }) => {
     const user = await signupAndLogin(page)
@@ -193,6 +194,38 @@ test("user can delete account", async ({ page }) => {
     await page.fill("input[type='password']", user.password)
     await page.click("button")
 
+    await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
+})
+
+test("user can delete account with MFA enabled", async ({ page }) => {
+    const { user } = await signupWithMFAEnabledAndLogin(page)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+    await expect(confirmDialog).toBeVisible()
+
+    // fill password
+    await confirmDialog.locator("input[type='password']").fill(user.password)
+
+    // fetch secret and generate current TOTP code
+    const response = await apiFetch(`/test/get-mfa-secret/?email=${user.email}`, {})
+    expect(response.status).toBe(200)
+    const secret = await response.json()
+    const code = authenticator.generate(secret)
+
+    // fill MFA code field and confirm
+    await confirmDialog.getByPlaceholder("MFA code").fill(code)
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+
+    await page.waitForURL("/login")
+
+    // ensure account was deleted (cannot log in)
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+    await page.click("button")
     await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
 })
 

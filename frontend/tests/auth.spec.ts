@@ -1,6 +1,6 @@
-import { Page, expect, test } from "@playwright/test"
+import { expect, test } from "@playwright/test"
 import { authenticator } from "otplib"
-import { apiFetch, getRandomEmail, signup, signupAndLogin } from "./utils"
+import { apiFetch, getRandomEmail, signup, signupAndLogin, signupWithMFAEnabled, signupWithMFAEnabledAndLogin } from "./utils"
 
 test("user can sign up", async ({ page }) => {
     await page.goto("/")
@@ -265,53 +265,3 @@ test("user cannot disable multi-factor authentication with an already used backu
 
     await expect(page.getByText("Invalid code", { exact: true })).toBeVisible({ timeout: 10_000 })
 })
-
-async function signupWithMFAEnabledAndLogin(page: Page) {
-    await page.context().grantPermissions(["clipboard-read", "clipboard-write"])
-
-    const user = await signupAndLogin(page)
-
-    await page.getByTestId("open-settings").click()
-
-    await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
-    await expect(page.getByText("Step 1: Setup", { exact: true })).toBeVisible()
-
-    await page.getByText("Generate QR and secret codes", { exact: true }).click()
-    await expect(page.getByText("Step 2: Verify", { exact: true })).toBeVisible()
-
-    const secretText = await page.getByText(/Secret:/).textContent()
-    const secret = secretText?.split("Secret:")[1].trim()!
-
-    const code = authenticator.generate(secret)
-
-    await page.getByPlaceholder("6-digit code", { exact: true }).fill(code)
-    await page.getByRole("button", { name: "Enable", exact: true }).click()
-
-    await expect(page.getByText("Enabling", { exact: true })).toBeVisible()
-    await expect(page.getByText("Step 3: Backup", { exact: true })).toBeVisible({ timeout: 15000 })
-
-    await page.getByRole("list").getByRole("button").first().click()
-
-    const clipboard = await page.evaluate(_ => navigator.clipboard.readText())
-    expect(clipboard.length).toEqual(6 * 2 * 10 + 9)
-
-    const backupCodes = clipboard.split("\n")
-    expect(backupCodes.length).toEqual(10)
-
-    await page.getByText("I have backed up the codes.", { exact: true }).click()
-    await page.getByRole("button", { name: "Close", exact: true }).click()
-
-    await page.reload()
-
-    return { user, backupCodes }
-}
-
-async function signupWithMFAEnabled(page: Page) {
-    const user = await signupWithMFAEnabledAndLogin(page)
-
-    await page.getByTestId("open-settings").click()
-    await page.getByRole("button", { name: "Log out", exact: true }).click()
-    await page.waitForURL("/login")
-
-    return user
-}
