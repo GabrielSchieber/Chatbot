@@ -121,7 +121,11 @@ export function CancelButton({ setIndex, tabIndex = 2 }: { setIndex: React.Dispa
 }
 
 export function EditButton({ onClick }: { onClick: () => void }) {
-    const { currentChat, pendingChat, isLoading } = useChat()
+    const { chatUUID } = useParams()
+
+    const { chats, pendingChat, isLoading } = useChat()
+
+    const currentChat = chats.find(c => c.uuid === chatUUID)
 
     return (
         <TooltipButton
@@ -156,7 +160,9 @@ export function CopyButton({ text }: { text: string }) {
 export function RegenerateButton({ index, model }: { index: number, model: Model | null }) {
     const { chatUUID } = useParams()
 
-    const { currentChat, setMessages, pendingChat, setPendingChat, isLoading } = useChat()
+    const { chats, setMessages, pendingChat, setPendingChat, isLoading } = useChat()
+
+    const currentChat = chats.find(c => c.uuid === chatUUID)
 
     const [isRotating, setIsRotating] = useState(false)
 
