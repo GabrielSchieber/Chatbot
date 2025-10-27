@@ -22,6 +22,7 @@ from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, s
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
 
 class Signup(APIView):
+    authentication_classes = []
     throttle_classes = [SignupRateThrottle]
 
     def post(self, request: Request):
