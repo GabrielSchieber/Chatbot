@@ -51,7 +51,7 @@ export default function Composer({
             layout
             transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
             className={`
-                flex flex-col w-[60vw] rounded-4xl bg-gray-800 light:bg-gray-200
+                flex flex-col w-[60vw] max-h-[50vh] rounded-4xl bg-gray-800 light:bg-gray-200
                 ${hasFiles ? "gap-2 px-4 pt-3 pb-1" : "px-3 py-1"}
                 ${withBorderAndShadow ? "mb-5 border-t-4 border-gray-600 light:border-gray-400 shadow-xl/50" : "mt-10 mb-5"}
             `}
@@ -64,7 +64,7 @@ export default function Composer({
         >
             <input ref={fileInputRef} type="file" className="hidden" onChange={onFileChange} multiple />
 
-            <div className="flex flex-col max-h-100 gap-1 overflow-x-hidden overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
+            <div className="flex flex-col gap-1 overflow-x-hidden overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
                 {filesArea}
                 {isExtended &&
                     <TextArea
