@@ -255,6 +255,33 @@ test("user can delete account with an MFA backup code", async ({ page }) => {
     await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
 })
 
+test("user cannot delete account with an incorrect password", async ({ page }) => {
+    const { user } = await signupWithMFAEnabledAndLogin(page)
+    await page.getByText("Settings").click()
+
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+
+    await expect(confirmDialog).toBeVisible()
+
+    // fill password
+    await confirmDialog.locator("input[type='password']").fill("wrong-password")
+
+    // fetch secret and generate current TOTP code
+    const response = await apiFetch(`/test/get-mfa-secret/?email=${user.email}`, {})
+    expect(response.status).toBe(200)
+    const secret = await response.json()
+    const code = authenticator.generate(secret)
+
+    // fill MFA code field and confirm
+    await confirmDialog.getByPlaceholder("MFA code").fill(code)
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+
+    // deletion should fail: dialog remains (no redirect to /login)
+    await expect(confirmDialog).toBeVisible()
+    await expect(confirmDialog.getByText("Invalid password.", { exact: true })).toBeVisible()
+})
+
 test("user cannot delete account with an invalid MFA code", async ({ page }) => {
     const { user } = await signupWithMFAEnabledAndLogin(page)
 
