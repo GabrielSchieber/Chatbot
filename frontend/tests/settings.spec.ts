@@ -176,10 +176,16 @@ test("user can delete account", async ({ page }) => {
     const confirmDialogTitle = page.getByRole("heading", { name: "Delete Account", exact: true })
     await expect(confirmDialogTitle).toBeVisible()
 
-    const confirmDialog = confirmDialogTitle.locator("..")
+    // find the dialog container and ensure action buttons are visible
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
     await expect(confirmDialog).toBeVisible()
 
     await expect(confirmDialog.getByRole("button", { name: "Cancel", exact: true })).toBeVisible()
+
+    // fill required password (and MFA if needed) before confirming
+    const passwordInput = confirmDialog.locator("input[type='password']")
+    await passwordInput.fill(user.password)
+
     await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
     await page.waitForURL("/login")
 

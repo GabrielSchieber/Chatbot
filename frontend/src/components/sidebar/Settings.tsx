@@ -240,7 +240,7 @@ function DeleteAccountEntryItem() {
                                 <button className={entryClasses} disabled={isLoading}>Cancel</button>
                             </Dialog.Close>
                             <button className={destructiveEntryClasses} onClick={handleConfirmDelete} disabled={isLoading}>
-                                {isLoading ? "Deleting..." : "Delete account"}
+                                {isLoading ? "Deleting..." : "Delete Account"}
                             </button>
                         </div>
                     </div>
