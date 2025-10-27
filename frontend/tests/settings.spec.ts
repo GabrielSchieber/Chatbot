@@ -255,6 +255,26 @@ test("user can delete account with an MFA backup code", async ({ page }) => {
     await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
 })
 
+test("user cannot delete account with an invalid MFA code", async ({ page }) => {
+    const { user } = await signupWithMFAEnabledAndLogin(page)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+
+    await expect(confirmDialog).toBeVisible()
+
+    // fill password and an invalid MFA code
+    await confirmDialog.locator("input[type='password']").fill(user.password)
+    await confirmDialog.getByPlaceholder("MFA code").fill("000000")
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+
+    // deletion should fail: dialog remains (no redirect to /login)
+    await expect(confirmDialog).toBeVisible()
+    await expect(confirmDialog.getByText("Invalid MFA code.", { exact: true })).toBeVisible({ timeout: 15_000 })
+})
+
 test("user cannot delete account with a used MFA backup code", async ({ page }) => {
     test.setTimeout(60_000)
     const { user, backupCodes } = await signupWithMFAEnabledAndLogin(page)
