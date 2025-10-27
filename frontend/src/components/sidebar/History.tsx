@@ -1,12 +1,12 @@
-import { ArchiveIcon, DotsVerticalIcon, Pencil1Icon, TrashIcon } from "@radix-ui/react-icons"
+import { DotsVerticalIcon } from "@radix-ui/react-icons"
 import { DropdownMenu } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
-import ConfirmDialog from "../ui/ConfirmDialog"
+import { ArchiveButton, DeleteButton, RenameButton } from "../ui/Buttons"
 import { useChat } from "../../context/ChatProvider"
 import { useNotify } from "../../context/NotificationProvider"
-import { archiveChat, deleteChat, getChats, renameChat } from "../../utils/api"
+import { getChats, renameChat } from "../../utils/api"
 import type { Chat } from "../../types"
 
 export default function History() {
@@ -28,10 +28,6 @@ export default function History() {
 
     const [isHoveringUUID, setIsHoveringUUID] = useState("")
     const [isOpenUUID, setIsOpenUUID] = useState("")
-
-    const dropdownItemClassName = "flex gap-2 px-3 py-2 items-center rounded-xl cursor-pointer outline-none text-center"
-    const nonDestructiveDropdownItemClassName = dropdownItemClassName + " text-white light:text-black hover:bg-gray-600 light:hover:bg-gray-400/50"
-    const destructiveDropdownItemClassName = dropdownItemClassName + " text-red-500 hover:bg-red-400/20"
 
     async function loadEntries(reset: boolean) {
         if (isLoadingRef.current || isLoading) return
@@ -72,27 +68,6 @@ export default function History() {
 
         setRenameUUID("")
         setRenameTitle("")
-    }
-
-    async function handleArchiveChat(chat: Chat) {
-        const response = await archiveChat(chat.uuid)
-        if (response.ok) {
-            setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, is_archived: true } : c))
-        } else {
-            notify(`Archival of "${chat.title}" was not possible.`)
-        }
-    }
-
-    async function handleDelete(chat: Chat) {
-        const response = await deleteChat(chat.uuid)
-        if (response.ok) {
-            setChats(previous => previous.filter(c => c.uuid !== chat.uuid))
-            if (location.pathname.includes(chat.uuid)) {
-                location.href = "/"
-            }
-        } else {
-            notify(`Deletion of "${chat.title}" was not possible.`)
-        }
     }
 
     useEffect(() => {
@@ -167,26 +142,9 @@ export default function History() {
                                     className="flex flex-col p-2 rounded-xl translate-x-7 shadow-xl/50 border border-gray-500/50 bg-gray-700 light:bg-gray-300"
                                     sideOffset={4}
                                 >
-                                    <DropdownMenu.Item className={nonDestructiveDropdownItemClassName} onSelect={_ => startRename(c)}>
-                                        <Pencil1Icon className="size-4.5" /> Rename
-                                    </DropdownMenu.Item>
-
-                                    <DropdownMenu.Item className={nonDestructiveDropdownItemClassName} onSelect={_ => handleArchiveChat(c)}>
-                                        <ArchiveIcon className="size-4.5" /> Archive
-                                    </DropdownMenu.Item>
-
-                                    <ConfirmDialog
-                                        trigger={
-                                            <DropdownMenu.Item className={destructiveDropdownItemClassName} onSelect={e => e.preventDefault()}>
-                                                <TrashIcon className="size-4.5" /> Delete
-                                            </DropdownMenu.Item>
-                                        }
-                                        title="Delete Chat"
-                                        description={`Are you sure you want to delete "${c.title}"? This action cannot be undone.`}
-                                        confirmText="Delete"
-                                        cancelText="Cancel"
-                                        onConfirm={() => handleDelete(c)}
-                                    />
+                                    <RenameButton onSelect={() => startRename(c)} />
+                                    <ArchiveButton chat={c} />
+                                    <DeleteButton chat={c} />
                                 </DropdownMenu.Content>
                             </DropdownMenu.Portal>
                         </DropdownMenu.Root>

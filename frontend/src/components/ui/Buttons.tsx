@@ -1,11 +1,13 @@
-import { ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, Cross2Icon, PauseIcon, Pencil1Icon, PlusIcon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
+import { ArchiveIcon, ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, Cross2Icon, PauseIcon, Pencil1Icon, PlusIcon, TrashIcon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
 import { DropdownMenu, Tooltip } from "radix-ui"
 import { useEffect, useState, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react"
 import { useParams } from "react-router"
 
+import ConfirmDialog from "./ConfirmDialog"
 import { useChat } from "../../context/ChatProvider"
-import { regenerateMessage, stopPendingChats } from "../../utils/api"
-import type { Model } from "../../types"
+import { useNotify } from "../../context/NotificationProvider"
+import { archiveChat, deleteChat, regenerateMessage, stopPendingChats } from "../../utils/api"
+import type { Chat, Model } from "../../types"
 
 export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
     fileInputRef: RefObject<HTMLInputElement | null>
@@ -234,6 +236,66 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
     )
 }
 
+export function RenameButton({ onSelect }: { onSelect: () => void }) {
+    return (
+        <DropdownMenu.Item className={nonDestructiveChatDropdownItemClassName} onSelect={onSelect}>
+            <Pencil1Icon className="size-4.5" /> Rename
+        </DropdownMenu.Item>
+    )
+}
+
+export function ArchiveButton({ chat }: { chat: Chat }) {
+    const { setChats } = useChat()
+    const notify = useNotify()
+
+    async function handleArchiveChat(chat: Chat) {
+        const response = await archiveChat(chat.uuid)
+        if (response.ok) {
+            setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, is_archived: true } : c))
+        } else {
+            notify(`Archival of "${chat.title}" was not possible.`)
+        }
+    }
+
+    return (
+        <DropdownMenu.Item className={nonDestructiveChatDropdownItemClassName} onSelect={_ => handleArchiveChat(chat)}>
+            <ArchiveIcon className="size-4.5" /> Archive
+        </DropdownMenu.Item>
+    )
+}
+
+export function DeleteButton({ chat }: { chat: Chat }) {
+    const { setChats } = useChat()
+    const notify = useNotify()
+
+    async function handleDelete(chat: Chat) {
+        const response = await deleteChat(chat.uuid)
+        if (response.ok) {
+            setChats(previous => previous.filter(c => c.uuid !== chat.uuid))
+            if (location.pathname.includes(chat.uuid)) {
+                location.href = "/"
+            }
+        } else {
+            notify(`Deletion of "${chat.title}" was not possible.`)
+        }
+    }
+
+    return (
+        <ConfirmDialog
+            trigger={
+                <DropdownMenu.Item className={destructiveChatDropdownItemClassName} onSelect={e => e.preventDefault()}>
+                    <TrashIcon className="size-4.5" /> Delete
+                </DropdownMenu.Item>
+            }
+            title="Delete Chat"
+            description={`Are you sure you want to delete "${chat.title}"? This action cannot be undone.`}
+            confirmText="Delete"
+            cancelText="Cancel"
+            onConfirm={() => handleDelete(chat)}
+        />
+    )
+}
+
 export function TooltipButton({ trigger, tooltip, onClick, className = "", isDisabled = false, sideOffset = 3, tabIndex, asChild = false, tooltipSize = "sm", dataTestID }: {
     trigger: ReactNode
     tooltip: ReactNode
@@ -288,3 +350,7 @@ const dropdownItemClassName = `
     flex gap-1 px-3 py-2 rounded-xl cursor-pointer outline-none
     focus:bg-gray-700 light:focus:bg-gray-300 hover:bg-gray-700 light:bg-gray-300
 `
+
+const chatDropdownItemClassName = "flex gap-2 px-3 py-2 items-center rounded-xl cursor-pointer outline-none text-center"
+const nonDestructiveChatDropdownItemClassName = chatDropdownItemClassName + " text-white light:text-black hover:bg-gray-600 light:hover:bg-gray-400/50"
+const destructiveChatDropdownItemClassName = chatDropdownItemClassName + " text-red-500 hover:bg-red-400/20"
