@@ -14,9 +14,14 @@ export default function Chat() {
         <div className="flex flex-col size-full items-center">
             <Header />
             <Messages />
-            <h2 className={`fixed top-[35%] text-3xl font-semibold truncate duration-500 ${chatUUID && "opacity-0"}`}>
+            <h1
+                className={`
+                    text-3xl font-semibold truncate transition-opacity duration-300
+                    ${chatUUID ? "fixed mt-25 top-0 bottom-0 translate-y-[35%] opacity-0" : "mb-5"}
+                `}
+            >
                 How can I help you today?
-            </h2>
+            </h1>
             <Prompt />
         </div>
     )
