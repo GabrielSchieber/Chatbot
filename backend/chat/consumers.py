@@ -38,6 +38,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def send_message(self, event):
         await self.send_json({"message": event["message"], "message_index": event["message_index"]})
 
+    async def send_title(self, event):
+        await self.send_json({"title": event["title"]})
+
     async def send_end(self, event):
         await self.send_json("end")
 

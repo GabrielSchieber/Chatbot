@@ -26,9 +26,9 @@ threading.Thread(target = start_background_loop, args = [event_loop], daemon = T
 chat_futures: dict[str, asyncio.Future[None]] = {}
 opened_chats: set[str] = set()
 
-def generate_pending_message_in_chat(chat: Chat, should_randomize: bool = False):
+def generate_pending_message_in_chat(chat: Chat, should_generate_title: bool = False, should_randomize: bool = False):
     if chat.pending_message is not None:
-        future = asyncio.run_coroutine_threadsafe(sample_model(chat, should_randomize), event_loop)
+        future = asyncio.run_coroutine_threadsafe(generate_message(chat, should_generate_title, should_randomize), event_loop)
         future.add_done_callback(lambda f: task_done_callback(f, str(chat.uuid)))
         chat_futures[str(chat.uuid)] = future
 
@@ -43,7 +43,7 @@ def task_done_callback(future: asyncio.Future[None], chat_uuid: str):
     if exception:
         logger.exception("Task failed", exc_info = exception)
 
-async def sample_model(chat: Chat, should_randomize: bool):
+async def generate_message(chat: Chat, should_generate_title: bool, should_randomize: bool):
     model = get_ollama_model(chat.pending_message.model)
     if model not in str(ollama.list()):
         raise ValueError(f"Model {model} not installed")
@@ -76,14 +76,46 @@ async def sample_model(chat: Chat, should_randomize: bool):
     except asyncio.CancelledError:
         chat.pending_message = None
         await safe_save_chat(chat)
+        if should_generate_title:
+            await generate_title(chat)
         return
 
     await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": chat.pending_message.text, "message_index": message_index})
+
+    if should_generate_title:
+        await generate_title(chat)
 
     chat.pending_message = None
     await chat.asave(update_fields = ["pending_message"])
 
     await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_end"})
+
+async def generate_title(chat: Chat):
+    model = get_ollama_model("SmolLM2-135M")
+    if model not in str(ollama.list()):
+        raise ValueError(f"Model {model} not installed")
+
+    first_message = await chat.messages.afirst()
+    last_message = await chat.messages.alast()
+
+    messages = [
+        {
+            "role": "system",
+            "content": "You are a helpful assistant that generates very concise and accurate titles for chat conversations. The titles should be no longer than 5 words."
+        },
+        {
+            "role": "user",
+            "content": f"Generate a concise title for the following conversation:\n\n{first_message.text}\n...\n{last_message.text}\n\nTitle:"
+        }
+    ]
+
+    response = await ollama.AsyncClient().chat(model, messages, options = {"num_predict": 10})
+
+    title = response["message"]["content"].strip().replace("\n", " ")
+    if title != "":
+        chat.title = title
+        await chat.asave(update_fields = ["title"])
+        await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_title", "title": chat.title})
 
 @database_sync_to_async
 def get_messages(up_to_message: Message) -> list[dict[str, str]]:

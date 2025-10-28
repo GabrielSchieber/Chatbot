@@ -13,7 +13,7 @@ import { useChat } from "../../context/ChatProvider"
 export default function Messages() {
     const { chatUUID } = useParams()
 
-    const { messages, setMessages, setPendingChat } = useChat()
+    const { setChats, messages, setMessages, setPendingChat } = useChat()
 
     const webSocket = useRef<WebSocket | null>(null)
     const ref = useRef<HTMLDivElement | null>(null)
@@ -61,6 +61,9 @@ export default function Messages() {
 
                         return previous
                     })
+                } else if (data.title) {
+                    setChats(previous => previous.map(c => c.pending_message_id !== null ? { ...c, title: data.title } : c))
+                    setPendingChat(previous => previous ? { ...previous, title: data.title } : previous)
                 } else if (data === "end") {
                     setPendingChat(null)
                 }
