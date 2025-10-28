@@ -85,7 +85,7 @@ export default function Messages() {
     return (
         <div
             ref={ref}
-            className="flex flex-col size-full px-5 pt-10 pb-5 items-center overflow-y-auto"
+            className={`flex flex-col w-full px-5 pt-10 pb-5 items-center overflow-y-auto duration-500 ${!chatUUID ? "h-[35%]" : "h-[100%]"}`}
             style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
             onScroll={handleScroll}
         >

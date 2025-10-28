@@ -51,10 +51,11 @@ export default function Composer({
             layout
             transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
             className={`
-                flex flex-col w-[60vw] max-h-[50vh] rounded-4xl bg-gray-800 light:bg-gray-200
+                flex flex-col w-[60vw] rounded-4xl bg-gray-800 light:bg-gray-200
                 ${hasFiles ? "gap-2 px-4 pt-3 pb-1" : "px-3 py-1"}
                 ${withBorderAndShadow ? "mb-5 border-t-4 border-gray-600 light:border-gray-400 shadow-xl/50" : "mt-10 mb-5"}
             `}
+            style={{ maxHeight: "calc(50vh - 3rem)" }}
             onClick={e => {
                 if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
                     return
