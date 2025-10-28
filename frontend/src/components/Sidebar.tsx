@@ -23,7 +23,6 @@ export default function Sidebar() {
                 flex flex-col justify-between overflow-x-hidden overflow-y-auto bg-gray-800 light:bg-gray-200
                 transition-all duration-300 ${isOpen ? "min-w-[250px] max-w-[250px]" : "min-w-[50px] max-w-[50px]"}
             `}
-            style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
         >
             <div className={`sticky flex flex-col top-0 gap-1 p-2 bg-gray-800 light:bg-gray-200 ${isOpen && "border-b"}`}>
                 <button

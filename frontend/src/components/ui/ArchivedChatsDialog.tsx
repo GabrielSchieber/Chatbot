@@ -127,7 +127,6 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
                     <div
                         ref={entriesRef}
                         className="flex flex-col w-full max-h-[50vh] gap-1 px-2 py-4 items-center overflow-x-hidden overflow-y-auto"
-                        style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
                         data-testid="archived-chats"
                     >
                         {chats.filter(c => c.is_archived).map(c => (

@@ -86,7 +86,6 @@ export default function Messages() {
         <div
             ref={ref}
             className={`flex flex-col w-full px-5 pt-10 pb-5 items-center overflow-y-auto duration-500 ${!chatUUID ? "h-[35%]" : "h-[100%]"}`}
-            style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
             onScroll={handleScroll}
         >
             {messages.map((m, i) => (
@@ -98,7 +97,6 @@ export default function Messages() {
                             <>
                                 <div
                                     className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-800 light:bg-gray-200"
-                                    style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
                                     data-testid={`message-${i}`}
                                 >
                                     {m.files.length > 0 &&

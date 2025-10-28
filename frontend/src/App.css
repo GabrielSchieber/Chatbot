@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+:root {
+    --scrollbar-color: theme(colors.gray.500);
+}
+
+* {
+    scrollbar-color: var(--scrollbar-color) transparent;
+}
+
 @custom-variant light (&:where(.Light, .Light *));
 
 .Light {

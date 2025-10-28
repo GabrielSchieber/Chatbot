@@ -65,7 +65,7 @@ export default function Composer({
         >
             <input ref={fileInputRef} type="file" className="hidden" onChange={onFileChange} multiple />
 
-            <div className="flex flex-col gap-1 overflow-x-hidden overflow-y-auto" style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}>
+            <div className="flex flex-col gap-1 overflow-x-hidden overflow-y-auto">
                 {filesArea}
                 {isExtended &&
                     <TextArea

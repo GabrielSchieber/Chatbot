@@ -138,11 +138,7 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
                         </Dialog.Close>
                     </div>
 
-                    <div
-                        ref={entriesRef}
-                        className="flex flex-col w-full max-h-[50vh] gap-2 px-2 py-4 items-center overflow-x-hidden overflow-y-auto"
-                        style={{ scrollbarColor: "oklch(0.554 0.046 257.417) transparent" }}
-                    >
+                    <div ref={entriesRef} className="flex flex-col w-full max-h-[50vh] gap-2 px-2 py-4 items-center overflow-x-hidden overflow-y-auto">
                         {entries.map(e => <Entry key={e.uuid} entry={e} />)}
 
                         {isLoading ? (
