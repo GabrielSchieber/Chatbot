@@ -23,7 +23,7 @@ export function Form({ children, handleSubmit }: { children: ReactNode, handleSu
 }
 
 export function Header({ text }: { text: string }) {
-    return <h2 className="text-2xl font-bold text-center text-gray-100 light:text-gray-800">{text}</h2>
+    return <h1 className="text-2xl font-bold text-center text-gray-100 light:text-gray-800">{text}</h1>
 }
 
 export function Email({ email, setEmail }: { email: string, setEmail: Dispatch<SetStateAction<string>> }) {

@@ -14,7 +14,7 @@ export default function Header() {
 
     return (
         <header className="flex w-full p-3 items-center justify-between">
-            <h2 className="text-2xl font-semibold">Chatbot</h2>
+            <p className="text-2xl font-semibold">Chatbot</p>
 
             {currentChat &&
                 <DropdownMenu.Root>
