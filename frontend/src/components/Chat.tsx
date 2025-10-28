@@ -3,6 +3,7 @@ import { useParams } from "react-router"
 import Header from "./chat/Header"
 import Messages from "./chat/Messages"
 import Prompt from "./chat/Prompt"
+import { useChat } from "../context/ChatProvider"
 
 export const MAX_FILES = 10
 export const MAX_FILE_SIZE = 5_000_000
@@ -10,9 +11,11 @@ export const MAX_FILE_SIZE = 5_000_000
 export default function Chat() {
     const { chatUUID } = useParams()
 
+    const { isMobile } = useChat()
+
     return (
         <div className="flex flex-col size-full items-center">
-            <Header />
+            {!isMobile && <Header />}
             <Messages />
             <h1
                 className={`

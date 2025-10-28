@@ -11,6 +11,7 @@ interface ChatContextValue {
     messages: Message[]
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
     isLoading: boolean
+    isMobile: boolean
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined)
@@ -23,6 +24,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const [chats, setChats] = useState<Chat[]>([])
     const [messages, setMessages] = useState<Message[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 750)
 
     useEffect(() => {
         if (!shouldSet.current) return
@@ -77,8 +79,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         })
     }, [])
 
+    useEffect(() => {
+        const onResize = () => setIsMobile(window.innerWidth < 750)
+        window.addEventListener("resize", onResize)
+        return () => window.removeEventListener("resize", onResize)
+    }, [])
+
     return (
-        <ChatContext.Provider value={{ chats, setChats, messages, setMessages, isLoading }}>
+        <ChatContext.Provider value={{ chats, setChats, messages, setMessages, isLoading, isMobile }}>
             {children}
         </ChatContext.Provider>
     )
