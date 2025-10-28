@@ -10,8 +10,6 @@ interface ChatContextValue {
     setChats: React.Dispatch<React.SetStateAction<Chat[]>>
     messages: Message[]
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
-    pendingChat: Chat | null
-    setPendingChat: React.Dispatch<React.SetStateAction<Chat | null>>
     isLoading: boolean
 }
 
@@ -24,7 +22,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     const [chats, setChats] = useState<Chat[]>([])
     const [messages, setMessages] = useState<Message[]>([])
-    const [pendingChat, setPendingChat] = useState<Chat | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
@@ -72,7 +69,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             if (response.ok) {
                 response.json().then(chats => {
                     if (chats.length > 0) {
-                        setPendingChat(chats[0])
+                        setChats(previous => [...previous, ...chats])
                     }
                     setIsLoading(false)
                 })
@@ -81,7 +78,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     return (
-        <ChatContext.Provider value={{ chats, setChats, messages, setMessages, pendingChat, setPendingChat, isLoading }}>
+        <ChatContext.Provider value={{ chats, setChats, messages, setMessages, isLoading }}>
             {children}
         </ChatContext.Provider>
     )

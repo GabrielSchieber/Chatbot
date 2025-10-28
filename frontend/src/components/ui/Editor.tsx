@@ -13,7 +13,7 @@ import type { MessageFile, Model } from "../../types"
 export default function Editor({ index, setIndex }: { index: number, setIndex: React.Dispatch<React.SetStateAction<number>> }) {
     const { chatUUID } = useParams()
 
-    const { messages, setMessages, pendingChat, setPendingChat } = useChat()
+    const { chats, setChats, messages, setMessages } = useChat()
 
     const message = messages[index]
 
@@ -30,6 +30,8 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
     const [removedFiles, setRemovedFiles] = useState<MessageFile[]>([])
 
     const [isExtended, setIsExtended] = useState(false)
+
+    const pendingChat = chats.find(c => c.pending_message_id !== null)
 
     function edit(index: number) {
         if (chatUUID) {
@@ -77,7 +79,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
                     setAddedFiles([])
                     setRemovedFiles([])
 
-                    response.json().then(chat => setPendingChat(chat))
+                    response.json().then(chat => setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c)))
                 } else {
                     alert("Edition of message was not possible")
                 }
@@ -199,7 +201,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
             setModel={setModel}
             sendMessage={() => edit(index)}
             sendMessageWithEvent={() => { }}
-            isSendDisabled={(text.trim() === "" && getCurrentFiles().length === 0) || pendingChat !== null}
+            isSendDisabled={(text.trim() === "" && getCurrentFiles().length === 0) || pendingChat !== undefined}
             setIndex={setIndex}
             tabIndex={3}
         />

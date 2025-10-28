@@ -15,7 +15,7 @@ export default function Prompt() {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
-    const { chats, setChats, setMessages, pendingChat, setPendingChat, isLoading } = useChat()
+    const { chats, setChats, setMessages, isLoading } = useChat()
 
     const fileInputRef = useRef<HTMLInputElement | null>(null)
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -30,6 +30,8 @@ export default function Prompt() {
     const [shouldShowPendingNotification, setShouldShowPendingNotification] = useState(false)
 
     const [isExtended, setIsExtended] = useState(false)
+
+    const pendingChat = chats.find(c => c.pending_message_id !== null)
 
     function sendMessage() {
         newMessage(chatUUID || "", text, model, files).then(response => {
@@ -61,7 +63,6 @@ export default function Prompt() {
                         navigate(`/chat/${chat.uuid}`)
                         setChats(previous => !previous.find(c => c.uuid === chat.uuid) ? [chat, ...previous] : previous)
                     }
-                    setPendingChat(chat)
                 })
             } else {
                 alert("Failed to send message")
@@ -173,7 +174,7 @@ export default function Prompt() {
                     setModel={setModel}
                     sendMessage={sendMessage}
                     sendMessageWithEvent={sendMessageWithEvent}
-                    isSendDisabled={(text.trim() === "" && files.length === 0) || pendingChat !== null || isLoading}
+                    isSendDisabled={(text.trim() === "" && files.length === 0) || pendingChat !== undefined || isLoading}
                     pendingChat={pendingChat}
                 />
             </>

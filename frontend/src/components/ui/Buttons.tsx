@@ -93,7 +93,7 @@ export function SendButton({ sendMessage, isDisabled, tabIndex = 2 }: { sendMess
 }
 
 export function StopButton({ tabIndex = 2 }: { tabIndex?: number }) {
-    const { setPendingChat } = useChat()
+    const { setChats } = useChat()
 
     return (
         <TooltipButton
@@ -103,7 +103,7 @@ export function StopButton({ tabIndex = 2 }: { tabIndex?: number }) {
             tabIndex={tabIndex}
             onClick={() => {
                 stopPendingChats()
-                setPendingChat(null)
+                setChats(previous => previous.map(c => ({ ...c, pending_message_id: null })))
             }}
         />
     )
@@ -125,9 +125,10 @@ export function CancelButton({ setIndex, tabIndex = 2 }: { setIndex: React.Dispa
 export function EditButton({ onClick }: { onClick: () => void }) {
     const { chatUUID } = useParams()
 
-    const { chats, pendingChat, isLoading } = useChat()
+    const { chats, isLoading } = useChat()
 
     const currentChat = chats.find(c => c.uuid === chatUUID)
+    const pendingChat = chats.find(c => c.pending_message_id !== null)
 
     return (
         <TooltipButton
@@ -135,7 +136,7 @@ export function EditButton({ onClick }: { onClick: () => void }) {
             tooltip="Edit"
             className={messageButtonClassNames}
             onClick={onClick}
-            isDisabled={currentChat?.is_archived || pendingChat !== null || isLoading}
+            isDisabled={currentChat?.is_archived || pendingChat !== undefined || isLoading}
             dataTestID="edit"
         />
     )
@@ -162,11 +163,12 @@ export function CopyButton({ text }: { text: string }) {
 export function RegenerateButton({ index, model }: { index: number, model: Model | null }) {
     const { chatUUID } = useParams()
 
-    const { chats, setMessages, pendingChat, setPendingChat, isLoading } = useChat()
-
-    const currentChat = chats.find(c => c.uuid === chatUUID)
+    const { chats, setChats, setMessages, isLoading } = useChat()
 
     const [isRotating, setIsRotating] = useState(false)
+
+    const currentChat = chats.find(c => c.uuid === chatUUID)
+    const pendingChat = chats.find(c => c.pending_message_id !== null)
 
     function regenerate(model: Model) {
         if (chatUUID) {
@@ -180,7 +182,7 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
                     })
 
                     response.json().then(chat => {
-                        setPendingChat(chat)
+                        setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
                         setIsRotating(true)
                     })
                 } else {
@@ -193,7 +195,7 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
     }
 
     useEffect(() => {
-        if (pendingChat === null) {
+        if (!pendingChat) {
             setIsRotating(false)
         }
     }, [pendingChat])
@@ -203,7 +205,7 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
             <DropdownMenu.Root>
                 <Tooltip.Root>
                     <Tooltip.Trigger asChild>
-                        <DropdownMenu.Trigger className={messageButtonClassNames} disabled={currentChat?.is_archived || pendingChat !== null || isLoading} data-testid="regenerate">
+                        <DropdownMenu.Trigger className={messageButtonClassNames} disabled={currentChat?.is_archived || pendingChat !== undefined || isLoading} data-testid="regenerate">
                             <UpdateIcon className={`size-4.5 ${isRotating && "animate-spin"}`} />
                         </DropdownMenu.Trigger>
                     </Tooltip.Trigger>
