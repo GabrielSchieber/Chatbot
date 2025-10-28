@@ -13,7 +13,7 @@ import { useChat } from "../../context/ChatProvider"
 export default function Messages() {
     const { chatUUID } = useParams()
 
-    const { setChats, messages, setMessages } = useChat()
+    const { setChats, messages, setMessages, isMobile } = useChat()
 
     const webSocket = useRef<WebSocket | null>(null)
     const ref = useRef<HTMLDivElement | null>(null)
@@ -87,11 +87,11 @@ export default function Messages() {
     return (
         <div
             ref={ref}
-            className={`flex flex-col w-full px-5 pt-10 pb-5 items-center overflow-y-auto duration-500 ${!chatUUID ? "h-[35%]" : "h-[100%]"}`}
+            className={`flex flex-col w-full px-5 pt-10 pb-5 overflow-y-auto duration-500 ${!chatUUID ? "h-[35%]" : "h-[100%]"} ${!isMobile && "items-center"}`}
             onScroll={handleScroll}
         >
             {messages.map((m, i) => (
-                <div key={m.id} className={`flex flex-col gap-0.5 w-[60vw] justify-self-center ${m.is_from_user ? "items-end" : "items-start"}`}>
+                <div key={m.id} className={`flex flex-col gap-0.5 ${m.is_from_user ? "items-end" : "items-start"} ${!isMobile && "w-[60vw]"}`}>
                     {editingMessageIndex === i ? (
                         <Editor index={editingMessageIndex} setIndex={setEditingMessageIndex} />
                     ) : (

@@ -3,6 +3,7 @@ import type { ChangeEvent, Dispatch, KeyboardEvent, ReactNode, RefObject, SetSta
 
 import { CancelButton, PlusDropdown, SendButton, StopButton } from "../ui/Buttons"
 import TextArea from "../ui/TextArea"
+import { useChat } from "../../context/ChatProvider"
 import type { Chat, Model } from "../../types"
 
 export default function Composer({
@@ -46,14 +47,17 @@ export default function Composer({
     pendingChat?: Chat | null
     tabIndex?: number
 }) {
+    const { isMobile } = useChat()
+
     return (
         <motion.div
             layout
             transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
             className={`
-                flex flex-col w-[60vw] rounded-4xl bg-gray-800 light:bg-gray-200
+                flex flex-col rounded-4xl bg-gray-800 light:bg-gray-200
                 ${hasFiles ? "gap-2 px-4 pt-3 pb-1" : "px-3 py-1"}
                 ${withBorderAndShadow ? "mb-5 border-t-4 border-gray-600 light:border-gray-400 shadow-xl/50" : "mt-10 mb-5"}
+                ${isMobile ? "w-[95%]" : "w-[60vw]"}
             `}
             style={{ maxHeight: "calc(50vh - 3rem)" }}
             onClick={e => {
