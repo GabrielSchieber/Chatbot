@@ -96,7 +96,7 @@ export default function History({ sidebarRef }: { sidebarRef: React.RefObject<HT
     }, [hasMore, isLoading])
 
     return (
-        <div className="flex-1 gap-1 px-2 py-4 justify-items-center" data-testid="history">
+        <div className="flex flex-col grow gap-1 px-2 py-4 items-center justify-items-center" data-testid="history">
             {chats.filter(c => !c.is_archived).sort((a, b) => a.index - b.index).map(c => (
                 renameUUID === c.uuid ? (
                     <input
