@@ -1,5 +1,6 @@
 import { Page, expect, test } from "@playwright/test"
-import { Chat, User, signupAndLogin } from "./utils"
+import { authenticator } from "otplib"
+import { Chat, User, signupAndLogin, signupWithMFAEnabledAndLogin, apiFetch } from "./utils"
 
 test("user can open settings", async ({ page }) => {
     const user = await signupAndLogin(page)
@@ -176,10 +177,16 @@ test("user can delete account", async ({ page }) => {
     const confirmDialogTitle = page.getByRole("heading", { name: "Delete Account", exact: true })
     await expect(confirmDialogTitle).toBeVisible()
 
-    const confirmDialog = confirmDialogTitle.locator("..")
+    // find the dialog container and ensure action buttons are visible
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
     await expect(confirmDialog).toBeVisible()
 
     await expect(confirmDialog.getByRole("button", { name: "Cancel", exact: true })).toBeVisible()
+
+    // fill required password (and MFA if needed) before confirming
+    const passwordInput = confirmDialog.locator("input[type='password']")
+    await passwordInput.fill(user.password)
+
     await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
     await page.waitForURL("/login")
 
@@ -188,6 +195,180 @@ test("user can delete account", async ({ page }) => {
     await page.click("button")
 
     await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
+})
+
+test("user can delete account with MFA enabled", async ({ page }) => {
+    const { user } = await signupWithMFAEnabledAndLogin(page)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+    await expect(confirmDialog).toBeVisible()
+
+    // fill password
+    await confirmDialog.locator("input[type='password']").fill(user.password)
+
+    // fetch secret and generate current TOTP code
+    const response = await apiFetch(`/test/get-mfa-secret/?email=${user.email}`, {})
+    expect(response.status).toBe(200)
+    const secret = await response.json()
+    const code = authenticator.generate(secret)
+
+    // fill MFA code field and confirm
+    await confirmDialog.getByPlaceholder("MFA code").fill(code)
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+
+    await page.waitForURL("/login")
+
+    // ensure account was deleted (cannot log in)
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+    await page.click("button")
+    await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
+})
+
+test("user can delete account with an MFA backup code", async ({ page }) => {
+    const { user, backupCodes } = await signupWithMFAEnabledAndLogin(page)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+    await expect(confirmDialog).toBeVisible()
+
+    // fill password
+    await confirmDialog.locator("input[type='password']").fill(user.password)
+
+    // fill backup code (first one) and confirm
+    await confirmDialog.getByPlaceholder("MFA code").fill(backupCodes[0])
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+
+    await page.waitForURL("/login")
+
+    // ensure account was deleted (cannot log in)
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+    await page.click("button")
+    await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
+})
+
+test("user cannot delete account with an incorrect password", async ({ page }) => {
+    const { user } = await signupWithMFAEnabledAndLogin(page)
+    await page.getByText("Settings").click()
+
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+
+    await expect(confirmDialog).toBeVisible()
+
+    // fill password
+    await confirmDialog.locator("input[type='password']").fill("wrong-password")
+
+    // fetch secret and generate current TOTP code
+    const response = await apiFetch(`/test/get-mfa-secret/?email=${user.email}`, {})
+    expect(response.status).toBe(200)
+    const secret = await response.json()
+    const code = authenticator.generate(secret)
+
+    // fill MFA code field and confirm
+    await confirmDialog.getByPlaceholder("MFA code").fill(code)
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+
+    // deletion should fail: dialog remains (no redirect to /login)
+    await expect(confirmDialog).toBeVisible()
+    await expect(confirmDialog.getByText("Invalid password.", { exact: true })).toBeVisible()
+})
+
+test("user cannot delete account with an invalid MFA code", async ({ page }) => {
+    const { user } = await signupWithMFAEnabledAndLogin(page)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+
+    await expect(confirmDialog).toBeVisible()
+
+    // fill password and an invalid MFA code
+    await confirmDialog.locator("input[type='password']").fill(user.password)
+    await confirmDialog.getByPlaceholder("MFA code").fill("000000")
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+
+    // deletion should fail: dialog remains (no redirect to /login)
+    await expect(confirmDialog).toBeVisible()
+    await expect(confirmDialog.getByText("Invalid MFA code.", { exact: true })).toBeVisible({ timeout: 15_000 })
+})
+
+test("user cannot delete account with a used MFA backup code", async ({ page }) => {
+    test.setTimeout(60_000)
+    const { user, backupCodes } = await signupWithMFAEnabledAndLogin(page)
+
+    // log out so we can consume a backup code via the login flow
+    await page.getByTestId("open-settings").click()
+    await page.getByRole("button", { name: "Log out", exact: true }).click()
+    await page.waitForURL("/login")
+
+    // perform login with a recovery code (this will consume the first backup code)
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+    await page.click("button")
+
+    await expect(page.getByText("Multi-Factor Authentication", { exact: true })).toBeVisible()
+    await expect(page.getByText("Enter the 6-digit code from your authenticator app", { exact: true })).toBeVisible()
+
+    await page.getByRole("button", { name: "Use recovery code", exact: true }).click()
+    await expect(page.getByText("Recover Multi-Factor Authentication", { exact: true })).toBeVisible()
+    await expect(page.getByText("Enter one of your recovery code", { exact: true })).toBeVisible()
+
+    await page.fill("input", backupCodes[0])
+    await page.getByRole("button", { name: "Verify", exact: true }).click()
+    await expect(page.getByRole("button", { name: "Verifying", exact: true })).toBeVisible()
+    await page.waitForURL("/")
+
+    // we're now logged in and the first backup code was consumed
+    // attempt to delete using the same (used) backup code
+    await page.getByText("Settings").click()
+    // small pause to ensure auth state and UI settled
+    await page.waitForTimeout(500)
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+    await expect(confirmDialog).toBeVisible()
+
+    // fill password and the already-used backup code
+    await confirmDialog.locator("input[type='password']").fill(user.password)
+    await confirmDialog.getByPlaceholder("MFA code").fill(backupCodes[0])
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+
+    // deletion should fail: dialog remains (no redirect to /login)
+    await expect(confirmDialog).toBeVisible()
+
+    // cleanup: cancel and ensure account still exists by logging out and logging back in
+    await confirmDialog.getByRole("button", { name: "Cancel", exact: true }).click()
+    await page.getByRole("button", { name: "Log out", exact: true }).click()
+    await page.waitForURL("/login")
+
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+    await page.click("button")
+
+    // Try to login; either the app will prompt for MFA or will directly sign-in.
+    // First, try a quick redirect to "/". If that doesn't happen, complete MFA with the next backup code.
+    try {
+        await page.waitForURL("/", { timeout: 2000 })
+    } catch (e) {
+        // MFA required — complete with next backup code
+        await expect(page.getByText("Multi-Factor Authentication", { exact: true })).toBeVisible()
+        await page.getByRole("button", { name: "Use recovery code", exact: true }).click()
+        await expect(page.getByText("Recover Multi-Factor Authentication", { exact: true })).toBeVisible()
+        await page.fill("input", backupCodes[1])
+        await page.getByRole("button", { name: "Verify", exact: true }).click()
+        await expect(page.getByRole("button", { name: "Verifying", exact: true })).toBeVisible()
+        await page.waitForURL("/")
+    }
 })
 
 test("user can log out", async ({ page }) => {

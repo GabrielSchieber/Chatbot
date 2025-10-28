@@ -60,8 +60,12 @@ export async function disableMFA(code: string) {
     })
 }
 
-export function deleteAccount() {
-    return apiFetch("delete-account/", { method: "DELETE" })
+export function deleteAccount(password: string, mfaCode?: string) {
+    return apiFetch("delete-account/", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, mfa_code: mfaCode })
+    })
 }
 
 export function getChat(chatUUID: string) {

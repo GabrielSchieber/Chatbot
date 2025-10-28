@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon, Cross1Icon, GearIcon } from "@radix-ui/react-icons"
 import { Dialog, Select } from "radix-ui"
-import { useState, type ReactNode } from "react"
+import { useState, useEffect, type ReactNode } from "react"
 
 import { ArchivedChatsDialog } from "../ui/ArchivedChatsDialog"
 import ConfirmDialog from "../ui/ConfirmDialog"
@@ -146,29 +146,107 @@ function DeleteChatsEntryItem() {
 }
 
 function DeleteAccountEntryItem() {
-    function handleDeleteAccount() {
-        deleteAccount().then(response => {
+    const { user } = useAuth()
+
+    const [isOpen, setIsOpen] = useState(false)
+    const [password, setPassword] = useState("")
+    const [mfaCode, setMFACode] = useState("")
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (!isOpen) {
+            setPassword("")
+            setMFACode("")
+            setIsLoading(false)
+            setError(null)
+        }
+    }, [isOpen])
+
+    async function handleConfirmDelete() {
+        setError(null)
+
+        if (!password) {
+            setError("Password is required to delete the account.")
+            return
+        }
+
+        if (user?.mfa?.is_enabled && !mfaCode) {
+            setError("MFA code is required.")
+            return
+        }
+
+        try {
+            setIsLoading(true)
+            const response = await deleteAccount(password, user?.mfa?.is_enabled ? mfaCode : undefined)
             if (response.ok) {
                 location.reload()
             } else {
-                alert("Deletion of account was not possible")
+                const json = await response.json().catch(() => ({}))
+                setError(json.error || "Deletion of account was not possible")
             }
-        })
+        } catch (err) {
+            setError("Network or server error")
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     return (
-        <ConfirmDialog
-            trigger={
-                <button className={destructiveEntryClasses}>
-                    Delete
-                </button>
-            }
-            title="Delete Account"
-            description="Are you sure you want to delete your account? This action cannot be undone."
-            confirmText="Delete Account"
-            cancelText="Cancel"
-            onConfirm={handleDeleteAccount}
-        />
+        <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
+            <Dialog.Trigger className={destructiveEntryClasses} data-testid="open-delete-account">
+                Delete
+            </Dialog.Trigger>
+
+            <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+
+                <Dialog.Content className="fixed w-80 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 rounded-xl bg-gray-800 light:bg-gray-200 text-white light:text-black">
+                    <div className="flex justify-between items-center mb-2">
+                        <Dialog.Title className="text-lg font-semibold">Delete Account</Dialog.Title>
+                        <Dialog.Description hidden>Delete Account</Dialog.Description>
+                        <Dialog.Close className="p-1 rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
+                            <Cross1Icon />
+                        </Dialog.Close>
+                    </div>
+
+                    <div className="text-sm mb-3">This action cannot be undone. Enter your password{user?.mfa?.is_enabled ? " and MFA code" : ""} to confirm.</div>
+
+                    <div className="flex flex-col gap-2">
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            placeholder="Password"
+                            className="px-2 py-1 rounded border bg-gray-900 light:bg-white light:text-black"
+                            disabled={isLoading}
+                        />
+
+                        {user?.mfa?.is_enabled && (
+                            <input
+                                type="text"
+                                value={mfaCode}
+                                onChange={e => setMFACode(e.target.value)}
+                                placeholder="MFA code"
+                                className="px-2 py-1 rounded border bg-gray-900 light:bg-white light:text-black"
+                                disabled={isLoading}
+                            />
+                        )}
+
+                        {error && <div className="text-red-400 text-sm">{error}</div>}
+
+                        <div className="flex justify-end gap-2 mt-2">
+                            <Dialog.Close asChild>
+                                <button className={entryClasses} disabled={isLoading}>Cancel</button>
+                            </Dialog.Close>
+                            <button className={destructiveEntryClasses} onClick={handleConfirmDelete} disabled={isLoading}>
+                                {isLoading ? "Deleting..." : "Delete Account"}
+                            </button>
+                        </div>
+                    </div>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
     )
 }
 
