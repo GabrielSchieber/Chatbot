@@ -59,9 +59,11 @@ export default function Prompt() {
                 setFiles([])
 
                 response.json().then(chat => {
-                    if (!chatUUID) {
+                    if (chatUUID) {
+                        setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
+                    } else {
                         navigate(`/chat/${chat.uuid}`)
-                        setChats(previous => !previous.find(c => c.uuid === chat.uuid) ? [chat, ...previous] : previous)
+                        setChats(previous => [...previous, chat])
                     }
                 })
             } else {
