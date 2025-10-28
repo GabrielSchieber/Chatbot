@@ -119,7 +119,7 @@ export default function History({ sidebarRef }: { sidebarRef: React.RefObject<HT
                     <a
                         key={`a-${c.uuid}`}
                         className={`
-                            flex w-full px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-600 light:hover:bg-gray-400/40
+                            flex w-full gap-2 px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-600 light:hover:bg-gray-400/40
                             ${c.uuid === chatUUID ? "bg-gray-700 light:bg-gray-300" : c.uuid === isOpenUUID && "bg-gray-600 light:bg-gray-400/40"}
                         `}
                         href={`/chat/${c.uuid}`}

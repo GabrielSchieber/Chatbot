@@ -184,8 +184,7 @@ async function sendExampleChat(page: Page, index: number, messagePairs?: number)
         i += 2
 
         if (index === 0) {
-            const chatsInHistory = await page.getByTestId("history").getByRole("link").count()
-            const chatAnchor = page.getByRole("link", { name: `Chat ${chatsInHistory}`, exact: true })
+            const chatAnchor = page.getByTestId("history").getByRole("link").first()
             await expect(chatAnchor).toBeVisible()
             await chatAnchor.hover()
             await chatAnchor.getByRole("button").click()
