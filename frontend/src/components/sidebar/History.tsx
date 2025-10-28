@@ -123,6 +123,7 @@ export default function History({ sidebarRef }: { sidebarRef: React.RefObject<HT
                             ${c.uuid === chatUUID ? "bg-gray-700 light:bg-gray-300" : c.uuid === isOpenUUID && "bg-gray-600 light:bg-gray-400/40"}
                         `}
                         href={`/chat/${c.uuid}`}
+                        title={c.title}
                         onMouseEnter={_ => setIsHoveringUUID(c.uuid)}
                         onMouseLeave={_ => setIsHoveringUUID("")}
                     >
