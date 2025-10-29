@@ -185,7 +185,7 @@ class ViewTests(TestCase):
         response = self.client.get("/api/get-chats/")
         self.assertEqual(response.status_code, 200)
 
-        expected_chats = [{"uuid": str(chat1.uuid), "title": chat1.title, "pending_message_id": None}]
+        expected_chats = [{"uuid": str(chat1.uuid), "title": chat1.title, "pending_message_id": None, "is_archived": False, "index": 0}]
         self.assertEqual(response.json()["chats"], expected_chats)
 
         chat2 = Chat.objects.create(user = user1, title = "Test chat 2")
@@ -193,8 +193,8 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         expected_chats = [
-            {"uuid": str(chat2.uuid), "title": chat2.title, "pending_message_id": None},
-            {"uuid": str(chat1.uuid), "title": chat1.title, "pending_message_id": None}
+            {"uuid": str(chat2.uuid), "title": chat2.title, "pending_message_id": None, "is_archived": False, "index": 0},
+            {"uuid": str(chat1.uuid), "title": chat1.title, "pending_message_id": None, "is_archived": False, "index": 1}
         ]
         self.assertEqual(response.json()["chats"], expected_chats)
 
@@ -208,7 +208,7 @@ class ViewTests(TestCase):
         response = self.client.get("/api/get-chats/")
         self.assertEqual(response.status_code, 200)
 
-        expected_chats = [{"uuid": str(chat3.uuid), "title": chat3.title, "pending_message_id": None}]
+        expected_chats = [{"uuid": str(chat3.uuid), "title": chat3.title, "pending_message_id": None, "is_archived": False, "index": 0}]
         self.assertEqual(response.json()["chats"], expected_chats)
 
         chat4 = Chat.objects.create(user = user2, title = "Test chat 4")
@@ -216,8 +216,8 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         expected_chats = [
-            {"uuid": str(chat4.uuid), "title": chat4.title, "pending_message_id": None},
-            {"uuid": str(chat3.uuid), "title": chat3.title, "pending_message_id": None}
+            {"uuid": str(chat4.uuid), "title": chat4.title, "pending_message_id": None, "is_archived": False, "index": 0},
+            {"uuid": str(chat3.uuid), "title": chat3.title, "pending_message_id": None, "is_archived": False, "index": 1}
         ]
         self.assertEqual(response.json()["chats"], expected_chats)
 
