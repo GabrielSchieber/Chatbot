@@ -2,9 +2,12 @@ import { ArchiveIcon, ChatBubbleIcon, Cross1Icon, MagnifyingGlassIcon } from "@r
 import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
 
+import { useAuth } from "../../context/AuthProvider"
 import { getChats, searchChats } from "../../utils/api"
 
-export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
+export default function Search({ itemClassNames }: { itemClassNames: string }) {
+    const { user } = useAuth()
+
     const entriesRef = useRef<HTMLDivElement | null>(null)
     const sentinelRef = useRef<HTMLDivElement | null>(null)
     const requestIDRef = useRef(0)
@@ -16,6 +19,8 @@ export default function Search({ isSidebarOpen, itemClassNames }: { isSidebarOpe
 
     const [hasMore, setHasMore] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
+
+    const isSidebarOpen = user ? user.preferences.has_sidebar_open : true
 
     async function loadEntries(reset: boolean, searchOverride?: string) {
         if (!reset && loadingCountRef.current > 0) return

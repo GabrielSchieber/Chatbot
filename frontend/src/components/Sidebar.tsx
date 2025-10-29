@@ -1,5 +1,5 @@
-import { ChevronLeftIcon, ChevronRightIcon, DotsHorizontalIcon, PlusIcon } from "@radix-ui/react-icons"
-import { useRef, useState } from "react"
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "@radix-ui/react-icons"
+import { useRef } from "react"
 
 import History from "./sidebar/History"
 import Search from "./sidebar/Search"
@@ -9,13 +9,13 @@ import { useChat } from "../context/ChatProvider"
 import { me } from "../utils/api"
 
 export default function Sidebar() {
-    const { user } = useAuth()
-
+    const { user, setUser } = useAuth()
     const { isMobile } = useChat()
 
     const ref = useRef<HTMLDivElement | null>(null)
 
-    const [isOpen, setIsOpen] = useState(user ? user.preferences.has_sidebar_open : true)
+    const isOpen = user ? user.preferences.has_sidebar_open : true
+    const setIsOpen = (value: boolean) => setUser(previous => previous ? { ...previous, preferences: { ...previous.preferences, has_sidebar_open: value } } : previous)
 
     const itemClassNames = "flex gap-1 p-2 items-center rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"
 
@@ -23,7 +23,7 @@ export default function Sidebar() {
         <>
             <div
                 className={`fixed inset-0 duration-500 ${isMobile && isOpen ? "bg-black/50" : "pointer-events-none"}`}
-                onClick={_ => setIsOpen(false)}
+                onClick={_ => (false)}
             />
 
             <div
@@ -54,7 +54,7 @@ export default function Sidebar() {
                         <PlusIcon className="size-5" /> {isOpen && "New Chat"}
                     </a>
 
-                    <Search isSidebarOpen={isOpen} itemClassNames={itemClassNames} />
+                    <Search itemClassNames={itemClassNames} />
                 </div>
 
                 {isOpen && <History sidebarRef={ref} />}
@@ -63,18 +63,6 @@ export default function Sidebar() {
                     <Settings isSidebarOpen={isOpen} itemClassNames={itemClassNames} />
                 </div>
             </div>
-
-            {isMobile && !isOpen && (
-                <button
-                    className={itemClassNames + " fixed m-2"}
-                    onClick={_ => {
-                        me(undefined, true)
-                        setIsOpen(true)
-                    }}
-                >
-                    <DotsHorizontalIcon className="size-5" />
-                </button>
-            )}
         </>
     )
 }
