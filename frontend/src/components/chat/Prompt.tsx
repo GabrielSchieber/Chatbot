@@ -63,7 +63,7 @@ export default function Prompt() {
                         setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
                     } else {
                         navigate(`/chat/${chat.uuid}`)
-                        setChats(previous => [...previous, chat])
+                        setChats(previous => [...previous.map(c => ({ ...c, index: c.index + 1 })), chat])
                     }
                 })
             } else {
