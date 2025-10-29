@@ -15,7 +15,7 @@ export default function Prompt() {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
-    const { chats, setChats, setMessages, isLoading } = useChat()
+    const { chats, setChats, setMessages, isLoading, isMobile } = useChat()
 
     const fileInputRef = useRef<HTMLInputElement | null>(null)
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -139,7 +139,7 @@ export default function Prompt() {
                 </button>
             </div>
         ) : (
-            <>
+            <div className={`flex flex-col w-full items-center ${isMobile && "mt-auto"}`}>
                 <AnimatePresence>
                     {shouldShowPendingNotification && pendingChat && (
                         <motion.div
@@ -179,7 +179,7 @@ export default function Prompt() {
                     isSendDisabled={(text.trim() === "" && files.length === 0) || pendingChat !== undefined || isLoading}
                     pendingChat={pendingChat}
                 />
-            </>
+            </div>
         )
     )
 }
