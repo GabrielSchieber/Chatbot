@@ -393,7 +393,7 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 401)
 
         self.login_user()
-        response = self.client.delete("/api/delete-account/")
+        response = self.client.delete("/api/delete-account/", {"password": "testpassword"}, "application/json")
         self.assertEqual(response.status_code, 204)
         self.assertEqual(User.objects.count(), 0)
 
@@ -401,7 +401,7 @@ class ViewTests(TestCase):
         user = create_user("someone@example.com", "somepassword")
 
         self.login_user("test@example.com", "testpassword")
-        response = self.client.delete("/api/delete-account/")
+        response = self.client.delete("/api/delete-account/", {"password": "testpassword"}, "application/json")
         self.assertEqual(response.status_code, 204)
         self.assertEqual(User.objects.count(), 1)
         self.assertEqual(User.objects.first(), user)
