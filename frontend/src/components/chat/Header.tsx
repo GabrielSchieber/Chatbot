@@ -22,51 +22,52 @@ export default function Header() {
     const itemClassNames = "flex gap-1 p-2 items-center rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"
 
     return (
-        <header className="flex w-full px-3 py-1 items-center justify-between">
-            {isMobile ? (
-                !isSidebarOpen && (
-                    <div className="flex gap-1">
-                        <button
-                            className={itemClassNames}
-                            onClick={_ => {
-                                me(undefined, true)
-                                setIsSidebarOpen(true)
-                            }}
-                            data-testid="toggle-sidebar"
-                        >
-                            <ChevronRightIcon className="size-5" />
-                        </button>
+        <header className="flex w-full p-2 items-center justify-between">
+            {isMobile && (
+                <div className={`flex gap-1 ${isSidebarOpen && "invisible"}`}>
+                    <button
+                        className={itemClassNames}
+                        onClick={_ => {
+                            me(undefined, true)
+                            setIsSidebarOpen(true)
+                        }}
+                        data-testid="toggle-sidebar"
+                    >
+                        <ChevronRightIcon className="size-5" />
+                    </button>
 
-                        <a className={itemClassNames} href="/" data-testid="new-chat">
-                            <PlusIcon className="size-5" />
-                        </a>
+                    <a className={itemClassNames} href="/" data-testid="new-chat">
+                        <PlusIcon className="size-5" />
+                    </a>
 
-                        <Search itemClassNames={itemClassNames} />
-                    </div>
-                )
-            ) : (
-                <p className="text-2xl font-semibold">Chatbot</p>
+                    <Search showLabel={!isMobile && isSidebarOpen} itemClassNames={itemClassNames} />
+                </div>
             )}
 
-            {currentChat &&
-                <DropdownMenu.Root>
-                    <DropdownMenu.Trigger
-                        className="
-                            p-2 rounded-lg cursor-pointer outline-none hover:bg-gray-700/50
-                            light:hover:bg-gray-300/50 focus:bg-gray-700/50 light:focus:bg-gray-300/50
-                        "
-                    >
-                        <DotsVerticalIcon className="size-4.5" />
-                    </DropdownMenu.Trigger>
+            <p className="text-2xl font-semibold">Chatbot</p>
 
-                    <DropdownMenu.Portal>
-                        <DropdownMenu.Content className="flex flex-col mr-2 p-2 rounded-xl shadow-xl/50 border border-gray-500/50 bg-gray-700 light:bg-gray-300">
-                            <ArchiveButton chat={currentChat} />
-                            <DeleteButton chat={currentChat} />
-                        </DropdownMenu.Content>
-                    </DropdownMenu.Portal>
-                </DropdownMenu.Root>
-            }
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger
+                    className={`
+                        p-2 rounded-lg cursor-pointer outline-none hover:bg-gray-700/50
+                        light:hover:bg-gray-300/50 focus:bg-gray-700/50 light:focus:bg-gray-300/50
+                        ${!chatUUID && "invisible"}
+                    `}
+                >
+                    <DotsVerticalIcon className="size-4.5" />
+                </DropdownMenu.Trigger>
+
+                <DropdownMenu.Portal>
+                    <DropdownMenu.Content className="flex flex-col mr-2 p-2 rounded-xl shadow-xl/50 border border-gray-500/50 bg-gray-700 light:bg-gray-300">
+                        {currentChat && (
+                            <>
+                                <ArchiveButton chat={currentChat} />
+                                <DeleteButton chat={currentChat} />
+                            </>
+                        )}
+                    </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+            </DropdownMenu.Root>
         </header>
     )
 }

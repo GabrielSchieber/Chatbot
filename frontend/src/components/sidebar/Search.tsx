@@ -2,12 +2,9 @@ import { ArchiveIcon, ChatBubbleIcon, Cross1Icon, MagnifyingGlassIcon } from "@r
 import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
 
-import { useAuth } from "../../context/AuthProvider"
 import { getChats, searchChats } from "../../utils/api"
 
-export default function Search({ itemClassNames }: { itemClassNames: string }) {
-    const { user } = useAuth()
-
+export default function Search({ showLabel, itemClassNames }: { showLabel: boolean, itemClassNames: string }) {
     const entriesRef = useRef<HTMLDivElement | null>(null)
     const sentinelRef = useRef<HTMLDivElement | null>(null)
     const requestIDRef = useRef(0)
@@ -19,8 +16,6 @@ export default function Search({ itemClassNames }: { itemClassNames: string }) {
 
     const [hasMore, setHasMore] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
-
-    const isSidebarOpen = user ? user.preferences.has_sidebar_open : true
 
     async function loadEntries(reset: boolean, searchOverride?: string) {
         if (!reset && loadingCountRef.current > 0) return
@@ -106,7 +101,7 @@ export default function Search({ itemClassNames }: { itemClassNames: string }) {
             }}
         >
             <Dialog.Trigger className={itemClassNames} data-testid="search-chats">
-                <MagnifyingGlassIcon className="size-5" /> {isSidebarOpen && "Search Chats"}
+                <MagnifyingGlassIcon className="size-5" /> {showLabel && "Search Chats"}
             </Dialog.Trigger>
 
             <Dialog.Portal>

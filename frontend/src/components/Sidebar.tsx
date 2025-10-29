@@ -23,7 +23,7 @@ export default function Sidebar() {
         <>
             <div
                 className={`fixed inset-0 duration-500 ${isMobile && isOpen ? "bg-black/50" : "pointer-events-none"}`}
-                onClick={_ => (false)}
+                onClick={_ => setIsOpen(false)}
             />
 
             <div
@@ -54,7 +54,7 @@ export default function Sidebar() {
                         <PlusIcon className="size-5" /> {isOpen && "New Chat"}
                     </a>
 
-                    <Search itemClassNames={itemClassNames} />
+                    <Search showLabel={isOpen} itemClassNames={itemClassNames} />
                 </div>
 
                 {isOpen && <History sidebarRef={ref} />}
