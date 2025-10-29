@@ -232,8 +232,15 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
             <p className={paragraphClassName}>
                 Make sure to backup the following 10 recovery codes in a safe place (each one can only be used once):
             </p>
-            <ul className="relative flex flex-col w-sm px-4 py-2 rounded-xl bg-gray-700 light:bg-gray-300">
-                <div className="absolute right-0 flex flex-col mr-2 gap-1">
+
+            <ul className="flex w-[60%] min-w-70 px-4 py-2 justify-between rounded-xl bg-gray-700 light:bg-gray-300">
+                <div>
+                    {backupCodes.map(c =>
+                        <li key={c} className="font-mono">{c}</li>
+                    )}
+                </div>
+
+                <div className="flex flex-col gap-1">
                     <button
                         className="p-1.5 rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"
                         onClick={_ => {
@@ -244,6 +251,7 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
                     >
                         {isCopyButtonChecked ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />}
                     </button>
+
                     <button
                         className="p-1.5 rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"
                         onClick={handleDownload}
@@ -251,16 +259,15 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
                         <DownloadIcon className="size-4.5" />
                     </button>
                 </div>
-                {backupCodes.map(c =>
-                    <li key={c} className="font-mono">{c}</li>
-                )}
             </ul>
+
             <button className="flex gap-2 items-center cursor-pointer outline-none" onClick={_ => setHasConfirmedBackup(!hasConfirmedBackup)}>
                 <div className="flex size-6 rounded bg-gray-600 hover:bg-gray-500 light:bg-gray-400">
                     {hasConfirmedBackup && <CheckIcon className="size-6" />}
                 </div>
                 <p>I have backed up the codes.</p>
             </button>
+
             <Dialog.Close className={buttonClassNames} disabled={!hasConfirmedBackup}>
                 Close
             </Dialog.Close>
