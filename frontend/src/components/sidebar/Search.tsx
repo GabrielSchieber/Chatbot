@@ -116,7 +116,7 @@ export default function Search({ showLabel, itemClassNames }: { showLabel: boole
                     className={`
                         fixed flex flex-col items-center left-1/2 -translate-x-1/2
                         text-white light:text-black bg-gray-800 light:bg-gray-200
-                        ${isMobile ? "inset-0 size-full" : "w-[75%] max-w-200 top-[20vh] rounded-xl"}
+                        ${isMobile ? "inset-0 size-full" : "w-[75%] max-w-200 top-[10vh] max-h-[80vh] rounded-xl"}
                     `}
                 >
                     <Dialog.Title hidden>Search Chats</Dialog.Title>
