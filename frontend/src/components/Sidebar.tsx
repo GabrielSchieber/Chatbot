@@ -57,7 +57,7 @@ export default function Sidebar() {
                     <Search showLabel={isOpen} itemClassNames={itemClassNames} />
                 </div>
 
-                {isOpen && <History sidebarRef={ref} />}
+                <History isSidebarOpen={isOpen} sidebarRef={ref} />
 
                 <div className={`sticky flex flex-col bottom-0 p-2 bg-gray-800 light:bg-gray-200 ${isOpen && "border-t"}`}>
                     <Settings isSidebarOpen={isOpen} itemClassNames={itemClassNames} />

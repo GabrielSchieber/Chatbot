@@ -9,7 +9,7 @@ import { useNotify } from "../../context/NotificationProvider"
 import { getChats, renameChat } from "../../utils/api"
 import type { Chat } from "../../types"
 
-export default function History({ sidebarRef }: { sidebarRef: React.RefObject<HTMLDivElement | null> }) {
+export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: boolean, sidebarRef: React.RefObject<HTMLDivElement | null> }) {
     const { chatUUID } = useParams()
 
     const { chats, setChats } = useChat()
@@ -96,7 +96,7 @@ export default function History({ sidebarRef }: { sidebarRef: React.RefObject<HT
     }, [hasMore, isLoading])
 
     return (
-        <div className="flex flex-col grow gap-1 px-2 py-4 items-center justify-items-center" data-testid="history">
+        <div className={`flex flex-col grow gap-1 px-2 py-4 items-center justify-items-center ${!isSidebarOpen && "hidden"}`} data-testid="history">
             {chats.filter(c => !c.is_archived).sort((a, b) => a.index - b.index).map(c => (
                 renameUUID === c.uuid ? (
                     <input
