@@ -37,14 +37,14 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
 
                 <Dialog.Content
                     className="
-                        fixed flex flex-col gap-3 p-4 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                        fixed flex flex-col gap-5 p-6 top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2
                         rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
                     "
                     onEscapeKeyDown={e => isLocked && e.preventDefault()}
                     onInteractOutside={e => isLocked && e.preventDefault()}
                 >
                     <div className="flex flex-col gap-2">
-                        <div className="flex gap-2 justify-between">
+                        <div className="flex gap-2 items-center justify-between">
                             <Dialog.Title className="text-xl font-bold">
                                 Manage multi-factor authentication
                             </Dialog.Title>
@@ -179,7 +179,7 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
             <div className="my-2">
                 <QRCodeCanvas value={authURL} size={200} />
             </div>
-            <div className="flex gap-2 px-2 py-0.5 rounded bg-gray-700 light:bg-gray-300">
+            <div className="flex gap-2 px-2 py-0.5 items-center rounded bg-gray-700 light:bg-gray-300">
                 <p>Secret: {secret}</p>
                 <button
                     className="p-1 rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"
