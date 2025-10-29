@@ -335,12 +335,12 @@ export function TooltipButton({ trigger, tooltip, onClick, className = "", isDis
 
 const messageButtonClassNames = `
     p-2 rounded-lg cursor-pointer hover:bg-gray-700
-    light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed
+    light:hover:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed
 `
 
 const promptBarButtonClassNames = `
     p-1.5 rounded-full cursor-pointer outline-none hover:bg-gray-700 light:hover:bg-gray-300
-    focus:bg-gray-700 light:focus:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50 transition
+    focus:bg-gray-700 light:focus:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500 transition
 `
 
 const dropdownContentClassName = `
