@@ -234,8 +234,8 @@ class GetChat(APIView):
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
         except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-        except Exception:
-            return Response(status = status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
         return Response(ChatSerializer(chat, many = False).data, status.HTTP_200_OK)
 
@@ -299,9 +299,12 @@ class RenameChat(APIView):
         if chat_uuid is None or new_title is None:
             return Response({"error": "Both 'chat_uuid' and 'new_title' fields must be provided."}, status.HTTP_400_BAD_REQUEST)
 
-        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
-        if chat is None:
+        try:
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+        except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+        except:
+            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
         chat.title = new_title
         chat.save()
@@ -316,9 +319,12 @@ class ArchiveChat(APIView):
         if chat_uuid is None:
             return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
 
-        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
-        if chat is None:
+        try:
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+        except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+        except:
+            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
         stop_pending_chat(chat)
         chat.is_archived = True
@@ -334,9 +340,12 @@ class UnarchiveChat(APIView):
         if chat_uuid is None:
             return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
 
-        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
-        if chat is None:
+        try:
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+        except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+        except:
+            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
         stop_pending_chat(chat)
         chat.is_archived = False
@@ -352,9 +361,12 @@ class DeleteChat(APIView):
         if chat_uuid is None:
             return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_404_NOT_FOUND)
 
-        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
-        if chat is None:
+        try:
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+        except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+        except:
+            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
         stop_pending_chat(chat)
         chat.delete()
@@ -414,9 +426,12 @@ class GetMessageFileContent(APIView):
             return Response({"error": "'message_file_id' field must be provided."}, status.HTTP_400_BAD_REQUEST)
         message_file_id = int(message_file_id)
 
-        chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
-        if chat is None:
+        try:
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+        except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+        except:
+            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
         message_file = MessageFile.objects.filter(message__chat = chat, id = message_file_id).first()
 
@@ -437,7 +452,7 @@ class GetMessages(APIView):
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
         except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-        except Exception:
+        except:
             return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
         messages = Message.objects.filter(chat = chat).order_by("created_at").prefetch_related("files")
@@ -457,8 +472,11 @@ class NewMessage(APIView):
             if chat_uuid == "":
                 chat = Chat.objects.create(user = request.user, title = f"Chat {Chat.objects.filter(user = request.user).count() + 1}")
             else:
-                chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
-                if not chat:
+                try:
+                    chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+                except Chat.DoesNotExist:
+                    return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+                except:
                     return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"error": "Invalid data type for 'chat_uuid' field."}, status.HTTP_400_BAD_REQUEST)
@@ -507,15 +525,15 @@ class EditMessage(APIView):
             return Response({"error": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
 
         chat_uuid = request.data.get("chat_uuid")
-        if chat_uuid:
-            if type(chat_uuid) == str:
-                chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
-                if not chat:
-                    return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
-            else:
-                return Response({"error": "Invalid data type for 'chat_uuid' field."}, status.HTTP_400_BAD_REQUEST)
+        if type(chat_uuid) == str:
+            try:
+                chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            except Chat.DoesNotExist:
+                return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+            except:
+                return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error": "A valid chat UUID must be provided."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid data type for 'chat_uuid' field."}, status.HTTP_400_BAD_REQUEST)
 
         text = request.data.get("text", "")
         if type(text) != str:
@@ -590,15 +608,15 @@ class RegenerateMessage(APIView):
             return Response({"error": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
 
         chat_uuid = request.data.get("chat_uuid")
-        if chat_uuid:
-            if type(chat_uuid) == str:
-                chat = Chat.objects.filter(user = request.user, uuid = chat_uuid).first()
-                if not chat:
-                    return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
-            else:
-                return Response({"error": "Invalid data type for 'chat_uuid'."}, status.HTTP_400_BAD_REQUEST)
+        if type(chat_uuid) == str:
+            try:
+                chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            except Chat.DoesNotExist:
+                return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+            except:
+                return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error": "A valid chat UUID must be provided."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid data type for 'chat_uuid' field."}, status.HTTP_400_BAD_REQUEST)
 
         index = request.data.get("index")
         if not index:
