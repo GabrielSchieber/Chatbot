@@ -7,24 +7,29 @@ import type { MessageFile } from "../../types"
 
 export default function Attachments({ files, onRemove, onRemoveAll }: { files: MessageFile[], onRemove?: (file: MessageFile) => void, onRemoveAll?: () => void }) {
     return (
-        <div className="relative flex flex-1 flex-col gap-1 items-start">
-            {files.map(f => (
-                <Attachment key={f.id} file={f} onRemove={onRemove} />
-            ))}
-            {files.length > 0 &&
-                <div className="flex gap-1 text-sm">
-                    <p className="px-2.5 py-1 rounded-lg bg-gray-800 light:bg-gray-200">
-                        Files: {files.length}/{MAX_FILES}
-                    </p>
-                    <p className="px-2.5 py-1 rounded-lg bg-gray-800 light:bg-gray-200">
-                        Size: {getFileSize(files.map(f => f.content_size).reduce((a, c) => a + c, 0))}/{getFileSize(MAX_FILE_SIZE)}
-                    </p>
-                </div>
-            }
+        <div className="flex flex-1 gap-1 justify-between">
+            <div className="flex flex-col gap-1 items-start">
+                {files.map(f => (
+                    <Attachment key={f.id} file={f} onRemove={onRemove} />
+                ))}
+                {files.length > 0 &&
+                    <div className="flex gap-1 text-sm">
+                        <p className="px-2.5 py-1 rounded-lg bg-gray-800 light:bg-gray-200">
+                            Files: {files.length}/{MAX_FILES}
+                        </p>
+                        <p className="px-2.5 py-1 rounded-lg bg-gray-800 light:bg-gray-200">
+                            Size: {getFileSize(files.map(f => f.content_size).reduce((a, c) => a + c, 0))}/{getFileSize(MAX_FILE_SIZE)}
+                        </p>
+                    </div>
+                }
+            </div>
+
             {onRemoveAll && files.length > 0 &&
-                <button className="absolute right-0 p-1 rounded-3xl cursor-pointer hover:bg-red-500/40" onClick={onRemoveAll} tabIndex={3}>
-                    <Cross1Icon className="size-3.5" />
-                </button>
+                <div>
+                    <button className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/40" onClick={onRemoveAll} tabIndex={3}>
+                        <Cross1Icon className="size-3.5" />
+                    </button>
+                </div>
             }
         </div>
     )
