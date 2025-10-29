@@ -10,7 +10,7 @@ import { archiveChats, deleteChat, getChats, unarchiveChat, unarchiveChats } fro
 import type { Chat } from "../../types"
 
 export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: string }) {
-    const { chats, setChats } = useChat()
+    const { chats, setChats, isMobile } = useChat()
     const notify = useNotify()
 
     const entriesRef = useRef<HTMLDivElement | null>(null)
@@ -107,10 +107,10 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
                 <Dialog.Overlay className="fixed inset-0 bg-black/50" />
 
                 <Dialog.Content
-                    className="
-                        fixed flex flex-col w-150 top-[20vh] left-1/2 -translate-x-1/2
-                        rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
-                    "
+                    className={`
+                        fixed flex flex-col left-1/2 -translate-x-1/2 text-white light:text-black bg-gray-800 light:bg-gray-200
+                        ${isMobile ? "inset-0 size-full" : "w-[75%] max-w-200 top-[20vh] rounded-xl"}
+                    `}
                 >
                     <div className="flex p-4 items-center justify-between border-b">
                         <Dialog.Title className="text-lg font-semibold">Archived Chats</Dialog.Title>
