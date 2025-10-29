@@ -25,8 +25,9 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
 
                 <Dialog.Content
                     className="
-                        fixed flex flex-col gap-5 w-100 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                        p-6 rounded-xl bg-gray-800 light:bg-gray-300 text-white light:text-black
+                        fixed flex flex-col w-[90%] max-w-100 gap-5 p-6
+                        top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 rounded-xl
+                        text-white light:text-black bg-gray-800 light:bg-gray-200
                     "
                 >
                     <div className="flex justify-between items-center">
@@ -265,7 +266,7 @@ function LogoutEntryItem() {
 
 function Entry({ name, item }: { name: string, item: ReactNode }) {
     return (
-        <div className="flex justify-between items-center border-b py-2">
+        <div className="flex gap-3 md:gap-20 py-2 items-center justify-between border-b">
             <label>{name}</label>
             {item}
         </div>
