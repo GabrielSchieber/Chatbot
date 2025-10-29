@@ -13,6 +13,7 @@ export default function Search({ showLabel, itemClassNames }: { showLabel: boole
     const [search, setSearch] = useState("")
     const [entries, setEntries] = useState<SearchEntry[]>([])
     const [hasChats, setHasChats] = useState(false)
+    const [isOpen, setIsOpen] = useState(false)
 
     const [hasMore, setHasMore] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
@@ -53,7 +54,7 @@ export default function Search({ showLabel, itemClassNames }: { showLabel: boole
     }, [])
 
     useEffect(() => {
-        if (!hasChats) return
+        if (!hasChats || !isOpen) return
 
         const query = search
         const debounceMs = 300
@@ -92,6 +93,7 @@ export default function Search({ showLabel, itemClassNames }: { showLabel: boole
     return (
         <Dialog.Root
             onOpenChange={async open => {
+                setIsOpen(open)
                 if (open) {
                     requestIDRef.current++
                     setEntries([])
