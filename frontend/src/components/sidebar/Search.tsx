@@ -3,10 +3,10 @@ import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
 
 import { useChat } from "../../context/ChatProvider"
-import { getChats, searchChats } from "../../utils/api"
+import { searchChats } from "../../utils/api"
 
 export default function Search({ showLabel, itemClassNames }: { showLabel: boolean, itemClassNames: string }) {
-    const { isMobile } = useChat()
+    const { chats, isMobile } = useChat()
 
     const entriesRef = useRef<HTMLDivElement | null>(null)
     const sentinelRef = useRef<HTMLDivElement | null>(null)
@@ -15,11 +15,12 @@ export default function Search({ showLabel, itemClassNames }: { showLabel: boole
 
     const [search, setSearch] = useState("")
     const [entries, setEntries] = useState<SearchEntry[]>([])
-    const [hasChats, setHasChats] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
 
     const [hasMore, setHasMore] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
+
+    const hasChats = chats.length > 0
 
     async function loadEntries(reset: boolean, searchOverride?: string) {
         if (!reset && loadingCountRef.current > 0) return
@@ -46,15 +47,6 @@ export default function Search({ showLabel, itemClassNames }: { showLabel: boole
             setIsLoading(loadingCountRef.current > 0)
         }
     }
-
-    useEffect(() => {
-        getChats(0, 1).then(async response => {
-            if (response.ok) {
-                const data = await response.json()
-                setHasChats(data.chats.length > 0)
-            }
-        })
-    }, [])
 
     useEffect(() => {
         if (!hasChats || !isOpen) return
