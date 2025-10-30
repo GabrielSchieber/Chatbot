@@ -26,6 +26,7 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
     const [renameTitle, setRenameTitle] = useState("")
 
     const [isHoveringUUID, setIsHoveringUUID] = useState("")
+    const [isFocusingUUID, setIsFocusingUUID] = useState("")
     const [isOpenUUID, setIsOpenUUID] = useState("")
 
     async function loadEntries(reset: boolean) {
@@ -119,19 +120,41 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
                     <a
                         key={`a-${c.uuid}`}
                         className={`
-                            flex w-full gap-2 px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-600 light:hover:bg-gray-400/40
+                            flex w-full gap-2 px-2 py-1 items-center justify-between rounded-lg outline-none
+                            hover:bg-gray-600 light:hover:bg-gray-400/40
+                            focus:bg-gray-600 light:focus:bg-gray-400/40
                             ${c.uuid === chatUUID ? "bg-gray-700 light:bg-gray-300" : c.uuid === isOpenUUID && "bg-gray-600 light:bg-gray-400/40"}
                         `}
                         href={`/chat/${c.uuid}`}
                         title={c.title}
                         onMouseEnter={_ => setIsHoveringUUID(c.uuid)}
                         onMouseLeave={_ => setIsHoveringUUID("")}
+                        onFocus={_ => setIsFocusingUUID(c.uuid)}
+                        onBlur={e => {
+                            const related = (e as React.FocusEvent<HTMLAnchorElement>).relatedTarget as Node | null
+                            if (related && e.currentTarget.contains(related)) return
+                            setIsHoveringUUID("")
+                            setIsFocusingUUID("")
+                        }}
                     >
                         <p className="truncate">{c.title}</p>
 
-                        <DropdownMenu.Root open={isOpenUUID === c.uuid} onOpenChange={o => setIsOpenUUID(o ? c.uuid : "")} modal={false}>
+                        <DropdownMenu.Root
+                            open={isOpenUUID === c.uuid}
+                            onOpenChange={o => {
+                                setIsHoveringUUID(o ? c.uuid : "")
+                                setIsFocusingUUID(o ? c.uuid : "")
+                                setIsOpenUUID(o ? c.uuid : "")
+                            }}
+                            modal={false}
+                        >
                             <DropdownMenu.Trigger
-                                className={`${isHoveringUUID !== c.uuid && isOpenUUID !== c.uuid && "hidden"} py-1 rounded cursor-pointer outline-none hover:bg-gray-500/50 light:hover:bg-gray-400/60`}
+                                className={`
+                                    ${isHoveringUUID !== c.uuid && isFocusingUUID !== c.uuid && isOpenUUID !== c.uuid && "hidden"}
+                                    py-1 rounded cursor-pointer outline-none
+                                    hover:bg-gray-500/50 light:hover:bg-gray-400/60
+                                    focus:bg-gray-500/50 light:focus:bg-gray-400/60
+                                `}
                                 onClick={e => e.preventDefault()}
                             >
                                 <DotsVerticalIcon />
@@ -139,7 +162,7 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
 
                             <DropdownMenu.Portal>
                                 <DropdownMenu.Content
-                                    className="flex flex-col p-2 rounded-xl translate-x-7 shadow-xl/50 border border-gray-500/50 bg-gray-700 light:bg-gray-300"
+                                    className="flex flex-col p-2 rounded-xl translate-x-10 shadow-xl/50 border border-gray-500/50 bg-gray-700 light:bg-gray-300"
                                     sideOffset={4}
                                 >
                                     <RenameButton onSelect={() => startRename(c)} />
