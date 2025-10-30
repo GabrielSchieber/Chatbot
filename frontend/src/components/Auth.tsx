@@ -1,13 +1,6 @@
 import { Label } from "radix-ui"
 import type { Dispatch, ReactNode, SetStateAction } from "react"
 
-export const formClassNames = "flex flex-col gap-3 p-4 items-center justify-center rounded-xl bg-gray-800 light:bg-gray-100"
-export const inputClassNames = "w-full px-3 py-2 rounded-xl outline-none bg-gray-700 light:bg-gray-300"
-export const buttonClassNames = `
-    px-6 py-1 rounded-xl cursor-pointer bg-gray-700 light:bg-gray-300 hover:bg-gray-600
-    light:hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed
-`
-
 export type Step = "login" | "mfa" | "mfa-recovery"
 
 export function Form({ children, handleSubmit }: { children: ReactNode, handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void }) {

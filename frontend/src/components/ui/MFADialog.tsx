@@ -3,7 +3,6 @@ import { QRCodeCanvas } from "qrcode.react"
 import { Dialog } from "radix-ui"
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react"
 
-import { buttonClassNames, inputClassNames } from "../Auth"
 import { useAuth } from "../../context/AuthProvider"
 import { useNotify } from "../../context/NotificationProvider"
 import { disableMFA, enableMFA, setupMFA } from "../../utils/api"
@@ -343,3 +342,10 @@ function DisabledDialog() {
 const paragraphBaseClassName = "w-fit px-2 py-1 text-center rounded-lg"
 const paragraphClassName = paragraphBaseClassName + " bg-gray-700 light:bg-gray-300"
 const errorParagraphClassName = paragraphBaseClassName + " text-white bg-red-500/60 light:bg-red-500"
+const inputClassNames = "w-full px-3 py-2 rounded-xl outline-none bg-gray-700 light:bg-gray-300"
+const buttonClassNames = `
+    px-6 py-1 rounded-xl cursor-pointer
+    bg-gray-700 light:bg-gray-300
+    hover:bg-gray-600 light:hover:bg-gray-400
+    disabled:opacity-50 disabled:cursor-not-allowed
+`
