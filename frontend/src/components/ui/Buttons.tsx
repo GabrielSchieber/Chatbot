@@ -31,7 +31,7 @@ export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
             />
 
             <DropdownMenu.Portal>
-                <DropdownMenu.Content className={dropdownContentClassName}>
+                <DropdownMenu.Content className={dropdownContentClassName + " mx-2"}>
                     <DropdownMenu.Item className={dropdownItemClassName} onClick={_ => fileInputRef.current?.click()}>
                         <UploadIcon className="size-6" /> Add files
                     </DropdownMenu.Item>
@@ -369,7 +369,7 @@ const promptBarButtonClassNames = `
 `
 
 const dropdownContentClassName = `
-    flex flex-col gap-2 mx-2 p-2 rounded-xl border
+    flex flex-col gap-2 p-2 rounded-xl border
     text-white light:text-black
     border-gray-600 light:border-gray-400
     bg-gray-800 light:bg-gray-200
