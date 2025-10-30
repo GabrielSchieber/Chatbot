@@ -244,18 +244,18 @@ class ViewTests(TestCase):
 
         response = self.client.get("/api/search-chats/?search=A question about math")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "A question about math", "matches": [], "last_modified_at": ""}])
+        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "A question about math", "matches": [], "is_archived": False, "last_modified_at": "Today"}])
 
         Message.objects.create(chat = chat, text = "What is math?", is_from_user = True)
         Message.objects.create(chat = chat, text = "Math is...", is_from_user = False)
 
         response = self.client.get("/api/search-chats/?search=What is math?")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "A question about math", "matches": ["What is math?"], "last_modified_at": "Today"}])
+        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "A question about math", "matches": ["What is math?"], "is_archived": False, "last_modified_at": "Today"}])
 
         response = self.client.get("/api/search-chats/?search=math")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "A question about math", "matches": ["What is math?", "Math is..."], "last_modified_at": "Today"}])
+        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "A question about math", "matches": ["What is math?", "Math is..."], "is_archived": False, "last_modified_at": "Today"}])
 
         response = self.client.get("/api/search-chats/?search=What is geometry?")
         self.assertEqual(response.status_code, 200)
@@ -269,18 +269,18 @@ class ViewTests(TestCase):
 
         response = self.client.get("/api/search-chats/?search=Geometry question")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "Geometry question", "matches": [], "last_modified_at": ""}])
+        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "Geometry question", "matches": [], "is_archived": False, "last_modified_at": "Today"}])
 
         Message.objects.create(chat = chat, text = "What is geometry?", is_from_user = True)
         Message.objects.create(chat = chat, text = "Geometry is...", is_from_user = False)
 
         response = self.client.get("/api/search-chats/?search=What is geometry?")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "Geometry question", "matches": ["What is geometry?"], "last_modified_at": "Today"}])
+        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "Geometry question", "matches": ["What is geometry?"], "is_archived": False, "last_modified_at": "Today"}])
 
         response = self.client.get("/api/search-chats/?search=geometry")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "Geometry question", "matches": ["What is geometry?", "Geometry is..."], "last_modified_at": "Today"}])
+        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "Geometry question", "matches": ["What is geometry?", "Geometry is..."], "is_archived": False, "last_modified_at": "Today"}])
 
     def test_rename_chat(self):
         response = self.client.patch("/api/rename-chat/")
