@@ -261,8 +261,8 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
                 </div>
             </ul>
 
-            <button className="flex gap-2 items-center cursor-pointer outline-none" onClick={_ => setHasConfirmedBackup(!hasConfirmedBackup)}>
-                <div className="flex size-6 rounded bg-gray-600 hover:bg-gray-500 light:bg-gray-400">
+            <button className="flex gap-2 p-1 items-center rounded cursor-pointer" onClick={_ => setHasConfirmedBackup(!hasConfirmedBackup)}>
+                <div className="flex size-6 rounded bg-gray-700 light:bg-gray-300">
                     {hasConfirmedBackup && <CheckIcon className="size-6" />}
                 </div>
                 <p>I have backed up the codes.</p>
