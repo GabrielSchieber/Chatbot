@@ -320,7 +320,7 @@ export function TooltipButton({ trigger, tooltip, onClick, className = "", isDis
                 </Tooltip.Trigger>
                 <Tooltip.Portal>
                     <Tooltip.Content
-                        className={`px-2 py-1 text-${tooltipSize} text-white rounded-lg bg-black`}
+                        className={`mx-1 px-2 py-1 text-${tooltipSize} text-white rounded-lg bg-black`}
                         side="bottom"
                         sideOffset={sideOffset}
                         onMouseEnter={_ => setIsOpen(false)}
@@ -334,25 +334,44 @@ export function TooltipButton({ trigger, tooltip, onClick, className = "", isDis
 }
 
 const messageButtonClassNames = `
-    p-2 rounded-lg cursor-pointer hover:bg-gray-700
-    light:hover:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed
+    p-2 rounded-lg cursor-pointer outline-none
+    hover:bg-gray-700 light:hover:bg-gray-300
+    focus:bg-gray-700 light:focus:bg-gray-300
+    disabled:text-gray-500 disabled:cursor-not-allowed
 `
 
 const promptBarButtonClassNames = `
-    p-1.5 rounded-full cursor-pointer outline-none hover:bg-gray-700 light:hover:bg-gray-300
-    focus:bg-gray-700 light:focus:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500 transition
+    p-1.5 rounded-full cursor-pointer outline-none
+    hover:bg-gray-700 light:hover:bg-gray-300
+    focus:bg-gray-700 light:focus:bg-gray-300
+    disabled:cursor-not-allowed disabled:text-gray-500
 `
 
 const dropdownContentClassName = `
-    flex flex-col gap-2 p-2 text-white light:text-black rounded-xl
-    border border-gray-600 light:border-gray-400 bg-gray-800 light:bg-gray-200
+    flex flex-col gap-2 mx-2 p-2 rounded-xl border
+    text-white light:text-black
+    border-gray-600 light:border-gray-400
+    bg-gray-800 light:bg-gray-200
 `
 
 const dropdownItemClassName = `
     flex gap-1 px-3 py-2 rounded-xl cursor-pointer outline-none
-    focus:bg-gray-700 light:focus:bg-gray-300 hover:bg-gray-700 light:bg-gray-300
+    hover:bg-gray-700 light:hover:bg-gray-300
+    focus:bg-gray-700 light:focus:bg-gray-300
 `
 
-const chatDropdownItemClassName = "flex gap-2 px-3 py-2 items-center rounded-xl cursor-pointer outline-none text-center"
-const nonDestructiveChatDropdownItemClassName = chatDropdownItemClassName + " text-white light:text-black hover:bg-gray-600 light:hover:bg-gray-400/50"
-const destructiveChatDropdownItemClassName = chatDropdownItemClassName + " text-red-500 hover:bg-red-400/20"
+const chatDropdownItemClassName = "flex gap-2 px-3 py-2 items-center text-center rounded-xl cursor-pointer outline-none"
+
+const nonDestructiveChatDropdownItemClassName = `
+    ${chatDropdownItemClassName}
+    text-white light:text-black
+    hover:bg-gray-600 light:hover:bg-gray-400/50
+    focus:bg-gray-600 light:focus:bg-gray-400/50
+`
+
+const destructiveChatDropdownItemClassName = `
+    ${chatDropdownItemClassName}
+    text-red-500
+    hover:bg-red-400/20
+    focus:bg-red-400/20
+`
