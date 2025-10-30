@@ -64,7 +64,7 @@ export default function Composer({
     }, [isExtended])
 
     return (
-        <motion.div
+        <motion.form
             layout
             className={`
                 flex flex-col max-h-[50vh] rounded-4xl bg-gray-800 light:bg-gray-200
@@ -79,7 +79,7 @@ export default function Composer({
                 textAreaRef.current?.focus()
             }}
         >
-            <input ref={fileInputRef} type="file" className="hidden" onChange={onChangeFile} multiple />
+            <input ref={fileInputRef} className="hidden" type="file" onChange={onChangeFile} tabIndex={-1} aria-hidden multiple />
 
             <div className="flex flex-col gap-1 overflow-x-hidden overflow-y-auto">
                 {files.length > 0 && (
@@ -127,6 +127,6 @@ export default function Composer({
                     )}
                 </div>
             </div>
-        </motion.div>
+        </motion.form>
     )
 }
