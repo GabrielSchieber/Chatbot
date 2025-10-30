@@ -1,8 +1,6 @@
-import { AnimatePresence, motion } from "motion/react"
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import { useParams } from "react-router"
 
-import Attachments from "./Attachments"
 import Composer from "./Composer"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
@@ -13,25 +11,15 @@ import type { MessageFile, Model } from "../../types"
 export default function Editor({ index, setIndex }: { index: number, setIndex: React.Dispatch<React.SetStateAction<number>> }) {
     const { chatUUID } = useParams()
 
-    const { chats, setChats, messages, setMessages } = useChat()
+    const { setChats, messages, setMessages } = useChat()
 
     const message = messages[index]
-
-    const fileInputRef = useRef<HTMLInputElement | null>(null)
-    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
-
-    const selectionStart = useRef(0)
-    const selectionEnd = useRef(0)
 
     const [text, setText] = useState(message.text)
     const [model, setModel] = useState<Model>(messages[index + 1].model || "SmolLM2-135M")
 
     const [addedFiles, setAddedFiles] = useState<File[]>([])
     const [removedFiles, setRemovedFiles] = useState<MessageFile[]>([])
-
-    const [isExtended, setIsExtended] = useState(false)
-
-    const pendingChat = chats.find(c => c.pending_message_id !== null)
 
     function edit(index: number) {
         if (chatUUID) {
@@ -175,53 +163,24 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
         return [...current, ...added]
     }
 
-    useEffect(() => {
-        setIsExtended(isExtended ? text !== "" : text.split("\n").length > 1 || (textAreaRef.current?.clientHeight || 0) > 48)
-    }, [text])
-
-    useEffect(() => {
-        textAreaRef.current?.setSelectionRange(selectionStart.current, selectionEnd.current)
-        textAreaRef.current?.focus()
-    }, [isExtended])
-
     return (
         <Composer
-            fileInputRef={fileInputRef}
-            textAreaRef={textAreaRef}
-            selectionStart={selectionStart}
-            selectionEnd={selectionEnd}
             text={text}
             setText={setText}
-            isExtended={isExtended}
-            hasFiles={getCurrentFiles().length > 0}
-            withBorderAndShadow={false}
-            filesArea={<Files files={getCurrentFiles()} onRemove={removeFile} onRemoveAll={removeFiles} />}
-            onFileChange={handleFileChange}
+            files={getCurrentFiles()}
             model={model}
             setModel={setModel}
+
+            onChangeFile={handleFileChange}
+            onRemoveFile={removeFile}
+            onRemoveAllFiles={removeFiles}
             sendMessage={() => edit(index)}
             sendMessageWithEvent={() => { }}
-            isSendDisabled={(text.trim() === "" && getCurrentFiles().length === 0) || pendingChat !== undefined}
+
+            withBorderAndShadow={false}
+
             setIndex={setIndex}
             tabIndex={3}
         />
-    )
-}
-
-function Files({ files, onRemove, onRemoveAll }: { files: MessageFile[], onRemove: (file: MessageFile) => void, onRemoveAll: () => void }) {
-    return (
-        <AnimatePresence>
-            {files.length > 0 && (
-                <motion.div
-                    layout
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    className="flex flex-wrap gap-2 p-2 rounded-xl border bg-gray-700 light:bg-gray-300 border-gray-200 light:border-gray-800"
-                >
-                    <Attachments files={files} onRemove={onRemove} onRemoveAll={onRemoveAll} />
-                </motion.div>
-            )}
-        </AnimatePresence>
     )
 }

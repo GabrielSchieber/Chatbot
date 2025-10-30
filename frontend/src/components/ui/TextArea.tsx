@@ -1,4 +1,3 @@
-import { motion } from "motion/react"
 import { useEffect } from "react"
 
 export default function TextArea({ ref, text, setText, sendMessageWithEvent, selectionStart, selectionEnd, tabIndex = 1 }: {
@@ -18,8 +17,8 @@ export default function TextArea({ ref, text, setText, sendMessageWithEvent, sel
     }, [text])
 
     return (
-        <motion.div className="flex flex-1">
-            <motion.textarea
+        <div className="flex flex-1">
+            <textarea
                 ref={ref}
                 className="flex-1 p-2 overflow-hidden resize-none outline-none"
                 value={text}
@@ -34,6 +33,6 @@ export default function TextArea({ ref, text, setText, sendMessageWithEvent, sel
                 rows={1}
                 autoFocus
             />
-        </motion.div>
+        </div>
     )
 }

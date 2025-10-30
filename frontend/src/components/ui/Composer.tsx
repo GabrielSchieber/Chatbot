@@ -1,65 +1,77 @@
 import { motion } from "motion/react"
-import type { ChangeEvent, Dispatch, KeyboardEvent, ReactNode, RefObject, SetStateAction } from "react"
+import { useEffect, useRef, useState, type ChangeEvent, type Dispatch, type KeyboardEvent, type SetStateAction } from "react"
 
-import { CancelButton, PlusDropdown, SendButton, StopButton } from "../ui/Buttons"
-import TextArea from "../ui/TextArea"
+import Attachments from "./Attachments"
+import { CancelButton, PlusDropdown, SendButton, StopButton } from "./Buttons"
+import TextArea from "./TextArea"
 import { useChat } from "../../context/ChatProvider"
-import type { Chat, Model } from "../../types"
+import type { MessageFile, Model } from "../../types"
 
 export default function Composer({
-    fileInputRef,
-    textAreaRef,
-    selectionStart,
-    selectionEnd,
     text,
     setText,
-    isExtended,
-    hasFiles,
-    withBorderAndShadow,
-    filesArea,
-    onFileChange,
+    files,
     model,
     setModel,
+
+    onChangeFile,
+    onRemoveFile,
+    onRemoveAllFiles,
     sendMessage,
     sendMessageWithEvent,
-    isSendDisabled,
-    setIndex,
-    pendingChat,
-    tabIndex = 1
+
+    withBorderAndShadow,
+
+    tabIndex = 1,
+    setIndex
 }: {
-    fileInputRef: RefObject<HTMLInputElement | null>
-    textAreaRef: RefObject<HTMLTextAreaElement | null>
-    selectionStart: RefObject<number>
-    selectionEnd: RefObject<number>
     text: string
     setText: Dispatch<SetStateAction<string>>
-    isExtended: boolean
-    hasFiles: boolean
-    withBorderAndShadow: boolean
-    filesArea: ReactNode
-    onFileChange: (e: ChangeEvent<HTMLInputElement>) => void
+    files: MessageFile[]
     model: Model
     setModel: Dispatch<React.SetStateAction<Model>>
+
+    onChangeFile: (e: ChangeEvent<HTMLInputElement>) => void
+    onRemoveFile?: (file: MessageFile) => void
+    onRemoveAllFiles?: () => void
     sendMessage: () => void
     sendMessageWithEvent: (e: KeyboardEvent<HTMLTextAreaElement>) => void | (() => void)
-    isSendDisabled: boolean
-    setIndex?: Dispatch<SetStateAction<number>>
-    pendingChat?: Chat | null
+
+    withBorderAndShadow: boolean
+
     tabIndex?: number
+    setIndex?: Dispatch<SetStateAction<number>>
 }) {
-    const { isMobile } = useChat()
+    const { chats, isLoading, isMobile } = useChat()
+
+    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
+    const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+    const selectionStart = useRef(0)
+    const selectionEnd = useRef(0)
+
+    const [isExtended, setIsExtended] = useState(false)
+
+    const pendingChat = chats.find(c => c.pending_message_id !== null)
+
+    useEffect(() => {
+        setIsExtended(isExtended ? text !== "" : text.split("\n").length > 1 || (textAreaRef.current?.clientHeight || 0) > 48)
+    }, [text])
+
+    useEffect(() => {
+        textAreaRef.current?.setSelectionRange(selectionStart.current, selectionEnd.current)
+        textAreaRef.current?.focus()
+    }, [isExtended])
 
     return (
         <motion.div
             layout
-            transition={{ layout: { duration: 0.1, ease: "easeInOut" } }}
             className={`
-                flex flex-col rounded-4xl bg-gray-800 light:bg-gray-200
-                ${hasFiles ? "gap-2 px-4 pt-3 pb-1" : "px-3 py-1"}
+                flex flex-col max-h-[50vh] rounded-4xl bg-gray-800 light:bg-gray-200
+                ${files.length > 0 ? "gap-2 px-4 pt-3 pb-1" : "px-3 py-1"}
                 ${withBorderAndShadow ? "mb-5 border-t-4 border-gray-600 light:border-gray-400 shadow-xl/50" : "mt-10 mb-5"}
                 ${isMobile ? "w-[95%]" : "w-[60vw]"}
             `}
-            style={{ maxHeight: "calc(50vh - 3rem)" }}
             onClick={e => {
                 if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
                     return
@@ -67,10 +79,15 @@ export default function Composer({
                 textAreaRef.current?.focus()
             }}
         >
-            <input ref={fileInputRef} type="file" className="hidden" onChange={onFileChange} multiple />
+            <input ref={fileInputRef} type="file" className="hidden" onChange={onChangeFile} multiple />
 
             <div className="flex flex-col gap-1 overflow-x-hidden overflow-y-auto">
-                {filesArea}
+                {files.length > 0 && (
+                    <div className="flex flex-wrap gap-2 p-2 rounded-xl border bg-gray-700 light:bg-gray-300 border-gray-200 light:border-gray-800">
+                        <Attachments files={files} onRemove={onRemoveFile} onRemoveAll={onRemoveAllFiles} />
+                    </div>
+                )}
+
                 {isExtended &&
                     <TextArea
                         ref={textAreaRef}
@@ -102,7 +119,11 @@ export default function Composer({
                     {pendingChat !== undefined && pendingChat !== null ? (
                         <StopButton tabIndex={tabIndex + 1} />
                     ) : (
-                        <SendButton sendMessage={sendMessage} isDisabled={isSendDisabled} tabIndex={tabIndex + 1} />
+                        <SendButton
+                            sendMessage={sendMessage}
+                            isDisabled={(text.trim() === "" && files.length === 0) || pendingChat !== undefined || isLoading}
+                            tabIndex={tabIndex + 1}
+                        />
                     )}
                 </div>
             </div>
