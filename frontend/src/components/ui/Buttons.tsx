@@ -22,11 +22,11 @@ export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
         <DropdownMenu.Root>
             <TooltipButton
                 trigger={
-                    <DropdownMenu.Trigger className={promptBarButtonClassNames} tabIndex={tabIndex}>
+                    <DropdownMenu.Trigger className={promptBarButtonClassNames} tabIndex={tabIndex} aria-label="Add files and more">
                         <PlusIcon className="size-6" />
                     </DropdownMenu.Trigger>
                 }
-                tooltip="Add files and more..."
+                tooltip="Add files and more"
                 asChild
             />
 

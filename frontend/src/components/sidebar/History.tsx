@@ -156,6 +156,7 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
                                     focus:bg-gray-500/50 light:focus:bg-gray-400/60
                                 `}
                                 onClick={e => e.preventDefault()}
+                                aria-label="Toggle chat options"
                             >
                                 <DotsVerticalIcon />
                             </DropdownMenu.Trigger>
