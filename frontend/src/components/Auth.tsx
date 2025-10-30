@@ -35,6 +35,7 @@ export function Email({ email, setEmail }: { email: string, setEmail: Dispatch<S
                     w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2
                     focus:ring-indigo-500 bg-gray-700 text-gray-100 light:bg-white light:text-gray-900
                 "
+                autoFocus
                 required
             />
         </div>
