@@ -4,9 +4,10 @@ import { useEffect, useState, type Dispatch, type ReactNode, type RefObject, typ
 import { useParams } from "react-router"
 
 import ConfirmDialog from "./ConfirmDialog"
+import { UnarchiveIcon } from "./Icons"
 import { useChat } from "../../context/ChatProvider"
 import { useNotify } from "../../context/NotificationProvider"
-import { archiveChat, deleteChat, regenerateMessage, stopPendingChats } from "../../utils/api"
+import { archiveChat, deleteChat, regenerateMessage, stopPendingChats, unarchiveChat } from "../../utils/api"
 import type { Chat, Model } from "../../types"
 
 export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
@@ -250,7 +251,7 @@ export function ArchiveButton({ chat }: { chat: Chat }) {
     const { setChats } = useChat()
     const notify = useNotify()
 
-    async function handleArchiveChat(chat: Chat) {
+    async function handleArchiveChat() {
         const response = await archiveChat(chat.uuid)
         if (response.ok) {
             setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, is_archived: true } : c))
@@ -260,8 +261,28 @@ export function ArchiveButton({ chat }: { chat: Chat }) {
     }
 
     return (
-        <DropdownMenu.Item className={nonDestructiveChatDropdownItemClassName} onSelect={_ => handleArchiveChat(chat)}>
+        <DropdownMenu.Item className={nonDestructiveChatDropdownItemClassName} onSelect={handleArchiveChat}>
             <ArchiveIcon className="size-4.5" /> Archive
+        </DropdownMenu.Item>
+    )
+}
+
+export function UnarchiveButton({ chat }: { chat: Chat }) {
+    const { setChats } = useChat()
+    const notify = useNotify()
+
+    async function handleUnarchiveChat() {
+        const response = await unarchiveChat(chat.uuid)
+        if (response.ok) {
+            setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, is_archived: false } : c))
+        } else {
+            notify(`Unarchival of "${chat.title}" was not possible.`)
+        }
+    }
+
+    return (
+        <DropdownMenu.Item className={nonDestructiveChatDropdownItemClassName} onSelect={handleUnarchiveChat}>
+            <UnarchiveIcon className="size-4.5" /> Unarchive
         </DropdownMenu.Item>
     )
 }

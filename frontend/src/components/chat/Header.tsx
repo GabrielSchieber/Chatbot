@@ -3,7 +3,7 @@ import { DropdownMenu } from "radix-ui"
 import { useParams } from "react-router"
 
 import Search from "../sidebar/Search"
-import { ArchiveButton, DeleteButton } from "../ui/Buttons"
+import { ArchiveButton, DeleteButton, UnarchiveButton } from "../ui/Buttons"
 import { useAuth } from "../../context/AuthProvider"
 import { useChat } from "../../context/ChatProvider"
 import { me } from "../../utils/api"
@@ -61,7 +61,11 @@ export default function Header() {
                     <DropdownMenu.Content className="flex flex-col mr-2 p-2 rounded-xl shadow-xl/50 border border-gray-500/50 bg-gray-700 light:bg-gray-300">
                         {currentChat && (
                             <>
-                                <ArchiveButton chat={currentChat} />
+                                {currentChat.is_archived ? (
+                                    <UnarchiveButton chat={currentChat} />
+                                ) : (
+                                    <ArchiveButton chat={currentChat} />
+                                )}
                                 <DeleteButton chat={currentChat} />
                             </>
                         )}
