@@ -405,6 +405,7 @@ test("user cannot delete account with a used MFA backup code", async ({ page }) 
 test("user can log out", async ({ page }) => {
     await signupAndLogin(page)
     await page.getByText("Settings").click()
+    await page.getByRole("tab", { name: "Security" }).click()
     await page.getByRole("button", { name: "Log out" }).click()
     await page.waitForURL("/login")
     await page.goto("/")
