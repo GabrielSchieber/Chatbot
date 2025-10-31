@@ -26,45 +26,48 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                 <Dialog.Title hidden>Settings</Dialog.Title>
                 <Dialog.Description hidden>Settings</Dialog.Description>
 
-                <Tabs.Root
-                    className="fixed flex top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 text-white light:text-black"
-                    defaultValue="General"
-                >
-                    <Tabs.List className="flex flex-col gap-1 p-4 items-start rounded-l-xl bg-gray-900 light:bg-gray-100">
-                        <Dialog.Close className={"ml-1 p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"} data-testid="close-settings">
-                            <Cross1Icon className="size-5" />
-                        </Dialog.Close>
+                <Dialog.Content>
+                    <Tabs.Root
+                        className="fixed flex top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 text-white light:text-black"
+                        defaultValue="General"
+                        orientation="vertical"
+                    >
+                        <Tabs.List className="flex flex-col gap-1 p-4 items-start rounded-l-xl bg-gray-900 light:bg-gray-100">
+                            <Dialog.Close className={"ml-1 p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"} data-testid="close-settings">
+                                <Cross1Icon className="size-5" />
+                            </Dialog.Close>
 
-                        <Trigger icon={<GearIcon className="size-4.5" />} title="General" />
-                        <Trigger icon={<MixerHorizontalIcon className="size-4.5" />} title="Data" />
-                        <Trigger icon={<LockClosedIcon className="size-4.5" />} title="Security" />
-                        <Trigger icon={<PersonIcon className="size-4.5" />} title="Account" />
-                    </Tabs.List>
+                            <Trigger icon={<GearIcon className="size-4.5" />} title="General" />
+                            <Trigger icon={<MixerHorizontalIcon className="size-4.5" />} title="Data" />
+                            <Trigger icon={<LockClosedIcon className="size-4.5" />} title="Security" />
+                            <Trigger icon={<PersonIcon className="size-4.5" />} title="Account" />
+                        </Tabs.List>
 
-                    <Content title="General">
-                        <Entry name="Theme" item={<ThemeEntryItem />} />
-                    </Content>
+                        <Content title="General">
+                            <Entry name="Theme" item={<ThemeEntryItem />} />
+                        </Content>
 
-                    <Content title="Data">
-                        <Entry name="Archived chats" item={<ArchivedChatsDialog triggerClassName={entryClasses} />} />
-                        <Entry name="Delete chats" item={<DeleteChatsEntryItem />} />
-                    </Content>
+                        <Content title="Data">
+                            <Entry name="Archived chats" item={<ArchivedChatsDialog triggerClassName={entryClasses} />} />
+                            <Entry name="Delete chats" item={<DeleteChatsEntryItem />} />
+                        </Content>
 
-                    <Content title="Security">
-                        <Entry name="Multi-factor authentication" item={<MFADialog triggerClassName={entryClasses} />} />
-                        <Entry name="Log out" item={<LogoutEntryItem />} />
-                    </Content>
+                        <Content title="Security">
+                            <Entry name="Multi-factor authentication" item={<MFADialog triggerClassName={entryClasses} />} />
+                            <Entry name="Log out" item={<LogoutEntryItem />} />
+                        </Content>
 
-                    <Content title="Account">
-                        {user && (
-                            <div className="flex gap-2 py-3 items-center">
-                                <EnvelopeClosedIcon className="size-4.5" />
-                                <p>{user.email}</p>
-                            </div>
-                        )}
-                        <Entry name="Delete account" item={<DeleteAccountEntryItem />} />
-                    </Content>
-                </Tabs.Root>
+                        <Content title="Account">
+                            {user && (
+                                <div className="flex gap-2 py-3 items-center">
+                                    <EnvelopeClosedIcon className="size-4.5" />
+                                    <p>{user.email}</p>
+                                </div>
+                            )}
+                            <Entry name="Delete account" item={<DeleteAccountEntryItem />} />
+                        </Content>
+                    </Tabs.Root>
+                </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
     )
@@ -87,7 +90,7 @@ function Trigger({ icon, title }: { icon: ReactNode, title: string }) {
 
 function Content({ title, children }: { title: string, children: ReactNode }) {
     return (
-        <Tabs.Content value={title} className="min-w-100 rounded-r-xl bg-gray-800 light:bg-gray-200">
+        <Tabs.Content value={title} className="min-w-100 rounded-r-xl bg-gray-800 light:bg-gray-200" tabIndex={-1}>
             <section className="flex flex-col">
                 <h2 className="p-4 mb-1 text-xl font-semibold border-b">{title}</h2>
                 <div className="flex flex-col px-4 divide-y divide-gray-500">
