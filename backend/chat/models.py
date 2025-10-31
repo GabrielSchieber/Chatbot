@@ -152,7 +152,7 @@ class MessageFile(models.Model):
     message = models.ForeignKey(Message, models.CASCADE, related_name = "files")
     name = models.CharField(max_length = 200)
     content = models.BinaryField(max_length = 5_000_000)
-    content_type = models.TextField(max_length = 100)
+    content_type = models.CharField(max_length = 100)
     created_at = models.DateTimeField(auto_now_add = True)
 
     def __str__(self):
