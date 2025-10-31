@@ -60,7 +60,7 @@ async def generate_message(chat: Chat, should_generate_title: bool, should_rando
         options["seed"] = random.randint(-(10 ** 10), 10 ** 10)
 
     messages: list[dict[str, str]] = await get_messages(chat.pending_message)
-    message_index = len(messages)
+    message_index = len(messages) - 1
 
     try:
         async for part in await ollama.AsyncClient().chat(model, messages, stream = True, options = options):
@@ -119,7 +119,7 @@ async def generate_title(chat: Chat):
 
 @database_sync_to_async
 def get_messages(up_to_message: Message) -> list[dict[str, str]]:
-    messages = []
+    messages = [{"role": "system", "content": "You are a helpful and nice AI personal assistant. Your role is to provide assistance to the user."}]
     for message in up_to_message.chat.messages.order_by("created_at"):
         if message.pk == up_to_message.pk:
             break
