@@ -195,6 +195,7 @@ test("user can delete account", async ({ page }) => {
 
     await page.getByText("Settings").click()
 
+    await page.getByRole("tab", { name: "Account" }).click()
     await page.getByRole("button", { name: "Delete", exact: true }).click()
 
     const confirmDialogTitle = page.getByRole("heading", { name: "Delete Account", exact: true })
@@ -225,6 +226,7 @@ test("user can delete account with MFA enabled", async ({ page }) => {
 
     await page.getByText("Settings").click()
 
+    await page.getByRole("tab", { name: "Account" }).click()
     await page.getByRole("button", { name: "Delete", exact: true }).click()
 
     const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
@@ -257,6 +259,7 @@ test("user can delete account with an MFA backup code", async ({ page }) => {
 
     await page.getByText("Settings").click()
 
+    await page.getByRole("tab", { name: "Account" }).click()
     await page.getByRole("button", { name: "Delete", exact: true }).click()
 
     const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
@@ -280,11 +283,13 @@ test("user can delete account with an MFA backup code", async ({ page }) => {
 
 test("user cannot delete account with an incorrect password", async ({ page }) => {
     const { user } = await signupWithMFAEnabledAndLogin(page)
+
     await page.getByText("Settings").click()
 
+    await page.getByRole("tab", { name: "Account" }).click()
     await page.getByRole("button", { name: "Delete", exact: true }).click()
-    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
 
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
     await expect(confirmDialog).toBeVisible()
 
     // fill password
@@ -310,9 +315,10 @@ test("user cannot delete account with an invalid MFA code", async ({ page }) => 
 
     await page.getByText("Settings").click()
 
+    await page.getByRole("tab", { name: "Account" }).click()
     await page.getByRole("button", { name: "Delete", exact: true }).click()
-    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
 
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
     await expect(confirmDialog).toBeVisible()
 
     // fill password and an invalid MFA code
@@ -331,6 +337,7 @@ test("user cannot delete account with a used MFA backup code", async ({ page }) 
 
     // log out so we can consume a backup code via the login flow
     await page.getByTestId("open-settings").click()
+    await page.getByRole("tab", { name: "Security" }).click()
     await page.getByRole("button", { name: "Log out", exact: true }).click()
     await page.waitForURL("/login")
 
@@ -354,8 +361,8 @@ test("user cannot delete account with a used MFA backup code", async ({ page }) 
     // we're now logged in and the first backup code was consumed
     // attempt to delete using the same (used) backup code
     await page.getByText("Settings").click()
-    // small pause to ensure auth state and UI settled
-    await page.waitForTimeout(500)
+
+    await page.getByRole("tab", { name: "Account" }).click()
     await page.getByRole("button", { name: "Delete", exact: true }).click()
 
     const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
@@ -371,6 +378,7 @@ test("user cannot delete account with a used MFA backup code", async ({ page }) 
 
     // cleanup: cancel and ensure account still exists by logging out and logging back in
     await confirmDialog.getByRole("button", { name: "Cancel", exact: true }).click()
+    await page.getByRole("tab", { name: "Security" }).click()
     await page.getByRole("button", { name: "Log out", exact: true }).click()
     await page.waitForURL("/login")
 
