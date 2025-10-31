@@ -6,17 +6,40 @@ test("user can open settings", async ({ page }) => {
     const user = await signupAndLogin(page)
 
     await page.getByText("Settings").click()
-    await expect(page.getByText(`Email: ${user.email}`, { exact: true })).toBeVisible()
+    await expect(page.getByText("General", { exact: true })).toHaveCount(2)
+
+    await expect(page.getByRole("tab", { name: "General" })).toBeVisible()
+    await expect(page.getByRole("tab", { name: "Data" })).toBeVisible()
+    await expect(page.getByRole("tab", { name: "Security" })).toBeVisible()
+    await expect(page.getByRole("tab", { name: "Account" })).toBeVisible()
+
+    async function clickTab(name: string) {
+        await page.getByRole("tab", { name }).click()
+        await expect(page.getByRole("heading", { name, exact: true })).toBeVisible()
+    }
 
     async function checkEntry(label: string, button: string) {
         await expect(page.locator("label").getByText(label, { exact: true })).toBeVisible()
         await expect(page.locator("button").getByText(button, { exact: true })).toBeVisible()
     }
 
+    await expect(page.getByRole("heading", { name: "General", exact: true })).toBeVisible()
     await checkEntry("Theme", "System")
+
+    await clickTab("Data")
+    await checkEntry("Archived chats", "Manage")
     await checkEntry("Delete chats", "Delete all")
-    await checkEntry("Delete account", "Delete")
+
+    await clickTab("Security")
+    await checkEntry("Multi-factor authentication", "Enable")
     await checkEntry("Log out", "Log out")
+
+    await clickTab("Account")
+    await checkEntry("Delete account", "Delete")
+    await expect(page.getByText(user.email, { exact: true })).toBeVisible()
+
+    await clickTab("General")
+    await checkEntry("Theme", "System")
 })
 
 test("user can change theme", async ({ page }) => {
