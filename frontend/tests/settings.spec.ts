@@ -413,6 +413,7 @@ async function archiveOrUnarchiveAllChats(page: Page, user: User, action: "archi
 
     await page.getByText("Settings").click()
 
+    await page.getByRole("tab", { name: "Data" }).click()
     await page.getByRole("button", { name: "Manage", exact: true }).click()
 
     if (shouldHaveChats) {
