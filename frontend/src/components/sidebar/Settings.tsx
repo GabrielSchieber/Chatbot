@@ -1,5 +1,5 @@
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon, Cross1Icon, GearIcon } from "@radix-ui/react-icons"
-import { Dialog, Select } from "radix-ui"
+import { CheckIcon, ChevronDownIcon, Cross1Icon, EnvelopeClosedIcon, GearIcon, LockClosedIcon, MixerHorizontalIcon, PersonIcon } from "@radix-ui/react-icons"
+import { Dialog, Select, Tabs } from "radix-ui"
 import { useState, useEffect, type ReactNode } from "react"
 
 import { ArchivedChatsDialog } from "../ui/ArchivedChatsDialog"
@@ -23,34 +23,78 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/50" />
 
-                <Dialog.Content
-                    className="
-                        fixed flex flex-col w-[90%] max-w-100 gap-5 p-6
-                        top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 rounded-xl
-                        text-white light:text-black bg-gray-800 light:bg-gray-200
-                    "
+                <Dialog.Title hidden>Settings</Dialog.Title>
+                <Dialog.Description hidden>Settings</Dialog.Description>
+
+                <Tabs.Root
+                    className="fixed flex top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 text-white light:text-black"
+                    defaultValue="General"
                 >
-                    <div className="flex justify-between items-center">
-                        <Dialog.Title className="text-lg font-semibold">Settings</Dialog.Title>
-                        <Dialog.Description hidden>Manage settings</Dialog.Description>
-                        <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-200" data-testid="close-settings">
+                    <Tabs.List className="flex flex-col gap-1 p-4 items-start rounded-l-xl bg-gray-900 light:bg-gray-100">
+                        <Dialog.Close className={"ml-1 p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"} data-testid="close-settings">
                             <Cross1Icon className="size-5" />
                         </Dialog.Close>
-                    </div>
 
-                    {user && <div className="font-semibold">Email: {user.email}</div>}
+                        <Trigger icon={<GearIcon className="size-4.5" />} title="General" />
+                        <Trigger icon={<MixerHorizontalIcon className="size-4.5" />} title="Data" />
+                        <Trigger icon={<LockClosedIcon className="size-4.5" />} title="Security" />
+                        <Trigger icon={<PersonIcon className="size-4.5" />} title="Account" />
+                    </Tabs.List>
 
-                    <div className="flex flex-col border-t-2">
+                    <Content title="General">
                         <Entry name="Theme" item={<ThemeEntryItem />} />
-                        <Entry name="Multi-factor authentication" item={<MFADialog triggerClassName={entryClasses} />} />
+                    </Content>
+
+                    <Content title="Data">
                         <Entry name="Archived chats" item={<ArchivedChatsDialog triggerClassName={entryClasses} />} />
                         <Entry name="Delete chats" item={<DeleteChatsEntryItem />} />
-                        <Entry name="Delete account" item={<DeleteAccountEntryItem />} />
+                    </Content>
+
+                    <Content title="Security">
+                        <Entry name="Multi-factor authentication" item={<MFADialog triggerClassName={entryClasses} />} />
                         <Entry name="Log out" item={<LogoutEntryItem />} />
-                    </div>
-                </Dialog.Content>
+                    </Content>
+
+                    <Content title="Account">
+                        {user && (
+                            <div className="flex gap-2 py-3 items-center">
+                                <EnvelopeClosedIcon className="size-4.5" />
+                                <p>{user.email}</p>
+                            </div>
+                        )}
+                        <Entry name="Delete account" item={<DeleteAccountEntryItem />} />
+                    </Content>
+                </Tabs.Root>
             </Dialog.Portal>
         </Dialog.Root>
+    )
+}
+
+function Trigger({ icon, title }: { icon: ReactNode, title: string }) {
+    return (
+        <Tabs.Trigger
+            value={title}
+            className={`
+                flex w-full gap-1 px-2 py-1 items-center cursor-pointer outline-none rounded-lg
+                hover:bg-gray-700 light:hover:bg-gray-300
+                focus:bg-gray-700 light:focus:bg-gray-300
+            `}
+        >
+            {icon} {title}
+        </Tabs.Trigger>
+    )
+}
+
+function Content({ title, children }: { title: string, children: ReactNode }) {
+    return (
+        <Tabs.Content value={title} className="min-w-100 rounded-r-xl bg-gray-800 light:bg-gray-200">
+            <section className="flex flex-col">
+                <h2 className="p-4 mb-1 text-xl font-semibold border-b">{title}</h2>
+                <div className="flex flex-col px-4 divide-y divide-gray-500">
+                    {children}
+                </div>
+            </section>
+        </Tabs.Content>
     )
 }
 
@@ -70,9 +114,11 @@ function ThemeEntryItem() {
         applyTheme(themeToSelect)
     }
 
+    const itemClasses = "flex items-center gap-4 px-2 py-1 rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"
+
     return (
         <Select.Root value={theme} onValueChange={handleChangeTheme}>
-            <Select.Trigger className={entryClasses + " inline-flex items-center justify-between w-30"} aria-label="Theme">
+            <Select.Trigger className={entryClasses + " gap-4"} aria-label="Theme">
                 <Select.Value placeholder="Select theme…" />
                 <Select.Icon>
                     <ChevronDownIcon />
@@ -80,10 +126,7 @@ function ThemeEntryItem() {
             </Select.Trigger>
 
             <Select.Portal>
-                <Select.Content className="text-white overflow-hidden rounded-md shadow-lg bg-gray-600 light:text-black light:bg-gray-200">
-                    <Select.ScrollUpButton>
-                        <ChevronUpIcon />
-                    </Select.ScrollUpButton>
+                <Select.Content className="text-white light:text-black bg-gray-900 light:bg-gray-100">
                     <Select.Viewport className="p-1">
                         <Select.Item value="System" className={itemClasses}>
                             <Select.ItemText>System</Select.ItemText>
@@ -91,12 +134,14 @@ function ThemeEntryItem() {
                                 <CheckIcon />
                             </Select.ItemIndicator>
                         </Select.Item>
+
                         <Select.Item value="Light" className={itemClasses}>
                             <Select.ItemText>Light</Select.ItemText>
                             <Select.ItemIndicator className="ml-auto">
                                 <CheckIcon />
                             </Select.ItemIndicator>
                         </Select.Item>
+
                         <Select.Item value="Dark" className={itemClasses}>
                             <Select.ItemText>Dark</Select.ItemText>
                             <Select.ItemIndicator className="ml-auto">
@@ -104,9 +149,6 @@ function ThemeEntryItem() {
                             </Select.ItemIndicator>
                         </Select.Item>
                     </Select.Viewport>
-                    <Select.ScrollDownButton>
-                        <ChevronDownIcon />
-                    </Select.ScrollDownButton>
                 </Select.Content>
             </Select.Portal>
         </Select.Root>
@@ -266,13 +308,17 @@ function LogoutEntryItem() {
 
 function Entry({ name, item }: { name: string, item: ReactNode }) {
     return (
-        <div className="flex gap-3 md:gap-20 py-2 items-center justify-between border-b">
+        <div className="flex gap-3 md:gap-20 py-2 items-center justify-between">
             <label>{name}</label>
             {item}
         </div>
     )
 }
 
-const entryClasses = "px-2 py-1 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-600 light:border-gray-800 light:hover:bg-gray-400"
+const entryClasses = `
+    flex px-2 py-1 items-center justify-center rounded-lg cursor-pointer
+    border border-gray-500
+    hover:bg-gray-700 light:hover:bg-gray-300
+    focus:bg-gray-700 light:focus:bg-gray-300
+`
 const destructiveEntryClasses = entryClasses + " text-red-500"
-const itemClasses = "flex items-center px-2 py-1 rounded cursor-pointer hover:bg-gray-500 light:hover:bg-gray-300"
