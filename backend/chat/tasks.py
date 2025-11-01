@@ -120,6 +120,19 @@ async def generate_title(chat: Chat):
 @database_sync_to_async
 def get_messages(up_to_message: Message) -> list[dict[str, str]]:
     system_prompt = "You are a helpful and nice AI personal assistant. Your role is to provide assistance to the user."
+
+    nickname = up_to_message.chat.user.preferences.nickname
+    if nickname != "":
+        system_prompt += f"\nThe user has the following nickname: {nickname}"
+
+    occupation = up_to_message.chat.user.preferences.occupation
+    if occupation != "":
+        system_prompt += f"\nThe user has the following occupation: {occupation}"
+
+    about = up_to_message.chat.user.preferences.about
+    if about != "":
+        system_prompt += f"\nThe user has the following to say about them: {about}"
+
     custom_instructions = up_to_message.chat.user.preferences.custom_instructions
     if custom_instructions != "":
         system_prompt += f"\nIn addition, you should follow these instructions:\n{custom_instructions}"
