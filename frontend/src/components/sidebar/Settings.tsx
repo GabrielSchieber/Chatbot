@@ -1,9 +1,10 @@
 import { CheckIcon, ChevronDownIcon, Cross1Icon, EnvelopeClosedIcon, GearIcon, LockClosedIcon, MixerHorizontalIcon, MixerVerticalIcon, PersonIcon } from "@radix-ui/react-icons"
 import { Dialog, Select, Tabs } from "radix-ui"
-import { useState, useEffect, type ReactNode, useRef } from "react"
+import { useState, useEffect, type ReactNode } from "react"
 
 import { ArchivedChatsDialog } from "../ui/ArchivedChatsDialog"
 import ConfirmDialog from "../ui/ConfirmDialog"
+import Customizations from "../ui/Customizations"
 import MFADialog from "../ui/MFADialog"
 import { useAuth } from "../../context/AuthProvider"
 import { useChat } from "../../context/ChatProvider"
@@ -49,7 +50,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                         </Content>
 
                         <Content title="Customizations">
-                            <CustomInstructionsEntryItem />
+                            <Customizations />
                         </Content>
 
                         <Content title="Data">
@@ -160,65 +161,6 @@ function ThemeEntryItem() {
                 </Select.Content>
             </Select.Portal>
         </Select.Root>
-    )
-}
-
-function CustomInstructionsEntryItem() {
-    const { user } = useAuth()
-
-    const ref = useRef<HTMLTextAreaElement | null>(null)
-    const requestIDRef = useRef(0)
-    const loadingCountRef = useRef(0)
-
-    const [text, setText] = useState(user?.preferences.custom_instructions || "")
-    const [hasChanged, setHasChanged] = useState(false)
-
-    async function setCustomInstructions() {
-        if (loadingCountRef.current > 0) return
-        loadingCountRef.current++
-        try {
-            await me(undefined, undefined, text)
-        } finally {
-            loadingCountRef.current = Math.max(0, loadingCountRef.current - 1)
-        }
-    }
-
-    useEffect(() => {
-        if (!hasChanged) return
-
-        if (ref.current) {
-            ref.current.style.height = "auto"
-            ref.current.style.height = ref.current.scrollHeight + "px"
-        }
-
-        const debounceMs = 300
-        const timer = window.setTimeout(() => {
-            requestIDRef.current++
-            void setCustomInstructions()
-        }, debounceMs)
-
-        return () => window.clearTimeout(timer)
-    }, [text])
-
-    return (
-        <div className="flex flex-col">
-            <p className="px-2 font-semibold">Custom instructions</p>
-            <div className="flex flex-1 max-h-40 my-2 overflow-y-auto rounded-lg border border-gray-500/50 bg-gray-700/50 light:bg-gray-300/50">
-                <textarea
-                    ref={ref}
-                    className="flex-1 px-2 py-1 overflow-hidden resize-none outline-none"
-                    placeholder="Type your preferences..."
-                    value={text}
-                    onChange={e => {
-                        setText(e.target.value)
-                        setHasChanged(true)
-                    }}
-                    rows={1}
-                    maxLength={1000}
-                    autoFocus
-                />
-            </div>
-        </div>
     )
 }
 
