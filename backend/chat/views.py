@@ -162,6 +162,30 @@ class Me(APIView):
                 return Response({"error": "Invalid length for 'custom_instructions' field."}, status.HTTP_400_BAD_REQUEST)
             user.preferences.custom_instructions = custom_instructions
 
+        nickname = request.data.get("nickname")
+        if nickname != None:
+            if type(nickname) != str:
+                return Response({"error": "Invalid data type for 'nickname' field."}, status.HTTP_400_BAD_REQUEST)
+            if len(nickname) > UserPreferences._meta.get_field("nickname").max_length:
+                return Response({"error": "Invalid length for 'nickname' field."}, status.HTTP_400_BAD_REQUEST)
+            user.preferences.nickname = nickname
+
+        occupation = request.data.get("occupation")
+        if occupation != None:
+            if type(occupation) != str:
+                return Response({"error": "Invalid data type for 'occupation' field."}, status.HTTP_400_BAD_REQUEST)
+            if len(occupation) > UserPreferences._meta.get_field("occupation").max_length:
+                return Response({"error": "Invalid length for 'occupation' field."}, status.HTTP_400_BAD_REQUEST)
+            user.preferences.occupation = occupation
+
+        about = request.data.get("about")
+        if about != None:
+            if type(about) != str:
+                return Response({"error": "Invalid data type for 'about' field."}, status.HTTP_400_BAD_REQUEST)
+            if len(about) > UserPreferences._meta.get_field("about").max_length:
+                return Response({"error": "Invalid length for 'about' field."}, status.HTTP_400_BAD_REQUEST)
+            user.preferences.about = about
+
         user.preferences.save()
         return Response(status = status.HTTP_200_OK)
 
