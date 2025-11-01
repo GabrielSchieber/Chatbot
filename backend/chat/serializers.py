@@ -5,7 +5,7 @@ from .models import Chat, Message, MessageFile, User, UserMFA, UserPreferences
 class UserPreferencesSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserPreferences
-        fields = ["theme", "has_sidebar_open", "custom_instructions"]
+        fields = ["theme", "has_sidebar_open", "custom_instructions", "nickname", "occupation", "about"]
 
 class UserMFASerializer(serializers.ModelSerializer):
     class Meta:

@@ -11,6 +11,9 @@ export type UserPreferences = {
     theme: Theme
     has_sidebar_open: boolean
     custom_instructions: string
+    nickname: string
+    occupation: string
+    about: string
 }
 
 export type UserMFA = {
