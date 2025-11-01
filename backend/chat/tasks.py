@@ -119,11 +119,18 @@ async def generate_title(chat: Chat):
 
 @database_sync_to_async
 def get_messages(up_to_message: Message) -> list[dict[str, str]]:
-    messages = [{"role": "system", "content": "You are a helpful and nice AI personal assistant. Your role is to provide assistance to the user."}]
+    system_prompt = "You are a helpful and nice AI personal assistant. Your role is to provide assistance to the user."
+    custom_instructions = up_to_message.chat.user.preferences.custom_instructions
+    if custom_instructions != "":
+        system_prompt += f"\nIn addition, you should follow these instructions:\n{custom_instructions}"
+
+    messages = [{"role": "system", "content": system_prompt}]
+
     for message in up_to_message.chat.messages.order_by("created_at"):
         if message.pk == up_to_message.pk:
             break
         messages.append(get_message_dict(message))
+
     return messages
 
 def get_message_dict(message: Message) -> dict[str, str]:
