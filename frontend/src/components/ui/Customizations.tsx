@@ -46,7 +46,7 @@ export default function Customizations() {
             <Entry>
                 <Label text="Custom instructions" />
                 <TextArea
-                    placeholder="Type your preferences..."
+                    placeholder="Additional instructions that I should follow."
                     value={customInstructions}
                     onChange={e => setCustomInstructions(e.currentTarget.value)}
                 />
@@ -70,7 +70,7 @@ export default function Customizations() {
             <Entry>
                 <Label text="About" />
                 <TextArea
-                    placeholder="Is there anything else that I should know about?"
+                    placeholder="Anything else that I should know about you?"
                     value={about}
                     onChange={e => setAbout(e.currentTarget.value)}
                 />
@@ -105,7 +105,7 @@ function Entry({ children }: { children: ReactNode }) {
 }
 
 function Label({ text }: { text: string }) {
-    return <p className="px-2 font-semibold">{text}</p>
+    return <p className="pl-1 pb-1 font-semibold">{text}</p>
 }
 
 function TextArea({ placeholder, value, onChange }: { placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void }) {
