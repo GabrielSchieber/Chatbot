@@ -87,6 +87,7 @@ function Trigger({ icon, title }: { icon: ReactNode, title: string }) {
                 flex w-full gap-1 px-2 py-1 items-center cursor-pointer outline-none rounded-lg
                 hover:bg-gray-700 light:hover:bg-gray-300
                 focus:bg-gray-700 light:focus:bg-gray-300
+                data-[state=active]:bg-gray-700 light:data-[state=active]:bg-gray-300
             `}
         >
             {icon} {title}
