@@ -111,7 +111,7 @@ function ThemeEntryItem() {
 
     function handleChangeTheme(themeValue: string) {
         const themeToSelect = isTheme(themeValue) ? themeValue : "System"
-        me(themeToSelect)
+        me(undefined, themeToSelect)
         setUser(previous => previous ? ({ ...previous, preferences: { ...previous.preferences, theme: themeToSelect } }) : previous)
         setTheme(themeToSelect)
         applyTheme(themeToSelect)

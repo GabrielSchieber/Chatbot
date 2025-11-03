@@ -28,7 +28,7 @@ export default function Header() {
                     <button
                         className={itemClassNames}
                         onClick={_ => {
-                            me(undefined, true)
+                            me(undefined, undefined, true)
                             setIsSidebarOpen(true)
                         }}
                         data-testid="toggle-sidebar"
