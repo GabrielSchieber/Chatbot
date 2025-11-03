@@ -1,4 +1,5 @@
 import { ArchiveIcon, ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, Cross2Icon, PauseIcon, Pencil1Icon, PlusIcon, TrashIcon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
+import { t } from "i18next"
 import { DropdownMenu, Tooltip } from "radix-ui"
 import { useEffect, useState, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react"
 import { useParams } from "react-router"
@@ -26,14 +27,14 @@ export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
                         <PlusIcon className="size-6" />
                     </DropdownMenu.Trigger>
                 }
-                tooltip="Add files and more"
+                tooltip={t("plusDropdown.tooltip")}
                 asChild
             />
 
             <DropdownMenu.Portal>
                 <DropdownMenu.Content className={dropdownContentClassName + " mx-2"}>
                     <DropdownMenu.Item className={dropdownItemClassName} onClick={_ => fileInputRef.current?.click()}>
-                        <UploadIcon className="size-6" /> Add files
+                        <UploadIcon className="size-6" /> {t("plusDropdown.addFiles")}
                     </DropdownMenu.Item>
 
                     <DropdownMenu.Sub open={isModelDropdownOpen}>
@@ -46,7 +47,7 @@ export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
                             onKeyDown={e => e.key === "Enter" && setIsModelDropdownOpen(!isModelDropdownOpen)}
                         >
                             <BoxModelIcon className="size-6" />
-                            Select model
+                            {t("plusDropdown.selectModel")}
                             {isModelDropdownOpen ? (
                                 <ChevronLeftIcon className="size-6" />
                             ) : (
@@ -83,7 +84,7 @@ export function SendButton({ sendMessage, isDisabled, tabIndex = 2 }: { sendMess
     return (
         <TooltipButton
             trigger={<ArrowUpIcon className="size-6" />}
-            tooltip="Send"
+            tooltip={t("sendButton.tooltip")}
             onClick={sendMessage}
             className={promptBarButtonClassNames}
             isDisabled={isDisabled}
@@ -99,7 +100,7 @@ export function StopButton({ tabIndex = 2 }: { tabIndex?: number }) {
     return (
         <TooltipButton
             trigger={<PauseIcon className="size-6" />}
-            tooltip="Stop"
+            tooltip={t("stopButton.tooltip")}
             className={promptBarButtonClassNames}
             tabIndex={tabIndex}
             onClick={() => {
@@ -114,7 +115,7 @@ export function CancelButton({ setIndex, tabIndex = 2 }: { setIndex: React.Dispa
     return (
         <TooltipButton
             trigger={<Cross2Icon className="size-6" />}
-            tooltip="Cancel"
+            tooltip={t("cancelButton.tooltip")}
             className={promptBarButtonClassNames}
             tabIndex={tabIndex}
             onClick={() => setIndex(-1)}
@@ -134,7 +135,7 @@ export function EditButton({ onClick }: { onClick: () => void }) {
     return (
         <TooltipButton
             trigger={<Pencil1Icon className="size-4.5" />}
-            tooltip="Edit"
+            tooltip={t("editButton.tooltip")}
             className={messageButtonClassNames}
             onClick={onClick}
             isDisabled={currentChat?.is_archived || pendingChat !== undefined || isLoading}
@@ -149,7 +150,7 @@ export function CopyButton({ text }: { text: string }) {
     return (
         <TooltipButton
             trigger={isChecked ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />}
-            tooltip="Copy"
+            tooltip={t("copyButton.tooltip")}
             className={messageButtonClassNames}
             onClick={() => {
                 navigator.clipboard.writeText(text)
@@ -187,11 +188,11 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
                         setIsRotating(true)
                     })
                 } else {
-                    alert("Regeneration of message was not possible")
+                    alert(t("regenerateButton.alert.failed"))
                 }
             })
         } else {
-            alert("You must be in a chat to regenerate a message")
+            alert(t("regenerateButton.alert.noChat"))
         }
     }
 
@@ -213,8 +214,8 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
 
                     <Tooltip.Portal>
                         <Tooltip.Content className="flex flex-col px-2 py-1 items-center text-sm text-white rounded-xl bg-black" side="bottom" sideOffset={3}>
-                            <p>Regenerate</p>
-                            {model && <p className="text-xs text-gray-400">Used {model}</p>}
+                            <p>{t("regenerateButton.tooltip")}</p>
+                            {model && <p className="text-xs text-gray-400">{t("regenerateButton.tooltipUsedModel", { model })}</p>}
                         </Tooltip.Content>
                     </Tooltip.Portal>
                 </Tooltip.Root>
@@ -242,7 +243,7 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
 export function RenameButton({ onSelect }: { onSelect: () => void }) {
     return (
         <DropdownMenu.Item className={nonDestructiveChatDropdownItemClassName} onSelect={onSelect}>
-            <Pencil1Icon className="size-4.5" /> Rename
+            <Pencil1Icon className="size-4.5" /> {t("renameButton.label")}
         </DropdownMenu.Item>
     )
 }
@@ -256,13 +257,13 @@ export function ArchiveButton({ chat }: { chat: Chat }) {
         if (response.ok) {
             setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, is_archived: true } : c))
         } else {
-            notify(`Archival of "${chat.title}" was not possible.`)
+            notify(t("archiveButton.error", { title: chat.title }))
         }
     }
 
     return (
         <DropdownMenu.Item className={nonDestructiveChatDropdownItemClassName} onSelect={handleArchiveChat}>
-            <ArchiveIcon className="size-4.5" /> Archive
+            <ArchiveIcon className="size-4.5" /> {t("archiveButton.label")}
         </DropdownMenu.Item>
     )
 }
@@ -276,13 +277,13 @@ export function UnarchiveButton({ chat }: { chat: Chat }) {
         if (response.ok) {
             setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, is_archived: false } : c))
         } else {
-            notify(`Unarchival of "${chat.title}" was not possible.`)
+            notify(t("unarchiveButton.error", { title: chat.title }))
         }
     }
 
     return (
         <DropdownMenu.Item className={nonDestructiveChatDropdownItemClassName} onSelect={handleUnarchiveChat}>
-            <UnarchiveIcon className="size-4.5" /> Unarchive
+            <UnarchiveIcon className="size-4.5" /> {t("unarchiveButton.label")}
         </DropdownMenu.Item>
     )
 }
@@ -299,7 +300,7 @@ export function DeleteButton({ chat }: { chat: Chat }) {
                 location.href = "/"
             }
         } else {
-            notify(`Deletion of "${chat.title}" was not possible.`)
+            notify(t("deleteButton.error", { title: chat.title }))
         }
     }
 
@@ -307,13 +308,13 @@ export function DeleteButton({ chat }: { chat: Chat }) {
         <ConfirmDialog
             trigger={
                 <DropdownMenu.Item className={destructiveChatDropdownItemClassName} onSelect={e => e.preventDefault()}>
-                    <TrashIcon className="size-4.5" /> Delete
+                    <TrashIcon className="size-4.5" /> {t("deleteButton.label")}
                 </DropdownMenu.Item>
             }
-            title="Delete Chat"
-            description={`Are you sure you want to delete "${chat.title}"? This action cannot be undone.`}
-            confirmText="Delete"
-            cancelText="Cancel"
+            title={t("deleteButton.title")}
+            description={t("deleteButton.description", { title: chat.title })}
+            confirmText={t("deleteButton.confirm")}
+            cancelText={t("deleteButton.cancel")}
             onConfirm={() => handleDelete(chat)}
         />
     )
