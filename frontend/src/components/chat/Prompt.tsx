@@ -1,4 +1,5 @@
 import { Cross2Icon } from "@radix-ui/react-icons"
+import { t } from "i18next"
 import { motion, AnimatePresence } from "motion/react"
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router"
@@ -20,9 +21,9 @@ export default function Prompt() {
     const [files, setFiles] = useState<File[]>([])
     const [model, setModel] = useState<Model>("SmolLM2-135M")
 
-    const [shouldShowPendingNotification, setShouldShowPendingNotification] = useState(false)
+    const [shouldShowPendingNotification, setShouldShowPendingNotification] = useState(true)
 
-    const pendingChat = chats.find(c => c.pending_message_id !== null)
+    const pendingChat = chats.find(c => c.pending_message_id === null)
 
     function sendMessage() {
         newMessage(chatUUID || "", text, model, files).then(response => {
@@ -79,7 +80,7 @@ export default function Prompt() {
         if (!e.target.files) return
 
         if (files.length + e.target.files.length > MAX_FILES) {
-            alert(`You can only attach up to ${MAX_FILES} files at a time.`)
+            alert(t("prompt.file.error.tooMany", { max: MAX_FILES }))
             e.target.value = ""
             return
         }
@@ -90,7 +91,7 @@ export default function Prompt() {
         const newTotal = newFiles.map(f => f.size).reduce((a, b) => a + b, 0)
 
         if (currentTotal + newTotal > MAX_FILE_SIZE) {
-            alert(`Total file size exceeds ${getFileSize(MAX_FILE_SIZE)} limit. Please select smaller files.`)
+            alert(t("prompt.file.error.tooLarge", { limit: getFileSize(MAX_FILE_SIZE) }))
             e.target.value = ""
             return
         }
@@ -106,7 +107,7 @@ export default function Prompt() {
     return (
         chatUUID && chats.find(c => c.uuid === chatUUID)?.is_archived ? (
             <div className="flex flex-col gap-3 mb-10 items-center">
-                <p>This chat is archived. To continue, unarchive it first.</p>
+                <p>{t("prompt.unarchive.label")}</p>
                 <button
                     className="
                         px-3 py-1 rounded-3xl cursor-pointer text-black light:text-white
@@ -117,7 +118,7 @@ export default function Prompt() {
                         setChats(previous => previous.map(c => c.uuid === chatUUID ? { ...c, is_archived: false } : c))
                     }}
                 >
-                    Unarchive
+                    {t("prompt.unarchive.button")}
                 </button>
             </div>
         ) : (
@@ -133,7 +134,9 @@ export default function Prompt() {
                             className="flex items-center justify-between gap-3 px-4 py-2 m-2 rounded-xl bg-gray-700 light:bg-gray-300"
                         >
                             <div>
-                                A message is already being generated in <a className="underline" href={`/chat/${pendingChat.uuid}`}>{pendingChat.title}</a>
+                                {t("prompt.pendingNotificationPrefix")}{" "}
+                                <a className="underline" href={`/chat/${pendingChat.uuid}`}>{pendingChat.title}</a>
+                                {t("prompt.pendingNotificationSuffix")}
                             </div>
                             <button
                                 className="p-1 rounded-3xl cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"

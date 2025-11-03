@@ -111,5 +111,12 @@
     "history.error.rename": "Não foi possivel renomear \"{{title}}\".",
     "history.loading": "Carregando...",
     "history.empty": "Você não tem nenhuma conversa.",
-    "chat.header": "Como posso te ajudar hoje?"
+    "chat.header": "Como posso te ajudar hoje?",
+    "prompt.unarchive.label": "Esta conversa está arquivada. Para continuar, primeiro desarquive-a.",
+    "prompt.unarchive.button": "Desarquivar",
+    "prompt.file.error.tooMany": "Você só pode anexar até {{max}} arquivos por vez.",
+    "prompt.file.error.tooLarge": "O tamanho total dos arquivos excede o limite de {{limit}}. Selecione arquivos menores.",
+    "prompt.file.error.sendFailed": "Falha ao enviar a mensagem.",
+    "prompt.pendingNotificationPrefix": "Já existe uma mensagem sendo gerada em",
+    "prompt.pendingNotificationSuffix": "."
 }
