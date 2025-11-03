@@ -52,6 +52,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class UserPreferences(models.Model):
     user = models.OneToOneField(User, models.CASCADE, related_name = "preferences")
+    language = models.CharField(choices = [[c, c] for c in ["English", "Português"]], default = "English")
     theme = models.CharField(choices = [[c, c] for c in ["System", "Light", "Dark"]], default = "System")
     has_sidebar_open = models.BooleanField(default = True)
 
