@@ -1,7 +1,7 @@
 import { CheckIcon, ChevronDownIcon, Cross1Icon, EnvelopeClosedIcon, GearIcon, LockClosedIcon, MixerHorizontalIcon, PersonIcon } from "@radix-ui/react-icons"
+import { t } from "i18next"
 import { Dialog, Select, Tabs } from "radix-ui"
 import { useState, useEffect, type ReactNode, type SetStateAction, type Dispatch } from "react"
-import { useTranslation } from "react-i18next"
 
 import { ArchivedChatsDialog } from "../ui/ArchivedChatsDialog"
 import ConfirmDialog from "../ui/ConfirmDialog"
@@ -11,11 +11,11 @@ import { useChat } from "../../context/ChatProvider"
 import { deleteAccount, deleteChats, logout, me } from "../../utils/api"
 import { applyTheme } from "../../utils/theme"
 import { getLanguageAbbreviation } from "../../utils/language"
+import i18n from "../../i18n"
 import type { Language, Theme } from "../../types"
 
 export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
     const { user } = useAuth()
-    const { t } = useTranslation()
 
     const [currentTab, setCurrentTab] = useState(t("settings.general"))
 
@@ -50,18 +50,18 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                         </Tabs.List>
 
                         <Content title={t("settings.general")}>
-                            <Entry name="Theme" item={<ThemeEntryItem />} />
-                            <Entry name="Language" item={<LanguageEntryItem setCurrentTab={setCurrentTab} />} />
+                            <Entry name={t("settings.theme")} item={<ThemeEntryItem />} />
+                            <Entry name={t("settings.language")} item={<LanguageEntryItem setCurrentTab={setCurrentTab} />} />
                         </Content>
 
                         <Content title={t("settings.data")}>
-                            <Entry name="Archived chats" item={<ArchivedChatsDialog triggerClassName={entryClasses} />} />
-                            <Entry name="Delete chats" item={<DeleteChatsEntryItem />} />
+                            <Entry name={t("settings.archivedChats")} item={<ArchivedChatsDialog triggerClassName={entryClasses} />} />
+                            <Entry name={t("settings.deleteChats")} item={<DeleteChatsEntryItem />} />
                         </Content>
 
                         <Content title={t("settings.security")}>
-                            <Entry name="Multi-factor authentication" item={<MFADialog triggerClassName={entryClasses} />} />
-                            <Entry name="Log out" item={<LogoutEntryItem />} />
+                            <Entry name={t("settings.mfa")} item={<MFADialog triggerClassName={entryClasses} />} />
+                            <Entry name={t("settings.logout")} item={<LogoutEntryItem />} />
                         </Content>
 
                         <Content title={t("settings.account")}>
@@ -71,7 +71,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                                     <p>{user.email}</p>
                                 </div>
                             )}
-                            <Entry name="Delete account" item={<DeleteAccountEntryItem />} />
+                            <Entry name={t("settings.deleteAccount")} item={<DeleteAccountEntryItem />} />
                         </Content>
                     </Tabs.Root>
                 </Dialog.Content>
@@ -127,7 +127,7 @@ function ThemeEntryItem() {
     return (
         <Select.Root value={theme} onValueChange={handleChangeTheme}>
             <Select.Trigger className={entryClasses + " gap-4"} aria-label="Theme">
-                <Select.Value placeholder="Select theme…" />
+                <Select.Value placeholder={"settings.selectTheme"} />
                 <Select.Icon>
                     <ChevronDownIcon />
                 </Select.Icon>
@@ -137,21 +137,21 @@ function ThemeEntryItem() {
                 <Select.Content className="text-white light:text-black bg-gray-900 light:bg-gray-100">
                     <Select.Viewport className="p-1">
                         <Select.Item value="System" className={itemClasses}>
-                            <Select.ItemText>System</Select.ItemText>
+                            <Select.ItemText>{t("settings.theme.system")}</Select.ItemText>
                             <Select.ItemIndicator className="ml-auto">
                                 <CheckIcon />
                             </Select.ItemIndicator>
                         </Select.Item>
 
                         <Select.Item value="Light" className={itemClasses}>
-                            <Select.ItemText>Light</Select.ItemText>
+                            <Select.ItemText>{t("settings.theme.light")}</Select.ItemText>
                             <Select.ItemIndicator className="ml-auto">
                                 <CheckIcon />
                             </Select.ItemIndicator>
                         </Select.Item>
 
                         <Select.Item value="Dark" className={itemClasses}>
-                            <Select.ItemText>Dark</Select.ItemText>
+                            <Select.ItemText>{t("settings.theme.dark")}</Select.ItemText>
                             <Select.ItemIndicator className="ml-auto">
                                 <CheckIcon />
                             </Select.ItemIndicator>
@@ -165,7 +165,6 @@ function ThemeEntryItem() {
 
 function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetStateAction<string>> }) {
     const { user, setUser } = useAuth()
-    const { i18n } = useTranslation()
 
     const [language, setLanguage] = useState<Language>(user?.preferences.language || "English")
 
@@ -182,7 +181,7 @@ function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetState
     return (
         <Select.Root value={language} onValueChange={handleChangeLanguage}>
             <Select.Trigger className={entryClasses + " gap-4"} aria-label="Language">
-                <Select.Value placeholder="Select language…" />
+                <Select.Value placeholder={t("settings.selectLanguage")} />
                 <Select.Icon>
                     <ChevronDownIcon />
                 </Select.Icon>
@@ -218,7 +217,7 @@ function DeleteChatsEntryItem() {
                     setChats([])
                 }
             } else {
-                alert("Deletion of chats was not possible")
+                alert(t("dialogs.deleteChats.error"))
             }
         })
     }
@@ -227,13 +226,13 @@ function DeleteChatsEntryItem() {
         <ConfirmDialog
             trigger={
                 <button className={destructiveEntryClasses}>
-                    Delete all
+                    {t("dialogs.deleteChats.confirm")}
                 </button>
             }
-            title="Delete Chats"
-            description="Are you sure you want to delete all of your chats? This action cannot be undone."
-            confirmText="Delete all"
-            cancelText="Cancel"
+            title={t("dialogs.deleteChats.title")}
+            description={t("dialogs.deleteChats.description")}
+            confirmText={t("dialogs.deleteChats.confirm")}
+            cancelText={t("dialogs.deleteChats.cancel")}
             onConfirm={handleDeleteChats}
         />
     )
@@ -261,12 +260,12 @@ function DeleteAccountEntryItem() {
         setError(null)
 
         if (!password) {
-            setError("Password is required to delete the account.")
+            setError(t("dialogs.deleteAccount.error.passwordRequired"))
             return
         }
 
         if (user?.mfa?.is_enabled && !mfaCode) {
-            setError("MFA code is required.")
+            setError(t("dialogs.deleteAccount.error.mfaRequired"))
             return
         }
 
@@ -277,10 +276,10 @@ function DeleteAccountEntryItem() {
                 location.reload()
             } else {
                 const json = await response.json().catch(() => ({}))
-                setError(json.error || "Deletion of account was not possible")
+                setError(json.error || t("dialogs.deleteAccount.error.deletionFailed"))
             }
         } catch (err) {
-            setError("Network or server error")
+            setError(t("dialogs.deleteAccount.error.network"))
         } finally {
             setIsLoading(false)
         }
@@ -289,29 +288,36 @@ function DeleteAccountEntryItem() {
     return (
         <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
             <Dialog.Trigger className={destructiveEntryClasses} data-testid="open-delete-account">
-                Delete
+                {t("dialogs.deleteAccount.button")}
             </Dialog.Trigger>
 
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/50" />
 
-                <Dialog.Content className="fixed w-80 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 rounded-xl bg-gray-800 light:bg-gray-200 text-white light:text-black">
+                <Dialog.Content
+                    className="
+                        fixed w-80  p-4 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                        rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
+                    "
+                >
                     <div className="flex justify-between items-center mb-2">
-                        <Dialog.Title className="text-lg font-semibold">Delete Account</Dialog.Title>
-                        <Dialog.Description hidden>Delete Account</Dialog.Description>
+                        <Dialog.Title className="text-lg font-semibold">{t("dialogs.deleteAccount.title")}</Dialog.Title>
+                        <Dialog.Description hidden>{t("dialogs.deleteAccount.title")}</Dialog.Description>
                         <Dialog.Close className="p-1 rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
                             <Cross1Icon />
                         </Dialog.Close>
                     </div>
 
-                    <div className="text-sm mb-3">This action cannot be undone. Enter your password{user?.mfa?.is_enabled ? " and MFA code" : ""} to confirm.</div>
+                    <div className="text-sm mb-3">
+                        {user?.mfa?.is_enabled ? t("dialogs.deleteAccount.descriptionWithMFA") : t("dialogs.deleteAccount.description")}
+                    </div>
 
                     <div className="flex flex-col gap-2">
                         <input
                             type="password"
                             value={password}
                             onChange={e => setPassword(e.target.value)}
-                            placeholder="Password"
+                            placeholder={t("dialogs.deleteAccount.passwordPlaceholder")}
                             className="px-2 py-1 rounded border bg-gray-900 light:bg-white light:text-black"
                             disabled={isLoading}
                         />
@@ -321,7 +327,7 @@ function DeleteAccountEntryItem() {
                                 type="text"
                                 value={mfaCode}
                                 onChange={e => setMFACode(e.target.value)}
-                                placeholder="MFA code"
+                                placeholder={t("dialogs.deleteAccount.mfaPlaceholder")}
                                 className="px-2 py-1 rounded border bg-gray-900 light:bg-white light:text-black"
                                 disabled={isLoading}
                             />
@@ -331,10 +337,10 @@ function DeleteAccountEntryItem() {
 
                         <div className="flex justify-end gap-2 mt-2">
                             <Dialog.Close asChild>
-                                <button className={entryClasses} disabled={isLoading}>Cancel</button>
+                                <button className={entryClasses} disabled={isLoading}>{t("dialogs.deleteAccount.cancel")}</button>
                             </Dialog.Close>
                             <button className={destructiveEntryClasses} onClick={handleConfirmDelete} disabled={isLoading}>
-                                {isLoading ? "Deleting..." : "Delete Account"}
+                                {isLoading ? t("dialogs.deleteAccount.confirming") : t("dialogs.deleteAccount.confirm")}
                             </button>
                         </div>
                     </div>
@@ -352,7 +358,7 @@ function LogoutEntryItem() {
 
     return (
         <button className={entryClasses} onClick={handleLogout}>
-            Log out
+            {t("settings.logout")}
         </button>
     )
 }
