@@ -17,7 +17,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .serializers import ChatSerializer, GetChatsGETSerializer, MessageSerializer, UserSerializer
-from .models import Chat, Message, MessageFile, PreAuthToken, User
+from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
 
@@ -141,6 +141,12 @@ class Me(APIView):
 
     def patch(self, request: Request):
         user: User = request.user
+
+        language = request.data.get("language")
+        if language != None: 
+            if language not in [c[0] for c in UserPreferences._meta.get_field("language").choices]:
+                return Response({"error": "Invalid language."}, status.HTTP_400_BAD_REQUEST)
+            user.preferences.language = language
 
         theme = request.data.get("theme")
         if theme != None: 

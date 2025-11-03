@@ -1,4 +1,4 @@
-import type { Model, Theme } from "../types"
+import type { Language, Model, Theme } from "../types"
 
 export function signup(email: string, password: string) {
     return fetch("/api/signup/", {
@@ -20,8 +20,8 @@ export function logout() {
     return apiFetch("logout/", { method: "POST" })
 }
 
-export function me(theme?: Theme, hasSidebarOpen?: boolean) {
-    if (theme === undefined && hasSidebarOpen === undefined) {
+export function me(language?: Language, theme?: Theme, hasSidebarOpen?: boolean) {
+    if (language === undefined && theme === undefined && hasSidebarOpen === undefined) {
         return apiFetch("me/")
     } else {
         return apiFetch("me/", {
