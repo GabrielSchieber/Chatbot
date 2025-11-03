@@ -110,5 +110,6 @@
     "regenerateButton.alert.failed": "Não foi possível regenerar a mensagem",
     "history.error.rename": "Não foi possivel renomear \"{{title}}\".",
     "history.error.loading": "Carregando...",
-    "history.error.empty": "Você não tem nenhuma conversa."
+    "history.error.empty": "Você não tem nenhuma conversa.",
+    "chat.header": "Como posso te ajudar hoje?"
 }

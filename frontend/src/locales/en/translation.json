@@ -110,5 +110,6 @@
     "regenerateButton.alert.failed": "Regeneration of message was not possible",
     "history.error.rename": "Renaming of \"{{title}}\" was not possible.",
     "history.loading": "Loading...",
-    "history.empty": "You don't have any chats."
+    "history.empty": "You don't have any chats.",
+    "chat.header": "How can I help you today?"
 }
