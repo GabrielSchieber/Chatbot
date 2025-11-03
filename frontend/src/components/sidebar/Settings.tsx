@@ -1,6 +1,7 @@
 import { CheckIcon, ChevronDownIcon, Cross1Icon, EnvelopeClosedIcon, GearIcon, LockClosedIcon, MixerHorizontalIcon, PersonIcon } from "@radix-ui/react-icons"
 import { Dialog, Select, Tabs } from "radix-ui"
 import { useState, useEffect, type ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 
 import { ArchivedChatsDialog } from "../ui/ArchivedChatsDialog"
 import ConfirmDialog from "../ui/ConfirmDialog"
@@ -13,18 +14,19 @@ import type { Theme } from "../../types"
 
 export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
     const { user } = useAuth()
+    const { t } = useTranslation()
 
     return (
         <Dialog.Root>
             <Dialog.Trigger className={itemClassNames} data-testid="open-settings">
-                <GearIcon className="size-5" /> {isSidebarOpen && "Settings"}
+                <GearIcon className="size-5" /> {isSidebarOpen && t("sidebar.settings")}
             </Dialog.Trigger>
 
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/50" />
 
-                <Dialog.Title hidden>Settings</Dialog.Title>
-                <Dialog.Description hidden>Settings</Dialog.Description>
+                <Dialog.Title hidden>{t("sidebar.settings")}</Dialog.Title>
+                <Dialog.Description hidden>{t("sidebar.settings")}</Dialog.Description>
 
                 <Dialog.Content>
                     <Tabs.Root

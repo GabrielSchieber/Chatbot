@@ -1,5 +1,6 @@
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "@radix-ui/react-icons"
 import { useRef } from "react"
+import { useTranslation } from "react-i18next"
 
 import History from "./sidebar/History"
 import Search from "./sidebar/Search"
@@ -11,6 +12,7 @@ import { me } from "../utils/api"
 export default function Sidebar() {
     const { user, setUser } = useAuth()
     const { isMobile } = useChat()
+    const { t } = useTranslation()
 
     const ref = useRef<HTMLDivElement | null>(null)
 
@@ -44,14 +46,14 @@ export default function Sidebar() {
                         data-testid="toggle-sidebar"
                     >
                         {isOpen ? (
-                            <><ChevronLeftIcon className="size-5" /> Close Sidebar</>
+                            <><ChevronLeftIcon className="size-5" />{t("sidebar.closeSidebar")}</>
                         ) : (
                             <ChevronRightIcon className="size-5" />
                         )}
                     </button>
 
                     <a className={itemClassNames} href="/" data-testid="new-chat">
-                        <PlusIcon className="size-5" /> {isOpen && "New Chat"}
+                        <PlusIcon className="size-5" /> {isOpen && t("sidebar.newChat")}
                     </a>
 
                     <Search showLabel={isOpen} itemClassNames={itemClassNames} />

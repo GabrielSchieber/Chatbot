@@ -1,12 +1,14 @@
 import { ArchiveIcon, ChatBubbleIcon, Cross1Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons"
 import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { useChat } from "../../context/ChatProvider"
 import { searchChats } from "../../utils/api"
 
 export default function Search({ showLabel, itemClassNames }: { showLabel: boolean, itemClassNames: string }) {
     const { chats, isMobile } = useChat()
+    const { t } = useTranslation()
 
     const entriesRef = useRef<HTMLDivElement | null>(null)
     const sentinelRef = useRef<HTMLDivElement | null>(null)
@@ -98,7 +100,7 @@ export default function Search({ showLabel, itemClassNames }: { showLabel: boole
             }}
         >
             <Dialog.Trigger className={itemClassNames} data-testid="search-chats">
-                <MagnifyingGlassIcon className="size-5" /> {showLabel && "Search Chats"}
+                <MagnifyingGlassIcon className="size-5" /> {showLabel && t("sidebar.searchChats")}
             </Dialog.Trigger>
 
             <Dialog.Portal>
@@ -111,8 +113,8 @@ export default function Search({ showLabel, itemClassNames }: { showLabel: boole
                         ${isMobile ? "inset-0 size-full" : "w-[75%] max-w-200 top-[10vh] max-h-[80vh] rounded-xl"}
                     `}
                 >
-                    <Dialog.Title hidden>Search Chats</Dialog.Title>
-                    <Dialog.Description hidden>Search Chats</Dialog.Description>
+                    <Dialog.Title hidden>{t("sidebar.searchChats")}</Dialog.Title>
+                    <Dialog.Description hidden>{t("sidebar.searchChats")}</Dialog.Description>
 
                     <div className="flex w-full gap-5 p-5 border-b border-gray-600 light:border-gray-400">
                         <input
