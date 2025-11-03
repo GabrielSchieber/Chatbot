@@ -107,5 +107,8 @@
     "deleteButton.cancel": "Cancel",
     "deleteButton.error": "Deletion of \"{{title}}\" was not possible.",
     "regenerateButton.alert.noChat": "You must be in a chat to regenerate a message",
-    "regenerateButton.alert.failed": "Regeneration of message was not possible"
+    "regenerateButton.alert.failed": "Regeneration of message was not possible",
+    "history.error.rename": "Renaming of \"{{title}}\" was not possible.",
+    "history.loading": "Loading...",
+    "history.empty": "You don't have any chats."
 }

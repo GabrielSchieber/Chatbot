@@ -107,5 +107,8 @@
     "deleteButton.cancel": "Cancelar",
     "deleteButton.error": "Não foi possível excluir \"{{title}}\".",
     "regenerateButton.alert.noChat": "Você deve estar em uma conversa para regenerar uma mensagem",
-    "regenerateButton.alert.failed": "Não foi possível regenerar a mensagem"
+    "regenerateButton.alert.failed": "Não foi possível regenerar a mensagem",
+    "history.error.rename": "Não foi possivel renomear \"{{title}}\".",
+    "history.error.loading": "Carregando...",
+    "history.error.empty": "Você não tem nenhuma conversa."
 }
