@@ -27,7 +27,7 @@ export function me(language?: Language, theme?: Theme, hasSidebarOpen?: boolean)
         return apiFetch("me/", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ theme, has_sidebar_open: hasSidebarOpen })
+            body: JSON.stringify({ language, theme, has_sidebar_open: hasSidebarOpen })
         })
     }
 }
