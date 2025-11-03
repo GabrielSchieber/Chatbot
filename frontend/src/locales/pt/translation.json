@@ -118,5 +118,6 @@
     "prompt.file.error.tooLarge": "O tamanho total dos arquivos excede o limite de {{limit}}. Selecione arquivos menores.",
     "prompt.file.error.sendFailed": "Falha ao enviar a mensagem.",
     "prompt.pendingNotificationPrefix": "Já existe uma mensagem sendo gerada em",
-    "prompt.pendingNotificationSuffix": "."
+    "prompt.pendingNotificationSuffix": ".",
+    "textarea.placeholder": "Me pergunte qualquer coisa..."
 }

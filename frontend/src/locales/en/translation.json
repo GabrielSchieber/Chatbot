@@ -118,5 +118,6 @@
     "prompt.file.error.tooLarge": "Total file size exceeds {{limit}} limit. Please select smaller files.",
     "prompt.file.error.sendFailed": "Failed to send message.",
     "prompt.pendingNotificationPrefix": "A message is already being generated in",
-    "prompt.pendingNotificationSuffix": "."
+    "prompt.pendingNotificationSuffix": ".",
+    "textarea.placeholder": "Ask me anything..."
 }
