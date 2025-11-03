@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronDownIcon, Cross1Icon, EnvelopeClosedIcon, GearIcon, LockClosedIcon, MixerHorizontalIcon, PersonIcon } from "@radix-ui/react-icons"
 import { Dialog, Select, Tabs } from "radix-ui"
-import { useState, useEffect, type ReactNode } from "react"
+import { useState, useEffect, type ReactNode, type SetStateAction, type Dispatch } from "react"
 import { useTranslation } from "react-i18next"
 
 import { ArchivedChatsDialog } from "../ui/ArchivedChatsDialog"
@@ -10,11 +10,14 @@ import { useAuth } from "../../context/AuthProvider"
 import { useChat } from "../../context/ChatProvider"
 import { deleteAccount, deleteChats, logout, me } from "../../utils/api"
 import { applyTheme } from "../../utils/theme"
-import type { Theme } from "../../types"
+import { getLanguageAbbreviation } from "../../utils/language"
+import type { Language, Theme } from "../../types"
 
 export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
     const { user } = useAuth()
     const { t } = useTranslation()
+
+    const [currentTab, setCurrentTab] = useState(t("settings.general"))
 
     return (
         <Dialog.Root>
@@ -31,7 +34,8 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                 <Dialog.Content>
                     <Tabs.Root
                         className="fixed flex top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 text-white light:text-black"
-                        defaultValue="General"
+                        value={currentTab}
+                        onValueChange={v => setCurrentTab(v)}
                         orientation="vertical"
                     >
                         <Tabs.List className="flex flex-col gap-1 p-4 items-start rounded-l-xl bg-gray-900 light:bg-gray-100">
@@ -39,27 +43,28 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                                 <Cross1Icon className="size-5" />
                             </Dialog.Close>
 
-                            <Trigger icon={<GearIcon className="size-4.5" />} title="General" />
-                            <Trigger icon={<MixerHorizontalIcon className="size-4.5" />} title="Data" />
-                            <Trigger icon={<LockClosedIcon className="size-4.5" />} title="Security" />
-                            <Trigger icon={<PersonIcon className="size-4.5" />} title="Account" />
+                            <Trigger icon={<GearIcon className="size-4.5" />} title={t("settings.general")} />
+                            <Trigger icon={<MixerHorizontalIcon className="size-4.5" />} title={t("settings.data")} />
+                            <Trigger icon={<LockClosedIcon className="size-4.5" />} title={t("settings.security")} />
+                            <Trigger icon={<PersonIcon className="size-4.5" />} title={t("settings.account")} />
                         </Tabs.List>
 
-                        <Content title="General">
+                        <Content title={t("settings.general")}>
                             <Entry name="Theme" item={<ThemeEntryItem />} />
+                            <Entry name="Language" item={<LanguageEntryItem setCurrentTab={setCurrentTab} />} />
                         </Content>
 
-                        <Content title="Data">
+                        <Content title={t("settings.data")}>
                             <Entry name="Archived chats" item={<ArchivedChatsDialog triggerClassName={entryClasses} />} />
                             <Entry name="Delete chats" item={<DeleteChatsEntryItem />} />
                         </Content>
 
-                        <Content title="Security">
+                        <Content title={t("settings.security")}>
                             <Entry name="Multi-factor authentication" item={<MFADialog triggerClassName={entryClasses} />} />
                             <Entry name="Log out" item={<LogoutEntryItem />} />
                         </Content>
 
-                        <Content title="Account">
+                        <Content title={t("settings.account")}>
                             {user && (
                                 <div className="flex gap-2 py-3 items-center">
                                     <EnvelopeClosedIcon className="size-4.5" />
@@ -119,8 +124,6 @@ function ThemeEntryItem() {
         applyTheme(themeToSelect)
     }
 
-    const itemClasses = "flex items-center gap-4 px-2 py-1 rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"
-
     return (
         <Select.Root value={theme} onValueChange={handleChangeTheme}>
             <Select.Trigger className={entryClasses + " gap-4"} aria-label="Theme">
@@ -153,6 +156,49 @@ function ThemeEntryItem() {
                                 <CheckIcon />
                             </Select.ItemIndicator>
                         </Select.Item>
+                    </Select.Viewport>
+                </Select.Content>
+            </Select.Portal>
+        </Select.Root>
+    )
+}
+
+function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetStateAction<string>> }) {
+    const { user, setUser } = useAuth()
+    const { i18n } = useTranslation()
+
+    const [language, setLanguage] = useState<Language>(user?.preferences.language || "English")
+
+    const languages: Language[] = ["English", "Português"]
+
+    async function handleChangeLanguage(language: Language) {
+        me(language)
+        setUser(previous => previous ? { ...previous, preferences: { ...previous.preferences, language } } : previous)
+        setLanguage(language)
+        const t = await i18n.changeLanguage(getLanguageAbbreviation(language))
+        setCurrentTab(t("settings.general"))
+    }
+
+    return (
+        <Select.Root value={language} onValueChange={handleChangeLanguage}>
+            <Select.Trigger className={entryClasses + " gap-4"} aria-label="Language">
+                <Select.Value placeholder="Select language…" />
+                <Select.Icon>
+                    <ChevronDownIcon />
+                </Select.Icon>
+            </Select.Trigger>
+
+            <Select.Portal>
+                <Select.Content className="text-white light:text-black bg-gray-900 light:bg-gray-100">
+                    <Select.Viewport className="p-1">
+                        {languages.map(l => (
+                            <Select.Item key={l} value={l} className={itemClasses}>
+                                <Select.ItemText>{l}</Select.ItemText>
+                                <Select.ItemIndicator className="ml-auto">
+                                    <CheckIcon />
+                                </Select.ItemIndicator>
+                            </Select.Item>
+                        ))}
                     </Select.Viewport>
                 </Select.Content>
             </Select.Portal>
@@ -327,3 +373,4 @@ const entryClasses = `
     focus:bg-gray-700 light:focus:bg-gray-300
 `
 const destructiveEntryClasses = entryClasses + " text-red-500"
+const itemClasses = "flex items-center gap-4 px-2 py-1 rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"

@@ -2,5 +2,9 @@
     "sidebar.closeSidebar": "Fechar Barra Lateral",
     "sidebar.newChat": "Nova Conversa",
     "sidebar.searchChats": "Pesquisar Conversas",
-    "sidebar.settings": "Configurações"
+    "sidebar.settings": "Configurações",
+    "settings.general": "Geral",
+    "settings.data": "Dados",
+    "settings.security": "Segurança",
+    "settings.account": "Conta"
 }

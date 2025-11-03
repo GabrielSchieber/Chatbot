@@ -2,5 +2,9 @@
     "sidebar.closeSidebar": "Close Sidebar",
     "sidebar.newChat": "New Chat",
     "sidebar.searchChats": "Search Chats",
-    "sidebar.settings": "Settings"
+    "sidebar.settings": "Settings",
+    "settings.general": "General",
+    "settings.data": "Data",
+    "settings.security": "Security",
+    "settings.account": "Account"
 }
