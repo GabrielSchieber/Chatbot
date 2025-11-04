@@ -119,5 +119,11 @@
     "prompt.file.error.sendFailed": "Falha ao enviar a mensagem.",
     "prompt.pendingNotificationPrefix": "Já existe uma mensagem sendo gerada em",
     "prompt.pendingNotificationSuffix": ".",
-    "textarea.placeholder": "Me pergunte qualquer coisa..."
+    "textarea.placeholder": "Me pergunte qualquer coisa...",
+    "search.placeholder": "Pesquisar conversas...",
+    "search.loading": "Carregando...",
+    "search.empty": "Você não tem nenhuma conversa para pesquisar.",
+    "search.noResults": "Nenhuma conversa foi encontrada.",
+    "search.date.today": "Hoje",
+    "search.date.yesterday": "Ontem"
 }

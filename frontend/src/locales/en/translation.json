@@ -119,5 +119,11 @@
     "prompt.file.error.sendFailed": "Failed to send message.",
     "prompt.pendingNotificationPrefix": "A message is already being generated in",
     "prompt.pendingNotificationSuffix": ".",
-    "textarea.placeholder": "Ask me anything..."
+    "textarea.placeholder": "Ask me anything...",
+    "search.placeholder": "Search chats...",
+    "search.loading": "Loading...",
+    "search.empty": "You have no chats to search.",
+    "search.noResults": "No chats were found.",
+    "search.date.today": "Today",
+    "search.date.yesterday": "Yesterday"
 }

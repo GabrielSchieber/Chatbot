@@ -1,14 +1,13 @@
 import { ArchiveIcon, ChatBubbleIcon, Cross1Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons"
+import i18next, { t } from "i18next"
 import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
-import { useTranslation } from "react-i18next"
 
 import { useChat } from "../../context/ChatProvider"
 import { searchChats } from "../../utils/api"
 
 export default function Search({ showLabel, itemClassNames }: { showLabel: boolean, itemClassNames: string }) {
     const { chats, isMobile } = useChat()
-    const { t } = useTranslation()
 
     const entriesRef = useRef<HTMLDivElement | null>(null)
     const sentinelRef = useRef<HTMLDivElement | null>(null)
@@ -120,7 +119,7 @@ export default function Search({ showLabel, itemClassNames }: { showLabel: boole
                         <input
                             className="flex-1 outline-none placeholder-gray-400 light:placeholder-gray-600"
                             type="text"
-                            placeholder="Search chats..."
+                            placeholder={t("search.placeholder")}
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             onKeyDown={async e => {
@@ -142,11 +141,11 @@ export default function Search({ showLabel, itemClassNames }: { showLabel: boole
                         {entries.map(e => <Entry key={e.uuid} entry={e} />)}
 
                         {isLoading ? (
-                            <p className="text-gray-400 light:text-gray-600">Loading...</p>
+                            <p className="text-gray-400 light:text-gray-600">{t("search.loading")}</p>
                         ) : !hasChats ? (
-                            <p className="text-gray-400 light:text-gray-600">You have no chats to search.</p>
+                            <p className="text-gray-400 light:text-gray-600">{t("search.empty")}</p>
                         ) : entries.length === 0 ? (
-                            <p className="text-gray-400 light:text-gray-600">No chats were found.</p>
+                            <p className="text-gray-400 light:text-gray-600">{t("search.noResults")}</p>
                         ) : hasMore && (
                             <div ref={sentinelRef} className="h-1"></div>
                         )}
@@ -176,7 +175,7 @@ function Entry({ entry }: { entry: SearchEntry }) {
                     <ChatBubbleIcon className="size-8" />
                 )}
                 <p className={`text-sm text-nowrap duration-300 opacity-0 group-hover:opacity-100 group-focus:opacity-100`}>
-                    {entry.last_modified_at}
+                    {formatChatDate(entry.last_modified_at)}
                 </p>
             </div>
 
@@ -193,4 +192,21 @@ function Entry({ entry }: { entry: SearchEntry }) {
             </div>
         </a>
     )
+}
+
+function formatChatDate(isoString: string): string {
+    const date = new Date(isoString)
+    const now = new Date()
+    const differenceMonths = now.getTime() - date.getTime()
+    const differenceDays = Math.floor(differenceMonths / (1000 * 60 * 60 * 24))
+
+    const language = i18next.language || "en"
+
+    if (differenceDays < 1) {
+        return t("search.date.today")
+    } else if (differenceDays === 1) {
+        return t("search.date.yesterday")
+    } else {
+        return new Intl.DateTimeFormat(language, { day: "numeric", month: "short" }).format(date)
+    }
 }

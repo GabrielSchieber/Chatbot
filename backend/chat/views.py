@@ -290,7 +290,7 @@ class SearchChats(APIView):
             "title": chat.title,
             "is_archived": chat.is_archived,
             "matches": [m.text for m in getattr(chat, "matched_messages", [])],
-            "last_modified_at": chat.last_modified_at()
+            "last_modified_at": chat.last_modified_at().isoformat()
         } for chat in chats]
 
         return Response({"entries": entries, "has_more": offset + limit < total}, status.HTTP_200_OK)
