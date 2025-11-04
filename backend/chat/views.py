@@ -6,6 +6,7 @@ from django.core.validators import validate_email
 from django.db.models import Prefetch, Q
 from django.shortcuts import render
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -38,7 +39,7 @@ class Signup(APIView):
             return Response({"error": "Email is not valid."}, status.HTTP_400_BAD_REQUEST)
 
         if User.objects.filter(email = email).exists():
-            return Response({"error": "Email is already registered. Please choose another one."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _("Email is already registered. Please choose another one.")}, status.HTTP_400_BAD_REQUEST)
 
         if len(password) < 12 or len(password) > 100:
             return Response({"error": "Password must have between 12 and 100 characters."}, status.HTTP_400_BAD_REQUEST)
@@ -60,7 +61,7 @@ class Login(APIView):
 
         user: User | None = authenticate(request, email = email, password = password)
         if user is None:
-            return Response({"error": "Email and/or password are invalid."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _("Email and/or password are invalid.")}, status.HTTP_400_BAD_REQUEST)
 
         if user.mfa.is_enabled:
             pre_auth_token = PreAuthToken.objects.create(user = user)
@@ -85,11 +86,11 @@ class VerifyMFA(APIView):
         try:
             pre_auth_token = PreAuthToken.objects.get(token = token)
         except PreAuthToken.DoesNotExist:
-            return Response({"error": "Invalid or expired token."}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": _("Invalid or expired token.")}, status.HTTP_401_UNAUTHORIZED)
 
         if pre_auth_token.is_expired():
             pre_auth_token.delete()
-            return Response({"error": "Token expired."}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": _("Token expired.")}, status.HTTP_401_UNAUTHORIZED)
 
         if pre_auth_token.user.mfa.verify(code):
             refresh = RefreshToken.for_user(pre_auth_token.user)
@@ -99,7 +100,7 @@ class VerifyMFA(APIView):
             pre_auth_token.delete()
             return response
         else:
-            return Response({"error": "Invalid code."}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": _("Invalid code.")}, status.HTTP_401_UNAUTHORIZED)
 
 class Logout(APIView):
     permission_classes = [IsAuthenticated]
@@ -181,7 +182,7 @@ class EnableMFA(APIView):
             backup_codes = user.mfa.enable()
             return Response({"backup_codes": backup_codes}, status.HTTP_200_OK)
         else:
-            return Response({"error": "Invalid code."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _("Invalid code.")}, status.HTTP_400_BAD_REQUEST)
 
 class DisableMFA(APIView):
     permission_classes = [IsAuthenticated]
@@ -197,7 +198,7 @@ class DisableMFA(APIView):
             user.mfa.disable()
             return Response(status = status.HTTP_200_OK)
         else:
-            return Response({"error": "Invalid code."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": _("Invalid code.")}, status.HTTP_400_BAD_REQUEST)
 
 class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]
@@ -210,13 +211,13 @@ class DeleteAccount(APIView):
             return Response({"error": "'password' field must be provided."}, status.HTTP_400_BAD_REQUEST)
 
         if not request.user.check_password(password):
-            return Response({"error": "Invalid password."}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": _("Invalid password.")}, status.HTTP_401_UNAUTHORIZED)
 
         if request.user.mfa.is_enabled:
             if mfa_code is None:
                 return Response({"error": "MFA code is required."}, status.HTTP_400_BAD_REQUEST)
             if not request.user.mfa.verify(mfa_code):
-                return Response({"error": "Invalid MFA code."}, status.HTTP_401_UNAUTHORIZED)
+                return Response({"error": _("Invalid MFA code.")}, status.HTTP_401_UNAUTHORIZED)
 
         try:
             request.user.delete()
