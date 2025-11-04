@@ -116,6 +116,55 @@ test("user can change theme", async ({ page }) => {
     expect(await html.getAttribute("class")).toEqual("Light")
 })
 
+test("user can change language", async ({ page }) => {
+    await signupAndLogin(page)
+
+    await page.getByText("Settings").click()
+
+    await expect(page.locator("label").getByText("Language", { exact: true })).toBeVisible()
+    await expect(page.locator("button").getByText("Auto-detect", { exact: true })).toBeVisible()
+
+    await page.locator("button").getByText("Auto-detect", { exact: true }).click()
+    const englishResponse = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
+    await page.getByText("English", { exact: true }).click()
+    await englishResponse
+
+    await page.reload()
+    await page.getByRole("heading", { name: "How can I help you today?", exact: true }).click()
+    await page.getByText("Settings").click()
+
+    await expect(page.locator("label").getByText("Language", { exact: true })).toBeVisible()
+    await expect(page.locator("button").getByText("English", { exact: true })).toBeVisible()
+
+    await page.locator("button").getByText("English", { exact: true }).click()
+    const portgueseResponse = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
+    await page.getByText("Português", { exact: true }).click()
+    await portgueseResponse
+
+    async function checkIfSettingsIsInPortuguese() {
+        await expect(page.getByRole("heading", { name: "Geral", exact: true })).toBeVisible()
+
+        await expect(page.locator("label").getByText("Idioma", { exact: true })).toBeVisible()
+        await expect(page.locator("button").getByText("Português", { exact: true })).toBeVisible()
+
+        await expect(page.locator("label").getByText("Tema", { exact: true })).toBeVisible()
+        await expect(page.locator("button").getByText("Sistema", { exact: true })).toBeVisible()
+
+        await expect(page.getByRole("tab", { name: "Geral" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Dados" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Segurança" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Conta" })).toBeVisible()
+    }
+
+    await checkIfSettingsIsInPortuguese()
+
+    await page.reload()
+    await page.getByRole("heading", { name: "Como posso te ajudar hoje?", exact: true }).click()
+    await page.getByText("Configurações").click()
+
+    await checkIfSettingsIsInPortuguese()
+})
+
 test("user can archive all chats", async ({ page }) => {
     const user = await signupAndLogin(page, true)
     await archiveOrUnarchiveAllChats(page, user, "archive", false)
