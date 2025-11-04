@@ -167,9 +167,10 @@ function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetState
     const { user, setUser } = useAuth()
     const { i18n } = useTranslation()
 
-    const [language, setLanguage] = useState<Language>(user?.preferences.language || "English")
+    const [language, setLanguage] = useState<Language>(user?.preferences.language || "")
 
-    const languages: Language[] = ["English", "Português"]
+    const languages: Language[] = ["", "English", "Português"]
+    const autoDetect = t("settings.autoDetect")
 
     async function handleChangeLanguage(language: Language) {
         me(language)
@@ -179,8 +180,10 @@ function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetState
         setCurrentTab(t("settings.general"))
     }
 
+    const getValue = (l: Language) => l ? l : autoDetect
+
     return (
-        <Select.Root value={language} onValueChange={handleChangeLanguage}>
+        <Select.Root value={getValue(language)} onValueChange={v => handleChangeLanguage(v === autoDetect ? "" : v as Language)}>
             <Select.Trigger className={entryClasses + " gap-4"} aria-label="Language">
                 <Select.Value placeholder={t("settings.selectLanguage")} />
                 <Select.Icon>
@@ -191,9 +194,9 @@ function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetState
             <Select.Portal>
                 <Select.Content className="text-white light:text-black bg-gray-900 light:bg-gray-100">
                     <Select.Viewport className="p-1">
-                        {languages.map(l => (
-                            <Select.Item key={l} value={l} className={itemClasses}>
-                                <Select.ItemText>{l}</Select.ItemText>
+                        {languages.map((l, i) => (
+                            <Select.Item key={`${l}-${i}`} value={getValue(l)} className={itemClasses}>
+                                <Select.ItemText>{getValue(l)}</Select.ItemText>
                                 <Select.ItemIndicator className="ml-auto">
                                     <CheckIcon />
                                 </Select.ItemIndicator>

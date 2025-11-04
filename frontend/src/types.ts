@@ -1,4 +1,4 @@
-export type Language = "English" | "Português"
+export type Language = "" | "English" | "Português"
 export type Theme = "System" | "Light" | "Dark"
 export type Model = "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondream"
 

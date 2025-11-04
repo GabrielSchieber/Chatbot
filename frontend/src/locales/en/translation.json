@@ -16,6 +16,7 @@
     "settings.deleteAccount": "Delete Account",
     "settings.selectTheme": "Select theme…",
     "settings.selectLanguage": "Select language…",
+    "settings.autoDetect": "Auto-detect",
     "settings.theme.system": "System",
     "settings.theme.light": "Light",
     "settings.theme.dark": "Dark",

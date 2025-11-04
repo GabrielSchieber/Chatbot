@@ -16,6 +16,7 @@
     "settings.deleteAccount": "Excluir Conta",
     "settings.selectTheme": "Selecionar tema…",
     "settings.selectLanguage": "Selecionar idioma…",
+    "settings.autoDetect": "Detecção automática",
     "settings.theme.system": "Sistema",
     "settings.theme.light": "Claro",
     "settings.theme.dark": "Escuro",

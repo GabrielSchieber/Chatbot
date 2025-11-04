@@ -19,7 +19,7 @@ export default function App() {
     }, [user?.preferences.theme])
 
     useEffect(() => {
-        if (user) {
+        if (user && user.preferences.language) {
             i18n.changeLanguage(getLanguageAbbreviation(user.preferences.language))
         } else {
             i18n.changeLanguage(navigator.languages?.[0] || navigator.language || "en")
