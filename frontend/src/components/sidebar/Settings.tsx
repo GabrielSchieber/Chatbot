@@ -2,6 +2,7 @@ import { CheckIcon, ChevronDownIcon, Cross1Icon, EnvelopeClosedIcon, GearIcon, L
 import { t } from "i18next"
 import { Dialog, Select, Tabs } from "radix-ui"
 import { useState, useEffect, type ReactNode, type SetStateAction, type Dispatch } from "react"
+import { useTranslation } from "react-i18next"
 
 import { ArchivedChatsDialog } from "../ui/ArchivedChatsDialog"
 import ConfirmDialog from "../ui/ConfirmDialog"
@@ -11,7 +12,6 @@ import { useChat } from "../../context/ChatProvider"
 import { deleteAccount, deleteChats, logout, me } from "../../utils/api"
 import { applyTheme } from "../../utils/theme"
 import { getLanguageAbbreviation } from "../../utils/language"
-import i18n from "../../i18n"
 import type { Language, Theme } from "../../types"
 
 export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
@@ -165,6 +165,7 @@ function ThemeEntryItem() {
 
 function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetStateAction<string>> }) {
     const { user, setUser } = useAuth()
+    const { i18n } = useTranslation()
 
     const [language, setLanguage] = useState<Language>(user?.preferences.language || "English")
 
