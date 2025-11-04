@@ -80,11 +80,13 @@ test("user can see and toggle sidebar with chats", async ({ page }) => {
 test("user can rename chats", async ({ page }) => {
     const user = await signupAndLogin(page, true)
 
-    const firstChat = user.chats[0]
-    const firstChatLink = page.getByRole("link", { name: firstChat.title, exact: true })
+    const chat = user.chats[0]
+    const link = page.getByRole("link").nth(1)
+    await expect(link).toContainText(chat.title)
+    await expect(link.getByRole("button", { includeHidden: true })).toHaveCount(1)
 
-    await firstChatLink.hover()
-    await firstChatLink.getByRole("button").click()
+    await link.hover()
+    await link.getByRole("button").click()
 
     await page.getByRole("menuitem", { name: "Rename", exact: true }).click()
 
@@ -106,20 +108,19 @@ test("user can archive chats", async ({ page }) => {
     const user = await signupAndLogin(page, true)
 
     const chat = user.chats[0]
-    const link = page.getByRole("link", { name: chat.title, exact: true })
+    const link = page.getByRole("link", { name: chat.title })
+    await expect(link.getByRole("button", { includeHidden: true })).toHaveCount(1)
 
     await link.hover()
     await link.getByRole("button").click()
     await page.getByRole("menuitem", { name: "Archive", exact: true }).click()
 
     await expect(link).not.toBeVisible()
-
     await page.reload()
-
     await expect(link).not.toBeVisible()
 
     await page.getByText("Settings").click()
-
+    await page.getByRole("tab", { name: "Data" }).click()
     await page.getByRole("button", { name: "Manage", exact: true }).click()
 
     await expect(page.getByRole("heading", { name: "Archived Chats", exact: true })).toBeVisible()
@@ -129,21 +130,20 @@ test("user can archive chats", async ({ page }) => {
 test("user can delete chats", async ({ page }) => {
     const user = await signupAndLogin(page, true)
 
-    const firstChat = user.chats[0]
-    const firstChatLink = page.getByRole("link", { name: firstChat.title, exact: true })
+    const chat = user.chats[0]
+    const link = page.getByRole("link", { name: chat.title })
+    await expect(link.getByRole("button", { includeHidden: true })).toHaveCount(1)
 
-    await firstChatLink.hover()
-    await firstChatLink.getByRole("button").click()
+    await link.hover()
+    await link.getByRole("button").click()
     await page.getByRole("menuitem", { name: "Delete", exact: true }).click()
 
     await expect(page.getByRole("heading", { name: "Delete Chat", exact: true })).toBeVisible()
-    await expect(page.getByText(`Are you sure you want to delete "${firstChat.title}"? This action cannot be undone.`, { exact: true })).toBeVisible()
+    await expect(page.getByText(`Are you sure you want to delete "${chat.title}"? This action cannot be undone.`, { exact: true })).toBeVisible()
     await expect(page.getByRole("button", { name: "Cancel", exact: true })).toBeVisible()
     await page.getByRole("button", { name: "Delete", exact: true }).click()
 
-    await expect(firstChatLink).not.toBeVisible()
-
+    await expect(link).not.toBeVisible()
     await page.reload()
-
-    await expect(firstChatLink).not.toBeVisible()
+    await expect(link).not.toBeVisible()
 })

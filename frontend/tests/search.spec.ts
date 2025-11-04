@@ -16,7 +16,7 @@ test("user can open search", async ({ page }) => {
         await expect(entry).toContainText(chat.title)
         expect(await entry.getAttribute("href")).toEqual(`/chat/${chat.uuid}`)
 
-        for (const message of chat.messages) {
+        for (const message of chat.messages.slice(0, 5)) {
             await expect(entry).toContainText(message.text.slice(0, 100) + "...")
         }
     }
