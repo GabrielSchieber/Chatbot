@@ -351,7 +351,7 @@ test("user cannot delete account with a used MFA backup code", async ({ page }) 
 
     await page.getByRole("button", { name: "Use recovery code", exact: true }).click()
     await expect(page.getByText("Recover Multi-Factor Authentication", { exact: true })).toBeVisible()
-    await expect(page.getByText("Enter one of your recovery code", { exact: true })).toBeVisible()
+    await expect(page.getByText("Enter one of your recovery codes", { exact: true })).toBeVisible()
 
     await page.fill("input", backupCodes[0])
     await page.getByRole("button", { name: "Verify", exact: true }).click()

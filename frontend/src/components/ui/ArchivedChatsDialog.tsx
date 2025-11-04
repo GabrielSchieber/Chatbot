@@ -153,7 +153,7 @@ function ArchiveOrUnarchiveDialog({ action, onConfirm }: { action: "archive" | "
                     {action === "archive" ? t("archivedChats.archiveAll.confirm") : t("archivedChats.unarchiveAll.confirm")}
                 </button>
             }
-            title={t("archivedChats.unarchiveAll.title")}
+            title={action === "archive" ? t("archivedChats.archiveAll.title") : t("archivedChats.unarchiveAll.title")}
             description={action === "archive" ? t("archivedChats.archiveAll.description") : t("archivedChats.unarchiveAll.description")}
             confirmText={action === "archive" ? t("archivedChats.archiveAll.confirm") : t("archivedChats.unarchiveAll.confirm")}
             onConfirm={onConfirm}
