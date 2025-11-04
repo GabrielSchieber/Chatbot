@@ -95,6 +95,7 @@ export async function signupWithMFAEnabled(page: Page) {
     const user = await signupWithMFAEnabledAndLogin(page)
 
     await page.getByTestId("open-settings").click()
+    await page.getByRole("tab", { name: "Security" }).click()
     await page.getByRole("button", { name: "Log out", exact: true }).click()
     await page.waitForURL("/login")
 

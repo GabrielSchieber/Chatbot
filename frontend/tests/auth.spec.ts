@@ -74,6 +74,7 @@ test("user can enable multi-factor authentication", async ({ page }) => {
 
     await page.getByTestId("open-settings").click()
 
+    await page.getByRole("tab", { name: "Security" }).click()
     await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
     await expect(page.getByText("Step 1: Setup", { exact: true })).toBeVisible()
 
@@ -128,6 +129,7 @@ test("user can disable multi-factor authentication", async ({ page }) => {
 
     await page.getByTestId("open-settings").click()
 
+    await page.getByRole("tab", { name: "Security" }).click()
     await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
     await expect(page.getByText("Step 1: Disable", { exact: true })).toBeVisible()
 
@@ -208,6 +210,7 @@ test("user cannot login with an already used multi-factor authentication backup 
     await page.waitForURL("/")
 
     await page.getByTestId("open-settings").click()
+    await page.getByRole("tab", { name: "Security" }).click()
     await page.getByRole("button", { name: "Log out", exact: true }).click()
     await page.waitForURL("/login")
 
@@ -219,6 +222,7 @@ test("user can disable multi-factor authentication with a backup code", async ({
 
     await page.getByTestId("open-settings").click()
 
+    await page.getByRole("tab", { name: "Security" }).click()
     await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
     await expect(page.getByText("Step 1: Disable", { exact: true })).toBeVisible()
 
@@ -256,6 +260,7 @@ test("user cannot disable multi-factor authentication with an already used backu
 
     await page.getByTestId("open-settings").click()
 
+    await page.getByRole("tab", { name: "Security" }).click()
     await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
     await expect(page.getByText("Step 1: Disable", { exact: true })).toBeVisible()
 
