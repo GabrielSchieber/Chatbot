@@ -19,7 +19,11 @@ export default function App() {
     }, [user?.preferences.theme])
 
     useEffect(() => {
-        i18n.changeLanguage(getLanguageAbbreviation(user?.preferences.language || "English"))
+        if (user) {
+            i18n.changeLanguage(getLanguageAbbreviation(user.preferences.language))
+        } else {
+            i18n.changeLanguage(navigator.languages?.[0] || navigator.language || "en")
+        }
     }, [user?.preferences.language])
 
     if (loading) return <></>
