@@ -85,7 +85,7 @@ test("user can delete chats", async ({ page }) => {
     await page.goto("/")
 
     await page.getByText("Settings").click()
-
+    await page.getByRole("tab", { name: "Data" }).click()
     const deleteChats = page.getByRole("button", { name: "Delete all", exact: true })
     await expect(deleteChats).toBeVisible()
 
@@ -102,7 +102,7 @@ test("user can delete chats", async ({ page }) => {
     await expect(confirmDialogTitle).not.toBeVisible()
     await expect(confirmDialog).not.toBeVisible()
 
-    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Data", exact: true })).toBeVisible()
     await expect(page.getByRole("button", { name: "Settings" })).not.toBeVisible()
     await expect(deleteChats).toBeVisible()
 
