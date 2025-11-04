@@ -20,14 +20,14 @@ export function logout() {
     return apiFetch("logout/", { method: "POST" })
 }
 
-export function me(theme?: Theme, hasSidebarOpen?: boolean) {
-    if (theme === undefined && hasSidebarOpen === undefined) {
+export function me(theme?: Theme, hasSidebarOpen?: boolean, customInstructions?: string, nickname?: string, occupation?: string, about?: string) {
+    if ([theme, hasSidebarOpen, customInstructions, nickname, occupation, about].every(f => f === undefined)) {
         return apiFetch("me/")
     } else {
         return apiFetch("me/", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ theme, has_sidebar_open: hasSidebarOpen })
+            body: JSON.stringify({ theme, has_sidebar_open: hasSidebarOpen, custom_instructions: customInstructions, nickname, occupation, about })
         })
     }
 }

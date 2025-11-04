@@ -60,7 +60,7 @@ async def generate_message(chat: Chat, should_generate_title: bool, should_rando
         options["seed"] = random.randint(-(10 ** 10), 10 ** 10)
 
     messages: list[dict[str, str]] = await get_messages(chat.pending_message)
-    message_index = len(messages)
+    message_index = len(messages) - 1
 
     try:
         async for part in await ollama.AsyncClient().chat(model, messages, stream = True, options = options):
@@ -119,11 +119,35 @@ async def generate_title(chat: Chat):
 
 @database_sync_to_async
 def get_messages(up_to_message: Message) -> list[dict[str, str]]:
-    messages = []
+    system_prompt = "You are a helpful and nice AI personal assistant. Your role is to provide assistance to the user."
+
+    custom_instructions = up_to_message.chat.user.preferences.custom_instructions
+    nickname = up_to_message.chat.user.preferences.nickname
+    occupation = up_to_message.chat.user.preferences.occupation
+    about = up_to_message.chat.user.preferences.about
+
+    if any(map(lambda p: p != "", [custom_instructions, nickname, occupation, about])):
+        system_prompt += f"\nIn addition, you should know the following:"
+
+    if nickname != "":
+        system_prompt += f"\nThe nickname of the user is: {nickname}"
+
+    if occupation != "":
+        system_prompt += f"\nThe user's occupation is: {occupation}"
+
+    if about != "":
+        system_prompt += f"\nThe user has the following to say about them:\n{about}"
+
+    if custom_instructions != "":
+        system_prompt += f"\nYou should follow these instructions:\n{custom_instructions}"
+
+    messages = [{"role": "system", "content": system_prompt}]
+
     for message in up_to_message.chat.messages.order_by("created_at"):
         if message.pk == up_to_message.pk:
             break
         messages.append(get_message_dict(message))
+
     return messages
 
 def get_message_dict(message: Message) -> dict[str, str]:

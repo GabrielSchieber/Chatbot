@@ -1,9 +1,10 @@
-import { CheckIcon, ChevronDownIcon, Cross1Icon, EnvelopeClosedIcon, GearIcon, LockClosedIcon, MixerHorizontalIcon, PersonIcon } from "@radix-ui/react-icons"
+import { CheckIcon, ChevronDownIcon, Cross1Icon, EnvelopeClosedIcon, GearIcon, LockClosedIcon, MixerHorizontalIcon, MixerVerticalIcon, PersonIcon } from "@radix-ui/react-icons"
 import { Dialog, Select, Tabs } from "radix-ui"
 import { useState, useEffect, type ReactNode } from "react"
 
 import { ArchivedChatsDialog } from "../ui/ArchivedChatsDialog"
 import ConfirmDialog from "../ui/ConfirmDialog"
+import Customizations from "../ui/Customizations"
 import MFADialog from "../ui/MFADialog"
 import { useAuth } from "../../context/AuthProvider"
 import { useChat } from "../../context/ChatProvider"
@@ -38,6 +39,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                             </Dialog.Close>
 
                             <Trigger icon={<GearIcon className="size-4.5" />} title="General" />
+                            <Trigger icon={<MixerVerticalIcon className="size-4.5" />} title="Customizations" />
                             <Trigger icon={<MixerHorizontalIcon className="size-4.5" />} title="Data" />
                             <Trigger icon={<LockClosedIcon className="size-4.5" />} title="Security" />
                             <Trigger icon={<PersonIcon className="size-4.5" />} title="Account" />
@@ -45,6 +47,10 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
 
                         <Content title="General">
                             <Entry name="Theme" item={<ThemeEntryItem />} />
+                        </Content>
+
+                        <Content title="Customizations">
+                            <Customizations />
                         </Content>
 
                         <Content title="Data">
@@ -81,6 +87,7 @@ function Trigger({ icon, title }: { icon: ReactNode, title: string }) {
                 flex w-full gap-1 px-2 py-1 items-center cursor-pointer outline-none rounded-lg
                 hover:bg-gray-700 light:hover:bg-gray-300
                 focus:bg-gray-700 light:focus:bg-gray-300
+                data-[state=active]:bg-gray-700 light:data-[state=active]:bg-gray-300
             `}
         >
             {icon} {title}

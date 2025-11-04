@@ -17,7 +17,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .serializers import ChatSerializer, GetChatsGETSerializer, MessageSerializer, UserSerializer
-from .models import Chat, Message, MessageFile, PreAuthToken, User
+from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
 
@@ -153,6 +153,38 @@ class Me(APIView):
             if type(has_sidebar_open) != bool:
                 return Response({"error": "Invalid data type for 'has_sidebar_open' field."}, status.HTTP_400_BAD_REQUEST)
             user.preferences.has_sidebar_open = has_sidebar_open
+
+        custom_instructions = request.data.get("custom_instructions")
+        if custom_instructions != None:
+            if type(custom_instructions) != str:
+                return Response({"error": "Invalid data type for 'custom_instructions' field."}, status.HTTP_400_BAD_REQUEST)
+            if len(custom_instructions) > UserPreferences._meta.get_field("custom_instructions").max_length:
+                return Response({"error": "Invalid length for 'custom_instructions' field."}, status.HTTP_400_BAD_REQUEST)
+            user.preferences.custom_instructions = custom_instructions
+
+        nickname = request.data.get("nickname")
+        if nickname != None:
+            if type(nickname) != str:
+                return Response({"error": "Invalid data type for 'nickname' field."}, status.HTTP_400_BAD_REQUEST)
+            if len(nickname) > UserPreferences._meta.get_field("nickname").max_length:
+                return Response({"error": "Invalid length for 'nickname' field."}, status.HTTP_400_BAD_REQUEST)
+            user.preferences.nickname = nickname
+
+        occupation = request.data.get("occupation")
+        if occupation != None:
+            if type(occupation) != str:
+                return Response({"error": "Invalid data type for 'occupation' field."}, status.HTTP_400_BAD_REQUEST)
+            if len(occupation) > UserPreferences._meta.get_field("occupation").max_length:
+                return Response({"error": "Invalid length for 'occupation' field."}, status.HTTP_400_BAD_REQUEST)
+            user.preferences.occupation = occupation
+
+        about = request.data.get("about")
+        if about != None:
+            if type(about) != str:
+                return Response({"error": "Invalid data type for 'about' field."}, status.HTTP_400_BAD_REQUEST)
+            if len(about) > UserPreferences._meta.get_field("about").max_length:
+                return Response({"error": "Invalid length for 'about' field."}, status.HTTP_400_BAD_REQUEST)
+            user.preferences.about = about
 
         user.preferences.save()
         return Response(status = status.HTTP_200_OK)

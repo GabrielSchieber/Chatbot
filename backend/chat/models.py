@@ -54,6 +54,10 @@ class UserPreferences(models.Model):
     user = models.OneToOneField(User, models.CASCADE, related_name = "preferences")
     theme = models.CharField(choices = [[c, c] for c in ["System", "Light", "Dark"]], default = "System")
     has_sidebar_open = models.BooleanField(default = True)
+    custom_instructions = models.CharField(max_length = 1000)
+    nickname = models.CharField(max_length = 50)
+    occupation = models.CharField(max_length = 50)
+    about = models.CharField(max_length = 1000)
 
     def __str__(self):
         return f"Preferences of {self.user} with {self.theme} theme and {"open" if self.has_sidebar_open else "closed"} sidebar"
