@@ -25,6 +25,7 @@ test("user can open settings", async ({ page }) => {
 
     await expect(page.getByRole("heading", { name: "General", exact: true })).toBeVisible()
     await checkEntry("Theme", "System")
+    await checkEntry("Language", "Auto-detect")
 
     await clickTab("Data")
     await checkEntry("Archived chats", "Manage")
@@ -40,6 +41,7 @@ test("user can open settings", async ({ page }) => {
 
     await clickTab("General")
     await checkEntry("Theme", "System")
+    await checkEntry("Language", "Auto-detect")
 })
 
 test("user can change theme", async ({ page }) => {
