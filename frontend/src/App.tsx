@@ -1,5 +1,5 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 import { useAuth } from "./context/AuthProvider"
 import { NotificationProvider } from "./context/NotificationProvider"
@@ -14,19 +14,26 @@ import i18n from "./i18n"
 export default function App() {
     const { user, loading, isLoggedIn } = useAuth()
 
-    useEffect(() => {
-        applyTheme(user?.preferences.theme || "System")
-    }, [user?.preferences.theme])
+    const [hasSetTheme, setHasSetTheme] = useState(false)
+    const [hasSetLanguage, setHasSetLanguage] = useState(false)
 
     useEffect(() => {
+        if (loading) return
+        applyTheme(user?.preferences.theme || "System")
+        setHasSetTheme(true)
+    }, [loading, user?.preferences.theme])
+
+    useEffect(() => {
+        if (loading) return
         if (user && user.preferences.language) {
             i18n.changeLanguage(getLanguageAbbreviation(user.preferences.language))
         } else {
             i18n.changeLanguage(navigator.languages?.[0] || navigator.language || "en")
         }
-    }, [user?.preferences.language])
+        setHasSetLanguage(true)
+    }, [loading, user?.preferences.language])
 
-    if (loading) return <></>
+    if (loading || !hasSetTheme || !hasSetLanguage) return <></>
 
     return (
         <NotificationProvider>
