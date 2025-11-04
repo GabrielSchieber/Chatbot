@@ -124,10 +124,29 @@ test("user can change language", async ({ page }) => {
     await expect(page.locator("label").getByText("Language", { exact: true })).toBeVisible()
     await expect(page.locator("button").getByText("Auto-detect", { exact: true })).toBeVisible()
 
+    async function checkIfSettingsDialogIsInEnglish(languageButtonText: string) {
+        await expect(page.getByRole("heading", { name: "General", exact: true })).toBeVisible()
+
+        await expect(page.locator("label").getByText("Language", { exact: true })).toBeVisible()
+        await expect(page.locator("button").getByText(languageButtonText, { exact: true })).toBeVisible()
+
+        await expect(page.locator("label").getByText("Theme", { exact: true })).toBeVisible()
+        await expect(page.locator("button").getByText("System", { exact: true })).toBeVisible()
+
+        await expect(page.getByRole("tab", { name: "General" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Data" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Security" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Account" })).toBeVisible()
+    }
+
+    await checkIfSettingsDialogIsInEnglish("Auto-detect")
+
     await page.locator("button").getByText("Auto-detect", { exact: true }).click()
-    const englishResponse = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
+    const englishResponse1 = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
     await page.getByText("English", { exact: true }).click()
-    await englishResponse
+    await englishResponse1
+
+    await checkIfSettingsDialogIsInEnglish("English")
 
     await page.reload()
     await page.getByRole("heading", { name: "How can I help you today?", exact: true }).click()
@@ -141,7 +160,7 @@ test("user can change language", async ({ page }) => {
     await page.getByText("Português", { exact: true }).click()
     await portgueseResponse
 
-    async function checkIfSettingsIsInPortuguese() {
+    async function checkIfSettingsDialogIsInPortuguese() {
         await expect(page.getByRole("heading", { name: "Geral", exact: true })).toBeVisible()
 
         await expect(page.locator("label").getByText("Idioma", { exact: true })).toBeVisible()
@@ -156,13 +175,26 @@ test("user can change language", async ({ page }) => {
         await expect(page.getByRole("tab", { name: "Conta" })).toBeVisible()
     }
 
-    await checkIfSettingsIsInPortuguese()
+    await checkIfSettingsDialogIsInPortuguese()
 
     await page.reload()
     await page.getByRole("heading", { name: "Como posso te ajudar hoje?", exact: true }).click()
     await page.getByText("Configurações").click()
 
-    await checkIfSettingsIsInPortuguese()
+    await checkIfSettingsDialogIsInPortuguese()
+
+    await page.locator("button").getByText("Português", { exact: true }).click()
+    const englishResponse2 = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
+    await page.getByText("English", { exact: true }).click()
+    await englishResponse2
+
+    await checkIfSettingsDialogIsInEnglish("English")
+
+    await page.reload()
+    await page.getByRole("heading", { name: "How can I help you today?", exact: true }).click()
+    await page.getByText("Settings").click()
+
+    await checkIfSettingsDialogIsInEnglish("English")
 })
 
 test("user can archive all chats", async ({ page }) => {
