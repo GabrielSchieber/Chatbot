@@ -1,3 +1,4 @@
+import { t } from "i18next"
 import React, { useState } from "react"
 
 import { Button, Email, Error, Form, Header, MFA, MFARecovery, MFAStepSwitch, Password, Recommendation, type Step } from "../components/Auth"
@@ -53,22 +54,23 @@ export default function Login() {
     return (
         step === "login" ? (
             <Form handleSubmit={handleSubmit}>
-                <Header text="Welcome back" />
+                <Header text={t("login.header")} />
                 <Email email={email} setEmail={setEmail} />
-                <Password password={password} setPassword={setPassword} label="Password" id="password" />
+                <Password password={password} setPassword={setPassword} label={t("login.password")} id="password" />
                 {error && <Error text={error} />}
-                <Button text={isVerifying ? "Logging in" : "Log in"} isDisabled={isVerifying} />
-                <Recommendation text="Don't have an account?" url="/signup" urlText="Sign up!" />
+                <Button text={isVerifying ? t("login.loggingIn") : t("login.logIn")} isDisabled={isVerifying} />
+                <Recommendation text={t("login.noAccount")} url="/signup" urlText={t("login.signUp")} />
+
             </Form>
         ) : step === "mfa" ? (
             <Form handleSubmit={handleMFASubmit}>
-                <Header text="Multi-Factor Authentication" />
-                <p className="text-center text-gray-400 light:text-gray-600">Enter the 6-digit code from your authenticator app</p>
+                <Header text={t("login.mfa.header")} />
+                <p className="text-center text-gray-400 light:text-gray-600">{t("login.mfa.description")}</p>
                 <MFA code={code} setCode={setCode} setError={setError} />
                 {error && <Error text={error} />}
-                <Button text={isVerifying ? "Verifying" : "Verify"} isDisabled={isVerifying} />
+                <Button text={isVerifying ? t("login.mfa.verifying") : t("login.mfa.verify")} isDisabled={isVerifying} />
                 <MFAStepSwitch
-                    text="Use recovery code"
+                    text={t("login.mfa.useRecovery")}
                     switchStep="mfa-recovery"
                     setStep={setStep}
                     setCode={setCode}
@@ -78,13 +80,13 @@ export default function Login() {
             </Form>
         ) : (
             <Form handleSubmit={handleMFASubmit}>
-                <Header text="Recover Multi-Factor Authentication" />
-                <p className="text-center text-gray-400 light:text-gray-600">Enter one of your recovery code</p>
+                <Header text={t("login.mfaRecovery.header")} />
+                <p className="text-center text-gray-400 light:text-gray-600">{t("login.mfaRecovery.description")}</p>
                 <MFARecovery code={code} setCode={setCode} setError={setError} />
                 {error && <Error text={error} />}
-                <Button text={isVerifying ? "Verifying" : "Verify"} isDisabled={isVerifying} />
+                <Button text={isVerifying ? t("login.mfa.verifying") : t("login.mfa.verify")} isDisabled={isVerifying} />
                 <MFAStepSwitch
-                    text="Use authenticator code"
+                    text={t("login.mfaRecovery.useAuthenticator")}
                     switchStep="mfa"
                     setStep={setStep}
                     setCode={setCode}

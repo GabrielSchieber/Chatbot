@@ -1,3 +1,4 @@
+import { t } from "i18next"
 import React, { useState } from "react"
 
 import { Button, Email, Error, Form, Header, Password, Recommendation } from "../components/Auth"
@@ -30,7 +31,7 @@ export default function Signup() {
             if (response.ok) {
                 location.href = "/"
             } else {
-                notify("An error occurred. Please try again later.", "error")
+                notify(t("signup.error"), "error")
                 setIsVerifying(false)
             }
         } else {
@@ -42,12 +43,12 @@ export default function Signup() {
 
     return (
         <Form handleSubmit={handleSubmit}>
-            <Header text="Create your account" />
+            <Header text={t("signup.header")} />
             <Email email={email} setEmail={setEmail} />
             <Password
                 password={password}
                 setPassword={setPassword}
-                label="Password"
+                label={t("signup.password")}
                 id="password"
                 minLength={12}
                 maxLength={100}
@@ -55,12 +56,12 @@ export default function Signup() {
             <Password
                 password={confirmPassword}
                 setPassword={setConfirmPassword}
-                label="Confirm Password"
+                label={t("signup.confirmPassword")}
                 id="confirm-password"
             />
             {error && <Error text={error} />}
-            <Button text={isVerifying ? "Signing up" : "Sign up"} isDisabled={isVerifying} />
-            <Recommendation text="Already have an account?" url="/login" urlText="Log in!" />
+            <Button text={isVerifying ? t("signup.signingUp") : t("signup.signUp")} isDisabled={isVerifying} />
+            <Recommendation text={t("signup.haveAccount")} url="/login" urlText={t("signup.logIn")} />
         </Form>
     )
 }
