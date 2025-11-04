@@ -21,9 +21,9 @@ export default function Prompt() {
     const [files, setFiles] = useState<File[]>([])
     const [model, setModel] = useState<Model>("SmolLM2-135M")
 
-    const [shouldShowPendingNotification, setShouldShowPendingNotification] = useState(true)
+    const [shouldShowPendingNotification, setShouldShowPendingNotification] = useState(false)
 
-    const pendingChat = chats.find(c => c.pending_message_id === null)
+    const pendingChat = chats.find(c => c.pending_message_id !== null)
 
     function sendMessage() {
         newMessage(chatUUID || "", text, model, files).then(response => {
