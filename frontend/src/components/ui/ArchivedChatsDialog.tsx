@@ -1,4 +1,5 @@
 import { Cross1Icon } from "@radix-ui/react-icons"
+import { t } from "i18next"
 import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
 
@@ -45,7 +46,7 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
         if (response.ok) {
             setChats(previous => previous.map(c => ({ ...c, is_archived: true })))
         } else {
-            notify("Archival of all chats was not possible.", "error")
+            notify(t("archivedChats.error.archiveAll"), "error")
         }
     }
 
@@ -54,7 +55,7 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
         if (response.ok) {
             setChats(previous => previous.map(c => ({ ...c, is_archived: false })))
         } else {
-            notify("Unarchival of all chats was not possible.", "error")
+            notify(t("archivedChats.error.unarchiveAll"), "error")
         }
     }
 
@@ -63,7 +64,7 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
         if (response.ok) {
             setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, is_archived: false } : c))
         } else {
-            notify(`Unarchival of "${chat.title}" was not possible.`, "error")
+            notify(t("archivedChats.error.unarchiveOne", { title: chat.title }), "error")
         }
     }
 
@@ -75,7 +76,7 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
                 location.href = "/"
             }
         } else {
-            notify(`Deletion of "${chat.title}" was not possible.`, "error")
+            notify(t("archivedChats.error.deleteOne", { title: chat.title }), "error")
         }
     }
 
@@ -101,7 +102,7 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
     return (
         <Dialog.Root onOpenChange={async open => open && await loadEntries()}>
             <Dialog.Trigger className={triggerClassName}>
-                Manage
+                {t("archivedChats.button")}
             </Dialog.Trigger>
 
             <Dialog.Portal>
@@ -114,8 +115,8 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
                     `}
                 >
                     <div className="flex p-4 items-center justify-between border-b">
-                        <Dialog.Title className="text-lg font-semibold">Archived Chats</Dialog.Title>
-                        <Dialog.Description hidden>Manage archived chats</Dialog.Description>
+                        <Dialog.Title className="text-lg font-semibold">{t("archivedChats.title")}</Dialog.Title>
+                        <Dialog.Description hidden>{t("archivedChats.description")}</Dialog.Description>
                         <div className="flex items-center gap-3">
                             <ArchiveOrUnarchiveDialog action="archive" onConfirm={handleArchiveAll} />
                             <ArchiveOrUnarchiveDialog action="unarchive" onConfirm={handleUnarchiveAll} />
@@ -131,9 +132,9 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
                         ))}
 
                         {isLoading && isLoadingRef.current ? (
-                            <p className="text-gray-400 light:text-gray-600">Loading...</p>
+                            <p className="text-gray-400 light:text-gray-600">{t("archivedChats.loading")}</p>
                         ) : chats.filter(c => c.is_archived).length === 0 ? (
-                            <p className="text-gray-400 light:text-gray-600">You don't have any archived chats.</p>
+                            <p className="text-gray-400 light:text-gray-600">{t("archivedChats.empty")}</p>
                         ) : hasMore && (
                             <div ref={sentinelRef} className="h-1"></div>
                         )}
@@ -145,18 +146,16 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
 }
 
 function ArchiveOrUnarchiveDialog({ action, onConfirm }: { action: "archive" | "unarchive", onConfirm: () => void }) {
-    const label = action === "archive" ? "Archive" : "Unarchive"
-
     return (
         <ConfirmDialog
             trigger={
                 <button className="px-3 py-1 rounded-3xl cursor-pointer bg-gray-700/50 hover:bg-gray-700 light:bg-gray-300/50 light:hover:bg-gray-300">
-                    {label} all
+                    {action === "archive" ? t("archivedChats.archiveAll.confirm") : t("archivedChats.unarchiveAll.confirm")}
                 </button>
             }
-            title={`${label} all chats`}
-            description={`Are you sure you want to ${label.toLowerCase()} all of your chats?`}
-            confirmText={`${label} all`}
+            title={action === "archive" ? t("archivedChats.archiveAll.title") : t("archivedChats.unarchiveAll.title")}
+            description={action === "archive" ? t("archivedChats.archiveAll.description") : t("archivedChats.unarchiveAll.description")}
+            confirmText={action === "archive" ? t("archivedChats.archiveAll.confirm") : t("archivedChats.unarchiveAll.confirm")}
             onConfirm={onConfirm}
             isDestructive={false}
         />
@@ -174,7 +173,7 @@ function Entry({ chat, handleUnarchive, handleDelete }: { chat: Chat, handleUnar
             <div className="flex gap-1 items-center">
                 <TooltipButton
                     trigger={<UnarchiveIcon className="size-4" />}
-                    tooltip="Unarchive"
+                    tooltip={t("archivedChats.tooltip.unarchive")}
                     className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-500/40"
                     onClick={e => {
                         e.preventDefault()
@@ -186,15 +185,15 @@ function Entry({ chat, handleUnarchive, handleDelete }: { chat: Chat, handleUnar
                     trigger={
                         <ConfirmDialog
                             trigger={<Cross1Icon className="size-4" />}
-                            title="Delete Archived Chat"
-                            description={`Are you sure you want to delete "${chat.title}"? This action cannot be undone.`}
-                            confirmText="Delete"
-                            cancelText="Cancel"
+                            title={t("archivedChats.delete.title")}
+                            description={t("archivedChats.delete.description", { title: chat.title })}
+                            confirmText={t("archivedChats.delete.confirm")}
+                            cancelText={t("archivedChats.delete.cancel")}
                             onConfirm={() => handleDelete(chat)}
                         />
                     }
                     onClick={e => e.preventDefault()}
-                    tooltip="Delete"
+                    tooltip={t("archivedChats.tooltip.delete")}
                     className="p-1.5 rounded-3xl text-red-500 cursor-pointer hover:bg-red-500/20"
                     tooltipSize="xs"
                 />

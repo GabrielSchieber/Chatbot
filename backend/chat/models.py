@@ -52,6 +52,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class UserPreferences(models.Model):
     user = models.OneToOneField(User, models.CASCADE, related_name = "preferences")
+    language = models.CharField(choices = [[c, c] for c in ["", "English", "Português"]], default = "")
     theme = models.CharField(choices = [[c, c] for c in ["System", "Light", "Dark"]], default = "System")
     has_sidebar_open = models.BooleanField(default = True)
     custom_instructions = models.CharField(max_length = 1000)
@@ -119,22 +120,8 @@ class Chat(models.Model):
     created_at = models.DateTimeField(auto_now_add = True)
 
     def last_modified_at(self):
-        def format_month(month: int) -> str:
-            return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][month - 1]
-
         message: Message | None = self.messages.order_by("-last_modified_at").first()
-
-        if message:
-            last_modified_at = timezone.now() - message.last_modified_at
-        else:
-            last_modified_at = timezone.now() - self.created_at
-
-        if last_modified_at < timedelta(days = 1):
-            return "Today"
-        elif last_modified_at < timedelta(days = 2):
-            return "Yesterday"
-        else:
-            return f"{message.created_at.day} {format_month(message.created_at.month)}"
+        return message.last_modified_at if message else self.created_at
 
     def __str__(self):
         title = self.title if len(self.title) <= 20 else f"{self.title[:20]}..."

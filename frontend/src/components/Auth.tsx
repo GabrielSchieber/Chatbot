@@ -1,3 +1,4 @@
+import { t } from "i18next"
 import { Label } from "radix-ui"
 import type { Dispatch, ReactNode, SetStateAction } from "react"
 
@@ -21,12 +22,12 @@ export function Email({ email, setEmail }: { email: string, setEmail: Dispatch<S
     return (
         <div className="flex flex-col space-y-2">
             <Label.Root htmlFor="email" className="text-sm font-medium text-gray-200 light:text-gray-700">
-                Email
+                {t("auth.email.label")}
             </Label.Root>
             <input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t("auth.email.placeholder")}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="
@@ -84,7 +85,7 @@ export function MFA({ code, setCode, setError }: {
     return (
         <div className="flex flex-col space-y-2">
             <Label.Root htmlFor="code" className="font-medium text-gray-200 light:text-gray-700">
-                Authentication Code
+                {t("auth.mfa.label")}
             </Label.Root>
             <input
                 id="code"
@@ -143,7 +144,7 @@ export function MFARecovery({ code, setCode, setError }: {
     return (
         <div className="flex flex-col space-y-2">
             <Label.Root htmlFor="code" className="font-medium text-gray-200 light:text-gray-700">
-                Recovery Code
+                {t("auth.mfaRecovery.label")}
             </Label.Root>
             <input
                 id="code"

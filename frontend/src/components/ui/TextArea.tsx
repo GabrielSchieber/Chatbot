@@ -1,3 +1,4 @@
+import { t } from "i18next"
 import { useEffect } from "react"
 
 export default function TextArea({ ref, text, setText, sendMessageWithEvent, selectionStart, selectionEnd, tabIndex = 1 }: {
@@ -22,7 +23,7 @@ export default function TextArea({ ref, text, setText, sendMessageWithEvent, sel
                 ref={ref}
                 className="flex-1 p-2 overflow-hidden resize-none outline-none"
                 value={text}
-                placeholder="Ask me anything..."
+                placeholder={t("textarea.placeholder")}
                 onChange={e => {
                     setText(e.target.value)
                     if (selectionStart) selectionStart.current = e.target.selectionStart

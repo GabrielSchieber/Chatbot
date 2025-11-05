@@ -25,6 +25,7 @@ test("user can open settings", async ({ page }) => {
 
     await expect(page.getByRole("heading", { name: "General", exact: true })).toBeVisible()
     await checkEntry("Theme", "System")
+    await checkEntry("Language", "Auto-detect")
 
     await clickTab("Data")
     await checkEntry("Archived chats", "Manage")
@@ -40,6 +41,7 @@ test("user can open settings", async ({ page }) => {
 
     await clickTab("General")
     await checkEntry("Theme", "System")
+    await checkEntry("Language", "Auto-detect")
 })
 
 test("user can change theme", async ({ page }) => {
@@ -112,6 +114,87 @@ test("user can change theme", async ({ page }) => {
     await waitForPageToLoad()
     await expect(page.locator("button").getByText("System")).not.toBeVisible()
     expect(await html.getAttribute("class")).toEqual("Light")
+})
+
+test("user can change language", async ({ page }) => {
+    await signupAndLogin(page)
+
+    await page.getByText("Settings").click()
+
+    await expect(page.locator("label").getByText("Language", { exact: true })).toBeVisible()
+    await expect(page.locator("button").getByText("Auto-detect", { exact: true })).toBeVisible()
+
+    async function checkIfSettingsDialogIsInEnglish(languageButtonText: string) {
+        await expect(page.getByRole("heading", { name: "General", exact: true })).toBeVisible()
+
+        await expect(page.locator("label").getByText("Language", { exact: true })).toBeVisible()
+        await expect(page.locator("button").getByText(languageButtonText, { exact: true })).toBeVisible()
+
+        await expect(page.locator("label").getByText("Theme", { exact: true })).toBeVisible()
+        await expect(page.locator("button").getByText("System", { exact: true })).toBeVisible()
+
+        await expect(page.getByRole("tab", { name: "General" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Data" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Security" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Account" })).toBeVisible()
+    }
+
+    await checkIfSettingsDialogIsInEnglish("Auto-detect")
+
+    await page.locator("button").getByText("Auto-detect", { exact: true }).click()
+    const englishResponse1 = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
+    await page.getByText("English", { exact: true }).click()
+    await englishResponse1
+
+    await checkIfSettingsDialogIsInEnglish("English")
+
+    await page.reload()
+    await page.getByRole("heading", { name: "How can I help you today?", exact: true }).click()
+    await page.getByText("Settings").click()
+
+    await expect(page.locator("label").getByText("Language", { exact: true })).toBeVisible()
+    await expect(page.locator("button").getByText("English", { exact: true })).toBeVisible()
+
+    await page.locator("button").getByText("English", { exact: true }).click()
+    const portgueseResponse = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
+    await page.getByText("Português", { exact: true }).click()
+    await portgueseResponse
+
+    async function checkIfSettingsDialogIsInPortuguese() {
+        await expect(page.getByRole("heading", { name: "Geral", exact: true })).toBeVisible()
+
+        await expect(page.locator("label").getByText("Idioma", { exact: true })).toBeVisible()
+        await expect(page.locator("button").getByText("Português", { exact: true })).toBeVisible()
+
+        await expect(page.locator("label").getByText("Tema", { exact: true })).toBeVisible()
+        await expect(page.locator("button").getByText("Sistema", { exact: true })).toBeVisible()
+
+        await expect(page.getByRole("tab", { name: "Geral" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Dados" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Segurança" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Conta" })).toBeVisible()
+    }
+
+    await checkIfSettingsDialogIsInPortuguese()
+
+    await page.reload()
+    await page.getByRole("heading", { name: "Como posso te ajudar hoje?", exact: true }).click()
+    await page.getByText("Configurações").click()
+
+    await checkIfSettingsDialogIsInPortuguese()
+
+    await page.locator("button").getByText("Português", { exact: true }).click()
+    const englishResponse2 = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
+    await page.getByText("English", { exact: true }).click()
+    await englishResponse2
+
+    await checkIfSettingsDialogIsInEnglish("English")
+
+    await page.reload()
+    await page.getByRole("heading", { name: "How can I help you today?", exact: true }).click()
+    await page.getByText("Settings").click()
+
+    await checkIfSettingsDialogIsInEnglish("English")
 })
 
 test("user can archive all chats", async ({ page }) => {
@@ -351,7 +434,7 @@ test("user cannot delete account with a used MFA backup code", async ({ page }) 
 
     await page.getByRole("button", { name: "Use recovery code", exact: true }).click()
     await expect(page.getByText("Recover Multi-Factor Authentication", { exact: true })).toBeVisible()
-    await expect(page.getByText("Enter one of your recovery code", { exact: true })).toBeVisible()
+    await expect(page.getByText("Enter one of your recovery codes", { exact: true })).toBeVisible()
 
     await page.fill("input", backupCodes[0])
     await page.getByRole("button", { name: "Verify", exact: true }).click()

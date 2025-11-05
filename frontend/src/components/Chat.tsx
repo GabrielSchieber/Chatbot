@@ -1,3 +1,4 @@
+import { t } from "i18next"
 import { useParams } from "react-router"
 
 import Header from "./chat/Header"
@@ -20,7 +21,7 @@ export default function Chat() {
                     ${chatUUID ? "fixed mt-25 top-0 bottom-0 translate-y-[35%] opacity-0 pointer-events-none" : "mb-5"}
                 `}
             >
-                How can I help you today?
+                {t("chat.header")}
             </h1>
             <Prompt />
         </div>

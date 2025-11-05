@@ -1,4 +1,5 @@
 import { DotsVerticalIcon } from "@radix-ui/react-icons"
+import { t } from "i18next"
 import { DropdownMenu } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
@@ -62,7 +63,7 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
             if (response.ok) {
                 setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, title: newTitle } : c))
             } else {
-                notify(`Renaming of "${chat.title}" was not possible.`)
+                notify(t("history.error.rename", { title: chat.title }))
             }
         }
 
@@ -177,9 +178,9 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
             ))}
 
             {isLoading && isLoadingRef.current ? (
-                <p className="text-gray-400 light:text-gray-600">Loading...</p>
+                <p className="text-center text-gray-400 light:text-gray-600">{t("history.loading")}</p>
             ) : chats.filter(c => !c.is_archived).length === 0 ? (
-                <p className="text-gray-400 light:text-gray-600">You don't have any chats.</p>
+                <p className="text-center text-gray-400 light:text-gray-600">{t("history.empty")}</p>
             ) : hasMore && (
                 <div ref={sentinelRef} className="h-1"></div>
             )}

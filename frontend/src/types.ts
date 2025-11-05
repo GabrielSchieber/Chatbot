@@ -1,3 +1,4 @@
+export type Language = "" | "English" | "Português"
 export type Theme = "System" | "Light" | "Dark"
 export type Model = "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondream"
 
@@ -8,6 +9,7 @@ export type User = {
 }
 
 export type UserPreferences = {
+    language: Language
     theme: Theme
     has_sidebar_open: boolean
     custom_instructions: string

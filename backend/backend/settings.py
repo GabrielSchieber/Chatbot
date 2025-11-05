@@ -2,6 +2,8 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from django.utils.translation import gettext_lazy as _
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
@@ -26,6 +28,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -84,7 +87,17 @@ LANGUAGE_CODE = "en-us"
 
 TIME_ZONE = "UTC"
 
+LANGUAGES = [
+    ("en", _("English")),
+    ("pt", _("Portuguese"))
+]
+
+LANGUAGE_CODE = "en"
+
 USE_I18N = True
+USE_L10N = True
+
+LOCALE_PATHS = [BASE_DIR / "locale"]
 
 USE_TZ = True
 

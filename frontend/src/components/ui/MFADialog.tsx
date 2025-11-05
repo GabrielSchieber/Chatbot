@@ -1,4 +1,5 @@
 import { CheckIcon, CopyIcon, Cross1Icon, DownloadIcon } from "@radix-ui/react-icons"
+import { t } from "i18next"
 import { QRCodeCanvas } from "qrcode.react"
 import { Dialog } from "radix-ui"
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react"
@@ -28,7 +29,7 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
     return (
         <Dialog.Root onOpenChange={_ => setStep(user.mfa.is_enabled ? "disable" : "setup")}>
             <Dialog.Trigger className={triggerClassName}>
-                {user.mfa.is_enabled ? "Disable" : "Enable"}
+                {user.mfa.is_enabled ? t("mfa.buttons.disable") : t("mfa.buttons.enable")}
             </Dialog.Trigger>
 
             <Dialog.Portal>
@@ -45,7 +46,7 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
                     <div className="flex flex-col gap-2">
                         <div className="flex gap-2 items-center justify-between">
                             <Dialog.Title className="text-xl font-bold">
-                                Manage multi-factor authentication
+                                {t("mfa.title")}
                             </Dialog.Title>
                             {!isLocked &&
                                 <Dialog.Close className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
@@ -57,15 +58,15 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
                             {(() => {
                                 switch (step) {
                                     case "setup":
-                                        return "Step 1: Setup"
+                                        return t("mfa.steps.setup")
                                     case "enable":
-                                        return "Step 2: Verify"
+                                        return t("mfa.steps.enable")
                                     case "enabled":
-                                        return "Step 3: Backup"
+                                        return t("mfa.steps.enabled")
                                     case "disable":
-                                        return "Step 1: Disable"
+                                        return t("mfa.steps.disable")
                                     case "disabled":
-                                        return "Step 2: Disabled"
+                                        return t("mfa.steps.disabled")
                                 }
                             })()}
                         </Dialog.Description>
@@ -114,7 +115,7 @@ function SetupDialog({ setAuthURL, setSecret, setStep, setIsLocked }: {
             setStep("enable")
         } else {
             setIsSettingUp(false)
-            setError("There was an error generating QR and secret codes")
+            setError(t("mfa.messages.errorGenerate"))
         }
 
         setIsLocked(false)
@@ -123,7 +124,7 @@ function SetupDialog({ setAuthURL, setSecret, setStep, setIsLocked }: {
     return (
         <div className="flex flex-col gap-1 items-center">
             <button className={buttonClassNames} onClick={handleSetup} disabled={isSettingUp}>
-                {isSettingUp ? "Generating" : "Generate"} QR and secret codes
+                {isSettingUp ? t("mfa.buttons.generating") : t("mfa.buttons.generate")}
             </button>
             {error && <p className={errorParagraphClassName}>{error}</p>}
         </div>
@@ -156,10 +157,10 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
             const data = await response.json()
             setBackupCodes(data.backup_codes)
             setStep("enabled")
-            notify("Multi-factor authentication enabled successfully!", "success")
+            notify(t("mfa.messages.enabledSuccess"), "success")
         } else {
             setIsEnabling(false)
-            setError("Invalid code")
+            setError(t("mfa.messages.errorInvalidCode"))
         }
 
         setIsLocked(false)
@@ -172,14 +173,12 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
 
     return (
         <div className="flex flex-col gap-2 items-center">
-            <p className={paragraphClassName}>
-                Scan this QR in your authenticator app (or use the secret below):
-            </p>
+            <p className={paragraphClassName}>{t("mfa.messages.setupQrInfo")}</p>
             <div className="my-2">
                 <QRCodeCanvas value={authURL} size={200} />
             </div>
             <div className="flex gap-2 px-2 py-0.5 items-center rounded bg-gray-700 light:bg-gray-300">
-                <p>Secret: {secret}</p>
+                <p>{t("mfa.labels.secret")} {secret}</p>
                 <button
                     className="p-1 rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"
                     onClick={_ => {
@@ -196,11 +195,11 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
                     className={inputClassNames}
                     value={code}
                     onChange={handleInputChange}
-                    placeholder="6-digit code"
+                    placeholder={t("mfa.placeholders.sixDigitCode")}
                     required
                 />
                 <button className={buttonClassNames} disabled={isEnabling}>
-                    {isEnabling ? "Enabling" : "Enable"}
+                    {isEnabling ? t("mfa.buttons.enabling") : t("mfa.buttons.enable")}
                 </button>
             </form>
             {error && <p className={errorParagraphClassName}>{error}</p>}
@@ -218,7 +217,7 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
 
         const a = document.createElement("a")
         a.href = url
-        a.download = "Recovery Codes.txt"
+        a.download = t("mfa.labels.recoveryFileName")
         a.click()
 
         URL.revokeObjectURL(url)
@@ -228,9 +227,7 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
 
     return (
         <div className="flex flex-col gap-2 p-2 items-center rounded-xl bg-gray-700/30 light:bg-gray-300/30">
-            <p className={paragraphClassName}>
-                Make sure to backup the following 10 recovery codes in a safe place (each one can only be used once):
-            </p>
+            <p className={paragraphClassName}>{t("mfa.messages.backupInfo")}</p>
 
             <ul className="flex w-[60%] min-w-70 px-4 py-2 justify-between rounded-xl bg-gray-700 light:bg-gray-300">
                 <div>
@@ -264,11 +261,11 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
                 <div className="flex size-6 rounded bg-gray-700 light:bg-gray-300">
                     {hasConfirmedBackup && <CheckIcon className="size-6" />}
                 </div>
-                <p>I have backed up the codes.</p>
+                <p>{t("mfa.messages.backupConfirm")}</p>
             </button>
 
             <Dialog.Close className={buttonClassNames} disabled={!hasConfirmedBackup}>
-                Close
+                {t("mfa.buttons.close")}
             </Dialog.Close>
         </div>
     )
@@ -291,10 +288,10 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
         const response = await disableMFA(code)
         if (response.ok) {
             setStep("disabled")
-            notify("Multi-factor authentication disabled successfully!", "success")
+            notify(t("mfa.messages.disabledMessage"), "success")
         } else {
             setIsDisabling(false)
-            setError("Invalid code")
+            setError(t("mfa.messages.errorInvalidCode"))
         }
 
         setIsLocked(false)
@@ -306,23 +303,19 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
     }
 
     return (
-        <div className="flex flex-col gap-2 max-w-[30vw] items-center">
-            <p className={paragraphClassName}>
-                Are you sure you want to disable multi-factor authentication?
-            </p>
-            <p className={paragraphClassName}>
-                Enter below the 6-digit code from your authenticator or recovery code to confirm.
-            </p>
+        <div className="flex flex-col gap-2 max-w-[30vw] self-center items-center">
+            <p className={paragraphClassName}>{t("mfa.messages.disableConfirm")}</p>
+            <p className={paragraphClassName}>{t("mfa.messages.disableInstruction")}</p>
             <form className="flex flex-col gap-2 items-center" onSubmit={handleDisable}>
                 <input
                     className={inputClassNames}
                     value={code}
                     onChange={handleInputChange}
-                    placeholder="Enter code"
+                    placeholder={t("mfa.placeholders.enterCode")}
                     required
                 />
                 <button className={buttonClassNames} disabled={isDisabling}>
-                    {isDisabling ? "Disabling" : "Disable"}
+                    {isDisabling ? t("mfa.buttons.disabling") : t("mfa.buttons.disable")}
                 </button>
             </form>
             {error && <p className={errorParagraphClassName}>{error}</p>}
@@ -333,8 +326,8 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
 function DisabledDialog() {
     return (
         <div className="flex flex-col gap-1 items-center">
-            <p className={paragraphClassName}>Multi-factor authentication disabled successfully</p>
-            <Dialog.Close className={buttonClassNames}>Close</Dialog.Close>
+            <p className={paragraphClassName}>{t("mfa.messages.disabledSuccess")}</p>
+            <Dialog.Close className={buttonClassNames}>{t("mfa.buttons.close")}</Dialog.Close>
         </div>
     )
 }
