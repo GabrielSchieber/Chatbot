@@ -7,6 +7,7 @@ import { useNavigate, useParams } from "react-router"
 import Composer from "../ui/Composer"
 import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
 import { useChat } from "../../context/ChatProvider"
+import { useNotify } from "../../context/NotificationProvider"
 import { newMessage, unarchiveChat } from "../../utils/api"
 import { getFileSize } from "../../utils/file"
 import type { Model } from "../../types"
@@ -16,6 +17,7 @@ export default function Prompt() {
     const navigate = useNavigate()
 
     const { chats, setChats, setMessages, isMobile } = useChat()
+    const notify = useNotify()
 
     const [text, setText] = useState("")
     const [files, setFiles] = useState<File[]>([])
@@ -59,7 +61,7 @@ export default function Prompt() {
                     }
                 })
             } else {
-                alert("Failed to send message")
+                notify("Failed to send message.", "error")
             }
         })
     }
@@ -80,7 +82,7 @@ export default function Prompt() {
         if (!e.target.files) return
 
         if (files.length + e.target.files.length > MAX_FILES) {
-            alert(t("prompt.file.error.tooMany", { max: MAX_FILES }))
+            notify(t("prompt.file.error.tooMany", { max: MAX_FILES }), "error")
             e.target.value = ""
             return
         }
@@ -91,7 +93,7 @@ export default function Prompt() {
         const newTotal = newFiles.map(f => f.size).reduce((a, b) => a + b, 0)
 
         if (currentTotal + newTotal > MAX_FILE_SIZE) {
-            alert(t("prompt.file.error.tooLarge", { limit: getFileSize(MAX_FILE_SIZE) }))
+            notify(t("prompt.file.error.tooLarge", { limit: getFileSize(MAX_FILE_SIZE) }), "error")
             e.target.value = ""
             return
         }
