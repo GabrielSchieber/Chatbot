@@ -15,7 +15,7 @@ services:
       - dist:/app/dist:ro
 
   postgres:
-    image: postgres:17.6-alpine
+    image: postgres:18.0-alpine
     restart: always
     env_file: .env
     ports:
