@@ -117,6 +117,7 @@ function Content({ title, children }: { title: string, children: ReactNode }) {
 
 function ThemeEntryItem() {
     const { user, setUser } = useAuth()
+
     const [theme, setTheme] = useState(user?.preferences.theme || "System")
 
     function isTheme(value: unknown): value is Theme {
@@ -143,26 +144,14 @@ function ThemeEntryItem() {
             <Select.Portal>
                 <Select.Content className="text-white light:text-black bg-gray-900 light:bg-gray-100">
                     <Select.Viewport className="p-1">
-                        <Select.Item value="System" className={itemClasses}>
-                            <Select.ItemText>{t("settings.theme.system")}</Select.ItemText>
-                            <Select.ItemIndicator className="ml-auto">
-                                <CheckIcon />
-                            </Select.ItemIndicator>
-                        </Select.Item>
-
-                        <Select.Item value="Light" className={itemClasses}>
-                            <Select.ItemText>{t("settings.theme.light")}</Select.ItemText>
-                            <Select.ItemIndicator className="ml-auto">
-                                <CheckIcon />
-                            </Select.ItemIndicator>
-                        </Select.Item>
-
-                        <Select.Item value="Dark" className={itemClasses}>
-                            <Select.ItemText>{t("settings.theme.dark")}</Select.ItemText>
-                            <Select.ItemIndicator className="ml-auto">
-                                <CheckIcon />
-                            </Select.ItemIndicator>
-                        </Select.Item>
+                        {["System", "Light", "Dark"].map(s => (
+                            <Select.Item key={s} value={s} className={itemClasses}>
+                                <Select.ItemText>{t(`settings.theme.${s.toLowerCase()}`)}</Select.ItemText>
+                                <Select.ItemIndicator className="ml-auto">
+                                    <CheckIcon />
+                                </Select.ItemIndicator>
+                            </Select.Item>
+                        ))}
                     </Select.Viewport>
                 </Select.Content>
             </Select.Portal>
