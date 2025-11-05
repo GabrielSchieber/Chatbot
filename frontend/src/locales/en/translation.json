@@ -114,7 +114,7 @@
     "history.empty": "You don't have any chats.",
     "chat.header": "How can I help you today?",
     "prompt.unarchive.label": "This chat is archived. To continue, unarchive it first.",
-    "prompt.unarchive.button": "Desarquivar",
+    "prompt.unarchive.button": "Unarchive",
     "prompt.file.error.tooMany": "You can only attach up to {{max}} files at a time.",
     "prompt.file.error.tooLarge": "Total file size exceeds {{limit}} limit. Please select smaller files.",
     "prompt.file.error.sendFailed": "Failed to send message.",
