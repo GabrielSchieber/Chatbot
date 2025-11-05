@@ -142,7 +142,7 @@ function ThemeEntryItem() {
             </Select.Trigger>
 
             <Select.Portal>
-                <Select.Content className="text-white light:text-black bg-gray-900 light:bg-gray-100">
+                <Select.Content className="rounded-lg text-white light:text-black bg-gray-900 light:bg-gray-100">
                     <Select.Viewport className="p-1">
                         {["System", "Light", "Dark"].map(s => (
                             <Select.Item key={s} value={s} className={itemClasses}>
@@ -188,7 +188,7 @@ function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetState
             </Select.Trigger>
 
             <Select.Portal>
-                <Select.Content className="text-white light:text-black bg-gray-900 light:bg-gray-100">
+                <Select.Content className="rounded-lg text-white light:text-black bg-gray-900 light:bg-gray-100">
                     <Select.Viewport className="p-1">
                         {languages.map((l, i) => (
                             <Select.Item key={`${l}-${i}`} value={getValue(l)} className={itemClasses}>
