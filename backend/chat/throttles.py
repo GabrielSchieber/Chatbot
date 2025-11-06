@@ -1,11 +1,13 @@
+import sys
+
 from django.conf import settings
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 class DebugBypassThrottleMixin:
     """Mixin that disables throttling when DEBUG = True."""
     def allow_request(self, request, view):
-        if settings.DEBUG:
-            return True  # Always allow requests in DEBUG mode
+        if settings.DEBUG or "test" in sys.argv:
+            return True  # Always allow requests in DEBUG mode or when testing
         return super().allow_request(request, view)
 
 class SignupRateThrottle(DebugBypassThrottleMixin, AnonRateThrottle):

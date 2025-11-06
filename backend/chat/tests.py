@@ -142,29 +142,29 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), [])
 
-        Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
-        Message.objects.create(chat = chat, text = "Hi!", is_from_user = False)
+        user_message_1 = Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
+        bot_message_1 = Message.objects.create(chat = chat, text = "Hi!", is_from_user = False)
 
         response = self.client.get(f"/api/get-messages/?chat_uuid={str(chat.uuid)}")
         self.assertEqual(response.status_code, 200)
 
         expected_messages = [
-            {"id": 1, "text": "Hello!", "is_from_user": True, "files": [], "model": None},
-            {"id": 2, "text": "Hi!", "is_from_user": False, "files": [], "model": None}
+            {"id": user_message_1.id, "text": "Hello!", "is_from_user": True, "files": [], "model": None},
+            {"id": bot_message_1.id, "text": "Hi!", "is_from_user": False, "files": [], "model": None}
         ]
         self.assertEqual(response.json(), expected_messages)
 
-        Message.objects.create(chat = chat, text = "Hello again!", is_from_user = True)
-        Message.objects.create(chat = chat, text = "Hi again!", is_from_user = False)
+        user_message_2 = Message.objects.create(chat = chat, text = "Hello again!", is_from_user = True)
+        bot_message_2 = Message.objects.create(chat = chat, text = "Hi again!", is_from_user = False)
 
         response = self.client.get(f"/api/get-messages/?chat_uuid={str(chat.uuid)}")
         self.assertEqual(response.status_code, 200)
 
         expected_messages = [
-            {"id": 1, "text": "Hello!", "is_from_user": True, "files": [], "model": None},
-            {"id": 2, "text": "Hi!", "is_from_user": False, "files": [], "model": None},
-            {"id": 3, "text": "Hello again!", "is_from_user": True, "files": [], "model": None},
-            {"id": 4, "text": "Hi again!", "is_from_user": False, "files": [], "model": None}
+            {"id": user_message_1.id, "text": "Hello!", "is_from_user": True, "files": [], "model": None},
+            {"id": bot_message_1.id, "text": "Hi!", "is_from_user": False, "files": [], "model": None},
+            {"id": user_message_2.id, "text": "Hello again!", "is_from_user": True, "files": [], "model": None},
+            {"id": bot_message_2.id, "text": "Hi again!", "is_from_user": False, "files": [], "model": None}
         ]
         self.assertEqual(response.json(), expected_messages)
 
@@ -244,18 +244,42 @@ class ViewTests(TestCase):
 
         response = self.client.get("/api/search-chats/?search=A question about math")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "A question about math", "matches": [], "is_archived": False, "last_modified_at": "Today"}])
+
+        expected_etries = [{
+            "uuid": str(chat.uuid),
+            "title": "A question about math",
+            "matches": [],
+            "is_archived": False,
+            "last_modified_at": chat.last_modified_at().isoformat()
+        }]
+        self.assertEqual(response.json()["entries"], expected_etries)
 
         Message.objects.create(chat = chat, text = "What is math?", is_from_user = True)
         Message.objects.create(chat = chat, text = "Math is...", is_from_user = False)
 
         response = self.client.get("/api/search-chats/?search=What is math?")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "A question about math", "matches": ["What is math?"], "is_archived": False, "last_modified_at": "Today"}])
+
+        expected_etries = [{
+            "uuid": str(chat.uuid),
+            "title": "A question about math",
+            "matches": ["What is math?"],
+            "is_archived": False,
+            "last_modified_at": chat.last_modified_at().isoformat()
+        }]
+        self.assertEqual(response.json()["entries"], expected_etries)
 
         response = self.client.get("/api/search-chats/?search=math")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "A question about math", "matches": ["What is math?", "Math is..."], "is_archived": False, "last_modified_at": "Today"}])
+
+        expected_etries = [{
+            "uuid": str(chat.uuid),
+            "title": "A question about math",
+            "matches": ["What is math?", "Math is..."],
+            "is_archived": False,
+            "last_modified_at": chat.last_modified_at().isoformat()
+        }]
+        self.assertEqual(response.json()["entries"], expected_etries)
 
         response = self.client.get("/api/search-chats/?search=What is geometry?")
         self.assertEqual(response.status_code, 200)
@@ -269,18 +293,42 @@ class ViewTests(TestCase):
 
         response = self.client.get("/api/search-chats/?search=Geometry question")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "Geometry question", "matches": [], "is_archived": False, "last_modified_at": "Today"}])
+
+        expected_etries = [{
+            "uuid": str(chat.uuid),
+            "title": "Geometry question",
+            "matches": [],
+            "is_archived": False,
+            "last_modified_at": chat.last_modified_at().isoformat()
+        }]
+        self.assertEqual(response.json()["entries"], expected_etries)
 
         Message.objects.create(chat = chat, text = "What is geometry?", is_from_user = True)
         Message.objects.create(chat = chat, text = "Geometry is...", is_from_user = False)
 
         response = self.client.get("/api/search-chats/?search=What is geometry?")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "Geometry question", "matches": ["What is geometry?"], "is_archived": False, "last_modified_at": "Today"}])
+
+        expected_etries = [{
+            "uuid": str(chat.uuid),
+            "title": "Geometry question",
+            "matches": ["What is geometry?"],
+            "is_archived": False,
+            "last_modified_at": chat.last_modified_at().isoformat()
+        }]
+        self.assertEqual(response.json()["entries"], expected_etries)
 
         response = self.client.get("/api/search-chats/?search=geometry")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [{"uuid": str(chat.uuid), "title": "Geometry question", "matches": ["What is geometry?", "Geometry is..."], "is_archived": False, "last_modified_at": "Today"}])
+
+        expected_etries = [{
+            "uuid": str(chat.uuid),
+            "title": "Geometry question",
+            "matches": ["What is geometry?", "Geometry is..."],
+            "is_archived": False,
+            "last_modified_at": chat.last_modified_at().isoformat()
+        }]
+        self.assertEqual(response.json()["entries"], expected_etries)
 
     def test_rename_chat(self):
         response = self.client.patch("/api/rename-chat/")
@@ -414,7 +462,7 @@ class ViewTests(TestCase):
 
     def create_and_login_user(self, email: str = "test@example.com", password: str = "testpassword"):
         user = create_user(email, password)
-        response = self.client.post("/api/login/", {"email": email, "password": password})
+        response = self.login_user(email, password)
         return user, response
 
 def create_user(email: str = "test@example.com", password: str = "testpassword") -> User:
