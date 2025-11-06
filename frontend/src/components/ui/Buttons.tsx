@@ -28,6 +28,7 @@ export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
                     </DropdownMenu.Trigger>
                 }
                 tooltip={t("plusDropdown.tooltip")}
+                type="button"
                 asChild
             />
 
@@ -86,6 +87,7 @@ export function SendButton({ sendMessage, isDisabled, tabIndex = 2 }: { sendMess
             trigger={<ArrowUpIcon className="size-6" />}
             tooltip={t("sendButton.tooltip")}
             onClick={sendMessage}
+            type="submit"
             className={promptBarButtonClassNames}
             isDisabled={isDisabled}
             tabIndex={tabIndex}
@@ -101,12 +103,13 @@ export function StopButton({ tabIndex = 2 }: { tabIndex?: number }) {
         <TooltipButton
             trigger={<PauseIcon className="size-6" />}
             tooltip={t("stopButton.tooltip")}
-            className={promptBarButtonClassNames}
-            tabIndex={tabIndex}
             onClick={() => {
                 stopPendingChats()
                 setChats(previous => previous.map(c => ({ ...c, pending_message_id: null })))
             }}
+            type="button"
+            className={promptBarButtonClassNames}
+            tabIndex={tabIndex}
         />
     )
 }
@@ -116,9 +119,10 @@ export function CancelButton({ setIndex, tabIndex = 2 }: { setIndex: React.Dispa
         <TooltipButton
             trigger={<Cross2Icon className="size-6" />}
             tooltip={t("cancelButton.tooltip")}
+            onClick={() => setIndex(-1)}
+            type="button"
             className={promptBarButtonClassNames}
             tabIndex={tabIndex}
-            onClick={() => setIndex(-1)}
             dataTestID="cancel"
         />
     )
@@ -136,8 +140,9 @@ export function EditButton({ onClick }: { onClick: () => void }) {
         <TooltipButton
             trigger={<Pencil1Icon className="size-4.5" />}
             tooltip={t("editButton.tooltip")}
-            className={messageButtonClassNames}
             onClick={onClick}
+            type="button"
+            className={messageButtonClassNames}
             isDisabled={currentChat?.is_archived || pendingChat !== undefined || isLoading}
             dataTestID="edit"
         />
@@ -320,31 +325,31 @@ export function DeleteButton({ chat }: { chat: Chat }) {
     )
 }
 
-export function TooltipButton({ trigger, tooltip, onClick, className = "", isDisabled = false, sideOffset = 3, tabIndex, asChild = false, tooltipSize = "sm", dataTestID }: {
+export function TooltipButton({ trigger, tooltip, onClick, type, className, isDisabled, tabIndex, asChild, dataTestID, tooltipSize = "sm" }: {
     trigger: ReactNode
     tooltip: ReactNode
-    className?: string
     onClick?: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void
+    type?: "button" | "submit" | "reset"
+    className?: string
     isDisabled?: boolean
-    sideOffset?: number
     tabIndex?: number
     asChild?: boolean
-    tooltipSize?: string
     dataTestID?: string
+    tooltipSize?: string
 }) {
     const [isOpen, setIsOpen] = useState(false)
 
     return (
         <Tooltip.Provider delayDuration={0}>
             <Tooltip.Root open={isOpen} onOpenChange={setIsOpen}>
-                <Tooltip.Trigger className={className} tabIndex={tabIndex} onClick={onClick} disabled={isDisabled} asChild={asChild} data-testid={dataTestID}>
+                <Tooltip.Trigger onClick={onClick} type={type} className={className} disabled={isDisabled} tabIndex={tabIndex} asChild={asChild} data-testid={dataTestID}>
                     {trigger}
                 </Tooltip.Trigger>
                 <Tooltip.Portal>
                     <Tooltip.Content
                         className={`mx-1 px-2 py-1 text-${tooltipSize} text-white rounded-lg bg-black`}
                         side="bottom"
-                        sideOffset={sideOffset}
+                        sideOffset={3}
                         onMouseEnter={_ => setIsOpen(false)}
                     >
                         {tooltip}

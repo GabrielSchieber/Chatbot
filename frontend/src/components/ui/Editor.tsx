@@ -170,17 +170,15 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
             files={getCurrentFiles()}
             model={model}
             setModel={setModel}
-
+            withBorderAndShadow={false}
+            tabIndex={3}
+            ariaLabel="Edit message"
             onChangeFile={handleFileChange}
             onRemoveFile={removeFile}
             onRemoveAllFiles={removeFiles}
             sendMessage={() => edit(index)}
             sendMessageWithEvent={() => { }}
-
-            withBorderAndShadow={false}
-
             setIndex={setIndex}
-            tabIndex={3}
         />
     )
 }

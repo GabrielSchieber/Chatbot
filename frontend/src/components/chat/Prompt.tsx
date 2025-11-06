@@ -156,14 +156,14 @@ export default function Prompt() {
                     files={files.map((f, id) => ({ id, name: f.name, content: f.slice(), content_size: f.size, content_type: f.type }))}
                     model={model}
                     setModel={setModel}
-
+                    withBorderAndShadow={true}
+                    tabIndex={1}
+                    ariaLabel="Message composer"
                     onChangeFile={handleFileChange}
                     onRemoveFile={f => setFiles(previous => previous.filter(p => p.name + "|" + p.size !== f.name + "|" + f.content_size))}
                     onRemoveAllFiles={() => setFiles([])}
                     sendMessage={sendMessage}
                     sendMessageWithEvent={sendMessageWithEvent}
-
-                    withBorderAndShadow={true}
                 />
             </div>
         )

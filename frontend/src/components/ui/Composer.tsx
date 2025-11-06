@@ -13,16 +13,14 @@ export default function Composer({
     files,
     model,
     setModel,
-
+    withBorderAndShadow,
+    tabIndex,
+    ariaLabel,
     onChangeFile,
     onRemoveFile,
     onRemoveAllFiles,
     sendMessage,
     sendMessageWithEvent,
-
-    withBorderAndShadow,
-
-    tabIndex = 1,
     setIndex
 }: {
     text: string
@@ -30,16 +28,14 @@ export default function Composer({
     files: MessageFile[]
     model: Model
     setModel: Dispatch<React.SetStateAction<Model>>
-
+    withBorderAndShadow: boolean
+    tabIndex: number
+    ariaLabel: string
     onChangeFile: (e: ChangeEvent<HTMLInputElement>) => void
-    onRemoveFile?: (file: MessageFile) => void
-    onRemoveAllFiles?: () => void
+    onRemoveFile: (file: MessageFile) => void
+    onRemoveAllFiles: () => void
     sendMessage: () => void
     sendMessageWithEvent: (e: KeyboardEvent<HTMLTextAreaElement>) => void | (() => void)
-
-    withBorderAndShadow: boolean
-
-    tabIndex?: number
     setIndex?: Dispatch<SetStateAction<number>>
 }) {
     const { chats, isLoading, isMobile } = useChat()
@@ -72,12 +68,15 @@ export default function Composer({
                 ${withBorderAndShadow ? "mb-5 border-t-4 border-gray-600 light:border-gray-400 shadow-xl/50" : "mt-10 mb-5"}
                 ${isMobile ? "w-[95%]" : "w-[60vw]"}
             `}
+            onSubmit={e => e.preventDefault()}
             onClick={e => {
                 if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
                     return
                 }
                 textAreaRef.current?.focus()
             }}
+            aria-label={ariaLabel}
+            role="form"
         >
             <input ref={fileInputRef} className="hidden" type="file" onChange={onChangeFile} tabIndex={-1} aria-hidden multiple />
 
