@@ -1,8 +1,3 @@
 Django == 5.2.8
 channels[daphne] == 4.3.1
-channels-redis == 4.3.0
-djangorestframework == 3.16.1
-djangorestframework-simplejwt == 5.5.1
 ollama == 0.6.0
-psycopg[binary] == 3.2.12
-pyotp == 2.9.0

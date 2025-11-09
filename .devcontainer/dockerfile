@@ -10,7 +10,7 @@ COPY /backend .
 
 ENV PATH="/app/backend/.venv/bin:$PATH"
 ENV DJANGO_DEBUG="True"
-ENV OLLAMA_HOST="http://host.docker.internal:11434"
+ENV OLLAMA_HOST="http://ollama:11434"
 
 WORKDIR /app/frontend
 

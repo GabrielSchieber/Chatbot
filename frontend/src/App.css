@@ -7,19 +7,3 @@
 * {
     scrollbar-color: var(--scrollbar-color) transparent;
 }
-
-@media(prefers-color-scheme: dark) {
-    input::-ms-reveal {
-        filter: invert(100%);
-    }
-}
-
-@custom-variant light (&:where(.Light, .Light *));
-
-.Light {
-    @import "highlight.js/styles/a11y-light.css";
-}
-
-.Dark {
-    @import "highlight.js/styles/a11y-dark.css";
-}
