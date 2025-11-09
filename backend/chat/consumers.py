@@ -13,6 +13,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         user_message = content.get("message")
         if type(user_message) != str:
             return await self.close()
+        if len(user_message) > 10000:
+            return await self.close()
 
         self.messages.append({"role": "user", "content": user_message})
 

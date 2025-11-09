@@ -106,6 +106,7 @@ export default function App() {
                                         placeholder="Ask me anything..."
                                         onChange={e => setPrompt(e.target.value)}
                                         onKeyDown={sendMessageOnEnter}
+                                        maxLength={10000}
                                         rows={1}
                                         autoFocus
                                     />
