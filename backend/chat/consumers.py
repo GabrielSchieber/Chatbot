@@ -19,7 +19,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         self.messages.append({"role": "user", "content": user_message})
 
         bot_message = ""
-        async for part in await ollama.AsyncClient().chat("smollm2:135m-instruct-fp16", self.messages, stream = True):
+        async for part in await ollama_client.chat("smollm2:135m-instruct-fp16", self.messages, stream = True):
             token = part.message.content
             if type(token) == str:
                 bot_message += token
@@ -30,3 +30,5 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({"message": bot_message})
 
         self.messages = self.messages[max(len(self.messages) - 20, 0):]
+
+ollama_client = ollama.AsyncClient()
