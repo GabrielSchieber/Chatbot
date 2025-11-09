@@ -7,7 +7,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.accept()
 
     async def receive_json(self, content):
-        user_message = content.get("message", "")
+        if type(content) != dict:
+            return await self.close(1003)
+
+        user_message = content.get("message")
+        if type(user_message) != str:
+            return await self.close(1003)
 
         self.messages.append({"role": "user", "content": user_message})
 
