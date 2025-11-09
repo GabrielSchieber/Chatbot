@@ -9,6 +9,9 @@ export default function App() {
     const [prompt, setPrompt] = useState("")
     const [messages, setMessages] = useState<string[]>([])
 
+    const [hasCopiedIndex, setHasCopiedIndex] = useState(-1)
+    const [copiedTimeoutID, setCopiedTimeoutID] = useState(-1)
+
     function sendMessage() {
         setMessages(previous => [...previous, prompt, ""])
         webSocket.current?.send(JSON.stringify({ message: prompt }))
@@ -63,7 +66,7 @@ export default function App() {
             <div className="flex flex-col size-full items-center">
                 <div className="flex flex-col w-full h-[100%] gap-3 px-5 py-10 items-center overflow-y-auto">
                     {messages.map((m, i) =>
-                        <div key={i} className={`flex flex-col w-[60vh] ${i % 2 === 0 ? "items-end" : "items-start"}`}>
+                        <div key={i} className={`flex flex-col w-[60vh] gap-1 ${i % 2 === 0 ? "items-end" : "items-start"}`}>
                             {i % 2 === 0 ? (
                                 <div className="min-w-20 max-w-[80%] px-3 py-2 rounded-2xl break-all whitespace-pre-wrap bg-gray-800">
                                     {m}
@@ -73,6 +76,18 @@ export default function App() {
                                     {m}
                                 </div>
                             )}
+
+                            <button
+                                className="px-2 py-1 text-xs rounded-lg cursor-pointer hover:bg-gray-700"
+                                onClick={_ => {
+                                    navigator.clipboard.writeText(m)
+                                    setHasCopiedIndex(i)
+                                    clearTimeout(copiedTimeoutID)
+                                    setCopiedTimeoutID(setTimeout(() => setHasCopiedIndex(-1), 3000))
+                                }}
+                            >
+                                {hasCopiedIndex === i ? "Copied" : "Copy"}
+                            </button>
                         </div>
                     )}
                 </div>
