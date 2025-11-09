@@ -13,8 +13,10 @@ export default function App() {
     const [copiedTimeoutID, setCopiedTimeoutID] = useState(-1)
 
     function sendMessage() {
+        if (!webSocket.current || webSocket.current.readyState !== WebSocket.OPEN) return
+
         setMessages(previous => [...previous, prompt, ""])
-        webSocket.current?.send(JSON.stringify({ message: prompt }))
+        webSocket.current.send(JSON.stringify({ message: prompt }))
         setPrompt("")
     }
 
