@@ -8,11 +8,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive_json(self, content):
         if type(content) != dict:
-            return await self.close(1003)
+            return await self.close()
 
         user_message = content.get("message")
         if type(user_message) != str:
-            return await self.close(1003)
+            return await self.close()
 
         self.messages.append({"role": "user", "content": user_message})
 
