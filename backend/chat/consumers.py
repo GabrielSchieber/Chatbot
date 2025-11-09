@@ -19,7 +19,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         self.messages.append({"role": "user", "content": user_message})
 
         bot_message = ""
-        async for part in await ollama_client.chat("smollm2:135m-instruct-fp16", self.messages, stream = True):
+        async for part in await ollama_client.chat(model_name, self.messages, stream = True, options = model_options):
             token = part.message.content
             if type(token) == str:
                 bot_message += token
@@ -32,3 +32,5 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         self.messages = self.messages[max(len(self.messages) - 20, 0):]
 
 ollama_client = ollama.AsyncClient()
+model_name = "smollm2:135m-instruct-fp16"
+model_options = {"num_predict": 1000}
