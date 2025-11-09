@@ -18,9 +18,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         bot_message = ""
         async for part in await ollama.AsyncClient().chat("smollm2:135m-instruct-fp16", self.messages, stream = True):
-            token = part["message"]["content"]
-            bot_message += token
-            await self.send_json({"token": token})
+            token = part.message.content
+            if type(token) == str:
+                bot_message += token
+                await self.send_json({"token": token})
 
         self.messages.append({"role": "assistant", "content": bot_message})
 
