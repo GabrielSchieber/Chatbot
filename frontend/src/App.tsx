@@ -70,11 +70,11 @@ export default function App() {
                     {messages.map((m, i) =>
                         <div key={i} className={`flex flex-col w-[60vh] gap-1 ${i % 2 === 0 ? "items-end" : "items-start"}`}>
                             {i % 2 === 0 ? (
-                                <div className="min-w-20 max-w-[80%] px-3 py-2 rounded-2xl break-all whitespace-pre-wrap bg-gray-800">
+                                <div className="min-w-20 max-w-[80%] px-3 py-2 rounded-2xl wrap-anywhere whitespace-pre-wrap bg-gray-800">
                                     {m}
                                 </div>
                             ) : (
-                                <div className="w-full break-all whitespace-pre-wrap">
+                                <div className="w-full wrap-anywhere whitespace-pre-wrap">
                                     {m}
                                 </div>
                             )}
