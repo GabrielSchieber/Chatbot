@@ -28,3 +28,5 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         self.messages.append({"role": "assistant", "content": bot_message})
 
         await self.send_json({"message": bot_message})
+
+        self.messages = self.messages[max(len(self.messages) - 20, 0):]
