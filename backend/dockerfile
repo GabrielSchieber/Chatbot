@@ -1,0 +1,14 @@
+FROM python:3.14-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN python -m venv .venv && . .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
+
+COPY . .
+
+ENV PATH="/app/.venv/bin:$PATH"
+ENV OLLAMA_HOST="http://ollama:11434"
+
+CMD ["python", "-m", "daphne", "-b", "0.0.0.0", "-p", "8000", "backend.asgi:application"]
