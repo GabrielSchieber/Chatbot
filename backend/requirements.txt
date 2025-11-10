@@ -1,3 +1,4 @@
 Django == 5.2.8
 channels[daphne] == 4.3.1
+channels-redis == 4.3.0
 ollama == 0.6.0

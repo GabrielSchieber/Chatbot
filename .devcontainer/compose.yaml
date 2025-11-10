@@ -5,10 +5,17 @@ services:
             dockerfile: .devcontainer/dockerfile
         command: sleep infinity
         env_file: .env
+        depends_on:
+            - redis
+            - ollama
         volumes:
             - ..:/app:cached
             - venv:/app/backend/.venv:cached
             - node_modules:/app/frontend/node_modules:cached
+
+    redis:
+        image: redis:8.2-alpine
+        restart: unless-stopped
 
     ollama:
         image: alpine/ollama:0.12.9
