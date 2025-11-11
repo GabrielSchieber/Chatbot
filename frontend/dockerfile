@@ -8,4 +8,6 @@ RUN npm install
 
 COPY . .
 
+ENV VITE_TARGET_URL="https://localhost"
+
 RUN npm run build

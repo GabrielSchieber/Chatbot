@@ -28,29 +28,30 @@ export default function App() {
     }
 
     function receiveMessage() {
-        if (!webSocket.current) {
-            webSocket.current = new WebSocket(`ws://${location.host}/ws/chat/`)
+        if (webSocket.current) return
 
-            webSocket.current.addEventListener("message", e => {
-                const data = JSON.parse(e.data)
+        const protocol = location.protocol === "https:" ? "wss://" : "ws://";
+        webSocket.current = new WebSocket(`${protocol}${location.host}/ws/chat/`);
 
-                if (data.token || data.message) {
-                    setMessages(previous => {
-                        if (previous.length === 0) return previous
+        webSocket.current.addEventListener("message", e => {
+            const data = JSON.parse(e.data)
 
-                        previous = [...previous]
+            if (data.token || data.message) {
+                setMessages(previous => {
+                    if (previous.length === 0) return previous
 
-                        if (data.token) {
-                            previous[previous.length - 1] += data.token
-                        } else {
-                            previous[previous.length - 1] = data.message
-                        }
+                    previous = [...previous]
 
-                        return previous
-                    })
-                }
-            })
-        }
+                    if (data.token) {
+                        previous[previous.length - 1] += data.token
+                    } else {
+                        previous[previous.length - 1] = data.message
+                    }
+
+                    return previous
+                })
+            }
+        })
     }
 
     function resizeTextArea() {

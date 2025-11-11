@@ -11,4 +11,4 @@ COPY . .
 ENV PATH="/app/.venv/bin:$PATH"
 ENV OLLAMA_HOST="http://ollama:11434"
 
-CMD ["python", "-m", "daphne", "-b", "0.0.0.0", "-p", "8000", "backend.asgi:application"]
+CMD ["daphne", "backend.asgi:application", "-e", "ssl:443:privateKey=ssl/localhost+2-key.pem:certKey=ssl/localhost+2.pem"]

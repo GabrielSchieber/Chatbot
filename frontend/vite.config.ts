@@ -1,5 +1,6 @@
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
+import { env } from "process"
 import { defineConfig } from "vite"
 
 export default defineConfig({
@@ -14,8 +15,9 @@ export default defineConfig({
     server: {
         proxy: {
             "/ws": {
-                target: "http://localhost:8000",
-                ws: true
+                target: env.VITE_TARGET_URL,
+                ws: true,
+                secure: true
             }
         }
     }
