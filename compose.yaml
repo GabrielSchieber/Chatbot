@@ -28,7 +28,9 @@ services:
         image: redis:8.2-alpine
 
     ollama:
-        image: alpine/ollama:0.12.9
+        build:
+            context: ./ollama
+            dockerfile: dockerfile
 
 volumes:
     dist:
