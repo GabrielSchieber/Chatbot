@@ -30,8 +30,7 @@ export default function App() {
     function receiveMessage() {
         if (webSocket.current) return
 
-        const protocol = location.protocol === "https:" ? "wss://" : "ws://";
-        webSocket.current = new WebSocket(`${protocol}${location.host}/ws/chat/`);
+        webSocket.current = new WebSocket("/ws/chat/")
 
         webSocket.current.addEventListener("message", e => {
             const data = JSON.parse(e.data)

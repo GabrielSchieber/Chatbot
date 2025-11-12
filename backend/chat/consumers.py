@@ -31,6 +31,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         self.messages = self.messages[max(len(self.messages) - 20, 0):]
 
-ollama_client = ollama.AsyncClient()
+ollama_client = ollama.AsyncClient("ollama")
 model_name = "smollm2:135m-instruct-fp16"
 model_options = {"num_predict": 1000}

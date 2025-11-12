@@ -11,6 +11,7 @@ dockerfile
 
 .venv/
 __pycache__/
+ssl/
 
 dist/
 node_modules/

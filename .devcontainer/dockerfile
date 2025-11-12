@@ -9,9 +9,6 @@ RUN python -m venv .venv && . .venv/bin/activate && pip install --upgrade pip &&
 COPY /backend .
 
 ENV PATH="/app/backend/.venv/bin:$PATH"
-ENV DJANGO_DEBUG="True"
-ENV OLLAMA_HOST="http://ollama:11434"
-ENV VITE_TARGET_URL="http://localhost:8000"
 
 WORKDIR /app/frontend
 
