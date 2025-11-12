@@ -1,4 +1,5 @@
 Django == 5.2.8
+Twisted[http2, tls] == 25.5.0
 channels[daphne] == 4.3.1
 channels-redis == 4.3.0
 ollama == 0.6.0
