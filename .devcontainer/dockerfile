@@ -12,11 +12,14 @@ ENV PATH="/app/backend/.venv/bin:$PATH"
 
 WORKDIR /app/frontend
 
-RUN apt-get update && apt-get install -y wget xz-utils && rm -rf /var/lib/apt/lists/*
-RUN mkdir -p /app_deps
-RUN wget -O /app_deps/node-v24.11.0-linux-x64.tar.xz https://nodejs.org/dist/v24.11.0/node-v24.11.0-linux-x64.tar.xz
-RUN tar -xf /app_deps/node-v24.11.0-linux-x64.tar.xz -C /app_deps
-RUN rm /app_deps/node-v24.11.0-linux-x64.tar.xz
+RUN apt-get update && \
+    apt-get install -y wget xz-utils && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /app_deps && \
+    wget -O /app_deps/node-v24.11.0-linux-x64.tar.xz https://nodejs.org/dist/v24.11.0/node-v24.11.0-linux-x64.tar.xz && \
+    tar -xf /app_deps/node-v24.11.0-linux-x64.tar.xz -C /app_deps && \
+    rm /app_deps/node-v24.11.0-linux-x64.tar.xz
+
 ENV PATH="/app_deps/node-v24.11.0-linux-x64/bin:$PATH"
 
 COPY /frontend/package.json .
