@@ -11,7 +11,9 @@ dockerfile
 
 .venv/
 __pycache__/
+chat_temp/
 ssl/
 
 dist/
 node_modules/
+test-results/

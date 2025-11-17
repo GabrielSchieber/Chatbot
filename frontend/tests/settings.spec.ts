@@ -1,0 +1,513 @@
+import { Page, expect, test } from "@playwright/test"
+import { authenticator } from "otplib"
+import { Chat, User, signupAndLogin, signupWithMFAEnabledAndLogin, apiFetch } from "./utils"
+
+test("user can open settings", async ({ page }) => {
+    const user = await signupAndLogin(page)
+
+    await page.getByText("Settings").click()
+    await expect(page.getByText("General", { exact: true })).toHaveCount(2)
+
+    await expect(page.getByRole("tab", { name: "General" })).toBeVisible()
+    await expect(page.getByRole("tab", { name: "Data" })).toBeVisible()
+    await expect(page.getByRole("tab", { name: "Security" })).toBeVisible()
+    await expect(page.getByRole("tab", { name: "Account" })).toBeVisible()
+
+    async function clickTab(name: string) {
+        await page.getByRole("tab", { name }).click()
+        await expect(page.getByRole("heading", { name, exact: true })).toBeVisible()
+    }
+
+    async function checkEntry(label: string, button: string) {
+        await expect(page.locator("label").getByText(label, { exact: true })).toBeVisible()
+        await expect(page.locator("button").getByText(button, { exact: true })).toBeVisible()
+    }
+
+    await expect(page.getByRole("heading", { name: "General", exact: true })).toBeVisible()
+    await checkEntry("Theme", "System")
+    await checkEntry("Language", "Auto-detect")
+
+    await clickTab("Data")
+    await checkEntry("Archived chats", "Manage")
+    await checkEntry("Delete chats", "Delete all")
+
+    await clickTab("Security")
+    await checkEntry("Multi-factor authentication", "Enable")
+    await checkEntry("Log out", "Log out")
+
+    await clickTab("Account")
+    await checkEntry("Delete account", "Delete")
+    await expect(page.getByText(user.email, { exact: true })).toBeVisible()
+
+    await clickTab("General")
+    await checkEntry("Theme", "System")
+    await checkEntry("Language", "Auto-detect")
+})
+
+test("user can change theme", async ({ page }) => {
+    await signupAndLogin(page)
+
+    async function waitForPageToLoad() {
+        await expect(page.getByText("You don't have any chats")).toBeVisible()
+    }
+
+    await waitForPageToLoad()
+
+    const html = page.locator("html")
+
+    expect(await html.getAttribute("class")).toEqual("Light")
+
+    const settingsButton = page.getByText("Settings")
+    await settingsButton.click()
+
+    await page.locator("button").getByText("System").click()
+
+    const systemOption = page.getByLabel("System").getByText("System")
+    const lightOption = page.getByLabel("Light").getByText("Light")
+    const darkOption = page.getByLabel("Dark").getByText("Dark")
+
+    await expect(systemOption).toBeVisible()
+    await expect(lightOption).toBeVisible()
+    await expect(darkOption).toBeVisible()
+
+    const darkResponse = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
+    await darkOption.click()
+    await darkResponse
+    await expect(page.locator("button").getByText("Dark")).toBeVisible()
+    expect(await html.getAttribute("class")).toEqual("Dark")
+
+    await page.reload()
+    await waitForPageToLoad()
+    await expect(page.locator("button").getByText("Dark")).not.toBeVisible()
+    expect(await html.getAttribute("class")).toEqual("Dark")
+
+    await settingsButton.click()
+
+    await page.locator("button").getByText("Dark").click()
+
+    await expect(systemOption).toBeVisible()
+    await expect(lightOption).toBeVisible()
+    await expect(darkOption).toBeVisible()
+
+    const lightResponse = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
+    await lightOption.click()
+    await lightResponse
+    await expect(page.locator("button").getByText("Light")).toBeVisible()
+    expect(await html.getAttribute("class")).toEqual("Light")
+
+    await page.reload()
+    await waitForPageToLoad()
+    await expect(page.locator("button").getByText("Light")).not.toBeVisible()
+    expect(await html.getAttribute("class")).toEqual("Light")
+
+    await settingsButton.click()
+
+    await page.locator("button").getByText("Light").click()
+
+    const systemResponse = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
+    await systemOption.click()
+    await systemResponse
+    await expect(page.locator("button").getByText("System")).toBeVisible()
+    expect(await html.getAttribute("class")).toEqual("Light")
+
+    await page.reload()
+    await waitForPageToLoad()
+    await expect(page.locator("button").getByText("System")).not.toBeVisible()
+    expect(await html.getAttribute("class")).toEqual("Light")
+})
+
+test("user can change language", async ({ page }) => {
+    await signupAndLogin(page)
+
+    await page.getByText("Settings").click()
+
+    await expect(page.locator("label").getByText("Language", { exact: true })).toBeVisible()
+    await expect(page.locator("button").getByText("Auto-detect", { exact: true })).toBeVisible()
+
+    async function checkIfSettingsDialogIsInEnglish(languageButtonText: string) {
+        await expect(page.getByRole("heading", { name: "General", exact: true })).toBeVisible()
+
+        await expect(page.locator("label").getByText("Language", { exact: true })).toBeVisible()
+        await expect(page.locator("button").getByText(languageButtonText, { exact: true })).toBeVisible()
+
+        await expect(page.locator("label").getByText("Theme", { exact: true })).toBeVisible()
+        await expect(page.locator("button").getByText("System", { exact: true })).toBeVisible()
+
+        await expect(page.getByRole("tab", { name: "General" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Data" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Security" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Account" })).toBeVisible()
+    }
+
+    await checkIfSettingsDialogIsInEnglish("Auto-detect")
+
+    await page.locator("button").getByText("Auto-detect", { exact: true }).click()
+    const englishResponse1 = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
+    await page.getByText("English", { exact: true }).click()
+    await englishResponse1
+
+    await checkIfSettingsDialogIsInEnglish("English")
+
+    await page.reload()
+    await page.getByRole("heading", { name: "How can I help you today?", exact: true }).click()
+    await page.getByText("Settings").click()
+
+    await expect(page.locator("label").getByText("Language", { exact: true })).toBeVisible()
+    await expect(page.locator("button").getByText("English", { exact: true })).toBeVisible()
+
+    await page.locator("button").getByText("English", { exact: true }).click()
+    const portgueseResponse = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
+    await page.getByText("Português", { exact: true }).click()
+    await portgueseResponse
+
+    async function checkIfSettingsDialogIsInPortuguese() {
+        await expect(page.getByRole("heading", { name: "Geral", exact: true })).toBeVisible()
+
+        await expect(page.locator("label").getByText("Idioma", { exact: true })).toBeVisible()
+        await expect(page.locator("button").getByText("Português", { exact: true })).toBeVisible()
+
+        await expect(page.locator("label").getByText("Tema", { exact: true })).toBeVisible()
+        await expect(page.locator("button").getByText("Sistema", { exact: true })).toBeVisible()
+
+        await expect(page.getByRole("tab", { name: "Geral" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Dados" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Segurança" })).toBeVisible()
+        await expect(page.getByRole("tab", { name: "Conta" })).toBeVisible()
+    }
+
+    await checkIfSettingsDialogIsInPortuguese()
+
+    await page.reload()
+    await page.getByRole("heading", { name: "Como posso te ajudar hoje?", exact: true }).click()
+    await page.getByText("Configurações").click()
+
+    await checkIfSettingsDialogIsInPortuguese()
+
+    await page.locator("button").getByText("Português", { exact: true }).click()
+    const englishResponse2 = page.waitForResponse(response => response.url().endsWith("/api/me/") && response.status() === 200)
+    await page.getByText("English", { exact: true }).click()
+    await englishResponse2
+
+    await checkIfSettingsDialogIsInEnglish("English")
+
+    await page.reload()
+    await page.getByRole("heading", { name: "How can I help you today?", exact: true }).click()
+    await page.getByText("Settings").click()
+
+    await checkIfSettingsDialogIsInEnglish("English")
+})
+
+test("user can archive all chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+    await archiveOrUnarchiveAllChats(page, user, "archive", false)
+})
+
+test("user can unarchive all chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+    await archiveOrUnarchiveAllChats(page, user, "archive", false)
+    await page.reload()
+    await archiveOrUnarchiveAllChats(page, user, "unarchive", true)
+})
+
+test("user can unarchive specific chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+    await archiveOrUnarchiveAllChats(page, user, "archive", false)
+
+    const archivedEntries = page.getByTestId("archived-chats").locator("a")
+    const historyEntries = page.getByTestId("history").locator("a")
+
+    async function unarchive(index: number, chat: Chat, expectedArchivedEntries: number, expectedHistoryEntries: number) {
+        await expect(archivedEntries).toHaveCount(expectedArchivedEntries)
+        await expect(historyEntries).toHaveCount(expectedHistoryEntries)
+
+        await expect(archivedEntries.nth(index)).toHaveText(chat.title)
+        expect(await archivedEntries.nth(index).getAttribute("href")).toEqual(`/chat/${chat.uuid}`)
+
+        await archivedEntries.nth(index).getByRole("button").first().click()
+
+        await expect(historyEntries).toHaveCount(expectedHistoryEntries + 1)
+        await expect(archivedEntries).toHaveCount(expectedArchivedEntries - 1)
+    }
+
+    await unarchive(0, user.chats[0], user.chats.length, 0)
+    await unarchive(3, user.chats[4], user.chats.length - 1, 1)
+    await unarchive(7, user.chats[9], user.chats.length - 2, 2)
+    await unarchive(2, user.chats[3], user.chats.length - 3, 3)
+})
+
+test("user can delete specific archived chats", async ({ page }) => {
+    const user = await signupAndLogin(page, true)
+    await archiveOrUnarchiveAllChats(page, user, "archive", false)
+
+    const archivedEntries = page.getByTestId("archived-chat-entry")
+    const historyEntries = page.getByTestId("history-entry")
+
+    async function deleteArchivedChat(index: number, chat: Chat, expectedArchivedEntries: number) {
+        await expect(archivedEntries).toHaveCount(expectedArchivedEntries)
+        await expect(historyEntries).toHaveCount(0)
+
+        await expect(archivedEntries.nth(index)).toHaveText(chat.title)
+        expect(await archivedEntries.nth(index).getAttribute("href")).toEqual(`/chat/${chat.uuid}`)
+
+        await archivedEntries.nth(index).getByRole("button").last().click()
+
+        const heading = page.getByRole("heading", { name: "Delete Archived Chat", exact: true })
+        await expect(heading).toBeVisible()
+
+        const dialog = heading.locator("..")
+        await expect(dialog.getByText(`Are you sure you want to delete "${chat.title}"? This action cannot be undone.`, { exact: true })).toBeVisible()
+
+        await expect(dialog.getByRole("button")).toHaveCount(2)
+        await expect(dialog.getByRole("button").first()).toHaveText("Cancel")
+        await dialog.getByRole("button", { name: "Delete", exact: true }).click()
+
+        await expect(heading).not.toBeVisible()
+
+        await expect(historyEntries).toHaveCount(0)
+        await expect(archivedEntries).toHaveCount(expectedArchivedEntries - 1)
+    }
+
+    await deleteArchivedChat(0, user.chats[0], user.chats.length)
+    await deleteArchivedChat(3, user.chats[4], user.chats.length - 1)
+    await deleteArchivedChat(7, user.chats[9], user.chats.length - 2)
+    await deleteArchivedChat(2, user.chats[3], user.chats.length - 3)
+})
+
+test("user can delete account", async ({ page }) => {
+    const user = await signupAndLogin(page)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("tab", { name: "Account" }).click()
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+
+    const confirmDialogTitle = page.getByRole("heading", { name: "Delete Account", exact: true })
+    await expect(confirmDialogTitle).toBeVisible()
+
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+    await expect(confirmDialog).toBeVisible()
+
+    await expect(confirmDialog.getByRole("button", { name: "Cancel", exact: true })).toBeVisible()
+
+    const passwordInput = confirmDialog.locator("input[type='password']")
+    await passwordInput.fill(user.password)
+
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+    await page.waitForURL("/login")
+
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+    await page.click("button")
+
+    await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
+})
+
+test("user can delete account with MFA enabled", async ({ page }) => {
+    const { user } = await signupWithMFAEnabledAndLogin(page)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("tab", { name: "Account" }).click()
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+    await expect(confirmDialog).toBeVisible()
+
+    await confirmDialog.locator("input[type='password']").fill(user.password)
+
+    const response = await apiFetch(`/test/get-mfa-secret/?email=${user.email}`, {})
+    expect(response.status).toBe(200)
+    const secret = await response.json()
+    const code = authenticator.generate(secret)
+
+    await confirmDialog.getByPlaceholder("MFA code").fill(code)
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+
+    await page.waitForURL("/login")
+
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+    await page.click("button")
+    await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
+})
+
+test("user can delete account with an MFA backup code", async ({ page }) => {
+    const { user, backupCodes } = await signupWithMFAEnabledAndLogin(page)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("tab", { name: "Account" }).click()
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+    await expect(confirmDialog).toBeVisible()
+
+    await confirmDialog.getByPlaceholder("Password").fill(user.password)
+    await confirmDialog.getByPlaceholder("MFA code").fill(backupCodes[0])
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+
+    await page.waitForURL("/login")
+
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+    await page.click("button")
+    await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
+})
+
+test("user cannot delete account with an incorrect password", async ({ page }) => {
+    const { user } = await signupWithMFAEnabledAndLogin(page)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("tab", { name: "Account" }).click()
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+    await expect(confirmDialog).toBeVisible()
+
+    await confirmDialog.locator("input[type='password']").fill("wrong-password")
+
+    const response = await apiFetch(`/test/get-mfa-secret/?email=${user.email}`, {})
+    expect(response.status).toBe(200)
+    const secret = await response.json()
+    const code = authenticator.generate(secret)
+
+    await confirmDialog.getByPlaceholder("MFA code").fill(code)
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+
+    await expect(confirmDialog).toBeVisible()
+    await expect(confirmDialog.getByText("Invalid password.", { exact: true })).toBeVisible()
+})
+
+test("user cannot delete account with an invalid MFA code", async ({ page }) => {
+    test.setTimeout(60_000)
+
+    const { user } = await signupWithMFAEnabledAndLogin(page)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("tab", { name: "Account" }).click()
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+    await expect(confirmDialog).toBeVisible()
+
+    await confirmDialog.getByPlaceholder("Password").fill(user.password)
+    await confirmDialog.getByPlaceholder("MFA code").fill("000000")
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+
+    await expect(confirmDialog).toBeVisible()
+    await expect(confirmDialog.getByText("Invalid MFA code.", { exact: true })).toBeVisible({ timeout: 20_000 })
+})
+
+test("user cannot delete account with a used MFA backup code", async ({ page }) => {
+    test.setTimeout(60_000)
+
+    const { user, backupCodes } = await signupWithMFAEnabledAndLogin(page)
+
+    await page.getByTestId("open-settings").click()
+    await page.getByRole("tab", { name: "Security" }).click()
+    await page.getByRole("button", { name: "Log out", exact: true }).click()
+    await page.waitForURL("/login")
+
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+    await page.click("button")
+
+    await expect(page.getByText("Multi-Factor Authentication", { exact: true })).toBeVisible()
+    await expect(page.getByText("Enter the 6-digit code from your authenticator app", { exact: true })).toBeVisible()
+
+    await page.getByRole("button", { name: "Use recovery code", exact: true }).click()
+    await expect(page.getByText("Recover Multi-Factor Authentication", { exact: true })).toBeVisible()
+    await expect(page.getByText("Enter one of your recovery codes", { exact: true })).toBeVisible()
+
+    await page.fill("input", backupCodes[0])
+    await page.getByRole("button", { name: "Verify", exact: true }).click()
+    await expect(page.getByRole("button", { name: "Verifying", exact: true })).toBeVisible()
+    await page.waitForURL("/")
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("tab", { name: "Account" }).click()
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+
+    const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
+    await expect(confirmDialog).toBeVisible()
+
+    await confirmDialog.locator("input[type='password']").fill(user.password)
+    await confirmDialog.getByPlaceholder("MFA code").fill(backupCodes[0])
+    await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
+
+    await expect(confirmDialog).toBeVisible()
+
+    await confirmDialog.getByRole("button", { name: "Cancel", exact: true }).click()
+    await page.getByRole("tab", { name: "Security" }).click()
+    await page.getByRole("button", { name: "Log out", exact: true }).click()
+    await page.waitForURL("/login")
+
+    await page.fill("input[type='email']", user.email)
+    await page.fill("input[type='password']", user.password)
+    await page.click("button")
+
+    try {
+        await page.waitForURL("/", { timeout: 2000 })
+    } catch (e) {
+        await expect(page.getByText("Multi-Factor Authentication", { exact: true })).toBeVisible()
+        await page.getByRole("button", { name: "Use recovery code", exact: true }).click()
+        await expect(page.getByText("Recover Multi-Factor Authentication", { exact: true })).toBeVisible()
+        await page.fill("input", backupCodes[1])
+        await page.getByRole("button", { name: "Verify", exact: true }).click()
+        await expect(page.getByRole("button", { name: "Verifying", exact: true })).toBeVisible()
+        await page.waitForURL("/")
+    }
+})
+
+test("user can log out", async ({ page }) => {
+    await signupAndLogin(page)
+    await page.getByText("Settings").click()
+    await page.getByRole("tab", { name: "Security" }).click()
+    await page.getByRole("button", { name: "Log out" }).click()
+    await page.waitForURL("/login")
+    await page.goto("/")
+    await page.waitForURL("/login")
+})
+
+async function archiveOrUnarchiveAllChats(page: Page, user: User, action: "archive" | "unarchive", shouldHaveChats: boolean) {
+    const label = action === "archive" ? "Archive" : "Unarchive"
+
+    const initialHistoryCount = action === "archive" ? user.chats.length : 0
+    const initialArchivedCount = action === "archive" ? 0 : user.chats.length
+
+    await expect(page.getByTestId("history").locator("a")).toHaveCount(initialHistoryCount)
+
+    await page.getByText("Settings").click()
+
+    await page.getByRole("tab", { name: "Data" }).click()
+    await page.getByRole("button", { name: "Manage", exact: true }).click()
+
+    if (shouldHaveChats) {
+        await expect(page.getByText("You don't have any archived chats.")).not.toBeVisible()
+        await expect(page.getByText("Loading...")).not.toBeVisible()
+    }
+    await page.getByTestId("archived-chats").evaluate((element: HTMLElement) => element.scrollTop = element.scrollHeight)
+
+    await expect(page.getByTestId("archived-chats").locator("a")).toHaveCount(initialArchivedCount)
+
+    await expect(page.getByRole("heading", { name: "Archived Chats", exact: true })).toBeVisible()
+    if (initialArchivedCount === 0) {
+        await expect(page.getByText("You don't have any archived chats.", { exact: true })).toBeVisible()
+    }
+
+    await page.getByRole("button", { name: `${label} all`, exact: true }).click()
+    await expect(page.getByRole("heading", { name: `${label} all chats`, exact: true })).toBeVisible()
+    await expect(page.getByText(`Are you sure you want to ${label.toLowerCase()} all of your chats?`, { exact: true })).toBeVisible()
+
+    await page.getByRole("button", { name: label + " all", exact: true }).click()
+
+    await expect(page.getByText("You don't have any archived chats.")).not.toBeVisible()
+    await expect(page.getByText("Loading...")).not.toBeVisible()
+    await page.getByTestId("archived-chats").evaluate((element: HTMLElement) => element.scrollTop = element.scrollHeight)
+
+    await expect(page.getByTestId("history").locator("a")).toHaveCount(initialArchivedCount)
+    await expect(page.getByTestId("archived-chats").locator("a")).toHaveCount(initialHistoryCount)
+}
