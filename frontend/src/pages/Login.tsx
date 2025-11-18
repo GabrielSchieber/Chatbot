@@ -32,7 +32,7 @@ export default function Login() {
             }
         } else {
             const data = await response.json()
-            setError(data.error)
+            setError(t(data.error))
             setIsVerifying(false)
         }
     }
@@ -46,7 +46,7 @@ export default function Login() {
             location.href = "/"
         } else {
             const data = await response.json()
-            setError(data.error)
+            setError(t(data.error))
             setIsVerifying(false)
         }
     }

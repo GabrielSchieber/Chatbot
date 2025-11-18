@@ -247,19 +247,19 @@ function DeleteAccountEntryItem() {
     const [password, setPassword] = useState("")
     const [mfaCode, setMFACode] = useState("")
     const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+    const [error, setError] = useState<string>("")
 
     useEffect(() => {
         if (!isOpen) {
             setPassword("")
             setMFACode("")
             setIsLoading(false)
-            setError(null)
+            setError("")
         }
     }, [isOpen])
 
     async function handleConfirmDelete() {
-        setError(null)
+        setError("")
 
         if (!password) {
             setError(t("dialogs.deleteAccount.error.passwordRequired"))
@@ -277,10 +277,10 @@ function DeleteAccountEntryItem() {
             if (response.ok) {
                 location.reload()
             } else {
-                const json = await response.json().catch(() => ({}))
-                setError(json.error || t("dialogs.deleteAccount.error.deletionFailed"))
+                const data = await response.json()
+                setError(t(data.error))
             }
-        } catch (err) {
+        } catch {
             setError(t("dialogs.deleteAccount.error.network"))
         } finally {
             setIsLoading(false)

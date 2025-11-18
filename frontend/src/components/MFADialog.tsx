@@ -159,8 +159,9 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
             setStep("enabled")
             notify(t("mfa.messages.enabledSuccess"), "success")
         } else {
+            const data = await response.json()
             setIsEnabling(false)
-            setError(t("mfa.messages.errorInvalidCode"))
+            setError(t(data.error))
         }
 
         setIsLocked(false)
@@ -290,8 +291,9 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
             setStep("disabled")
             notify(t("mfa.messages.disabledMessage"), "success")
         } else {
+            const data = await response.json()
             setIsDisabling(false)
-            setError(t("mfa.messages.errorInvalidCode"))
+            setError(t(data.error))
         }
 
         setIsLocked(false)

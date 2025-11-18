@@ -20,7 +20,7 @@ export default function Signup() {
         setIsVerifying(true)
 
         if (password !== confirmPassword) {
-            setError("Passwords do not match.")
+            setError(t("signup.passwordsNoMatch"))
             setIsVerifying(false)
             return
         }
@@ -36,7 +36,7 @@ export default function Signup() {
             }
         } else {
             const data = await response.json()
-            setError(data.error)
+            setError(t(data.error))
             setIsVerifying(false)
         }
     }

@@ -73,8 +73,10 @@
     "mfa.buttons.generate": "Generate QR and secret codes",
     "mfa.buttons.generating": "Generating",
     "mfa.buttons.close": "Close",
-    "mfa.messages.errorGenerate": "There was an error generating QR and secret codes",
-    "mfa.messages.errorInvalidCode": "Invalid code",
+    "mfa.messages.errorGenerate": "There was an error generating QR and secret codes.",
+    "mfa.messages.errorInvalidPassword": "The password is invalid.",
+    "mfa.messages.errorInvalidCode": "The code is invalid.",
+    "mfa.messages.errorInvalidOrExpiredCode": "The code is invalid or expired.",
     "mfa.messages.enabledSuccess": "Multi-factor authentication enabled successfully!",
     "mfa.messages.disabledSuccess": "Multi-factor authentication disabled successfully!",
     "mfa.messages.setupQrInfo": "Scan this QR in your authenticator app (or use the secret below):",
@@ -82,7 +84,7 @@
     "mfa.messages.backupConfirm": "I have backed up the codes.",
     "mfa.messages.disableConfirm": "Are you sure you want to disable multi-factor authentication?",
     "mfa.messages.disableInstruction": "Enter below the 6-digit code from your authenticator or recovery code to confirm.",
-    "mfa.messages.disabledMessage": "Multi-factor authentication disabled successfully",
+    "mfa.messages.disabledMessage": "Multi-factor authentication disabled successfully.",
     "mfa.placeholders.sixDigitCode": "6-digit code",
     "mfa.placeholders.enterCode": "Enter code",
     "mfa.labels.secret": "Secret:",
@@ -149,6 +151,7 @@
     "login.mfaRecovery.header": "Recover Multi-Factor Authentication",
     "login.mfaRecovery.description": "Enter one of your recovery codes",
     "login.mfaRecovery.useAuthenticator": "Use authenticator code",
+    "login.error": "The email and/or password are invalid.",
     "signup.header": "Create your account",
     "signup.password": "Password",
     "signup.confirmPassword": "Confirm Password",
@@ -157,5 +160,6 @@
     "signup.signUp": "Sign up",
     "signup.haveAccount": "Already have an account?",
     "signup.logIn": "Log in!",
-    "signup.error": "An error occurred. Please try again later."
+    "signup.emailError": "The email address is already registered. Please choose another one.",
+    "signup.loginAfterSignupError": "An error occurred. Please try again later."
 }

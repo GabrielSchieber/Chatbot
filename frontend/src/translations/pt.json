@@ -73,8 +73,10 @@
     "mfa.buttons.generate": "Gerar QR e códigos secretos",
     "mfa.buttons.generating": "Gerando",
     "mfa.buttons.close": "Fechar",
-    "mfa.messages.errorGenerate": "Ocorreu um erro ao gerar o QR e os códigos secretos",
-    "mfa.messages.errorInvalidCode": "Código inválido",
+    "mfa.messages.errorGenerate": "Ocorreu um erro ao gerar o QR e os códigos secretos.",
+    "mfa.messages.errorInvalidPassword": "A senha está inválida.",
+    "mfa.messages.errorInvalidCode": "O código está inválido.",
+    "mfa.messages.errorInvalidOrExpiredCode": "O código está inválido ou expirou.",
     "mfa.messages.enabledSuccess": "Autenticação de múltiplos fatores ativada com sucesso!",
     "mfa.messages.disabledSuccess": "Autenticação de múltiplos fatores desativada com sucesso!",
     "mfa.messages.setupQrInfo": "Escaneie este QR no seu aplicativo autenticador (ou use o segredo abaixo):",
@@ -82,7 +84,7 @@
     "mfa.messages.backupConfirm": "Eu salvei os códigos de recuperação.",
     "mfa.messages.disableConfirm": "Tem certeza de que deseja desativar a autenticação de múltiplos fatores?",
     "mfa.messages.disableInstruction": "Digite abaixo o código de 6 dígitos do seu autenticador ou um código de recuperação para confirmar.",
-    "mfa.messages.disabledMessage": "Autenticação de múltiplos fatores desativada com sucesso",
+    "mfa.messages.disabledMessage": "Autenticação de múltiplos fatores desativada com sucesso.",
     "mfa.placeholders.sixDigitCode": "Código de 6 dígitos",
     "mfa.placeholders.enterCode": "Digite o código",
     "mfa.labels.secret": "Segredo:",
@@ -149,6 +151,7 @@
     "login.mfaRecovery.header": "Recuperar Autenticação de Múltiplos Fatores",
     "login.mfaRecovery.description": "Digite um dos seus códigos de recuperação",
     "login.mfaRecovery.useAuthenticator": "Usar código do autenticador",
+    "login.error": "O e-mail e/ou a senha estão inválidos.",
     "signup.header": "Crie sua conta",
     "signup.password": "Senha",
     "signup.confirmPassword": "Confirmar Senha",
@@ -157,5 +160,6 @@
     "signup.signUp": "Cadastrar",
     "signup.haveAccount": "Já tem uma conta?",
     "signup.logIn": "Entrar!",
-    "signup.error": "Ocorreu um erro. Tente novamente mais tarde."
+    "signup.emailError": "O endereço de e-mail já está cadastrado. Por favor, escolha outro.",
+    "signup.loginAfterSignupError": "Ocorreu um erro. Tente novamente mais tarde."
 }
