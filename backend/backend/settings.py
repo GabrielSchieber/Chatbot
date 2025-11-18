@@ -73,22 +73,6 @@ DATABASES = {
     }
 }
 
-LANGUAGE_CODE = "en-us"
-
-TIME_ZONE = "UTC"
-
-LANGUAGES = [
-    ("en", _("English")),
-    ("pt", _("Portuguese"))
-]
-
-LANGUAGE_CODE = "en"
-
-USE_I18N = True
-USE_L10N = True
-
-USE_TZ = True
-
 STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

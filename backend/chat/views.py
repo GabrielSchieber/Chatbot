@@ -4,7 +4,6 @@ from django.contrib.auth import authenticate
 from django.core.validators import validate_email
 from django.db.models import Prefetch, Q
 from django.shortcuts import render
-from django.utils.translation import gettext as _
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -37,7 +36,7 @@ class Signup(APIView):
             return Response({"error": "Email address is invalid."}, status.HTTP_400_BAD_REQUEST)
 
         if User.objects.filter(email = email).exists():
-            return Response({"error": _("Email is already registered. Please choose another one.")}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "signup.emailError"}, status.HTTP_400_BAD_REQUEST)
 
         if len(password) < 12 or len(password) > 1000:
             return Response({"error": "Password must have between 12 and 1000 characters."}, status.HTTP_400_BAD_REQUEST)
@@ -59,7 +58,7 @@ class Login(APIView):
 
         user: User | None = authenticate(request, email = email, password = password)
         if user is None:
-            return Response({"error": _("Email and/or password are invalid.")}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "login.error"}, status.HTTP_401_UNAUTHORIZED)
 
         if user.mfa.is_enabled:
             pre_auth_token = PreAuthToken.objects.create(user = user)
@@ -72,6 +71,7 @@ class Login(APIView):
             return response
 
 class VerifyMFA(APIView):
+    authentication_classes = []
     throttle_classes = [IPEmailRateThrottle]
 
     def post(self, request: Request):
@@ -84,21 +84,23 @@ class VerifyMFA(APIView):
         try:
             pre_auth_token = PreAuthToken.objects.get(token = token)
         except PreAuthToken.DoesNotExist:
-            return Response({"error": _("Invalid or expired token.")}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "mfa.messages.errorInvalidOrExpiredCode"}, status.HTTP_401_UNAUTHORIZED)
+        except:
+            return Response({"error": "Invalid token format."}, status.HTTP_400_BAD_REQUEST)
 
         if pre_auth_token.is_expired():
             pre_auth_token.delete()
-            return Response({"error": _("Token expired.")}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "mfa.messages.errorInvalidOrExpiredCode"}, status.HTTP_401_UNAUTHORIZED)
 
-        if pre_auth_token.user.mfa.verify(code):
-            refresh = RefreshToken.for_user(pre_auth_token.user)
-            response = Response(status = status.HTTP_200_OK)
-            response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
-            response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
-            pre_auth_token.delete()
-            return response
-        else:
-            return Response({"error": _("Invalid code.")}, status.HTTP_401_UNAUTHORIZED)
+        if not pre_auth_token.user.mfa.verify(code):
+            return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
+
+        refresh = RefreshToken.for_user(pre_auth_token.user)
+        response = Response(status = status.HTTP_200_OK)
+        response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
+        response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+        pre_auth_token.delete()
+        return response
 
 class Logout(APIView):
     permission_classes = [IsAuthenticated]
@@ -110,6 +112,7 @@ class Logout(APIView):
         return response
 
 class Refresh(TokenRefreshView):
+    authentication_classes = []
     throttle_classes = [RefreshRateThrottle]
 
     def post(self, request: Request):
@@ -120,7 +123,7 @@ class Refresh(TokenRefreshView):
         serializer = self.get_serializer(data = {"refresh": refresh_token})
         try:
             serializer.is_valid(raise_exception = True)
-        except Exception:
+        except:
             return Response({"error": "Invalid refresh token."}, status.HTTP_401_UNAUTHORIZED)
 
         access = serializer.validated_data["access"]
@@ -199,7 +202,7 @@ class SetupMFA(APIView):
 
     def post(self, request: Request):
         secret, auth_url = request.user.mfa.setup()
-        return Response({"auth_url": auth_url, "secret": secret})
+        return Response({"auth_url": auth_url, "secret": secret}, status.HTTP_200_OK)
 
 class EnableMFA(APIView):
     permission_classes = [IsAuthenticated]
@@ -208,27 +211,28 @@ class EnableMFA(APIView):
         user: User = request.user
         code = request.data.get("code")
 
-        if user.mfa.verify(code):
-            backup_codes = user.mfa.enable()
-            return Response({"backup_codes": backup_codes}, status.HTTP_200_OK)
-        else:
-            return Response({"error": _("Invalid code.")}, status.HTTP_400_BAD_REQUEST)
+        if not user.mfa.verify(code):
+            return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
+
+        backup_codes = user.mfa.enable()
+        return Response({"backup_codes": backup_codes}, status.HTTP_200_OK)
 
 class DisableMFA(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request):
         user: User = request.user
-        code = request.data.get("code")
 
         if not user.mfa.is_enabled:
             return Response({"error": "MFA is not enabled."}, status.HTTP_400_BAD_REQUEST)
 
-        if user.mfa.verify(code):
-            user.mfa.disable()
-            return Response(status = status.HTTP_200_OK)
-        else:
-            return Response({"error": _("Invalid code.")}, status.HTTP_400_BAD_REQUEST)
+        code = request.data.get("code")
+
+        if not user.mfa.verify(code):
+            return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
+
+        user.mfa.disable()
+        return Response(status = status.HTTP_200_OK)
 
 class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]
@@ -243,22 +247,19 @@ class DeleteAccount(APIView):
             return Response({"error": "'password' field must be provided."}, status.HTTP_400_BAD_REQUEST)
 
         if not user.check_password(password):
-            return Response({"error": _("Invalid password.")}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "mfa.messages.errorInvalidPassword"}, status.HTTP_401_UNAUTHORIZED)
 
         if user.mfa.is_enabled:
             if mfa_code is None:
                 return Response({"error": "MFA code is required."}, status.HTTP_400_BAD_REQUEST)
             if not user.mfa.verify(mfa_code):
-                return Response({"error": _("Invalid MFA code.")}, status.HTTP_401_UNAUTHORIZED)
+                return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
 
-        try:
-            user.delete()
-            response = Response(status = status.HTTP_204_NO_CONTENT)
-            response.delete_cookie("access_token")
-            response.delete_cookie("refresh_token")
-            return response
-        except Exception:
-            return Response({"error": "Failed to delete account."}, status.HTTP_400_BAD_REQUEST)
+        user.delete()
+        response = Response(status = status.HTTP_204_NO_CONTENT)
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
+        return response
 
 class GetChat(APIView):
     permission_classes = [IsAuthenticated]
