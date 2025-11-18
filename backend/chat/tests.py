@@ -91,19 +91,19 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_login_with_invalid_credentials(self):
-        error = "Email and/or password are invalid."
+        error = "login.error"
 
         create_user()
         response = self.login_user("someemail@example.com", "somepassword")
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["error"], error)
 
         response = self.login_user("test@example.com", "somepassword")
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["error"], error)
 
         response = self.login_user("someemail@example.com", "testpassword")
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["error"], error)
 
     def test_logout(self):
