@@ -33,7 +33,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
 
                 <Dialog.Content>
                     <Tabs.Root
-                        className="fixed flex top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 text-white light:text-black"
+                        className="fixed flex top-[20vh] right-1/2 translate-x-1/2 text-white light:text-black"
                         value={currentTab}
                         onValueChange={v => setCurrentTab(v)}
                         orientation="vertical"
