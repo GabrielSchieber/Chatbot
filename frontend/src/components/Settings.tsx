@@ -15,6 +15,7 @@ import type { Language, Theme } from "../utils/types"
 
 export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
     const { user } = useAuth()
+    const { isMobile } = useChat()
     const { t } = useTranslation()
 
     const [currentTab, setCurrentTab] = useState(t("settings.general"))
@@ -33,12 +34,19 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
 
                 <Dialog.Content>
                     <Tabs.Root
-                        className="fixed flex top-[20vh] right-1/2 translate-x-1/2 text-white light:text-black"
+                        className={`
+                            fixed flex top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 text-white light:text-black
+                            ${isMobile ? "flex-col w-[calc(100vw-50px)] min-h-120" : "w-150 min-h-105"}
+                        `}
                         value={currentTab}
                         onValueChange={v => setCurrentTab(v)}
-                        orientation="vertical"
                     >
-                        <Tabs.List className="flex flex-col gap-1 p-4 items-start rounded-l-xl bg-gray-900 light:bg-gray-100">
+                        <Tabs.List
+                            className={`
+                                flex gap-1 p-4 items-start bg-gray-900 light:bg-gray-100
+                                ${isMobile ? "flex-row flex-wrap rounded-t-xl" : "flex-col rounded-l-xl"}
+                            `}
+                        >
                             <Dialog.Close className={"ml-1 p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"} data-testid="close-settings">
                                 <Cross1Icon className="size-5" />
                             </Dialog.Close>
@@ -48,7 +56,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                             <Trigger icon={<MixerHorizontalIcon className="size-4.5" />} title={t("settings.data")} />
                             <Trigger icon={<LockClosedIcon className="size-4.5" />} title={t("settings.security")} />
                             <Trigger icon={<PersonIcon className="size-4.5" />} title={t("settings.account")} />
-                        </Tabs.List >
+                        </Tabs.List>
 
                         <Content title={t("settings.general")}>
                             <Entry name={t("settings.theme")} item={<ThemeEntryItem />} />
@@ -90,7 +98,7 @@ function Trigger({ icon, title }: { icon: ReactNode, title: string }) {
         <Tabs.Trigger
             value={title}
             className={`
-                flex w-full gap-1 px-2 py-1 items-center cursor-pointer outline-none rounded-lg
+                flex gap-1 px-2 py-1 items-center cursor-pointer outline-none rounded-lg
                 hover:bg-gray-700 light:hover:bg-gray-300
                 focus:bg-gray-700 light:focus:bg-gray-300
                 data-[state=active]:bg-gray-700 light:data-[state=active]:bg-gray-300
@@ -102,9 +110,15 @@ function Trigger({ icon, title }: { icon: ReactNode, title: string }) {
 }
 
 function Content({ title, children }: { title: string, children: ReactNode }) {
+    const { isMobile } = useChat()
+
     return (
-        <Tabs.Content value={title} className="min-w-100 rounded-r-xl bg-gray-800 light:bg-gray-200" tabIndex={-1}>
-            <section className="flex flex-col">
+        <Tabs.Content
+            value={title}
+            className={`flex grow bg-gray-800 light:bg-gray-200 ${isMobile ? "rounded-b-xl" : "rounded-r-xl"}`}
+            tabIndex={-1}
+        >
+            <section className="flex flex-col w-full">
                 <h2 className="p-4 mb-1 text-xl font-semibold border-b">{title}</h2>
                 <div className="flex flex-col px-4 divide-y divide-gray-500">
                     {children}
@@ -369,7 +383,7 @@ function LogoutEntryItem() {
 
 function Entry({ name, item }: { name: string, item: ReactNode }) {
     return (
-        <div className="flex gap-3 md:gap-20 py-2 items-center justify-between">
+        <div className="flex py-2 items-center justify-between">
             <label>{name}</label>
             {item}
         </div>
