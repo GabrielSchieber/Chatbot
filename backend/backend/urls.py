@@ -1,10 +1,7 @@
 import os
 
-from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path, re_path
-
-from chat.views import index
+from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -13,6 +10,3 @@ urlpatterns = [
 
 if os.getenv("PLAYWRIGHT_TEST") == "True":
     urlpatterns.append(path("test/", include("chat.urls_test")))
-
-if not settings.DEBUG and os.getenv("PLAYWRIGHT_TEST") != "True":
-    urlpatterns.append(re_path("^(?!admin).*", index))

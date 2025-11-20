@@ -3,7 +3,6 @@ import json
 from django.contrib.auth import authenticate
 from django.core.validators import validate_email
 from django.db.models import Prefetch, Q
-from django.shortcuts import render
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -676,6 +675,3 @@ class RegenerateMessage(APIView):
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, status.HTTP_200_OK)
-
-def index(request):
-    return render(request, "index.html")
