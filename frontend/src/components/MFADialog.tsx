@@ -275,9 +275,15 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
 function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAction<Step>>, setIsLocked: Dispatch<SetStateAction<boolean>> }) {
     const notify = useNotify()
 
+    const [method, setMethod] = useState<"authenticator" | "recovery">("authenticator")
     const [code, setCode] = useState("")
     const [error, setError] = useState("")
     const [isDisabling, setIsDisabling] = useState(false)
+
+    const methodSwitchClassName = `
+        w-full text-center text-gray-400 light:text-gray-600 cursor-pointer
+        disabled:cursor-not-allowed enabled:hover:underline disabled:text-gray-600 light:disabled:text-gray-400
+    `
 
     async function handleDisable(e: React.FormEvent) {
         e.preventDefault()
@@ -305,22 +311,36 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
     }
 
     return (
-        <div className="flex flex-col gap-2 max-w-[30vw] self-center items-center">
+        <div className="flex flex-col gap-2 self-center">
             <p className={paragraphClassName}>{t("mfa.messages.disableConfirm")}</p>
-            <p className={paragraphClassName}>{t("mfa.messages.disableInstruction")}</p>
+            <p className={paragraphClassName}>
+                {t(method === "authenticator" ? "mfa.messages.authenticatorDisableInstruction" : "mfa.messages.recoveryDisableInstruction")}
+            </p>
             <form className="flex flex-col gap-2 items-center" onSubmit={handleDisable}>
                 <input
-                    className={inputClassNames}
+                    className={inputClassNames + " w-[70%]"}
                     value={code}
+                    placeholder={t(method === "authenticator" ? "auth.mfa.placeholder" : "auth.mfaRecovery.placeholder")}
+                    maxLength={method === "authenticator" ? 6 : 12}
                     onChange={handleInputChange}
-                    placeholder={t("mfa.placeholders.enterCode")}
                     required
                 />
                 <button className={buttonClassNames} disabled={isDisabling}>
                     {isDisabling ? t("mfa.buttons.disabling") : t("mfa.buttons.disable")}
                 </button>
             </form>
-            {error && <p className={errorParagraphClassName}>{error}</p>}
+            {error && <p className={errorParagraphClassName + " self-center"}>{error}</p>}
+            <button
+                className={methodSwitchClassName}
+                onClick={_ => {
+                    setMethod(method === "authenticator" ? "recovery" : "authenticator")
+                    setCode("")
+                    setError("")
+                }}
+                disabled={isDisabling}
+            >
+                {method === "authenticator" ? t("login.mfa.useRecovery") : t("login.mfaRecovery.useAuthenticator")}
+            </button>
         </div>
     )
 }
@@ -337,7 +357,7 @@ function DisabledDialog() {
 const paragraphBaseClassName = "w-fit px-2 py-1 text-center rounded-lg"
 const paragraphClassName = paragraphBaseClassName + " bg-gray-700 light:bg-gray-300"
 const errorParagraphClassName = paragraphBaseClassName + " text-white bg-red-500/60 light:bg-red-500"
-const inputClassNames = "w-full px-3 py-2 rounded-xl outline-none bg-gray-700 light:bg-gray-300"
+const inputClassNames = "px-3 py-2 rounded-xl outline-none bg-gray-700 light:bg-gray-300"
 const buttonClassNames = `
     px-6 py-1 rounded-xl cursor-pointer
     bg-gray-700 light:bg-gray-300
