@@ -94,6 +94,7 @@ export function MFA({ code, setCode, setError }: {
                 pattern="\d{6}"
                 maxLength={6}
                 value={code}
+                placeholder={t("auth.mfa.placeholder")}
                 onChange={handleChange}
                 className="tracking-widest text-center text-lg w-full px-3 py-2 border rounded-md bg-gray-700 text-gray-100 light:bg-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
@@ -151,6 +152,7 @@ export function MFARecovery({ code, setCode, setError }: {
                 type="text"
                 maxLength={12}
                 value={code}
+                placeholder={t("auth.mfaRecovery.placeholder")}
                 onChange={handleChange}
                 className="tracking-widest text-center text-lg w-full px-3 py-2 border rounded-md bg-gray-700 text-gray-100 light:bg-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
