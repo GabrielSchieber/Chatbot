@@ -17,6 +17,7 @@ export default function Signup() {
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
+        setError("")
         setIsVerifying(true)
 
         if (password !== confirmPassword) {
