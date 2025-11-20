@@ -211,7 +211,7 @@ class EnableMFA(APIView):
         code = request.data.get("code")
 
         if not user.mfa.verify(code):
-            return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
 
         backup_codes = user.mfa.enable()
         return Response({"backup_codes": backup_codes}, status.HTTP_200_OK)
@@ -228,7 +228,7 @@ class DisableMFA(APIView):
         code = request.data.get("code")
 
         if not user.mfa.verify(code):
-            return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
 
         user.mfa.disable()
         return Response(status = status.HTTP_200_OK)
@@ -246,13 +246,13 @@ class DeleteAccount(APIView):
             return Response({"error": "'password' field must be provided."}, status.HTTP_400_BAD_REQUEST)
 
         if not user.check_password(password):
-            return Response({"error": "mfa.messages.errorInvalidPassword"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "mfa.messages.errorInvalidPassword"}, status.HTTP_403_FORBIDDEN)
 
         if user.mfa.is_enabled:
             if mfa_code is None:
                 return Response({"error": "MFA code is required."}, status.HTTP_400_BAD_REQUEST)
             if not user.mfa.verify(mfa_code):
-                return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
+                return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
 
         user.delete()
         response = Response(status = status.HTTP_204_NO_CONTENT)
