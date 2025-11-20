@@ -6,9 +6,9 @@ COPY /backend/requirements.txt .
 
 RUN python -m venv .venv && . .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
 
-COPY /backend .
-
 ENV PATH="/app/backend/.venv/bin:$PATH"
+
+COPY /backend .
 
 WORKDIR /app/frontend
 
@@ -22,8 +22,7 @@ RUN apt-get update && \
 
 ENV PATH="/app_deps/node-v24.11.0-linux-x64/bin:$PATH"
 
-COPY /frontend/package.json .
-COPY /frontend/package-lock.json .
+COPY /frontend/package.json /frontend/package-lock.json ./
 
 RUN npm install
 

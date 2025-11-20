@@ -3,6 +3,7 @@ services:
         build:
             context: ./backend
             dockerfile: dockerfile
+        command: daphne backend.asgi:application -e ssl:443:privateKey=ssl/private_key.pem:certKey=ssl/certificate.pem
         env_file: .env
         volumes:
             - dist:/app/dist:ro

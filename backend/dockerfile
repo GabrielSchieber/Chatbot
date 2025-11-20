@@ -6,8 +6,6 @@ COPY requirements.txt .
 
 RUN python -m venv .venv && . .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
 
-COPY . .
-
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["daphne", "backend.asgi:application", "-e", "ssl:443:privateKey=ssl/private_key.pem:certKey=ssl/certificate.pem"]
+COPY . .
