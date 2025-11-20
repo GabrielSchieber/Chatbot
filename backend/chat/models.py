@@ -67,9 +67,11 @@ class UserMFA(models.Model):
     is_enabled = models.BooleanField(default = False)
 
     def verify(self, code: str):
-        if verify_secret(self.secret, code):
-            return True
-        else:
+        if type(code) != str:
+            return False
+        elif len(code) == 6:
+            return verify_secret(self.secret, code)
+        elif len(code) == 12:
             for hashed_backup_code in self.backup_codes:
                 if check_password(code, hashed_backup_code):
                     self.backup_codes.remove(hashed_backup_code)
