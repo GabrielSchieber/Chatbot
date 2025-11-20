@@ -6,6 +6,7 @@ services:
         env_file: .env
         volumes:
             - dist:/app/dist:ro
+            - static:/app/static
 
     frontend:
         build:
@@ -37,7 +38,9 @@ services:
             - ./backend/nginx.conf:/etc/nginx/nginx.conf:ro
             - ./backend/ssl:/etc/nginx/ssl:ro
             - dist:/app/dist:ro
+            - static:/app/static
 
 volumes:
     dist:
+    static:
     postgres:

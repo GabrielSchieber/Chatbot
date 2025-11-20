@@ -15,4 +15,4 @@ if os.getenv("PLAYWRIGHT_TEST") == "True":
     urlpatterns.append(path("test/", include("chat.urls_test")))
 
 if not settings.DEBUG and os.getenv("PLAYWRIGHT_TEST") != "True":
-    urlpatterns.append(re_path(".*", index))
+    urlpatterns.append(re_path("^(?!admin).*", index))

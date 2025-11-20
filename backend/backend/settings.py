@@ -47,7 +47,7 @@ ROOT_URLCONF = "backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [] if DEBUG else ["dist"],
+        "DIRS": ["dist"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -74,6 +74,7 @@ DATABASES = {
 }
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "static"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
