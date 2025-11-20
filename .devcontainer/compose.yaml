@@ -22,7 +22,7 @@ services:
     ollama:
         image: chatbot-ollama
         build:
-            context: ../ollama
+            context: ../backend/ollama
             dockerfile: dockerfile
 
 volumes:

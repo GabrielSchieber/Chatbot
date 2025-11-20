@@ -12,6 +12,7 @@ dockerfile
 .venv/
 __pycache__/
 chat_temp/
+ollama/
 ssl/
 
 dist/

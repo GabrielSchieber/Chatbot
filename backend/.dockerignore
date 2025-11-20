@@ -1,6 +1,7 @@
 .venv/
 __pycache__/
 chat_temp/
+ollama/
 
 .dockerignore
 dockerfile
