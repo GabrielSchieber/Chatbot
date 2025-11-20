@@ -197,6 +197,7 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
                     value={code}
                     onChange={handleInputChange}
                     placeholder={t("mfa.placeholders.sixDigitCode")}
+                    maxLength={6}
                     required
                 />
                 <button className={buttonClassNames} disabled={isEnabling}>
