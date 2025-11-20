@@ -1,5 +1,5 @@
 import { t } from "i18next"
-import { Label } from "radix-ui"
+import { Label as RadixLabel } from "radix-ui"
 import type { Dispatch, ReactNode, SetStateAction } from "react"
 
 export type Step = "login" | "mfa" | "mfa-recovery"
@@ -21,9 +21,7 @@ export function Header({ text }: { text: string }) {
 export function Email({ email, setEmail }: { email: string, setEmail: Dispatch<SetStateAction<string>> }) {
     return (
         <div className="flex flex-col space-y-2">
-            <Label.Root htmlFor="email" className="text-sm font-medium text-gray-200 light:text-gray-700">
-                {t("auth.email.label")}
-            </Label.Root>
+            <Label htmlFor="email" text={t("auth.email.label")} />
             <input
                 id="email"
                 type="email"
@@ -51,9 +49,7 @@ export function Password({ password, setPassword, label, id, minLength, maxLengt
 }) {
     return (
         <div className="flex flex-col space-y-2">
-            <Label.Root htmlFor={id} className="text-sm font-medium text-gray-200 light:text-gray-700">
-                {label}
-            </Label.Root>
+            <Label htmlFor={id} text={label} />
             <input
                 id={id}
                 type="password"
@@ -84,19 +80,15 @@ export function MFA({ code, setCode, setError }: {
 
     return (
         <div className="flex flex-col space-y-2">
-            <Label.Root htmlFor="code" className="font-medium text-gray-200 light:text-gray-700">
-                {t("auth.mfa.label")}
-            </Label.Root>
+            <Label htmlFor="code" text={t("auth.mfa.label")} />
             <input
                 id="code"
                 type="text"
-                inputMode="numeric"
-                pattern="\d{6}"
                 maxLength={6}
                 value={code}
                 placeholder={t("auth.mfa.placeholder")}
                 onChange={handleChange}
-                className="tracking-widest text-center text-lg w-full px-3 py-2 border rounded-md bg-gray-700 text-gray-100 light:bg-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className={mfaInputClassName}
                 required
             />
         </div>
@@ -144,9 +136,7 @@ export function MFARecovery({ code, setCode, setError }: {
 
     return (
         <div className="flex flex-col space-y-2">
-            <Label.Root htmlFor="code" className="font-medium text-gray-200 light:text-gray-700">
-                {t("auth.mfaRecovery.label")}
-            </Label.Root>
+            <Label htmlFor="code" text={t("auth.mfaRecovery.label")} />
             <input
                 id="code"
                 type="text"
@@ -154,7 +144,7 @@ export function MFARecovery({ code, setCode, setError }: {
                 value={code}
                 placeholder={t("auth.mfaRecovery.placeholder")}
                 onChange={handleChange}
-                className="tracking-widest text-center text-lg w-full px-3 py-2 border rounded-md bg-gray-700 text-gray-100 light:bg-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className={mfaInputClassName}
                 required
             />
         </div>
@@ -190,3 +180,16 @@ export function Recommendation({ text, url, urlText }: { text: string, url: stri
         </p>
     )
 }
+
+function Label({ htmlFor, text }: { htmlFor?: string, text: string }) {
+    return (
+        <RadixLabel.Root htmlFor={htmlFor} className="text-sm font-medium text-gray-200 light:text-gray-700">
+            {text}
+        </RadixLabel.Root>
+    )
+}
+
+const mfaInputClassName = `
+    tracking-widest text-center w-full px-3 py-2 border rounded-md bg-gray-700 text-gray-100
+    light:bg-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500
+`
