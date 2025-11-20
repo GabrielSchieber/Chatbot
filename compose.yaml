@@ -25,6 +25,7 @@ services:
         image: redis:8.2-alpine
 
     ollama:
+        image: chatbot-ollama
         build:
             context: ./ollama
             dockerfile: dockerfile
