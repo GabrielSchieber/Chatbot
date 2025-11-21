@@ -22,6 +22,26 @@
     }
 }
 
+@custom-variant hover-none {
+    @media (hover: none) {
+        @slot;
+    }
+}
+
+@custom-variant pointer-coarse {
+    @media (pointer: coarse) {
+        @slot;
+    }
+}
+
+@custom-variant touch {
+
+    @media (hover: none),
+    (pointer: coarse) {
+        @slot;
+    }
+}
+
 @custom-variant light (&:where(.Light, .Light *));
 
 .Light {
