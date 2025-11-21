@@ -14,14 +14,6 @@
     }
 }
 
-@media (hover: none),
-(pointer: coarse) {
-    .history-menu-trigger {
-        display: block !important;
-        opacity: 1 !important;
-    }
-}
-
 @custom-variant hover-none {
     @media (hover: none) {
         @slot;

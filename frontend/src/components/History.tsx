@@ -151,8 +151,8 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
                         >
                             <DropdownMenu.Trigger
                                 className={`
-                                    history-menu-trigger
-                                    ${isHoveringUUID !== c.uuid && isFocusingUUID !== c.uuid && isOpenUUID !== c.uuid && "hidden"}
+                                    ${isHoveringUUID !== c.uuid && isFocusingUUID !== c.uuid && isOpenUUID !== c.uuid ?
+                                        "hidden hover-none:block pointer-coarse:block touch:block" : "block"}
                                     py-1 rounded cursor-pointer outline-none
                                     hover:bg-gray-500/50 light:hover:bg-gray-400/60
                                     focus:bg-gray-500/50 light:focus:bg-gray-400/60
