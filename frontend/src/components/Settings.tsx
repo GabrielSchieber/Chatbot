@@ -98,6 +98,8 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
 }
 
 function Trigger({ icon, title }: { icon: ReactNode, title: string }) {
+    const { isMobile } = useChat()
+
     return (
         <Tabs.Trigger
             value={title}
@@ -106,6 +108,7 @@ function Trigger({ icon, title }: { icon: ReactNode, title: string }) {
                 hover:bg-gray-700 light:hover:bg-gray-300
                 focus:bg-gray-700 light:focus:bg-gray-300
                 data-[state=active]:bg-gray-700 light:data-[state=active]:bg-gray-300
+                ${!isMobile && "w-full"}
             `}
         >
             {icon} {title}
