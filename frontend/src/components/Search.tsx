@@ -174,7 +174,12 @@ function Entry({ entry }: { entry: SearchEntry }) {
                 ) : (
                     <ChatBubbleIcon className="size-8" />
                 )}
-                <p className={`text-sm text-nowrap duration-300 opacity-0 group-hover:opacity-100 group-focus:opacity-100`}>
+                <p
+                    className="
+                        text-sm text-nowrap duration-300 opacity-0 group-hover:opacity-100 group-focus:opacity-100
+                        hover-none:opacity-100 pointer-coarse:opacity-100 touch:opacity-100
+                    "
+                >
                     {formatChatDate(entry.last_modified_at)}
                 </p>
             </div>
