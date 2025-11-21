@@ -1,15 +1,16 @@
 import { CheckIcon, ChevronDownIcon, Cross1Icon, EnvelopeClosedIcon, GearIcon, LockClosedIcon, MixerHorizontalIcon, MixerVerticalIcon, PersonIcon } from "@radix-ui/react-icons"
 import { Dialog, Select, Tabs } from "radix-ui"
-import { useState, useEffect, type ReactNode, type SetStateAction, type Dispatch } from "react"
+import { useState, type ReactNode, type SetStateAction, type Dispatch } from "react"
 import { useTranslation } from "react-i18next"
 
 import { ArchivedChatsDialog } from "./ArchivedChatsDialog"
 import ConfirmDialog from "./ConfirmDialog"
 import Customizations from "./Customizations"
+import DeleteAccountDialog from "./DeleteAccountDialog"
 import MFADialog from "./MFADialog"
 import { useAuth } from "../providers/AuthProvider"
 import { useChat } from "../providers/ChatProvider"
-import { deleteAccount, deleteChats, logout, me } from "../utils/api"
+import { deleteChats, logout, me } from "../utils/api"
 import { applyTheme, getLanguageAbbreviation } from "../utils/misc"
 import type { Language, Theme } from "../utils/types"
 
@@ -84,7 +85,10 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                                     <p>{user.email}</p>
                                 </div>
                             )}
-                            <Entry name={t("settings.deleteAccount")} item={<DeleteAccountEntryItem />} />
+                            <Entry
+                                name={t("settings.deleteAccount")}
+                                item={<DeleteAccountDialog entryClasses={entryClasses} destructiveEntryClasses={destructiveEntryClasses} />}
+                            />
                         </Content>
                     </Tabs.Root>
                 </Dialog.Content>
@@ -250,119 +254,6 @@ function DeleteChatsEntryItem() {
             cancelText={t("dialogs.deleteChats.cancel")}
             onConfirm={handleDeleteChats}
         />
-    )
-}
-
-function DeleteAccountEntryItem() {
-    const { user } = useAuth()
-    const { t } = useTranslation()
-
-    const [isOpen, setIsOpen] = useState(false)
-    const [password, setPassword] = useState("")
-    const [mfaCode, setMFACode] = useState("")
-    const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState<string>("")
-
-    useEffect(() => {
-        if (!isOpen) {
-            setPassword("")
-            setMFACode("")
-            setIsLoading(false)
-            setError("")
-        }
-    }, [isOpen])
-
-    async function handleConfirmDelete() {
-        setError("")
-
-        if (!password) {
-            setError(t("dialogs.deleteAccount.error.passwordRequired"))
-            return
-        }
-
-        if (user?.mfa?.is_enabled && !mfaCode) {
-            setError(t("dialogs.deleteAccount.error.mfaRequired"))
-            return
-        }
-
-        try {
-            setIsLoading(true)
-            const response = await deleteAccount(password, user?.mfa?.is_enabled ? mfaCode : undefined)
-            if (response.ok) {
-                location.reload()
-            } else {
-                const data = await response.json()
-                setError(t(data.error))
-            }
-        } catch {
-            setError(t("dialogs.deleteAccount.error.network"))
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    return (
-        <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
-            <Dialog.Trigger className={destructiveEntryClasses} data-testid="open-delete-account">
-                {t("dialogs.deleteAccount.button")}
-            </Dialog.Trigger>
-
-            <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 bg-black/50" />
-
-                <Dialog.Content
-                    className="
-                        fixed w-80  p-4 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                        rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
-                    "
-                >
-                    <div className="flex justify-between items-center mb-2">
-                        <Dialog.Title className="text-lg font-semibold">{t("dialogs.deleteAccount.title")}</Dialog.Title>
-                        <Dialog.Description hidden>{t("dialogs.deleteAccount.title")}</Dialog.Description>
-                        <Dialog.Close className="p-1 rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
-                            <Cross1Icon />
-                        </Dialog.Close>
-                    </div>
-
-                    <div className="text-sm mb-3">
-                        {user?.mfa?.is_enabled ? t("dialogs.deleteAccount.descriptionWithMFA") : t("dialogs.deleteAccount.description")}
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            placeholder={t("dialogs.deleteAccount.passwordPlaceholder")}
-                            className="px-2 py-1 rounded border bg-gray-900 light:bg-white light:text-black"
-                            disabled={isLoading}
-                        />
-
-                        {user?.mfa?.is_enabled && (
-                            <input
-                                type="text"
-                                value={mfaCode}
-                                onChange={e => setMFACode(e.target.value)}
-                                placeholder={t("dialogs.deleteAccount.mfaPlaceholder")}
-                                className="px-2 py-1 rounded border bg-gray-900 light:bg-white light:text-black"
-                                disabled={isLoading}
-                            />
-                        )}
-
-                        {error && <div className="text-red-400 text-sm">{error}</div>}
-
-                        <div className="flex justify-end gap-2 mt-2">
-                            <Dialog.Close asChild>
-                                <button className={entryClasses} disabled={isLoading}>{t("dialogs.deleteAccount.cancel")}</button>
-                            </Dialog.Close>
-                            <button className={destructiveEntryClasses} onClick={handleConfirmDelete} disabled={isLoading}>
-                                {isLoading ? t("dialogs.deleteAccount.confirming") : t("dialogs.deleteAccount.confirm")}
-                            </button>
-                        </div>
-                    </div>
-                </Dialog.Content>
-            </Dialog.Portal>
-        </Dialog.Root>
     )
 }
 
