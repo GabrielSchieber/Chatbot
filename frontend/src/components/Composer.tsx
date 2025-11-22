@@ -66,7 +66,7 @@ export default function Composer({
                 flex flex-col max-h-[50vh] rounded-4xl bg-gray-800 light:bg-gray-200
                 ${files.length > 0 ? "gap-2 px-4 pt-3 pb-1" : "px-3 py-1"}
                 ${withBorderAndShadow ? "mb-5 border-t-4 border-gray-600 light:border-gray-400 shadow-xl/50" : "mt-10 mb-5"}
-                ${isMobile ? "w-[95%]" : "w-[60vw]"}
+                ${isMobile ? "w-[calc(100vw-10px)]" : "w-[60vw]"}
             `}
             onSubmit={e => e.preventDefault()}
             onClick={e => {

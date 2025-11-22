@@ -87,18 +87,24 @@ export default function Messages() {
     return (
         <div
             ref={ref}
-            className={`flex flex-col w-full px-5 pt-10 pb-5 overflow-y-auto duration-500 ${!chatUUID ? "h-[35%]" : "h-[100%]"} ${!isMobile && "items-center"}`}
+            className={`flex flex-col w-full px-3 pt-10 pb-5 items-center overflow-y-auto duration-500 ${!chatUUID ? "h-[35%]" : "h-[100%]"} ${!isMobile && "items-center"}`}
             onScroll={handleScroll}
         >
             {messages.map((m, i) => (
-                <div key={m.id} className={`flex flex-col gap-0.5 ${m.is_from_user ? "items-end" : "items-start"} ${!isMobile && "w-[60vw]"}`}>
+                <div
+                    key={m.id}
+                    className={`
+                        flex flex-col gap-0.5 ${isMobile ? "w-full" : "w-[60vw]"}
+                        ${editingMessageIndex === i && isMobile ? "items-center" : m.is_from_user ? "items-end" : "items-start"}
+                    `}
+                >
                     {editingMessageIndex === i ? (
                         <Editor index={editingMessageIndex} setIndex={setEditingMessageIndex} />
                     ) : (
                         m.is_from_user ? (
                             <>
                                 <div
-                                    className={`flex flex-col gap-1 min-w-20 px-3 py-2 rounded-2xl bg-gray-800 light:bg-gray-200 ${isMobile ? "max-w-full" : "max-w-[80%]"}`}
+                                    className={`flex flex-col gap-1 min-w-20 px-3 py-2 rounded-xl bg-gray-800 light:bg-gray-200 ${isMobile ? "max-w-full" : "max-w-[80%]"}`}
                                     data-testid={`message-${i}`}
                                 >
                                     {m.files.length > 0 &&
