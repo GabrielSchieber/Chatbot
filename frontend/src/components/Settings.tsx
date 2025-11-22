@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronDownIcon, Cross1Icon, EnvelopeClosedIcon, GearIcon, LockClosedIcon, MixerHorizontalIcon, MixerVerticalIcon, PersonIcon } from "@radix-ui/react-icons"
 import { Dialog, Select, Tabs } from "radix-ui"
-import { useState, type ReactNode, type SetStateAction, type Dispatch } from "react"
+import { useState, type ReactNode, type SetStateAction, type Dispatch, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 
 import { ArchivedChatsDialog } from "./ArchivedChatsDialog"
@@ -21,6 +21,14 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
 
     const [currentTab, setCurrentTab] = useState(t("settings.general"))
 
+    const [isScreenHeightSmall, setIsScreenHeightSmall] = useState(window.innerHeight < 430)
+
+    useEffect(() => {
+        const onResize = () => setIsScreenHeightSmall(window.innerHeight < 430)
+        window.addEventListener("resize", onResize)
+        return () => window.removeEventListener("resize", onResize)
+    }, [])
+
     return (
         <Dialog.Root>
             <Dialog.Trigger className={itemClassNames} data-testid="open-settings">
@@ -36,8 +44,8 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                 <Dialog.Content>
                     <Tabs.Root
                         className={`
-                            fixed flex top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 text-white light:text-black
-                            ${isMobile ? "flex-col w-[calc(100vw-50px)] min-h-120" : "w-150 min-h-105"}
+                            fixed flex top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 text-white light:text-black
+                            ${isMobile ? "flex-col inset-0 size-full" : isScreenHeightSmall ? "inset-0 w-150 h-full" : "w-150 min-h-105"}
                         `}
                         value={currentTab}
                         onValueChange={v => setCurrentTab(v)}
@@ -122,7 +130,7 @@ function Content({ title, children }: { title: string, children: ReactNode }) {
     return (
         <Tabs.Content
             value={title}
-            className={`flex grow bg-gray-800 light:bg-gray-200 ${isMobile ? "rounded-b-xl" : "rounded-r-xl"}`}
+            className={`flex grow overflow-y-auto bg-gray-800 light:bg-gray-200 ${isMobile ? "rounded-b-xl" : "rounded-r-xl"}`}
             tabIndex={-1}
         >
             <section className="flex flex-col w-full">
