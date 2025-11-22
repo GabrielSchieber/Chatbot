@@ -114,16 +114,18 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
                         ${isMobile ? "inset-0 size-full" : "w-[75%] max-w-200 max-h-[80vh] top-[10vh] rounded-xl"}
                     `}
                 >
-                    <div className="flex p-4 items-center justify-between border-b">
-                        <Dialog.Title className="text-lg font-semibold">{t("archivedChats.title")}</Dialog.Title>
-                        <Dialog.Description hidden>{t("archivedChats.description")}</Dialog.Description>
-                        <div className="flex items-center gap-3">
-                            <ArchiveOrUnarchiveDialog action="archive" onConfirm={handleArchiveAll} />
-                            <ArchiveOrUnarchiveDialog action="unarchive" onConfirm={handleUnarchiveAll} />
-                            <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-200" data-testid="close-settings">
-                                <Cross1Icon className="size-5" />
-                            </Dialog.Close>
+                    <div className="flex p-3 items-center border-b">
+                        <div className="flex flex-wrap w-full gap-3 items-center justify-center">
+                            <Dialog.Title className="text-lg font-semibold">{t("archivedChats.title")}</Dialog.Title>
+                            <Dialog.Description hidden>{t("archivedChats.description")}</Dialog.Description>
+                            <div className="flex gap-3 items-center md:ml-auto">
+                                <ArchiveOrUnarchiveDialog action="archive" onConfirm={handleArchiveAll} />
+                                <ArchiveOrUnarchiveDialog action="unarchive" onConfirm={handleUnarchiveAll} />
+                            </div>
                         </div>
+                        <Dialog.Close className="ml-auto p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-200" data-testid="close-settings">
+                            <Cross1Icon className="size-5" />
+                        </Dialog.Close>
                     </div>
 
                     <div ref={entriesRef} className="flex flex-col gap-1 px-2 py-4 items-center overflow-y-auto" data-testid="archived-chats">
