@@ -98,7 +98,7 @@ export default function Messages() {
                         m.is_from_user ? (
                             <>
                                 <div
-                                    className="flex flex-col gap-1 min-w-20 max-w-[80%] px-3 py-2 rounded-2xl bg-gray-800 light:bg-gray-200"
+                                    className={`flex flex-col gap-1 min-w-20 px-3 py-2 rounded-2xl bg-gray-800 light:bg-gray-200 ${isMobile ? "max-w-full" : "max-w-[80%]"}`}
                                     data-testid={`message-${i}`}
                                 >
                                     {m.files.length > 0 &&
