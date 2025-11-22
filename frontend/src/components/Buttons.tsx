@@ -1,4 +1,4 @@
-import { ArchiveIcon, ArrowUpIcon, BoxModelIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, Cross2Icon, PauseIcon, Pencil1Icon, PlusIcon, TrashIcon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
+import { ArchiveIcon, ArrowUpIcon, CheckIcon, CopyIcon, Cross2Icon, PauseIcon, Pencil1Icon, PlusIcon, TrashIcon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
 import { t } from "i18next"
 import { DropdownMenu, Tooltip } from "radix-ui"
 import { useEffect, useState, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react"
@@ -17,8 +17,6 @@ export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
     setModel: Dispatch<SetStateAction<Model>>
     tabIndex?: number
 }) {
-    const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false)
-
     return (
         <DropdownMenu.Root>
             <TooltipButton
@@ -33,48 +31,30 @@ export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
             />
 
             <DropdownMenu.Portal>
-                <DropdownMenu.Content className={dropdownContentClassName + " mx-2"}>
+                <DropdownMenu.Content className={dropdownContentClassName + " mx-2 group data-[side=top]:flex-col-reverse"}>
                     <DropdownMenu.Item className={dropdownItemClassName} onClick={_ => fileInputRef.current?.click()}>
                         <UploadIcon className="size-6" /> {t("plusDropdown.addFiles")}
                     </DropdownMenu.Item>
 
-                    <DropdownMenu.Sub open={isModelDropdownOpen}>
-                        <DropdownMenu.SubTrigger
-                            className={dropdownItemClassName}
-                            onClick={e => {
-                                e.stopPropagation()
-                                setIsModelDropdownOpen(!isModelDropdownOpen)
-                            }}
-                            onKeyDown={e => e.key === "Enter" && setIsModelDropdownOpen(!isModelDropdownOpen)}
-                        >
-                            <BoxModelIcon className="size-6" />
-                            {t("plusDropdown.selectModel")}
-                            {isModelDropdownOpen ? (
-                                <ChevronLeftIcon className="size-6" />
-                            ) : (
-                                <ChevronRightIcon className="size-6" />
-                            )}
-                        </DropdownMenu.SubTrigger>
-
-                        <DropdownMenu.Portal>
-                            <DropdownMenu.SubContent className={dropdownContentClassName + " -translate-y-15"} sideOffset={12} onClick={e => e.stopPropagation()}>
-                                {(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
-                                    <DropdownMenu.Item
-                                        key={m}
-                                        className={dropdownItemClassName + " w-45 justify-between"}
-                                        onClick={e => {
-                                            e.preventDefault()
-                                            e.stopPropagation()
-                                            setModel(m)
-                                        }}
-                                    >
-                                        {m}
-                                        {m === model && <CheckIcon className="size-6" />}
-                                    </DropdownMenu.Item>
-                                ))}
-                            </DropdownMenu.SubContent>
-                        </DropdownMenu.Portal>
-                    </DropdownMenu.Sub>
+                    <div className="flex flex-col">
+                        <p className="ml-2 text-sm text-gray-400 light:text-gray-600">Models:</p>
+                        <div className="flex flex-col p-1 rounded-xl bg-gray-700/30 light:bg-gray-300/30">
+                            {(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
+                                <DropdownMenu.Item
+                                    key={m}
+                                    className={dropdownItemClassName + " w-45 justify-between"}
+                                    onClick={e => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setModel(m)
+                                    }}
+                                >
+                                    {m}
+                                    {m === model && <CheckIcon className="size-6" />}
+                                </DropdownMenu.Item>
+                            ))}
+                        </div>
+                    </div>
                 </DropdownMenu.Content>
             </DropdownMenu.Portal>
         </DropdownMenu.Root>
@@ -384,7 +364,7 @@ const dropdownContentClassName = `
 const dropdownItemClassName = `
     flex gap-1 px-3 py-2 rounded-xl cursor-pointer outline-none
     hover:bg-gray-700 light:hover:bg-gray-300
-    focus:bg-gray-700 light:focus:bg-gray-300
+    not-hover-none:focus:bg-gray-700 not-hover-none:light:focus:bg-gray-300
 `
 
 const chatDropdownItemClassName = "flex gap-2 px-3 py-2 items-center text-center rounded-xl cursor-pointer outline-none"
