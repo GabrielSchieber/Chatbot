@@ -106,7 +106,7 @@ export default function Messages() {
                                             <Attachments files={m.files} />
                                         </div>
                                     }
-                                    <div className="w-full whitespace-pre-wrap">
+                                    <div className="w-full wrap-anywhere whitespace-pre-wrap">
                                         {m.text}
                                     </div>
                                 </div>
@@ -118,7 +118,7 @@ export default function Messages() {
                             </>
                         ) : (
                             <>
-                                <div className="w-full whitespace-pre-wrap" data-testid={`message-${i}`}>
+                                <div className="w-full wrap-anywhere whitespace-pre-wrap" data-testid={`message-${i}`}>
                                     <ReactMarkdown
                                         children={m.text}
                                         remarkPlugins={[remarkGfm]}
