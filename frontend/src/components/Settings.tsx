@@ -53,7 +53,8 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                         <Tabs.List
                             className={`
                                 flex gap-1 p-4 items-start bg-gray-900 light:bg-gray-100
-                                ${isMobile ? "flex-row flex-wrap rounded-t-xl" : "flex-col rounded-l-xl"}
+                                ${isMobile ? "flex-row flex-wrap rounded-t-xl" : "flex-col"}
+                                ${!isMobile && !isScreenHeightSmall && "rounded-l-xl"}
                             `}
                         >
                             <Dialog.Close className={"ml-1 p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"} data-testid="close-settings">
@@ -67,26 +68,26 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
                             <Trigger icon={<PersonIcon className="size-4.5" />} title={t("settings.account")} />
                         </Tabs.List>
 
-                        <Content title={t("settings.general")}>
+                        <Content title={t("settings.general")} isScreenHeightSmall={isScreenHeightSmall}>
                             <Entry name={t("settings.theme")} item={<ThemeEntryItem />} />
                             <Entry name={t("settings.language")} item={<LanguageEntryItem setCurrentTab={setCurrentTab} />} />
                         </Content>
 
-                        <Content title={t("settings.customizations")}>
+                        <Content title={t("settings.customizations")} isScreenHeightSmall={isScreenHeightSmall}>
                             <Customizations />
                         </Content>
 
-                        <Content title={t("settings.data")}>
+                        <Content title={t("settings.data")} isScreenHeightSmall={isScreenHeightSmall}>
                             <Entry name={t("settings.archivedChats")} item={<ArchivedChatsDialog triggerClassName={entryClasses} />} />
                             <Entry name={t("settings.deleteChats")} item={<DeleteChatsEntryItem />} />
                         </Content>
 
-                        <Content title={t("settings.security")}>
+                        <Content title={t("settings.security")} isScreenHeightSmall={isScreenHeightSmall}>
                             <Entry name={t("settings.mfa")} item={<MFADialog triggerClassName={entryClasses} />} />
                             <Entry name={t("settings.logout")} item={<LogoutEntryItem />} />
                         </Content>
 
-                        <Content title={t("settings.account")}>
+                        <Content title={t("settings.account")} isScreenHeightSmall={isScreenHeightSmall}>
                             {user && (
                                 <div className="flex gap-2 py-3 items-center">
                                     <EnvelopeClosedIcon className="size-4.5" />
@@ -124,13 +125,13 @@ function Trigger({ icon, title }: { icon: ReactNode, title: string }) {
     )
 }
 
-function Content({ title, children }: { title: string, children: ReactNode }) {
+function Content({ title, isScreenHeightSmall, children }: { title: string, isScreenHeightSmall: boolean, children: ReactNode }) {
     const { isMobile } = useChat()
 
     return (
         <Tabs.Content
             value={title}
-            className={`flex grow overflow-y-auto bg-gray-800 light:bg-gray-200 ${isMobile ? "rounded-b-xl" : "rounded-r-xl"}`}
+            className={`flex grow overflow-y-auto bg-gray-800 light:bg-gray-200 ${!isMobile && !isScreenHeightSmall && "rounded-r-xl"}`}
             tabIndex={-1}
         >
             <section className="flex flex-col w-full">
