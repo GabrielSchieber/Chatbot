@@ -17,7 +17,7 @@ export default function Chat() {
             <Messages />
             <h1
                 className={`
-                    text-3xl font-semibold truncate transition-opacity duration-300
+                    text-3xl font-semibold text-center transition-opacity duration-300
                     ${chatUUID ? "fixed mt-25 top-0 bottom-0 translate-y-[35%] opacity-0 pointer-events-none" : "mb-5"}
                 `}
             >
