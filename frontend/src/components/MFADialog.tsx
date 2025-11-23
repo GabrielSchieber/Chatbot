@@ -7,12 +7,13 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from "react"
 import { useAuth } from "../providers/AuthProvider"
 import { useNotify } from "../providers/NotificationProvider"
 import { disableMFA, enableMFA, setupMFA } from "../utils/api"
+import { useChat } from "../providers/ChatProvider"
 
 export default function MFADialog({ triggerClassName }: { triggerClassName: string }) {
     const { user, setUser } = useAuth()
-    if (!user) return <></>
+    const { isMobile } = useChat()
 
-    const [step, setStep] = useState<Step>(user.mfa.is_enabled ? "disable" : "setup")
+    const [step, setStep] = useState<Step>(user?.mfa.is_enabled ? "disable" : "setup")
     const [authURL, setAuthURL] = useState("")
     const [secret, setSecret] = useState("")
     const [backupCodes, setBackupCodes] = useState<string[]>([])
@@ -27,19 +28,20 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
     }, [step])
 
     return (
-        <Dialog.Root onOpenChange={_ => setStep(user.mfa.is_enabled ? "disable" : "setup")}>
+        <Dialog.Root onOpenChange={_ => setStep(user?.mfa.is_enabled ? "disable" : "setup")}>
             <Dialog.Trigger className={triggerClassName}>
-                {user.mfa.is_enabled ? t("mfa.buttons.disable") : t("mfa.buttons.enable")}
+                {user?.mfa.is_enabled ? t("mfa.buttons.disable") : t("mfa.buttons.enable")}
             </Dialog.Trigger>
 
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/50" />
 
                 <Dialog.Content
-                    className="
-                        fixed flex flex-col gap-5 p-6 top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2
+                    className={`
+                        fixed flex flex-col gap-5 p-6 top-1/2 -translate-y-1/2
                         rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
-                    "
+                        ${isMobile ? "inset-0 mx-2 h-fit" : "right-1/2 translate-x-1/2"}
+                    `}
                     onEscapeKeyDown={e => isLocked && e.preventDefault()}
                     onInteractOutside={e => isLocked && e.preventDefault()}
                 >
