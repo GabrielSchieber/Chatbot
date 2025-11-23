@@ -5,20 +5,18 @@ export default function ConfirmDialog({
     trigger,
     title,
     description,
-    confirmText = "Confirm",
+    onConfirm,
     cancelText = "Cancel",
-    isDestructive = true,
-    onConfirm
+    confirmText = "Confirm",
+    isDestructive = true
 }: {
     trigger: ReactNode
     title: string
-    description?: string
-    confirmText?: string
-    cancelText?: string
-    onConfirmClassName?: string
-    onCancelClassName?: string
-    isDestructive?: boolean
+    description: string
     onConfirm: () => void
+    cancelText?: string
+    confirmText?: string
+    isDestructive?: boolean
 }) {
     return (
         <AlertDialog.Root>
@@ -27,39 +25,40 @@ export default function ConfirmDialog({
             </AlertDialog.Trigger>
 
             <AlertDialog.Portal>
-                <AlertDialog.Overlay className="bg-black/50 fixed inset-0" />
+                <AlertDialog.Overlay className="fixed inset-0 bg-black/50" />
+
                 <AlertDialog.Content
                     className="
-                        fixed w-[90vw] max-w-sm p-6 rounded-xl shadow-xl top-1/2 left-1/2
-                        -translate-x-1/2 -translate-y-1/2 bg-gray-800 light:bg-gray-200
+                        fixed flex flex-col top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                        w-[90vw] max-w-md gap-3 p-6 rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
                     "
                 >
-                    <AlertDialog.Title className="text-lg font-semibold text-white light:text-black">
+                    <AlertDialog.Title className="text-xl font-bold">
                         {title}
                     </AlertDialog.Title>
-                    {description && (
-                        <AlertDialog.Description className="mt-2 text-sm text-gray-300 light:text-gray-700">
-                            {description}
-                        </AlertDialog.Description>
-                    )}
 
-                    <div className="mt-4 flex justify-end gap-2">
+                    <AlertDialog.Description className="text-lg">
+                        {description}
+                    </AlertDialog.Description>
+
+                    <div className="flex gap-3 justify-end text-lg font-semibold">
                         <AlertDialog.Cancel
                             className="
                                 px-4 py-2 rounded cursor-pointer text-white light:text-black
-                                bg-gray-700 hover:bg-gray-500/50 light:bg-gray-300
+                                bg-gray-700 hover:bg-gray-600 light:bg-gray-300 light:hover:bg-gray-400
                             "
                         >
                             {cancelText}
                         </AlertDialog.Cancel>
 
                         <AlertDialog.Action
-                            className={"px-4 py-2 rounded cursor-pointer " +
-                                (isDestructive ?
+                            className={`
+                                px-4 py-2 rounded cursor-pointer
+                                ${isDestructive ?
                                     "text-white bg-red-600 hover:bg-red-700" :
-                                    "text-white light:text-black bg-gray-700 hover:bg-gray-500/50 light:bg-gray-300"
-                                )
-                            }
+                                    "text-white light:text-black bg-gray-900 hover:bg-gray-900/30 light:bg-gray-100 light:hover:100/30"
+                                }
+                            `}
                             onClick={onConfirm}
                         >
                             {confirmText}
