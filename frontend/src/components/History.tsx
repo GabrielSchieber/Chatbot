@@ -165,8 +165,10 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
 
                             <DropdownMenu.Portal>
                                 <DropdownMenu.Content
-                                    className="flex flex-col p-2 rounded-xl translate-x-10 shadow-xl/50 border border-gray-500/50 bg-gray-700 light:bg-gray-300"
+                                    className="flex flex-col p-2 rounded-xl shadow-xl/50 border border-gray-500/50 bg-gray-700 light:bg-gray-300"
                                     sideOffset={4}
+                                    align="start"
+                                    alignOffset={-10}
                                 >
                                     <RenameButton onSelect={() => startRename(c)} />
                                     <ArchiveButton chat={c} />
