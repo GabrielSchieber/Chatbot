@@ -20,50 +20,47 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         shouldSet.current = false
 
         if (chatUUID) {
-            getChat(chatUUID).then(response => {
+            getChat(chatUUID).then(async response => {
                 if (response.ok) {
-                    response.json().then(chat => setChats(previous => !previous.find(c => c.uuid === chat.uuid) ? [...previous, chat] : previous))
+                    const chat = await response.json()
+                    setChats(previous => !previous.find(c => c.uuid === chat.uuid) ? [...previous, chat] : previous)
                 }
             })
 
-            getMessages(chatUUID).then(response => {
+            getMessages(chatUUID).then(async response => {
                 if (response.ok) {
-                    response.json().then(data => {
-                        setMessages(data)
+                    const fetchedMessages: Message[] = await response.json()
+                    setMessages(fetchedMessages)
 
-                        for (const m of data) {
-                            for (const f of m.files) {
-                                if (getFileType(f.name) === "Image" && f.content === null) {
-                                    getMessageFileContent(chatUUID, f.id).then(response => {
-                                        if (response.ok) {
-                                            response.blob().then(blob => {
-                                                setMessages(previous =>
-                                                    previous.map(p => (
-                                                        p.id !== m.id ? p :
-                                                            { ...p, files: p.files.map(file => file.id === f.id ? { ...file, content: blob } : file) }
-                                                    ))
-                                                )
-                                            })
-                                        }
-                                    })
+                    for (const m of fetchedMessages) {
+                        for (const f of m.files) {
+                            if (getFileType(f.name) === "Image" && f.content === null) {
+                                const contentResponse = await getMessageFileContent(chatUUID, f.id)
+                                if (response.ok) {
+                                    const fetchedContent = await contentResponse.blob()
+                                    setMessages(previous =>
+                                        previous.map(
+                                            p => p.id !== m.id ? p :
+                                                { ...p, files: p.files.map(file => file.id === f.id ? { ...file, content: fetchedContent } : file) }
+                                        )
+                                    )
                                 }
                             }
                         }
-                    })
+                    }
                 } else {
                     location.href = "/"
                 }
             })
         }
 
-        getChats(0, 1, true).then(response => {
+        getChats(0, 1, true).then(async response => {
             if (response.ok) {
-                response.json().then(chats => {
-                    if (chats.length > 0) {
-                        setChats(previous => [...previous, ...chats])
-                    }
-                    setIsLoading(false)
-                })
+                const chats = await response.json()
+                if (chats.length > 0) {
+                    setChats(previous => [...previous, ...chats])
+                }
+                setIsLoading(false)
             }
         })
     }, [])

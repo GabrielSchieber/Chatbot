@@ -8,12 +8,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        me().then(response => {
+        me().then(async response => {
             if (response.ok) {
-                response.json().then(data => {
-                    setUser(data)
-                    setLoading(false)
-                })
+                const data = await response.json()
+                setUser(data)
+                setLoading(false)
             } else {
                 setUser(null)
                 setLoading(false)
