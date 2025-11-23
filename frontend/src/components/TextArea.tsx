@@ -18,7 +18,7 @@ export default function TextArea({ ref, text, setText, sendMessageWithEvent, sel
     }, [text])
 
     return (
-        <div className="flex flex-1">
+        <div className="flex flex-1 min-w-10">
             <textarea
                 ref={ref}
                 className="flex-1 p-2 overflow-hidden resize-none outline-none"
