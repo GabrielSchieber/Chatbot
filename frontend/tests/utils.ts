@@ -64,10 +64,8 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
     await page.getByText("Generate QR and secret codes", { exact: true }).click()
     await expect(page.getByText("Step 2: Verify", { exact: true })).toBeVisible()
 
-    const secretText = await page.getByText(/Secret:/).textContent()
-    const secret = secretText?.split("Secret:")[1].trim()!
-
-    const code = authenticator.generate(secret)
+    const secret = await page.getByTestId("mfa-secret").textContent()
+    const code = authenticator.generate(secret!)
 
     await page.getByPlaceholder("6-digit code", { exact: true }).fill(code)
     await page.getByRole("button", { name: "Enable", exact: true }).click()
@@ -75,7 +73,7 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
     await expect(page.getByText("Enabling", { exact: true })).toBeVisible()
     await expect(page.getByText("Step 3: Backup", { exact: true })).toBeVisible({ timeout: 15000 })
 
-    await page.getByRole("list").getByRole("button").first().click()
+    await page.getByRole("button").first().click()
 
     const clipboard = await page.evaluate(_ => navigator.clipboard.readText())
     expect(clipboard.length).toEqual(6 * 2 * 10 + 9)

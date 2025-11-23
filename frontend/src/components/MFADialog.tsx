@@ -183,7 +183,7 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
             </div>
             <div className={`flex gap-1 px-2 py-1 rounded-xl bg-gray-700 light:bg-gray-300 ${isMobile ? "flex-col" : "items-center"}`}>
                 <p className="px-2 font-semibold">{t("mfa.labels.secret")}</p>
-                <p className={`px-3 py-1 wrap-anywhere ${isMobile && "text-sm"} rounded-lg bg-gray-800/30`}>{secret}</p>
+                <p className={`px-3 py-1 wrap-anywhere ${isMobile && "text-sm"} rounded-lg bg-gray-800/30`} data-testid="mfa-secret">{secret}</p>
                 <button
                     className="flex gap-2 md:ml-2 px-2 py-0.5 items-center rounded cursor-pointer hover:bg-gray-600/50 light:hover:bg-gray-400/50"
                     onClick={_ => {
