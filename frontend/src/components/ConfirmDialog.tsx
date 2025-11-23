@@ -44,8 +44,11 @@ export default function ConfirmDialog({
                     <div className="flex gap-3 justify-end text-lg font-semibold">
                         <AlertDialog.Cancel
                             className="
-                                px-4 py-2 rounded cursor-pointer text-white light:text-black
-                                bg-gray-700 hover:bg-gray-600 light:bg-gray-300 light:hover:bg-gray-400
+                                px-4 py-2 rounded-xl cursor-pointer
+                                text-white light:text-black
+                                border border-gray-500
+                                bg-gray-700 light:bg-gray-300
+                                hover:bg-gray-700/50 light:hover:bg-gray-300/50
                             "
                         >
                             {cancelText}
@@ -53,10 +56,15 @@ export default function ConfirmDialog({
 
                         <AlertDialog.Action
                             className={`
-                                px-4 py-2 rounded cursor-pointer
+                                px-4 py-2 rounded-xl cursor-pointer
                                 ${isDestructive ?
                                     "text-white bg-red-600 hover:bg-red-700" :
-                                    "text-white light:text-black bg-gray-900 hover:bg-gray-900/30 light:bg-gray-100 light:hover:100/30"
+                                    `
+                                        border border-gray-500
+                                        text-white light:text-black
+                                        bg-gray-900 light:bg-gray-100
+                                        hover:bg-gray-900/50 light:hover:bg-gray-100/50
+                                    `
                                 }
                             `}
                             onClick={onConfirm}
