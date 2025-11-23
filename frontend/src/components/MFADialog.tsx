@@ -263,7 +263,7 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
 
                     <button
                         className={`
-                            flex gap-2 px-2 py-1 items-center cursor-pointer rounded-lg bg-gray-700/80
+                            flex gap-2 px-2 py-1 items-center cursor-pointer rounded-lg bg-gray-700/80 light:bg-gray-300/80
                             ${!isMobile && "rounded-lg hover:bg-gray-600/50 light:hover:bg-gray-400/50"}
                         `}
                         onClick={handleDownload}
