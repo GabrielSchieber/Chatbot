@@ -114,7 +114,7 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
                         ${isMobile ? "inset-0 size-full" : "w-[75%] max-w-200 max-h-[80vh] top-[10vh] rounded-xl"}
                     `}
                 >
-                    <div className="flex p-3 items-center border-b">
+                    <div className="flex gap-3 p-3 items-center border-b">
                         <div className="flex flex-wrap w-full gap-3 items-center justify-center">
                             <Dialog.Title className="text-lg font-semibold">{t("archivedChats.title")}</Dialog.Title>
                             <Dialog.Description hidden>{t("archivedChats.description")}</Dialog.Description>
