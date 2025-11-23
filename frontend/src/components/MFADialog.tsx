@@ -193,7 +193,7 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
                     }}
                 >
                     {isCopyButtonChecked ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />}
-                    {isCopyButtonChecked ? "Copied" : "Copy"}
+                    {isCopyButtonChecked ? t("copyButton.tooltip.clicked") : t("copyButton.tooltip")}
                 </button>
             </div>
             <form className="flex flex-col gap-2 items-center" onSubmit={handleEnable}>
