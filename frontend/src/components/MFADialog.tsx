@@ -274,8 +274,8 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
                 </div>
             </div>
 
-            <button className="flex gap-2 px-4 py-1 items-center rounded cursor-pointer bg-gray-700/40" onClick={_ => setHasConfirmedBackup(!hasConfirmedBackup)}>
-                <div className="flex min-w-6.5 max-w-6.5 min-h-6.5 max-h-6.5 items-center rounded bg-gray-700 light:bg-gray-300">
+            <button className="flex gap-2 min-h-12 px-4 items-center rounded-xl cursor-pointer bg-gray-700/40 light:bg-gray-300" onClick={_ => setHasConfirmedBackup(!hasConfirmedBackup)}>
+                <div className="flex min-w-6.5 max-w-6.5 min-h-6.5 max-h-6.5 items-center rounded-lg bg-gray-700 light:bg-gray-100">
                     {hasConfirmedBackup && <CheckIcon className="size-6" />}
                 </div>
                 <p>{t("mfa.messages.backupConfirm")}</p>
