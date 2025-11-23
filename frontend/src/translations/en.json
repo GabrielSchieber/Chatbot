@@ -73,6 +73,7 @@
     "mfa.buttons.generate": "Generate QR and secret codes",
     "mfa.buttons.generating": "Generating",
     "mfa.buttons.close": "Close",
+    "mfa.buttons.download": "Download",
     "mfa.messages.errorGenerate": "There was an error generating QR and secret codes.",
     "mfa.messages.errorInvalidPassword": "The password is invalid.",
     "mfa.messages.errorInvalidCode": "The code is invalid.",

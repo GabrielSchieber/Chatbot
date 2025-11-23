@@ -74,6 +74,7 @@
     "mfa.buttons.generate": "Gerar QR e códigos secretos",
     "mfa.buttons.generating": "Gerando",
     "mfa.buttons.close": "Fechar",
+    "mfa.buttons.download": "Baixar",
     "mfa.messages.errorGenerate": "Ocorreu um erro ao gerar o QR e os códigos secretos.",
     "mfa.messages.errorInvalidPassword": "A senha está inválida.",
     "mfa.messages.errorInvalidCode": "O código está inválido.",

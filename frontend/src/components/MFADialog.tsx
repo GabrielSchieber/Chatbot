@@ -215,6 +215,8 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
 }
 
 function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], setIsLocked: Dispatch<SetStateAction<boolean>> }) {
+    const { isMobile } = useChat()
+
     const [isCopyButtonChecked, setIsCopyButtonChecked] = useState(false)
     const [hasConfirmedBackup, setHasConfirmedBackup] = useState(false)
 
@@ -233,19 +235,22 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
     useEffect(() => setIsLocked(!hasConfirmedBackup), [hasConfirmedBackup])
 
     return (
-        <div className="flex flex-col gap-2 p-2 items-center rounded-xl bg-gray-700/30 light:bg-gray-300/30">
+        <div className="flex flex-col gap-3 items-center">
             <p className={paragraphClassName}>{t("mfa.messages.backupInfo")}</p>
 
-            <ul className="flex w-[60%] min-w-70 px-4 py-2 justify-between rounded-xl bg-gray-700 light:bg-gray-300">
-                <div>
+            <div className="flex flex-col gap-2 px-3 py-2 items-center rounded-lg bg-gray-700/50 light:bg-gray-300/50">
+                <ul className="px-3 py-1 rounded-lg bg-gray-700/80 light:bg-gray-300/80">
                     {backupCodes.map(c =>
                         <li key={c} className="font-mono">{c}</li>
                     )}
-                </div>
+                </ul>
 
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col size-full gap-3">
                     <button
-                        className="p-1.5 rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"
+                        className={`
+                            flex gap-2 px-2 py-1 items-center cursor-pointer rounded-lg bg-gray-700/80 light:bg-gray-300/80
+                            ${!isMobile && "rounded-lg hover:bg-gray-600/50 light:hover:bg-gray-400/50"}
+                        `}
                         onClick={_ => {
                             navigator.clipboard.writeText(backupCodes.join("\n"))
                             setIsCopyButtonChecked(true)
@@ -253,19 +258,24 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
                         }}
                     >
                         {isCopyButtonChecked ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />}
+                        {t(isCopyButtonChecked ? "copyButton.tooltip.clicked" : "copyButton.tooltip")}
                     </button>
 
                     <button
-                        className="p-1.5 rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"
+                        className={`
+                            flex gap-2 px-2 py-1 items-center cursor-pointer rounded-lg bg-gray-700/80
+                            ${!isMobile && "rounded-lg hover:bg-gray-600/50 light:hover:bg-gray-400/50"}
+                        `}
                         onClick={handleDownload}
                     >
                         <DownloadIcon className="size-4.5" />
+                        {t("mfa.buttons.download")}
                     </button>
                 </div>
-            </ul>
+            </div>
 
-            <button className="flex gap-2 p-1 items-center rounded cursor-pointer" onClick={_ => setHasConfirmedBackup(!hasConfirmedBackup)}>
-                <div className="flex size-6 rounded bg-gray-700 light:bg-gray-300">
+            <button className="flex gap-2 px-4 py-1 items-center rounded cursor-pointer bg-gray-700/40" onClick={_ => setHasConfirmedBackup(!hasConfirmedBackup)}>
+                <div className="flex min-w-6.5 max-w-6.5 min-h-6.5 max-h-6.5 items-center rounded bg-gray-700 light:bg-gray-300">
                     {hasConfirmedBackup && <CheckIcon className="size-6" />}
                 </div>
                 <p>{t("mfa.messages.backupConfirm")}</p>
