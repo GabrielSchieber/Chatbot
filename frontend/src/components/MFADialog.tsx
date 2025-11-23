@@ -176,16 +176,16 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
     }
 
     return (
-        <div className="flex flex-col gap-2 items-center">
+        <div className="flex flex-col gap-3 items-center">
             <p className={paragraphClassName}>{t("mfa.messages.setupQrInfo")}</p>
             <div className="my-2">
                 <QRCodeCanvas value={authURL} size={200} />
             </div>
-            <div className={`flex gap-1 px-2 py-1    rounded bg-gray-700 light:bg-gray-300 ${isMobile ? "flex-col" : "items-center"}`}>
-                <p className="px-1 font-semibold">{t("mfa.labels.secret")}</p>
-                <p className={`px-2 wrap-anywhere ${isMobile && "text-sm"} rounded-lg bg-gray-800/30`}>{secret}</p>
+            <div className={`flex gap-1 px-2 py-1 rounded-xl bg-gray-700 light:bg-gray-300 ${isMobile ? "flex-col" : "items-center"}`}>
+                <p className="px-2 font-semibold">{t("mfa.labels.secret")}</p>
+                <p className={`px-3 py-1 wrap-anywhere ${isMobile && "text-sm"} rounded-lg bg-gray-800/30`}>{secret}</p>
                 <button
-                    className="flex gap-2 px-1 py-0.5 items-center rounded cursor-pointer hover:bg-gray-600/50 light:hover:bg-gray-400/50"
+                    className="flex gap-2 md:ml-2 px-2 py-0.5 items-center rounded cursor-pointer hover:bg-gray-600/50 light:hover:bg-gray-400/50"
                     onClick={_ => {
                         navigator.clipboard.writeText(secret)
                         setIsCopyButtonChecked(true)
@@ -196,7 +196,7 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
                     {isCopyButtonChecked ? t("copyButton.tooltip.clicked") : t("copyButton.tooltip")}
                 </button>
             </div>
-            <form className="flex flex-col gap-2 items-center" onSubmit={handleEnable}>
+            <form className="flex flex-col gap-3 items-center" onSubmit={handleEnable}>
                 <input
                     className={inputClassNames}
                     value={code}
@@ -274,7 +274,10 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
                 </div>
             </div>
 
-            <button className="flex gap-2 min-h-12 px-4 items-center rounded-xl cursor-pointer bg-gray-700/40 light:bg-gray-300" onClick={_ => setHasConfirmedBackup(!hasConfirmedBackup)}>
+            <button
+                className="flex gap-2 min-h-10 px-4 py-1 items-center rounded-xl cursor-pointer bg-gray-700/40 light:bg-gray-300"
+                onClick={_ => setHasConfirmedBackup(!hasConfirmedBackup)}
+            >
                 <div className="flex min-w-6.5 max-w-6.5 min-h-6.5 max-h-6.5 items-center rounded-lg bg-gray-700 light:bg-gray-100">
                     {hasConfirmedBackup && <CheckIcon className="size-6" />}
                 </div>
@@ -327,14 +330,14 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
     }
 
     return (
-        <div className="flex flex-col gap-2 self-center">
+        <div className="flex flex-col gap-3 items-center">
             <p className={paragraphClassName}>{t("mfa.messages.disableConfirm")}</p>
             <p className={paragraphClassName}>
                 {t(method === "authenticator" ? "mfa.messages.authenticatorDisableInstruction" : "mfa.messages.recoveryDisableInstruction")}
             </p>
-            <form className="flex flex-col gap-2 items-center" onSubmit={handleDisable}>
+            <form className="flex flex-col w-full gap-3 items-center" onSubmit={handleDisable}>
                 <input
-                    className={inputClassNames + " w-[70%]"}
+                    className={inputClassNames + " w-full md:w-[70%]"}
                     value={code}
                     placeholder={t(method === "authenticator" ? "auth.mfa.placeholder" : "auth.mfaRecovery.placeholder")}
                     maxLength={method === "authenticator" ? 6 : 12}
@@ -363,7 +366,7 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
 
 function DisabledDialog() {
     return (
-        <div className="flex flex-col gap-1 items-center">
+        <div className="flex flex-col gap-3 items-center">
             <p className={paragraphClassName}>{t("mfa.messages.disabledSuccess")}</p>
             <Dialog.Close className={buttonClassNames}>{t("mfa.buttons.close")}</Dialog.Close>
         </div>
