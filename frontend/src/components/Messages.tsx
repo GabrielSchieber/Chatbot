@@ -89,13 +89,15 @@ export default function Messages() {
         <div ref={ref} className={`flex flex-col w-full px-2 py-10 items-center overflow-y-auto ${!chatUUID ? "h-[35%]" : "h-full"}`} onScroll={handleScroll}>
             <div className={`flex flex-col gap-3 ${isMobile ? "w-full" : "w-[60vw]"}`}>
                 {messages.map((m, i) =>
-                    editingMessageIndex === i ? (
-                        <Editor index={i} setIndex={setEditingMessageIndex} />
-                    ) : m.is_from_user ? (
-                        <UserMessage index={i} text={m.text} files={m.files} onEditClick={() => setEditingMessageIndex(i)} />
-                    ) : (
-                        <BotMessage index={i} text={m.text} model={m.model} />
-                    )
+                    <React.Fragment key={i}>
+                        {editingMessageIndex === i ? (
+                            <Editor index={i} setIndex={setEditingMessageIndex} />
+                        ) : m.is_from_user ? (
+                            <UserMessage index={i} text={m.text} files={m.files} onEditClick={() => setEditingMessageIndex(i)} />
+                        ) : (
+                            <BotMessage index={i} text={m.text} model={m.model} />
+                        )}
+                    </React.Fragment>
                 )}
             </div>
         </div>
