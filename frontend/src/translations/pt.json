@@ -98,6 +98,7 @@
     "cancelButton.tooltip": "Cancelar",
     "editButton.tooltip": "Editar",
     "copyButton.tooltip": "Copiar",
+    "copyButton.tooltip.clicked": "Copiado",
     "regenerateButton.tooltip": "Regenerar",
     "regenerateButton.tooltipUsedModel": "Usado {{model}}",
     "renameButton.label": "Renomear",

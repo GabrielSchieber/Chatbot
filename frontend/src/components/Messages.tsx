@@ -1,4 +1,5 @@
 import { CheckIcon, CopyIcon } from "@radix-ui/react-icons"
+import { t } from "i18next"
 import React, { useEffect, useRef, useState, type ReactElement } from "react"
 import ReactMarkdown from "react-markdown"
 import { useParams } from "react-router"
@@ -179,7 +180,7 @@ function BotMessage({ index, text, model }: { index: number, text: string, model
                                             onClick={copyCodeBlock}
                                         >
                                             {copied ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />}
-                                            {copied ? "Copied" : "Copy"}
+                                            {copied ? t("copyButton.tooltip.clicked") : t("copyButton.tooltip")}
                                         </button>
                                     </div>
                                     <pre className="overflow-x-auto m-0" {...props}>
