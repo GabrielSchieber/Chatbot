@@ -184,7 +184,7 @@ function Entry({ entry }: { entry: SearchEntry }) {
                 </p>
             </div>
 
-            <div className="flex flex-1 flex-col gap-2 justify-between">
+            <div className="flex flex-1 flex-col gap-2 justify-between wrap-anywhere whitespace-pre-wrap">
                 <p className="px-2 rounded text-lg font-semibold bg-gray-600/50 light:bg-gray-400/40">{entry.title}</p>
 
                 {entry.matches.length > 0 &&
