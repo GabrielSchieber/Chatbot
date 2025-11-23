@@ -140,6 +140,7 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
     setStep: Dispatch<SetStateAction<Step>>
     setIsLocked: Dispatch<SetStateAction<boolean>>
 }) {
+    const { isMobile } = useChat()
     const notify = useNotify()
 
     const [code, setCode] = useState("")
@@ -180,10 +181,11 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
             <div className="my-2">
                 <QRCodeCanvas value={authURL} size={200} />
             </div>
-            <div className="flex gap-2 px-2 py-0.5 items-center rounded bg-gray-700 light:bg-gray-300">
-                <p>{t("mfa.labels.secret")} {secret}</p>
+            <div className={`flex gap-1 px-2 py-1    rounded bg-gray-700 light:bg-gray-300 ${isMobile ? "flex-col" : "items-center"}`}>
+                <p className="px-1 font-semibold">{t("mfa.labels.secret")}</p>
+                <p className={`px-2 wrap-anywhere ${isMobile && "text-sm"} rounded-lg bg-gray-800/30`}>{secret}</p>
                 <button
-                    className="p-1 rounded cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"
+                    className="flex gap-2 px-1 py-0.5 items-center rounded cursor-pointer hover:bg-gray-600/50 light:hover:bg-gray-400/50"
                     onClick={_ => {
                         navigator.clipboard.writeText(secret)
                         setIsCopyButtonChecked(true)
@@ -191,6 +193,7 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
                     }}
                 >
                     {isCopyButtonChecked ? <CheckIcon className="size-4.5" /> : <CopyIcon className="size-4.5" />}
+                    {isCopyButtonChecked ? "Copied" : "Copy"}
                 </button>
             </div>
             <form className="flex flex-col gap-2 items-center" onSubmit={handleEnable}>
