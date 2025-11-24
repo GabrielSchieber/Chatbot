@@ -289,8 +289,7 @@ test("user can delete account", async ({ page }) => {
 
     await expect(confirmDialog.getByRole("button", { name: "Cancel", exact: true })).toBeVisible()
 
-    const passwordInput = confirmDialog.locator("input[type='password']")
-    await passwordInput.fill(user.password)
+    await confirmDialog.getByLabel("Password", { exact: true }).fill(user.password)
 
     await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
     await page.waitForURL("/login")
@@ -299,7 +298,7 @@ test("user can delete account", async ({ page }) => {
     await page.fill("input[type='password']", user.password)
     await page.click("button")
 
-    await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
+    await expect(page.getByText("The email and/or password are invalid.", { exact: true })).toBeVisible()
 })
 
 test("user can delete account with MFA enabled", async ({ page }) => {
@@ -313,14 +312,14 @@ test("user can delete account with MFA enabled", async ({ page }) => {
     const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
     await expect(confirmDialog).toBeVisible()
 
-    await confirmDialog.locator("input[type='password']").fill(user.password)
+    await confirmDialog.getByLabel("Password", { exact: true }).fill(user.password)
 
     const response = await apiFetch(`/test/get-mfa-secret/?email=${user.email}`, {})
     expect(response.status).toBe(200)
     const secret = await response.json()
     const code = authenticator.generate(secret)
 
-    await confirmDialog.getByPlaceholder("MFA code").fill(code)
+    await confirmDialog.getByPlaceholder("6-digit code").fill(code)
     await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
 
     await page.waitForURL("/login")
@@ -328,7 +327,7 @@ test("user can delete account with MFA enabled", async ({ page }) => {
     await page.fill("input[type='email']", user.email)
     await page.fill("input[type='password']", user.password)
     await page.click("button")
-    await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
+    await expect(page.getByText("The email and/or password are invalid.", { exact: true })).toBeVisible()
 })
 
 test("user can delete account with an MFA backup code", async ({ page }) => {
@@ -342,8 +341,11 @@ test("user can delete account with an MFA backup code", async ({ page }) => {
     const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
     await expect(confirmDialog).toBeVisible()
 
-    await confirmDialog.getByPlaceholder("Password").fill(user.password)
-    await confirmDialog.getByPlaceholder("MFA code").fill(backupCodes[0])
+    await confirmDialog.getByLabel("Password", { exact: true }).fill(user.password)
+
+    await confirmDialog.getByRole("tab", { name: "Recovery Code", exact: true }).click()
+    await confirmDialog.getByPlaceholder("12-character recovery code").fill(backupCodes[0])
+
     await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
 
     await page.waitForURL("/login")
@@ -351,7 +353,7 @@ test("user can delete account with an MFA backup code", async ({ page }) => {
     await page.fill("input[type='email']", user.email)
     await page.fill("input[type='password']", user.password)
     await page.click("button")
-    await expect(page.getByText("Email and/or password are invalid.", { exact: true })).toBeVisible()
+    await expect(page.getByText("The email and/or password are invalid.", { exact: true })).toBeVisible()
 })
 
 test("user cannot delete account with an incorrect password", async ({ page }) => {
@@ -365,18 +367,18 @@ test("user cannot delete account with an incorrect password", async ({ page }) =
     const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
     await expect(confirmDialog).toBeVisible()
 
-    await confirmDialog.locator("input[type='password']").fill("wrong-password")
+    await confirmDialog.getByLabel("Password", { exact: true }).fill("wrong-password")
 
     const response = await apiFetch(`/test/get-mfa-secret/?email=${user.email}`, {})
     expect(response.status).toBe(200)
     const secret = await response.json()
     const code = authenticator.generate(secret)
 
-    await confirmDialog.getByPlaceholder("MFA code").fill(code)
+    await confirmDialog.getByPlaceholder("6-digit code").fill(code)
     await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
 
     await expect(confirmDialog).toBeVisible()
-    await expect(confirmDialog.getByText("Invalid password.", { exact: true })).toBeVisible()
+    await expect(confirmDialog.getByText("The password is invalid.", { exact: true })).toBeVisible()
 })
 
 test("user cannot delete account with an invalid MFA code", async ({ page }) => {
@@ -392,12 +394,12 @@ test("user cannot delete account with an invalid MFA code", async ({ page }) => 
     const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
     await expect(confirmDialog).toBeVisible()
 
-    await confirmDialog.getByPlaceholder("Password").fill(user.password)
-    await confirmDialog.getByPlaceholder("MFA code").fill("000000")
+    await confirmDialog.getByLabel("Password", { exact: true }).fill(user.password)
+    await confirmDialog.getByPlaceholder("6-digit code").fill("000000")
     await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
 
     await expect(confirmDialog).toBeVisible()
-    await expect(confirmDialog.getByText("Invalid MFA code.", { exact: true })).toBeVisible({ timeout: 20_000 })
+    await expect(confirmDialog.getByText("The code is invalid.", { exact: true })).toBeVisible({ timeout: 20_000 })
 })
 
 test("user cannot delete account with a used MFA backup code", async ({ page }) => {
@@ -434,8 +436,11 @@ test("user cannot delete account with a used MFA backup code", async ({ page }) 
     const confirmDialog = page.getByRole("dialog", { name: "Delete Account", exact: true })
     await expect(confirmDialog).toBeVisible()
 
-    await confirmDialog.locator("input[type='password']").fill(user.password)
-    await confirmDialog.getByPlaceholder("MFA code").fill(backupCodes[0])
+    await confirmDialog.getByLabel("Password", { exact: true }).fill(user.password)
+
+    await confirmDialog.getByRole("tab", { name: "Recovery Code", exact: true }).click()
+    await confirmDialog.getByPlaceholder("12-character recovery code").fill(backupCodes[0])
+
     await confirmDialog.getByRole("button", { name: "Delete Account", exact: true }).click()
 
     await expect(confirmDialog).toBeVisible()
