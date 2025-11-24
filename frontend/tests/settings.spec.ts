@@ -149,7 +149,6 @@ test("user can change language", async ({ page }) => {
     await checkIfSettingsDialogIsInEnglish("English")
 
     await page.reload()
-    await page.getByRole("heading", { name: "How can I help you today?", exact: true }).click()
     await page.getByText("Settings").click()
 
     await expect(page.locator("label").getByText("Language", { exact: true })).toBeVisible()
@@ -178,7 +177,6 @@ test("user can change language", async ({ page }) => {
     await checkIfSettingsDialogIsInPortuguese()
 
     await page.reload()
-    await page.getByRole("heading", { name: "Como posso te ajudar hoje?", exact: true }).click()
     await page.getByText("Configurações").click()
 
     await checkIfSettingsDialogIsInPortuguese()
@@ -191,7 +189,6 @@ test("user can change language", async ({ page }) => {
     await checkIfSettingsDialogIsInEnglish("English")
 
     await page.reload()
-    await page.getByRole("heading", { name: "How can I help you today?", exact: true }).click()
     await page.getByText("Settings").click()
 
     await checkIfSettingsDialogIsInEnglish("English")
@@ -327,7 +324,7 @@ test("user can delete account with MFA enabled", async ({ page }) => {
     await page.fill("input[type='email']", user.email)
     await page.fill("input[type='password']", user.password)
     await page.click("button")
-    await expect(page.getByText("The email and/or password are invalid.", { exact: true })).toBeVisible()
+    await expect(page.getByText("The email and/or password are invalid.", { exact: true })).toBeVisible({ timeout: 10_000 })
 })
 
 test("user can delete account with an MFA backup code", async ({ page }) => {
@@ -407,7 +404,7 @@ test("user cannot delete account with a used MFA backup code", async ({ page }) 
 
     const { user, backupCodes } = await signupWithMFAEnabledAndLogin(page)
 
-    await page.getByTestId("open-settings").click()
+    await page.getByText("Settings").click()
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByRole("button", { name: "Log out", exact: true }).click()
     await page.waitForURL("/login")

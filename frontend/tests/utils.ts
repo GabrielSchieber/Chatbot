@@ -55,7 +55,7 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
 
     const user = await signupAndLogin(page)
 
-    await page.getByTestId("open-settings").click()
+    await page.getByText("Settings").click()
     await page.getByRole("tab", { name: "Security" }).click()
 
     await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
