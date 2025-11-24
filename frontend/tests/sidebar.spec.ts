@@ -64,7 +64,7 @@ test("user can see and toggle sidebar with chats", async ({ page }, testInfo) =>
     await checkVisibility(true)
 })
 
-test("user can rename chats", async ({ page }) => {
+test("user can rename chats", async ({ page }, testInfo) => {
     const user = await signupAndLogin(page, true)
 
     const chat = user.chats[0]
@@ -72,9 +72,10 @@ test("user can rename chats", async ({ page }) => {
     await expect(link).toContainText(chat.title)
     await expect(link.getByRole("button", { includeHidden: true })).toHaveCount(1)
 
-    await link.hover()
+    if (!testInfo.project.use.isMobile!) {
+        await link.hover()
+    }
     await link.getByRole("button").click()
-
     await page.getByRole("menuitem", { name: "Rename", exact: true }).click()
 
     const renameInput = page.locator("input[type='text']")
@@ -83,7 +84,7 @@ test("user can rename chats", async ({ page }) => {
     await renameInput.press("Enter")
     await expect(renameInput).not.toBeVisible()
 
-    const renamedChatLink = page.getByRole("link", { name: "Renamed Chat", exact: true })
+    const renamedChatLink = page.locator("a").getByText("Renamed Chat", { exact: true })
     await expect(renamedChatLink).toBeVisible()
 
     await page.reload()
@@ -91,14 +92,16 @@ test("user can rename chats", async ({ page }) => {
     await expect(renamedChatLink).toBeVisible()
 })
 
-test("user can archive chats", async ({ page }) => {
+test("user can archive chats", async ({ page }, testInfo) => {
     const user = await signupAndLogin(page, true)
 
     const chat = user.chats[0]
     const link = page.getByRole("link", { name: chat.title })
     await expect(link.getByRole("button", { includeHidden: true })).toHaveCount(1)
 
-    await link.hover()
+    if (!testInfo.project.use.isMobile!) {
+        await link.hover()
+    }
     await link.getByRole("button").click()
     await page.getByRole("menuitem", { name: "Archive", exact: true }).click()
 
@@ -124,7 +127,6 @@ test("user can delete chats", async ({ page }, testInfo) => {
     if (!testInfo.project.use.isMobile) {
         await link.hover()
     }
-
     await link.getByRole("button").click()
     await page.getByRole("menuitem", { name: "Delete", exact: true }).click()
 
