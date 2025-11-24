@@ -127,14 +127,17 @@ test("user can archive chats", async ({ page }) => {
     await expect(page.getByRole("link", { name: chat.title, exact: true })).toBeVisible()
 })
 
-test("user can delete chats", async ({ page }) => {
+test("user can delete chats", async ({ page }, testInfo) => {
     const user = await signupAndLogin(page, true)
 
     const chat = user.chats[0]
     const link = page.getByRole("link", { name: chat.title })
     await expect(link.getByRole("button", { includeHidden: true })).toHaveCount(1)
 
-    await link.hover()
+    if (!testInfo.project.use.isMobile) {
+        await link.hover()
+    }
+
     await link.getByRole("button").click()
     await page.getByRole("menuitem", { name: "Delete", exact: true }).click()
 
