@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react"
 
 import { Button, Email, Error, Form, Header, Password, Recommendation } from "../components/Auth"
 import { useNotify } from "../providers/NotificationProvider"
-import { login, signup } from "../utils/api"
+import { login, me, signup } from "../utils/api"
 
 export default function Signup() {
     const notify = useNotify()
@@ -30,6 +30,9 @@ export default function Signup() {
         if (response.ok) {
             const response = await login(email, password)
             if (response.ok) {
+                if (window.innerWidth < 750) {
+                    await me(undefined, undefined, false)
+                }
                 location.href = "/"
             } else {
                 notify(t("signup.error"), "error")
