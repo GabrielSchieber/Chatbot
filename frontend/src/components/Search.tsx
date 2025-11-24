@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react"
 import { useChat } from "../providers/ChatProvider"
 import { searchChats } from "../utils/api"
 
-export default function Search({ showLabel, itemClassNames, testID }: { showLabel: boolean, itemClassNames: string, testID: string }) {
+export default function Search({ showLabel, itemClassNames }: { showLabel: boolean, itemClassNames: string }) {
     const { chats, isMobile } = useChat()
 
     const entriesRef = useRef<HTMLDivElement | null>(null)
@@ -98,7 +98,7 @@ export default function Search({ showLabel, itemClassNames, testID }: { showLabe
                 }
             }}
         >
-            <Dialog.Trigger className={itemClassNames} data-testid={testID}>
+            <Dialog.Trigger className={itemClassNames}>
                 <MagnifyingGlassIcon className="size-5" /> {showLabel && t("sidebar.searchChats")}
             </Dialog.Trigger>
 

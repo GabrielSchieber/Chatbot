@@ -14,7 +14,7 @@ import { deleteChats, logout, me } from "../utils/api"
 import { applyTheme, getLanguageAbbreviation } from "../utils/misc"
 import type { Language, Theme } from "../utils/types"
 
-export default function Settings({ isSidebarOpen, itemClassNames, testID }: { isSidebarOpen: boolean, itemClassNames: string, testID: string }) {
+export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
     const { user } = useAuth()
     const { isMobile } = useChat()
     const { t } = useTranslation()
@@ -31,7 +31,7 @@ export default function Settings({ isSidebarOpen, itemClassNames, testID }: { is
 
     return (
         <Dialog.Root>
-            <Dialog.Trigger className={itemClassNames} data-testid={testID}>
+            <Dialog.Trigger className={itemClassNames}>
                 <GearIcon className="size-5" /> {isSidebarOpen && t("sidebar.settings")}
             </Dialog.Trigger>
 
