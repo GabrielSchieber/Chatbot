@@ -32,7 +32,7 @@ export default function Sidebar() {
                 ref={ref}
                 className={`
                     flex flex-col justify-between overflow-x-hidden overflow-y-auto bg-gray-800 light:bg-gray-200
-                    transition-all duration-300 ${isOpen ? "min-w-[250px] max-w-[250px]" : isMobile ? "min-w-0 max-w-0" : "min-w-[50px] max-w-[50px]"}
+                    transition-all duration-300 ${isOpen ? "min-w-[250px] max-w-[250px]" : isMobile ? "min-w-0 max-w-0 hidden" : "min-w-[50px] max-w-[50px]"}
                     ${isMobile && "fixed inset-0"}
                 `}
             >
@@ -43,7 +43,7 @@ export default function Sidebar() {
                             me(undefined, undefined, !isOpen)
                             setIsOpen(!isOpen)
                         }}
-                        data-testid="toggle-sidebar"
+                        data-testid="toggle-sidebar-panel"
                     >
                         {isOpen ? (
                             <><ChevronLeftIcon className="size-5" />{t("sidebar.closeSidebar")}</>
@@ -52,17 +52,17 @@ export default function Sidebar() {
                         )}
                     </button>
 
-                    <a className={itemClassNames} href="/" data-testid="new-chat">
+                    <a className={itemClassNames} href="/" data-testid="new-chat-panel">
                         <PlusIcon className="size-5" /> {isOpen && t("sidebar.newChat")}
                     </a>
 
-                    <Search showLabel={isOpen} itemClassNames={itemClassNames} />
+                    <Search showLabel={isOpen} itemClassNames={itemClassNames} testID="search-chats-panel" />
                 </div>
 
                 <History isSidebarOpen={isOpen} sidebarRef={ref} />
 
                 <div className={`sticky flex flex-col bottom-0 p-2 bg-gray-800 light:bg-gray-200 ${isOpen && "border-t"}`}>
-                    <Settings isSidebarOpen={isOpen} itemClassNames={itemClassNames} />
+                    <Settings isSidebarOpen={isOpen} itemClassNames={itemClassNames} testID="open-settings-panel" />
                 </div>
             </div>
         </>

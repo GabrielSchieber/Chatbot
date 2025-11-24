@@ -31,16 +31,16 @@ export default function Header() {
                             me(undefined, undefined, true)
                             setIsSidebarOpen(true)
                         }}
-                        data-testid="toggle-sidebar"
+                        data-testid="toggle-sidebar-header"
                     >
                         <ChevronRightIcon className="size-5" />
                     </button>
 
-                    <a className={itemClassNames} href="/" data-testid="new-chat">
+                    <a className={itemClassNames} href="/" data-testid="new-chat-header">
                         <PlusIcon className="size-5" />
                     </a>
 
-                    <Search showLabel={!isMobile && isSidebarOpen} itemClassNames={itemClassNames} />
+                    <Search showLabel={!isMobile && isSidebarOpen} itemClassNames={itemClassNames} testID="search-chats-header" />
                 </div>
             )}
 
