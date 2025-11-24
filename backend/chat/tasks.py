@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 import ollama
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
-from django.core.exceptions import ObjectDoesNotExist
 
 channel_layer = get_channel_layer()
 ollama_client = ollama.AsyncClient("ollama")
@@ -64,17 +63,20 @@ async def generate_message(chat: Chat, should_generate_title: bool, should_rando
     try:
         async for part in await ollama_client.chat(model, messages, stream = True, options = options):
             token = part.message.content
+
+            if type(token) == str:
+                chat.pending_message.text += token
+                if not await safe_save_message_text(chat.pending_message):
+                    return
+                await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_token", "token": token, "message_index": message_index})
+
             if str(chat.uuid) in opened_chats:
                 opened_chats.discard(str(chat.uuid))
                 await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": chat.pending_message.text, "message_index": message_index})
-            elif type(token) == str:
-                chat.pending_message.text += token
-                if not await safe_save_message(chat.pending_message):
-                    return
-                await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_token", "token": token, "message_index": message_index})
     except asyncio.CancelledError:
         chat.pending_message = None
-        await safe_save_chat(chat)
+        if not await safe_save_chat_pending_message(chat):
+            return
         if should_generate_title:
             await generate_title(chat)
         return
@@ -85,7 +87,8 @@ async def generate_message(chat: Chat, should_generate_title: bool, should_rando
         await generate_title(chat)
 
     chat.pending_message = None
-    await chat.asave(update_fields = ["pending_message"])
+    if not await safe_save_chat_pending_message(chat):
+        return
 
     await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_end"})
 
@@ -213,17 +216,14 @@ def get_ollama_model(model: str):
     else:
         return model.lower().replace("-", ":")
 
-async def safe_save_message(bot_message: Message):
-    try:
-        exists = await database_sync_to_async(Chat.objects.filter(pk = bot_message.chat_id).exists)()
-        if not exists:
-            return False
-        await bot_message.asave()
-        return True
-    except ObjectDoesNotExist:
+async def safe_save_message_text(message: Message):
+    exists = await database_sync_to_async(Message.objects.filter(pk = message.pk).exists)()
+    if not exists:
         return False
+    await message.asave(update_fields = ["text"])
+    return True
 
-async def safe_save_chat(chat: Chat):
+async def safe_save_chat_pending_message(chat: Chat):
     exists = await database_sync_to_async(Chat.objects.filter(pk = chat.pk).exists)()
     if not exists:
         return False
