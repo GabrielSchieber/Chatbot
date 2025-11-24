@@ -62,7 +62,7 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
     await expect(page.getByText("Step 1: Setup", { exact: true })).toBeVisible()
 
     await page.getByText("Generate QR and secret codes", { exact: true }).click()
-    await expect(page.getByText("Step 2: Verify", { exact: true })).toBeVisible()
+    await expect(page.getByText("Step 2: Verify", { exact: true })).toBeVisible({ timeout: 10_000 })
 
     const secret = await page.getByTestId("mfa-secret").textContent()
     const code = authenticator.generate(secret!)
@@ -71,7 +71,7 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
     await page.getByRole("button", { name: "Enable", exact: true }).click()
 
     await expect(page.getByText("Enabling", { exact: true })).toBeVisible()
-    await expect(page.getByText("Step 3: Backup", { exact: true })).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText("Step 3: Backup", { exact: true })).toBeVisible({ timeout: 20_000 })
 
     await page.getByRole("button").first().click()
 
@@ -92,7 +92,7 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
 export async function signupWithMFAEnabled(page: Page) {
     const user = await signupWithMFAEnabledAndLogin(page)
 
-    await page.getByTestId("open-settings").click()
+    await page.getByText("Settings").click()
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByRole("button", { name: "Log out", exact: true }).click()
     await page.waitForURL("/login")

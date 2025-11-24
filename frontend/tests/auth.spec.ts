@@ -72,7 +72,7 @@ test("user cannot login with invalid password", async ({ page }) => {
 test("user can enable multi-factor authentication", async ({ page }) => {
     await signupAndLogin(page)
 
-    await page.getByTestId("open-settings").click()
+    await page.getByText("Settings").click()
 
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
@@ -125,7 +125,7 @@ test("user can log in with multi-factor authentication", async ({ page }) => {
 test("user can disable multi-factor authentication", async ({ page }) => {
     const { user } = await signupWithMFAEnabledAndLogin(page)
 
-    await page.getByTestId("open-settings").click()
+    await page.getByText("Settings").click()
 
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
@@ -207,7 +207,7 @@ test("user cannot login with an already used multi-factor authentication backup 
     await tryToLoginWithCode(backupCodes[0], true)
     await page.waitForURL("/")
 
-    await page.getByTestId("open-settings").click()
+    await page.getByText("Settings").click()
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByRole("button", { name: "Log out", exact: true }).click()
     await page.waitForURL("/login")
@@ -218,7 +218,7 @@ test("user cannot login with an already used multi-factor authentication backup 
 test("user can disable multi-factor authentication with a backup code", async ({ page }) => {
     const { backupCodes } = await signupWithMFAEnabledAndLogin(page)
 
-    await page.getByTestId("open-settings").click()
+    await page.getByText("Settings").click()
 
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
@@ -259,7 +259,7 @@ test("user cannot disable multi-factor authentication with an already used backu
 
     await page.waitForURL("/")
 
-    await page.getByTestId("open-settings").click()
+    await page.getByText("Settings").click()
 
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
