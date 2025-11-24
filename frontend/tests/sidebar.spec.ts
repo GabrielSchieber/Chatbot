@@ -29,24 +29,38 @@ test("user can see and toggle sidebar", async ({ page }) => {
 })
 
 test("user can see and toggle sidebar with chats", async ({ page }, testInfo) => {
-    await signupAndLogin(page, true)
+    const isWidthSmall = page.viewportSize()!.width < 750
 
-    const toggleSidebar = page.getByText(toggleSidebarText)
+    const user = await signupAndLogin(page, true)
+
+    const extendedToggleSidebar = page.getByText(toggleSidebarText)
+    const collapedToggleSidebar = page.getByRole("button").first()
+    const bannerToggleSidebar = page.getByRole("banner").getByRole("button").first()
+
     const newChat = page.getByText(newChatText)
     const searchChats = page.getByText(searchChatsText)
     const openSettings = page.getByText(openSettingsText)
 
+    const visibleToggleChatOptions = page.getByLabel("Toggle chat options").filter({ visible: true })
+
     async function checkVisibility(visible: boolean) {
-        await expect(toggleSidebar).toBeVisible({ visible })
+        await expect(extendedToggleSidebar).toBeVisible({ visible })
+
         await expect(newChat).toBeVisible({ visible })
         await expect(searchChats).toBeVisible({ visible })
         await expect(openSettings).toBeVisible({ visible })
+
+        await expect(visibleToggleChatOptions).toHaveCount(testInfo.project.use.isMobile! && visible ? user.chats.length : 0)
     }
 
     await checkVisibility(true)
-    await toggleSidebar.click()
+    await extendedToggleSidebar.click()
     await checkVisibility(false)
-    await page.getByRole("button").first().click()
+    if (isWidthSmall) {
+        await bannerToggleSidebar.click()
+    } else {
+        await collapedToggleSidebar.click()
+    }
     await checkVisibility(true)
 })
 
