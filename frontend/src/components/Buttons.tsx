@@ -90,6 +90,7 @@ export function StopButton({ tabIndex = 2 }: { tabIndex?: number }) {
             type="button"
             className={promptBarButtonClassNames}
             tabIndex={tabIndex}
+            dataTestID="stop-button"
         />
     )
 }
