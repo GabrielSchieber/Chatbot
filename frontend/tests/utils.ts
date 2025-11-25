@@ -55,7 +55,7 @@ export async function signupAndLogin(page: Page, withChats: boolean = false): Pr
         const response = await apiFetch("/test/create-chats/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email })
+            body: JSON.stringify({ email, chats: exampleChats })
         })
         expect(response.status).toEqual(200)
         const uuids = await response.json()

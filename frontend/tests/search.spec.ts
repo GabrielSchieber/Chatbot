@@ -4,7 +4,9 @@ import { Chat, signupAndLogin } from "./utils"
 test("user can open search", async ({ page }) => {
     const user = await signupAndLogin(page, true)
 
-    await page.getByRole("button", { name: "Search Chats", exact: true }).click()
+    const searchButton = page.viewportSize()!.width < 750 ?
+        page.getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
+    await searchButton.click()
 
     await expect(page.getByPlaceholder("Search chats...", { exact: true })).toBeVisible()
 
@@ -26,7 +28,7 @@ test("user can search chats", async ({ page }) => {
     const user = await signupAndLogin(page, true)
 
     function findChatByTitle(title: string) {
-        return user.chats.find(c => c.title === title)
+        return user.chats.find(c => c.title === title)!
     }
 
     type Entry = { chat: Chat, matches: [number, string][] }
@@ -60,17 +62,20 @@ test("user can search chats", async ({ page }) => {
         }
     }
 
-    const mathParagraphChat = findChatByTitle("Paragraph About Math")!
-    const mathHelpChat = findChatByTitle("Math Help")!
-    const bookChat = findChatByTitle("Book Recommendation")!
-    const petAdviceChat = findChatByTitle("Pet Advice")!
-    const travelAdviceChat = findChatByTitle("Travel Advice")!
-    const jobInterviewChat = findChatByTitle("Job Interview Prep")!
-    const techSupportChat = findChatByTitle("Tech Support")!
-    const motivationChat = findChatByTitle("Motivation")!
-    const weatherInquiryChat = findChatByTitle("Weather Inquiry")!
+    const mathParagraphChat = findChatByTitle("Paragraph About Math")
+    const mathHelpChat = findChatByTitle("Math Help")
+    const bookChat = findChatByTitle("Book Recommendation")
+    const petAdviceChat = findChatByTitle("Pet Advice")
+    const travelAdviceChat = findChatByTitle("Travel Advice")
+    const jobInterviewChat = findChatByTitle("Job Interview Prep")
+    const techSupportChat = findChatByTitle("Tech Support")
+    const motivationChat = findChatByTitle("Motivation")
+    const weatherInquiryChat = findChatByTitle("Weather Inquiry")
 
-    await page.getByRole("button", { name: "Search Chats", exact: true }).click()
+    const searchButton = page.viewportSize()!.width < 750 ?
+        page.getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
+    await searchButton.click()
+
     const input = page.getByPlaceholder("Search chats...", { exact: true })
     await expect(input).toBeVisible()
 
@@ -150,7 +155,9 @@ test("search filters by title", async ({ page }) => {
     const user = await signupAndLogin(page, true)
     const chat = user.chats[0]
 
-    await page.getByRole("button", { name: "Search Chats", exact: true }).click()
+    const searchButton = page.viewportSize()!.width < 750 ?
+        page.getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
+    await searchButton.click()
 
     const input = page.getByPlaceholder("Search chats...", { exact: true })
     await input.click()
@@ -165,7 +172,9 @@ test("search filters by title", async ({ page }) => {
 test("search shows no results message when nothing matches", async ({ page }) => {
     await signupAndLogin(page, true)
 
-    await page.getByRole("button", { name: "Search Chats", exact: true }).click()
+    const searchButton = page.viewportSize()!.width < 750 ?
+        page.getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
+    await searchButton.click()
 
     const input = page.getByPlaceholder("Search chats...", { exact: true })
     await input.click()
@@ -178,19 +187,22 @@ test("search shows no results message when nothing matches", async ({ page }) =>
 test("infinite scroll loads more search entries", async ({ page }) => {
     await signupAndLogin(page, true)
 
-    await page.getByRole("button", { name: "Search Chats", exact: true }).click()
+    const searchButton = page.viewportSize()!.width < 750 ?
+        page.getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
+    await searchButton.click()
+
     const dialog = page.getByRole("dialog")
 
     const entries = dialog.getByRole("link")
     const initialCount = await entries.count()
 
-    const container = dialog.locator('div.overflow-y-auto')
-    await container.evaluate((el: HTMLElement) => { el.scrollTop = el.scrollHeight })
+    const container = dialog.locator("div.overflow-y-auto")
+    await container.evaluate((element: HTMLElement) => { element.scrollTop = element.scrollHeight })
 
     await page.waitForFunction((initial) => {
-        const dialogEl = document.querySelector('[role="dialog"]')
-        if (!dialogEl) return false
-        const links = dialogEl.querySelectorAll('a')
+        const dialogElement = document.querySelector("[role='dialog']")
+        if (!dialogElement) return false
+        const links = dialogElement.querySelectorAll("a")
         return links.length > initial
     }, initialCount, { timeout: 5000 })
 
@@ -202,7 +214,9 @@ test("clicking a search entry navigates to the chat", async ({ page }) => {
     const user = await signupAndLogin(page, true)
     const firstChat = user.chats[0]
 
-    await page.getByRole("button", { name: "Search Chats", exact: true }).click()
+    const searchButton = page.viewportSize()!.width < 750 ?
+        page.getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
+    await searchButton.click()
 
     const first = page.getByRole("dialog").getByRole("link").nth(0)
     expect(await first.getAttribute("href")).toEqual(`/chat/${firstChat.uuid}`)
