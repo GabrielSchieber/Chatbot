@@ -99,39 +99,118 @@ test("user can see and toggle sidebar", async ({ page }) => {
 })
 
 test("user can see and toggle sidebar with chats", async ({ page }, testInfo) => {
-    const isWidthSmall = page.viewportSize()!.width < 750
-
     const user = await signupAndLogin(page, true)
 
-    const extendedToggleSidebar = page.getByText(toggleSidebarText)
-    const collapedToggleSidebar = page.getByRole("button").first()
-    const bannerToggleSidebar = page.getByRole("banner").getByRole("button").first()
+    const isWidthSmall = page.viewportSize()!.width < 750
 
-    const newChat = page.getByText(newChatText)
-    const searchChats = page.getByText(searchChatsText)
-    const openSettings = page.getByText(openSettingsText)
+    const toggleSidebar = page.getByRole("button", { name: toggleSidebarText })
+    const newChat = page.getByRole("link", { name: newChatText })
+    const searchChats = page.getByRole("button", { name: searchChatsText })
+    const openSettings = page.getByRole("button", { name: openSettingsText })
 
-    const visibleToggleChatOptions = page.getByLabel("Toggle chat options").filter({ visible: true })
+    const historyParagraph = page.getByRole("paragraph").getByText("You don't have any chats.", { exact: true })
+    const visibleChatEntries = page.getByTestId("history").getByRole("link").filter({ visible: true })
+    const visibleToggleChatOptions = page.getByLabel("Toggle chat options", { exact: true }).filter({ visible: true })
 
-    async function checkVisibility(visible: boolean) {
-        await expect(extendedToggleSidebar).toBeVisible({ visible })
+    const header = page.getByRole("banner")
+    await expect(header).toHaveCount(1)
 
-        await expect(newChat).toBeVisible({ visible })
-        await expect(searchChats).toBeVisible({ visible })
-        await expect(openSettings).toBeVisible({ visible })
+    await expect(header.getByRole("button")).toHaveCount(isWidthSmall ? 2 : 0)
+    await expect(header.getByRole("link")).toHaveCount(isWidthSmall ? 1 : 0)
 
-        await expect(visibleToggleChatOptions).toHaveCount(testInfo.project.use.isMobile! && visible ? user.chats.length : 0)
+    const headerToggleSidebar = header.getByRole("button").first()
+    const headerNewChat = header.getByRole("link")
+    const headerSearchChats = header.getByRole("button").last()
+
+    function successfulMeResponse() {
+        return page.waitForResponse(response =>
+            response.url().endsWith("/api/me/") && response.status() === 200 && response.request().method() === "PATCH"
+        )
     }
 
-    await checkVisibility(true)
-    await extendedToggleSidebar.click()
-    await checkVisibility(false)
     if (isWidthSmall) {
-        await bannerToggleSidebar.click()
+        await expect(toggleSidebar).not.toBeVisible()
+        await expect(newChat).not.toBeVisible()
+        await expect(searchChats).not.toBeVisible()
+        await expect(openSettings).not.toBeVisible()
+
+        await expect(historyParagraph).not.toBeVisible()
+        await expect(visibleChatEntries).toHaveCount(0)
+        await expect(visibleToggleChatOptions).toHaveCount(0)
+
+        await expect(headerToggleSidebar).toBeVisible()
+        await expect(headerNewChat).toBeVisible()
+        await expect(headerSearchChats).toBeVisible()
+
+        const response1 = successfulMeResponse()
+        await headerToggleSidebar.click()
+        await response1
+
+        await expect(toggleSidebar).toBeVisible()
+        await expect(newChat).toBeVisible()
+        await expect(searchChats).toBeVisible()
+        await expect(openSettings).toBeVisible()
+
+        await expect(historyParagraph).not.toBeVisible()
+        await expect(visibleChatEntries).toHaveCount(user.chats.length)
+        await expect(visibleToggleChatOptions).toHaveCount(testInfo.project.use.isMobile! ? user.chats.length : 0)
+
+        const response2 = successfulMeResponse()
+        await toggleSidebar.click()
+        await response2
+
+        await expect(toggleSidebar).not.toBeVisible()
+        await expect(newChat).not.toBeVisible()
+        await expect(searchChats).not.toBeVisible()
+        await expect(openSettings).not.toBeVisible()
+
+        await expect(historyParagraph).not.toBeVisible()
+        await expect(visibleChatEntries).toHaveCount(0)
+        await expect(visibleToggleChatOptions).toHaveCount(0)
+
+        await expect(headerToggleSidebar).toBeVisible()
+        await expect(headerNewChat).toBeVisible()
+        await expect(headerSearchChats).toBeVisible()
     } else {
-        await collapedToggleSidebar.click()
+        await expect(toggleSidebar).toBeVisible()
+        await expect(newChat).toBeVisible()
+        await expect(searchChats).toBeVisible()
+        await expect(openSettings).toBeVisible()
+
+        await expect(historyParagraph).not.toBeVisible()
+        await expect(visibleChatEntries).toHaveCount(user.chats.length)
+        await expect(visibleToggleChatOptions).toHaveCount(testInfo.project.use.isMobile! ? user.chats.length : 0)
+
+        const response1 = successfulMeResponse()
+        await toggleSidebar.click()
+        await response1
+
+        await expect(toggleSidebar).not.toBeVisible()
+        await expect(newChat).not.toBeVisible()
+        await expect(searchChats).not.toBeVisible()
+        await expect(openSettings).not.toBeVisible()
+
+        await expect(historyParagraph).not.toBeVisible()
+        await expect(visibleChatEntries).toHaveCount(0)
+        await expect(visibleToggleChatOptions).toHaveCount(0)
+
+        await expect(headerToggleSidebar).not.toBeVisible()
+        await expect(headerNewChat).not.toBeVisible()
+        await expect(headerSearchChats).not.toBeVisible()
+
+        const response2 = successfulMeResponse()
+        await page.getByRole("button").first().click()
+        await response2
+
+        await expect(toggleSidebar).toBeVisible()
+        await expect(newChat).toBeVisible()
+        await expect(searchChats).toBeVisible()
+        await expect(openSettings).toBeVisible()
+
+        await expect(historyParagraph).not.toBeVisible()
+        await expect(visibleChatEntries).toHaveCount(user.chats.length)
+        await expect(visibleToggleChatOptions).toHaveCount(testInfo.project.use.isMobile! ? user.chats.length : 0)
     }
-    await checkVisibility(true)
 })
 
 test("user can rename chats", async ({ page }, testInfo) => {
