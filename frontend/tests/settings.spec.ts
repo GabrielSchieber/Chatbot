@@ -5,7 +5,12 @@ import { Chat, User, signupAndLogin, signupWithMFAEnabledAndLogin, apiFetch } fr
 test("user can open settings", async ({ page }) => {
     const user = await signupAndLogin(page)
 
-    await page.getByText("Settings").click()
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
+
     await expect(page.getByText("General", { exact: true })).toHaveCount(2)
 
     await expect(page.getByRole("tab", { name: "General" })).toBeVisible()
@@ -48,16 +53,18 @@ test("user can change theme", async ({ page }) => {
     await signupAndLogin(page)
 
     async function waitForPageToLoad() {
-        await expect(page.getByText("You don't have any chats")).toBeVisible()
+        await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
+        await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
     }
-
-    await waitForPageToLoad()
 
     const html = page.locator("html")
 
     expect(await html.getAttribute("class")).toEqual("Light")
 
     const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
     await settingsButton.click()
 
     await page.locator("button").getByText("System").click()
@@ -119,7 +126,11 @@ test("user can change theme", async ({ page }) => {
 test("user can change language", async ({ page }) => {
     await signupAndLogin(page)
 
-    await page.getByText("Settings").click()
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
 
     await expect(page.locator("label").getByText("Language", { exact: true })).toBeVisible()
     await expect(page.locator("button").getByText("Auto-detect", { exact: true })).toBeVisible()
@@ -273,7 +284,11 @@ test("user can delete specific archived chats", async ({ page }) => {
 test("user can delete account", async ({ page }) => {
     const user = await signupAndLogin(page)
 
-    await page.getByText("Settings").click()
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
 
     await page.getByRole("tab", { name: "Account" }).click()
     await page.getByRole("button", { name: "Delete", exact: true }).click()
@@ -301,7 +316,11 @@ test("user can delete account", async ({ page }) => {
 test("user can delete account with MFA enabled", async ({ page }) => {
     const { user } = await signupWithMFAEnabledAndLogin(page)
 
-    await page.getByText("Settings").click()
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
 
     await page.getByRole("tab", { name: "Account" }).click()
     await page.getByRole("button", { name: "Delete", exact: true }).click()
@@ -330,7 +349,11 @@ test("user can delete account with MFA enabled", async ({ page }) => {
 test("user can delete account with an MFA backup code", async ({ page }) => {
     const { user, backupCodes } = await signupWithMFAEnabledAndLogin(page)
 
-    await page.getByText("Settings").click()
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
 
     await page.getByRole("tab", { name: "Account" }).click()
     await page.getByRole("button", { name: "Delete", exact: true }).click()
@@ -356,7 +379,11 @@ test("user can delete account with an MFA backup code", async ({ page }) => {
 test("user cannot delete account with an incorrect password", async ({ page }) => {
     const { user } = await signupWithMFAEnabledAndLogin(page)
 
-    await page.getByText("Settings").click()
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
 
     await page.getByRole("tab", { name: "Account" }).click()
     await page.getByRole("button", { name: "Delete", exact: true }).click()
@@ -383,7 +410,11 @@ test("user cannot delete account with an invalid MFA code", async ({ page }) => 
 
     const { user } = await signupWithMFAEnabledAndLogin(page)
 
-    await page.getByText("Settings").click()
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
 
     await page.getByRole("tab", { name: "Account" }).click()
     await page.getByRole("button", { name: "Delete", exact: true }).click()
@@ -404,7 +435,12 @@ test("user cannot delete account with a used MFA backup code", async ({ page }) 
 
     const { user, backupCodes } = await signupWithMFAEnabledAndLogin(page)
 
-    await page.getByText("Settings").click()
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
+
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByRole("button", { name: "Log out", exact: true }).click()
     await page.waitForURL("/login")
@@ -466,9 +502,16 @@ test("user cannot delete account with a used MFA backup code", async ({ page }) 
 
 test("user can log out", async ({ page }) => {
     await signupAndLogin(page)
-    await page.getByText("Settings").click()
+
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
+
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByRole("button", { name: "Log out" }).click()
+
     await page.waitForURL("/login")
     await page.goto("/")
     await page.waitForURL("/login")
@@ -482,7 +525,14 @@ async function archiveOrUnarchiveAllChats(page: Page, user: User, action: "archi
 
     await expect(page.getByTestId("history").locator("a")).toHaveCount(initialHistoryCount)
 
-    await page.getByText("Settings").click()
+    await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
+
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
 
     await page.getByRole("tab", { name: "Data" }).click()
     await page.getByRole("button", { name: "Manage", exact: true }).click()
