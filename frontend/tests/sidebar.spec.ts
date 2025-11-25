@@ -216,10 +216,14 @@ test("user can see and toggle sidebar with chats", async ({ page }, testInfo) =>
 test("user can rename chats", async ({ page }, testInfo) => {
     const user = await signupAndLogin(page, true)
 
+    if (page.viewportSize()!.width < 750) {
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+
     const chat = user.chats[0]
     const link = page.getByRole("link").nth(1)
     await expect(link).toContainText(chat.title)
-    await expect(link.getByRole("button", { includeHidden: true })).toHaveCount(1)
+    await expect(link.getByRole("button", { includeHidden: !testInfo.project.use.isMobile! })).toHaveCount(1)
 
     if (!testInfo.project.use.isMobile!) {
         await link.hover()
@@ -244,9 +248,13 @@ test("user can rename chats", async ({ page }, testInfo) => {
 test("user can archive chats", async ({ page }, testInfo) => {
     const user = await signupAndLogin(page, true)
 
+    if (page.viewportSize()!.width < 750) {
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+
     const chat = user.chats[0]
     const link = page.getByRole("link", { name: chat.title })
-    await expect(link.getByRole("button", { includeHidden: true })).toHaveCount(1)
+    await expect(link.getByRole("button", { includeHidden: !testInfo.project.use.isMobile! })).toHaveCount(1)
 
     if (!testInfo.project.use.isMobile!) {
         await link.hover()
@@ -269,9 +277,13 @@ test("user can archive chats", async ({ page }, testInfo) => {
 test("user can delete chats", async ({ page }, testInfo) => {
     const user = await signupAndLogin(page, true)
 
+    if (page.viewportSize()!.width < 750) {
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+
     const chat = user.chats[0]
     const link = page.getByRole("link", { name: chat.title })
-    await expect(link.getByRole("button", { includeHidden: true })).toHaveCount(1)
+    await expect(link.getByRole("button", { includeHidden: !testInfo.project.use.isMobile! })).toHaveCount(1)
 
     if (!testInfo.project.use.isMobile) {
         await link.hover()
