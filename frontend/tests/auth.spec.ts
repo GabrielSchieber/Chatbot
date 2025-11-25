@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test"
 import { authenticator } from "otplib"
-import { apiFetch, getRandomEmail, signup, signupAndLogin, signupWithMFAEnabled, signupWithMFAEnabledAndLogin } from "./utils"
+import { apiFetch, getRandomEmail, signupAndLogin, signupWithMFAEnabled, signupWithMFAEnabledAndLogin } from "./utils"
 
 test("user can sign up", async ({ page }) => {
     await page.goto("/")
@@ -272,3 +272,15 @@ test("user cannot disable multi-factor authentication with an already used backu
 
     await expect(page.getByText("The code is invalid.", { exact: true })).toBeVisible({ timeout: 20_000 })
 })
+
+async function signup() {
+    const email = getRandomEmail()
+    const password = "testpassword"
+    const response = await apiFetch("/api/signup/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    })
+    expect(response.status).toBe(201)
+    return [email, password]
+}

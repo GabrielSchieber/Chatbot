@@ -9,35 +9,53 @@ export function getRandomEmail() {
     return `user_${crypto.randomUUID()}@example.com`
 }
 
-export async function signup() {
+export async function signupAndLogin(page: Page, withChats: boolean = false): Promise<User> {
     const email = getRandomEmail()
     const password = "testpassword"
-    const response = await apiFetch("/api/signup/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-    })
-    expect(response.status).toBe(201)
-    return [email, password]
-}
 
-export async function signupAndLogin(page: Page, withChats: boolean = false): Promise<User> {
-    const [email, password] = await signup()
+    await page.goto("/signup")
 
-    await page.goto("/login")
+    await page.getByLabel("Email", { exact: true }).fill(email)
+    await page.getByLabel("Password", { exact: true }).fill(password)
+    await page.getByLabel("Confirm Password", { exact: true }).fill(password)
 
-    await page.fill("input[type='email']", email)
-    await page.fill("input[type='password']", password)
+    const shouldWaitForMeResponse = page.viewportSize()!.width < 750
 
-    await page.click("button")
+    const signupResponse = page.waitForResponse(response =>
+        response.url().endsWith("/api/signup/") && response.status() === 201 && response.request().method() === "POST"
+    )
+    const loginResponse = page.waitForResponse(response =>
+        response.url().endsWith("/api/login/") && response.status() === 200 && response.request().method() === "POST"
+    )
+
+    let meResponse
+    if (shouldWaitForMeResponse) {
+        meResponse = page.waitForResponse(response =>
+            response.url().endsWith("/api/me/") && response.status() === 200 && response.request().method() === "PATCH"
+        )
+    }
+
+    await page.getByRole("button", { name: "Sign up", exact: true }).click()
+    await signupResponse
+    await loginResponse
+    if (shouldWaitForMeResponse) {
+        await meResponse
+    }
+
+    async function waitForPageToLoad() {
+        await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
+        await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
+    }
+
     await page.waitForURL("/")
+    await waitForPageToLoad()
 
     let chats: Chat[] = []
     if (withChats) {
         const response = await apiFetch("/test/create-chats/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, chats: exampleChats })
+            body: JSON.stringify({ email })
         })
         expect(response.status).toEqual(200)
         const uuids = await response.json()
@@ -46,6 +64,7 @@ export async function signupAndLogin(page: Page, withChats: boolean = false): Pr
     }
 
     await page.reload()
+    await waitForPageToLoad()
 
     return { email, password, chats }
 }
