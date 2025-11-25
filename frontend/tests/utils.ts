@@ -74,9 +74,13 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
 
     const user = await signupAndLogin(page)
 
-    await page.getByText("Settings").click()
-    await page.getByRole("tab", { name: "Security" }).click()
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
 
+    await page.getByRole("tab", { name: "Security" }).click()
     await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
     await expect(page.getByText("Step 1: Setup", { exact: true })).toBeVisible()
 
@@ -104,6 +108,8 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
     await page.getByRole("button", { name: "Close", exact: true }).click()
 
     await page.reload()
+    await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
 
     return { user, backupCodes }
 }
@@ -111,7 +117,12 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
 export async function signupWithMFAEnabled(page: Page) {
     const user = await signupWithMFAEnabledAndLogin(page)
 
-    await page.getByText("Settings").click()
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
+
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByRole("button", { name: "Log out", exact: true }).click()
     await page.waitForURL("/login")
