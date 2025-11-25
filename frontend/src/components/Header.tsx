@@ -33,7 +33,7 @@ export default function Header() {
                 </div>
             }
 
-            <p className="text-2xl font-semibold">Chatbot</p>
+            <p className="text-2xl font-semibold not-md:text-[16px]">Chatbot</p>
 
             <DropdownMenu.Root>
                 <DropdownMenu.Trigger
