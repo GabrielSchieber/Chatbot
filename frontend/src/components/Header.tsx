@@ -1,9 +1,9 @@
-import { ChevronRightIcon, DotsVerticalIcon, PlusIcon } from "@radix-ui/react-icons"
+import { DotsVerticalIcon } from "@radix-ui/react-icons"
 import { DropdownMenu } from "radix-ui"
 import { useParams } from "react-router"
 
+import { ArchiveButton, DeleteButton, NewChat, ToggleSidebar, UnarchiveButton } from "./Buttons"
 import Search from "./Search"
-import { ArchiveButton, DeleteButton, UnarchiveButton } from "./Buttons"
 import { useAuth } from "../providers/AuthProvider"
 import { useChat } from "../providers/ChatProvider"
 import { me } from "../utils/api"
@@ -14,34 +14,24 @@ export default function Header() {
     const { user, setUser } = useAuth()
     const { chats, isMobile } = useChat()
 
-    const currentChat = chats.find(c => c.uuid === chatUUID)
-
     const isSidebarOpen = user ? user.preferences.has_sidebar_open : true
-    const setIsSidebarOpen = (value: boolean) => setUser(previous => previous ? { ...previous, preferences: { ...previous.preferences, has_sidebar_open: value } } : previous)
 
-    const itemClassNames = "flex gap-1 p-2 items-center rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"
+    function setIsSidebarOpen(value: boolean) {
+        me(undefined, undefined, value)
+        setUser(previous => previous ? { ...previous, preferences: { ...previous.preferences, has_sidebar_open: value } } : previous)
+    }
+
+    const currentChat = chats.find(c => c.uuid === chatUUID)
 
     return (
         <header className="flex w-full p-2 items-center justify-between">
-            {isMobile && (
+            {isMobile &&
                 <div className={`flex gap-1 ${isSidebarOpen && "invisible"}`}>
-                    <button
-                        className={itemClassNames}
-                        onClick={_ => {
-                            me(undefined, undefined, true)
-                            setIsSidebarOpen(true)
-                        }}
-                    >
-                        <ChevronRightIcon className="size-5" />
-                    </button>
-
-                    <a className={itemClassNames} href="/">
-                        <PlusIcon className="size-5" />
-                    </a>
-
-                    <Search showLabel={!isMobile && isSidebarOpen} itemClassNames={itemClassNames} />
+                    <ToggleSidebar withLabel={false} onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+                    <NewChat withLabel={false} />
+                    <Search openButtonWithLabel={false} />
                 </div>
-            )}
+            }
 
             <p className="text-2xl font-semibold">Chatbot</p>
 

@@ -1,6 +1,6 @@
-import { ArchiveIcon, ArrowUpIcon, CheckIcon, CopyIcon, Cross2Icon, PauseIcon, Pencil1Icon, PlusIcon, TrashIcon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
+import { ArchiveIcon, ArrowUpIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, Cross2Icon, GearIcon, MagnifyingGlassIcon, PauseIcon, Pencil1Icon, PlusIcon, TrashIcon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
 import { t } from "i18next"
-import { DropdownMenu, Tooltip } from "radix-ui"
+import { Dialog, DropdownMenu, Tooltip } from "radix-ui"
 import { useEffect, useState, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react"
 import { useParams } from "react-router"
 
@@ -341,6 +341,42 @@ export function TooltipButton({ trigger, tooltip, onClick, type, className, isDi
     )
 }
 
+export function ToggleSidebar({ withLabel, onClick }: { withLabel: boolean, onClick: VoidFunction }) {
+    return (
+        <button className={sidebarButtonClasses} onClick={onClick}>
+            {withLabel ? (
+                <><ChevronLeftIcon className="size-5" />{t("sidebar.closeSidebar")}</>
+            ) : (
+                <ChevronRightIcon className="size-5" />
+            )}
+        </button>
+    )
+}
+
+export function NewChat({ withLabel }: { withLabel: boolean }) {
+    return (
+        <a className={sidebarButtonClasses} href="/">
+            <PlusIcon className="size-5" /> {withLabel && t("sidebar.newChat")}
+        </a>
+    )
+}
+
+export function SearchChats({ withLabel }: { withLabel: boolean }) {
+    return (
+        <Dialog.Trigger className={sidebarButtonClasses}>
+            <MagnifyingGlassIcon className="size-5" /> {withLabel && t("sidebar.searchChats")}
+        </Dialog.Trigger>
+    )
+}
+
+export function OpenSettings({ withLabel }: { withLabel: boolean }) {
+    return (
+        <Dialog.Trigger className={sidebarButtonClasses}>
+            <GearIcon className="size-5" /> {withLabel && t("sidebar.settings")}
+        </Dialog.Trigger>
+    )
+}
+
 const messageButtonClassNames = `
     p-2 rounded-lg cursor-pointer outline-none
     hover:bg-gray-700 light:hover:bg-gray-300
@@ -383,3 +419,5 @@ const destructiveChatDropdownItemClassName = `
     hover:bg-red-400/20
     focus:bg-red-400/20
 `
+
+const sidebarButtonClasses = "flex gap-1 p-2 items-center rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"

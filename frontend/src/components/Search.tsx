@@ -1,12 +1,13 @@
-import { ArchiveIcon, ChatBubbleIcon, Cross1Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons"
+import { ArchiveIcon, ChatBubbleIcon, Cross1Icon } from "@radix-ui/react-icons"
 import i18next, { t } from "i18next"
 import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
 
+import { SearchChats } from "./Buttons"
 import { useChat } from "../providers/ChatProvider"
 import { searchChats } from "../utils/api"
 
-export default function Search({ showLabel, itemClassNames }: { showLabel: boolean, itemClassNames: string }) {
+export default function Search({ openButtonWithLabel }: { openButtonWithLabel: boolean }) {
     const { chats, isMobile } = useChat()
 
     const entriesRef = useRef<HTMLDivElement | null>(null)
@@ -98,9 +99,7 @@ export default function Search({ showLabel, itemClassNames }: { showLabel: boole
                 }
             }}
         >
-            <Dialog.Trigger className={itemClassNames}>
-                <MagnifyingGlassIcon className="size-5" /> {showLabel && t("sidebar.searchChats")}
-            </Dialog.Trigger>
+            <SearchChats withLabel={openButtonWithLabel} />
 
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/50" />

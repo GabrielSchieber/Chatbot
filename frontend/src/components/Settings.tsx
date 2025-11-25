@@ -4,6 +4,7 @@ import { useState, type ReactNode, type SetStateAction, type Dispatch, useEffect
 import { useTranslation } from "react-i18next"
 
 import { ArchivedChatsDialog } from "./ArchivedChatsDialog"
+import { OpenSettings } from "./Buttons"
 import ConfirmDialog from "./ConfirmDialog"
 import Customizations from "./Customizations"
 import DeleteAccountDialog from "./DeleteAccountDialog"
@@ -14,7 +15,7 @@ import { deleteChats, logout, me } from "../utils/api"
 import { applyTheme, getLanguageAbbreviation } from "../utils/misc"
 import type { Language, Theme } from "../utils/types"
 
-export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarOpen: boolean, itemClassNames: string }) {
+export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) {
     const { user } = useAuth()
     const { isMobile } = useChat()
     const { t } = useTranslation()
@@ -31,9 +32,7 @@ export default function Settings({ isSidebarOpen, itemClassNames }: { isSidebarO
 
     return (
         <Dialog.Root>
-            <Dialog.Trigger className={itemClassNames}>
-                <GearIcon className="size-5" /> {isSidebarOpen && t("sidebar.settings")}
-            </Dialog.Trigger>
+            <OpenSettings withLabel={isSidebarOpen} />
 
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/50" />
