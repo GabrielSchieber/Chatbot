@@ -26,12 +26,10 @@ test("user can chat with bot", async ({ page }) => {
 test("user can chat with bot with a file", async ({ page }) => {
     await signupAndLogin(page)
 
-    await page.goto("/")
-
-    const message = "Describe the following file."
+    const message = "Describe the following file in a concise way."
     const fileName = "about-cats.txt"
     const fileContent = "The purpose of this file is to describe cats and their behavior."
-    const expectedResponse = `The file "about-cats.txt" describes a cat's behavior. The content lists the names of different cat breeds.`
+    const expectedResponse = "This file contains information about the purpose, content, and how it should be used for the file on which you are interested in learning more about the cat."
 
     await page.setInputFiles("input[type='file']", {
         name: fileName,
@@ -70,12 +68,12 @@ test("user can chat with bot with a file", async ({ page }) => {
 test("user can chat with bot with multiple files", async ({ page }) => {
     await signupAndLogin(page)
 
-    const message = "Summarize the files."
+    const message = "Describe the files."
     const file1Name = "about-cats.txt"
     const file1Content = "The purpose of this file is to describe cats and their behavior."
     const file2Name = "about-dogs.txt"
     const file2Content = "The purpose of this file is to describe dogs and their behavior."
-    const expectedResponse = "The files in the following sections describe cats and their behaviors:\n== About-cats.txt\nContains information about cats, including their size and characteristics.\n== About-dogs.txt\nContains information about dogs, including their size and characteristics."
+    const expectedResponse = "Cats are the perfect companions for many, as they provide a unique mix of independence and loyalty that makes them an ideal companion for those who love to play fetch or even just sit in front of the computer without looking at the cat's picture too much."
 
     for (const [fileName, fileContent] of [[file1Name, file1Content], [file2Name, file2Content]]) {
         await page.setInputFiles("input[type='file']", {
@@ -114,12 +112,11 @@ test("user can chat with bot with multiple files", async ({ page }) => {
 
 test("user can remove attached file before sending message", async ({ page }) => {
     await signupAndLogin(page)
-    await page.goto("/")
 
     const message = "Hello!"
     const fileName = "about-cats.txt"
     const fileContent = "The purpose of this file is to describe cats and their behavior."
-    const expectedResponse = "Hello! How can I assist you today?"
+    const expectedResponse = "How can I help you today?"
 
     await page.setInputFiles("input[type='file']", {
         name: fileName,
@@ -135,6 +132,57 @@ test("user can remove attached file before sending message", async ({ page }) =>
     await textarea.fill("Hello!")
     await textarea.press("Enter", { delay: 20, timeout: 1000 })
     await expect(textarea).not.toContainText("Hello!")
+
+    const stopButton = page.getByTestId("stop-button")
+    await expect(stopButton).toBeVisible()
+
+    const userMessage = page.getByTestId("message-0")
+    const botMessage = page.getByTestId("message-1")
+
+    await expect(userMessage).toBeVisible({ timeout })
+    await expect(botMessage).toBeVisible({ timeout })
+
+    await expect(userMessage).toContainText(message, { timeout })
+    await expect(botMessage).toContainText(expectedResponse, { timeout })
+
+    await expect(stopButton).not.toBeVisible({ timeout })
+
+    if (page.viewportSize()!.width < 750) {
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+    await expect(page.getByText("Close Sidebar")).toBeVisible()
+    await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
+})
+
+test("user can remove one attached file from many existing ones before sending message", async ({ page }) => {
+    await signupAndLogin(page)
+
+    const message = "Describe the files briefly."
+    const file1Name = "about-cats.txt"
+    const file1Content = "The purpose of this file is to describe cats and their behavior."
+    const file2Name = "about-dogs.txt"
+    const file2Content = "The purpose of this file is to describe dogs and their behavior."
+    const file3Name = "about-birds.txt"
+    const file3Content = "The purpose of this file is to describe birds and their behavior."
+    const expectedResponse = "Cats are about-about-pets.txt, about-about-about-paws.txt. They like to play with the paws and they want to be a part of your family."
+
+    for (const [fileName, fileContent] of [[file1Name, file1Content], [file2Name, file2Content], [file3Name, file3Content]]) {
+        await page.setInputFiles("input[type='file']", {
+            name: fileName,
+            mimeType: "text/plain",
+            buffer: (globalThis as any).Buffer.from(fileContent)
+        })
+        await expect(page.getByText(fileName)).toBeVisible()
+    }
+
+    await expect(page.getByText(file2Name)).toBeVisible()
+    await page.getByTestId("remove-attachment-button-about-dogs.txt").click()
+    await expect(page.getByText(file2Name)).not.toBeVisible()
+
+    const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
+    await textarea.fill(message)
+    await textarea.press("Enter", { delay: 20, timeout: 1000 })
+    await expect(textarea).not.toContainText(message)
 
     const stopButton = page.getByTestId("stop-button")
     await expect(stopButton).toBeVisible()
@@ -350,19 +398,17 @@ const timeout = 60_000
 
 const exampleChats: { title: string, messages: string[] }[] = [
     {
-        title: "I've got a lot of questions",
+        title: "What is the issue or problem we need to solve",
         messages: [
             "Hello!",
-            "Hello! How can I assist you today?"
+            "How can I help you today?"
         ]
     },
     {
-        title: "That's an excellent start. I",
+        title: "What are the steps to follow through on this conversation",
         messages: [
-            "What is Arithmetic? Describe it in one small phrase.",
-            "Arithmetic, the process of counting and arranging numbers, is a cornerstone of mathematics. At its core, arithmetic involves assigning a number to every element in a set, allowing us to perform arithmetic operations on sets efficiently. Arithmetic is used in counting, problem-solving, and strategic planning across various fields, from counting objects",
-            "And what is Algebra? Talk about it briefly.",
-            "It is a foundational branch of mathematics that studies shapes and patterns within sets of objects, using a method called graph theory to describe relationships between them. Algebra combines abstract thinking with number theory and geometry to model real-world problems and abstract concepts in mathematics. It provides an algebraic perspective on shapes, allowing us to model and analyze"
+            "I have eggs and spinach. What can I make?",
+            "You can try making an omelet or a salad with some of those same ingredients, such as eggs and spinach."
         ]
     }
 ]
