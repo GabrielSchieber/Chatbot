@@ -232,7 +232,7 @@ test("user can edit their message", async ({ page }) => {
     const firstUserMessage = exampleChats[0].messages[0]
     const firstBotMessage = exampleChats[0].messages[1]
     const secondUserMessage = "Howdy!"
-    const secondBotMessage = "It’s so much easier than you can imagine! What’s on your mind? Let's get a cup of tea, warm yourself in a comfortable chair, and see what the day has in store for us."
+    const secondBotMessage = "What do I need to do?"
 
     await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
     await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
@@ -244,8 +244,13 @@ test("user can edit their message", async ({ page }) => {
     await userMessageTextArea.fill(secondUserMessage)
     await page.getByTestId("send").first().click()
 
+    const stopButton = page.getByTestId("stop-button")
+    await expect(stopButton).toBeVisible()
+
     await expect(page.getByTestId("message-0")).toHaveText(secondUserMessage, { timeout })
     await expect(page.getByTestId("message-1")).toHaveText(secondBotMessage, { timeout })
+
+    await expect(stopButton).not.toBeVisible()
 })
 
 test("user can regenerate messages", async ({ page }) => {
