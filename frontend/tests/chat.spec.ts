@@ -112,6 +112,51 @@ test("user can chat with bot with multiple files", async ({ page }) => {
     await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
 })
 
+test("user can remove attached file before sending message", async ({ page }) => {
+    await signupAndLogin(page)
+    await page.goto("/")
+
+    const message = "Hello!"
+    const fileName = "about-cats.txt"
+    const fileContent = "The purpose of this file is to describe cats and their behavior."
+    const expectedResponse = "Hello! How can I assist you today?"
+
+    await page.setInputFiles("input[type='file']", {
+        name: fileName,
+        mimeType: "text/plain",
+        buffer: (globalThis as any).Buffer.from(fileContent)
+    })
+
+    await expect(page.getByText(fileName)).toBeVisible()
+    await page.getByTestId("remove-attachment-button-about-cats.txt").click()
+    await expect(page.getByText(fileName)).not.toBeVisible()
+
+    const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
+    await textarea.fill("Hello!")
+    await textarea.press("Enter", { delay: 20, timeout: 1000 })
+    await expect(textarea).not.toContainText("Hello!")
+
+    const stopButton = page.getByTestId("stop-button")
+    await expect(stopButton).toBeVisible()
+
+    const userMessage = page.getByTestId("message-0")
+    const botMessage = page.getByTestId("message-1")
+
+    await expect(userMessage).toBeVisible({ timeout })
+    await expect(botMessage).toBeVisible({ timeout })
+
+    await expect(userMessage).toContainText(message, { timeout })
+    await expect(botMessage).toContainText(expectedResponse, { timeout })
+
+    await expect(stopButton).not.toBeVisible({ timeout })
+
+    if (page.viewportSize()!.width < 750) {
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+    await expect(page.getByText("Close Sidebar")).toBeVisible()
+    await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
+})
+
 test("user can copy their own message", async ({ page }) => {
     await signupAndLogin(page)
     await sendExampleChat(page, 0)
