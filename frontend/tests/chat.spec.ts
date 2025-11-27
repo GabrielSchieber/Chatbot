@@ -253,6 +253,45 @@ test("user can edit their message", async ({ page }) => {
     await expect(stopButton).not.toBeVisible()
 })
 
+test("user can edit their message and attach a file", async ({ page }) => {
+    await signupAndLogin(page)
+    await sendExampleChat(page, 0)
+
+    const firstUserMessage = exampleChats[0].messages[0]
+    const firstBotMessage = exampleChats[0].messages[1]
+
+    const secondUserMessage = "Describe the following file in a concise way."
+    const fileName = "about-cats.txt"
+    const fileContent = "The purpose of this file is to describe cats and their behavior."
+    const secondBotMessage = "(1)\nHere's what you are about to read: (2)\n\n\n\nThe purpose of this text is to provide information about the world of cats, including how they behave in different situations."
+
+    await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
+    await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
+
+    await page.getByTestId("edit").click()
+    const userMessageTextArea = page.getByText(firstUserMessage, { exact: true })
+    await userMessageTextArea.click()
+    await userMessageTextArea.press("ArrowLeft")
+    await userMessageTextArea.fill(secondUserMessage)
+
+    await page.setInputFiles("input[type='file']", {
+        name: fileName,
+        mimeType: "text/plain",
+        buffer: (globalThis as any).Buffer.from(fileContent)
+    })
+    await expect(page.getByText(fileName)).toBeVisible()
+
+    await page.getByTestId("send").first().click()
+
+    const stopButton = page.getByTestId("stop-button")
+    await expect(stopButton).toBeVisible()
+
+    await expect(page.getByTestId("message-0")).toHaveText(secondUserMessage, { timeout })
+    await expect(page.getByTestId("message-1")).toHaveText(secondBotMessage, { timeout })
+
+    await expect(stopButton).not.toBeVisible()
+})
+
 test("user can regenerate messages", async ({ page }) => {
     await signupAndLogin(page)
     await sendExampleChat(page, 0)
