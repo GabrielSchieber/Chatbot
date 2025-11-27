@@ -475,6 +475,38 @@ test("user can change models between messages", async ({ page }) => {
     await sendMessage(page, 2, "Hello again!", "Please make it into a sentence, please, what's your question?")
 })
 
+test("user can change models while editing a message", async ({ page }) => {
+    await signupAndLogin(page)
+
+    const userMessage1 = "Hello!"
+    const userMessage2 = "Hello again!"
+    const botMessage1 = "How can I help you today?"
+    const botMessage2 = "Go on, Go on!"
+
+    await sendMessage(page, 0, userMessage1, botMessage1)
+
+    await page.getByTestId("edit").click()
+
+    const dropdownTrigger = page.getByLabel("Add files and more").first()
+    const modelSelection = page.getByTestId("model-selection").first()
+    const modelSelectionEntries = modelSelection.getByTestId("model-selection-entry")
+
+    await dropdownTrigger.click()
+    await expect(modelSelectionEntries).toHaveCount(4)
+    await modelSelectionEntries.nth(0).click()
+    await page.keyboard.press("Escape")
+    await expect(modelSelectionEntries).not.toBeVisible()
+
+    const textArea = page.getByRole("textbox", { name: "Ask me anything..." }).first()
+    await textArea.click()
+    await textArea.press("ArrowLeft")
+    await textArea.fill(userMessage2)
+    await page.getByTestId("send").first().click()
+
+    await expect(page.getByTestId("message-0")).toHaveText(userMessage2, { timeout })
+    await expect(page.getByTestId("message-1")).toHaveText(botMessage2, { timeout })
+})
+
 async function sendMessage(page: Page, index: number, message: string, expectedResponse: string) {
     const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
     await textarea.fill(message)
