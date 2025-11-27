@@ -292,6 +292,65 @@ test("user can edit their message and attach a file", async ({ page }) => {
     await expect(stopButton).not.toBeVisible()
 })
 
+test("user can edit their message and remove a file", async ({ page }) => {
+    await signupAndLogin(page)
+
+    const userMessage1 = "Describe the following file in a concise way."
+    const fileName = "about-cats.txt"
+    const fileContent = "The purpose of this file is to describe cats and their behavior."
+    const botMessage1 = "This file contains information about the purpose, content, and how it should be used for the file on which you are interested in learning more about the cat."
+
+    const userMessage2 = "Hello!"
+    const botMessage2 = "Is that all you have to say?"
+
+    await page.setInputFiles("input[type='file']", {
+        name: fileName,
+        mimeType: "text/plain",
+        buffer: (globalThis as any).Buffer.from(fileContent)
+    })
+
+    await expect(page.getByText(fileName)).toBeVisible()
+
+    const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
+    await textarea.fill(userMessage1)
+    await textarea.press("Enter", { delay: 20, timeout: 1000 })
+    await expect(textarea).not.toContainText(userMessage1)
+
+    const stopButton = page.getByTestId("stop-button")
+    await expect(stopButton).toBeVisible()
+
+    const userMessage = page.getByTestId("message-0")
+    const botMessage = page.getByTestId("message-1")
+
+    await expect(userMessage).toBeVisible({ timeout })
+    await expect(botMessage).toBeVisible({ timeout })
+
+    await expect(userMessage).toContainText(userMessage1, { timeout })
+    await expect(botMessage).toContainText(botMessage1, { timeout })
+
+    await expect(stopButton).not.toBeVisible({ timeout })
+
+    await page.getByTestId("edit").click()
+
+    await expect(page.getByText(fileName)).toBeVisible()
+    await page.getByTestId("remove-attachment-button-about-cats.txt").click()
+    await expect(page.getByText(fileName)).not.toBeVisible()
+
+    const userMessageTextArea = page.getByText(userMessage1, { exact: true })
+    await userMessageTextArea.click()
+    await userMessageTextArea.press("ArrowLeft")
+    await userMessageTextArea.fill(userMessage2)
+
+    await page.getByTestId("send").first().click()
+
+    await expect(stopButton).toBeVisible()
+
+    await expect(userMessage).toHaveText(userMessage2, { timeout })
+    await expect(botMessage).toHaveText(botMessage2, { timeout })
+
+    await expect(stopButton).not.toBeVisible()
+})
+
 test("user can regenerate messages", async ({ page }) => {
     await signupAndLogin(page)
     await sendExampleChat(page, 0)
