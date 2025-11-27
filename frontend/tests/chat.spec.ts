@@ -67,6 +67,51 @@ test("user can chat with bot with a file", async ({ page }) => {
     await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
 })
 
+test("user can chat with bot with multiple files", async ({ page }) => {
+    await signupAndLogin(page)
+
+    const message = "Summarize the files."
+    const file1Name = "about-cats.txt"
+    const file1Content = "The purpose of this file is to describe cats and their behavior."
+    const file2Name = "about-dogs.txt"
+    const file2Content = "The purpose of this file is to describe dogs and their behavior."
+    const expectedResponse = "The files in the following sections describe cats and their behaviors:\n== About-cats.txt\nContains information about cats, including their size and characteristics.\n== About-dogs.txt\nContains information about dogs, including their size and characteristics."
+
+    for (const [fileName, fileContent] of [[file1Name, file1Content], [file2Name, file2Content]]) {
+        await page.setInputFiles("input[type='file']", {
+            name: fileName,
+            mimeType: "text/plain",
+            buffer: (globalThis as any).Buffer.from(fileContent)
+        })
+        await expect(page.getByText(fileName)).toBeVisible()
+    }
+
+    const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
+    await textarea.fill(message)
+    await textarea.press("Enter", { delay: 20, timeout: 1000 })
+    await expect(textarea).not.toContainText(message)
+
+    const stopButton = page.getByTestId("stop-button")
+    await expect(stopButton).toBeVisible()
+
+    const userMessage = page.getByTestId("message-0")
+    const botMessage = page.getByTestId("message-1")
+
+    await expect(userMessage).toBeVisible({ timeout })
+    await expect(botMessage).toBeVisible({ timeout })
+
+    await expect(userMessage).toContainText(message, { timeout })
+    await expect(botMessage).toContainText(expectedResponse, { timeout })
+
+    await expect(stopButton).not.toBeVisible({ timeout })
+
+    if (page.viewportSize()!.width < 750) {
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+    await expect(page.getByText("Close Sidebar")).toBeVisible()
+    await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
+})
+
 test("user can copy their own message", async ({ page }) => {
     await signupAndLogin(page)
     await sendExampleChat(page, 0)
