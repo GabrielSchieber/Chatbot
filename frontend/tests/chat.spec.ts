@@ -259,7 +259,7 @@ test("user can regenerate messages", async ({ page }) => {
 
     const firstUserMessage = exampleChats[0].messages[0]
     const firstBotMessage = exampleChats[0].messages[1]
-    const secondBotMessage = ""
+    const secondBotMessage = "Dear Sir/MRS.S, please inform me about your visit? We appreciate your consideration. Thank you for visiting us today!\n\n\nI'm glad of your request. I'd be happy to assist in any way that suits your needs and preferences. Please come later if you're interested?"
 
     await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
     await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
@@ -274,8 +274,13 @@ test("user can regenerate messages", async ({ page }) => {
 
     await regenerateDropdownEntries.first().click()
 
+    const stopButton = page.getByTestId("stop-button")
+    await expect(stopButton).toBeVisible()
+
     await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
     await expect(page.getByTestId("message-1")).toHaveText(secondBotMessage, { timeout })
+
+    await expect(stopButton).not.toBeVisible()
 })
 
 test("user can delete chats", async ({ page }) => {
