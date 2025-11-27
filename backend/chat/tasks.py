@@ -73,9 +73,9 @@ async def generate_message(chat: Chat, should_generate_title: bool, should_rando
     await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_end"})
 
 async def generate_title(chat: Chat):
-    model, options = get_ollama_model_and_options("SmolLM2-135M")
+    model, options = get_ollama_model_and_options(chat.pending_message.model)
 
-    options["num_predict"] = 7
+    options["num_predict"] = 10
     if IS_PLAYWRIGHT_TEST:
         options["seed"] = 0
 
@@ -85,7 +85,7 @@ async def generate_title(chat: Chat):
     messages = [
         {
             "role": "user",
-            "content": f"Generate a descriptive title for the following conversation between a human and their AI personal assistant. The title should be in plain, simple English, it should not contain any punctuations and it should be no longer than seven words:\n\nUser:\n{first_message.text}\n\nAssistant:\n{last_message.text}"
+            "content": f"Generate a descriptive and concise title for the following conversation between a human and their AI personal assistant that happened on chatbot web app. The title should be in plain, simple English, it should NOT contain any punctuations and it should be NO longer than ten words:\n\nUser:\n{first_message.text}\n\nAssistant:\n{last_message.text}"
         }
     ]
 
@@ -135,7 +135,7 @@ def get_message_dict(message: Message) -> dict[str, str]:
         return {"role": "assistant", "content": message.text}
 
 def get_system_prompt(user: User):
-    system_prompt = "You are a helpful and nice AI personal assistant. Your role is to provide assistance to the user."
+    system_prompt = "You are a helpful and nice AI personal assistant. Your role is to provide assistance to the user. Always answer the user concisely using one small phrase with simple words."
 
     custom_instructions = user.preferences.custom_instructions
     nickname = user.preferences.nickname
@@ -190,12 +190,16 @@ def is_any_user_chat_pending(user: User) -> bool:
 
 def get_ollama_model_and_options(model: str):
     base_options = {"numa": True, "num_ctx": 512, "num_batch": 1, "logits_all": True, "use_mmap": True, "use_mlock": True, "num_predict": 256}
-    if model == "Moondream":
-        return "moondream:1.8b-v2-q2_K", base_options
-    elif model == "SmolLM2-135M":
-        return "smollm2:135m-instruct-q2_K", {**base_options, "num_keep": 25, "top_k": 10, "top_p": 1.0, "tfs_z": 0.25, "typical_p": 1.5, "repeat_last_n": 5, "temperature": 0.875}
-    else:
-        return model.lower().replace("-", ":"), base_options
+
+    match model:
+        case "SmolLM2-135M":
+            return "smollm2:135m-instruct-q2_K", base_options
+        case "SmolLM2-360M":
+            return "smollm2:360m-instruct-q2_K", base_options
+        case "SmolLM2-1.7B":
+            return "smollm2:1.7b-instruct-q2_K", {**base_options, "temperature": 0.35}
+        case "Moondream":
+            return "moondream:1.8b-v2-q2_K", base_options
 
 async def safe_save_message_text(message: Message):
     exists = await database_sync_to_async(Message.objects.filter(pk = message.pk).exists)()
