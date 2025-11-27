@@ -1,10 +1,11 @@
 import binascii
 
 from django import forms
-from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from django.utils.safestring import mark_safe
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.contrib.auth.forms import ReadOnlyPasswordHashField
+from django.contrib.auth.models import Group
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from .models import Chat, Message, MessageFile, User, UserMFA, UserPreferences
@@ -131,6 +132,8 @@ class UserAdmin(DjangoUserAdmin):
 	search_fields = ("email",)
 	ordering = ("email",)
 	filter_horizontal = ("groups", "user_permissions")
+
+admin.site.unregister(Group)
 
 admin.site.register(Chat)
 admin.site.register(Message)
