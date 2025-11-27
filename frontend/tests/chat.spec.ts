@@ -458,6 +458,23 @@ test("user can create new chat", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
 })
 
+test("user can change models between messages", async ({ page }) => {
+    await signupAndLogin(page)
+    await sendMessage(page, 0, "Hello!", "How can I help you today?")
+
+    const dropdownTrigger = page.getByLabel("Add files and more")
+    const modelSelection = page.getByTestId("model-selection")
+    const modelSelectionEntries = modelSelection.getByTestId("model-selection-entry")
+
+    await dropdownTrigger.click()
+    await expect(modelSelectionEntries).toHaveCount(4)
+    await modelSelectionEntries.nth(0).click()
+    await page.keyboard.press("Escape")
+    await expect(modelSelectionEntries).not.toBeVisible()
+
+    await sendMessage(page, 2, "Hello again!", "Please make it into a sentence, please, what's your question?")
+})
+
 async function sendMessage(page: Page, index: number, message: string, expectedResponse: string) {
     const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
     await textarea.fill(message)

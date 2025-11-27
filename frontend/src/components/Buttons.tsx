@@ -36,7 +36,7 @@ export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
                         <UploadIcon className="size-6" /> {t("plusDropdown.addFiles")}
                     </DropdownMenu.Item>
 
-                    <div className="flex flex-col">
+                    <div className="flex flex-col" data-testid="model-selection">
                         <p className="ml-2 text-sm text-gray-400 light:text-gray-600">Models:</p>
                         <div className="flex flex-col p-1 rounded-xl bg-gray-700/30 light:bg-gray-300/30">
                             {(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
@@ -48,6 +48,7 @@ export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
                                         e.stopPropagation()
                                         setModel(m)
                                     }}
+                                    data-testid="model-selection-entry"
                                 >
                                     {m}
                                     {m === model && <CheckIcon className="size-6" />}
