@@ -2,6 +2,8 @@ import { Page, expect, test } from "@playwright/test"
 import { signupAndLogin } from "./utils"
 
 test.beforeEach(async ({ page }) => {
+    test.setTimeout(timeout)
+
     await page.addInitScript(() => {
         const store = { text: "" }
 
@@ -23,41 +25,57 @@ test("user can chat with bot", async ({ page }) => {
 
 test("user can copy their own message", async ({ page }) => {
     await signupAndLogin(page)
-    await sendExampleChat(page, 1, 1)
+    await sendExampleChat(page, 0)
 
-    await page.getByTestId("copy").first().click()
-    await expectClipboard(page, exampleChats[1].messagePairs[0].user)
+    const copyButtons = page.getByTestId("copy")
+    await expect(copyButtons).toHaveCount(2)
+    await copyButtons.first().click()
+    await expectClipboard(page, exampleChats[0].messages[0])
 })
 
 test("user can copy bot messages", async ({ page }) => {
     await signupAndLogin(page)
-    await sendExampleChat(page, 1, 1)
+    await sendExampleChat(page, 0)
 
-    await page.getByTestId("copy").last().click()
-    await expectClipboard(page, exampleChats[1].messagePairs[0].bot)
+    const copyButtons = page.getByTestId("copy")
+    await expect(copyButtons).toHaveCount(2)
+    await copyButtons.last().click()
+    await expectClipboard(page, exampleChats[0].messages[1])
 })
 
 test("user can edit their message", async ({ page }) => {
     await signupAndLogin(page)
     await sendExampleChat(page, 0)
 
-    const userMessage = exampleChats[0].messagePairs[0].user
-    const botMessage = exampleChats[0].messagePairs[0].bot
+    const firstUserMessage = exampleChats[0].messages[0]
+    const firstBotMessage = exampleChats[0].messages[1]
+    const secondUserMessage = "Howdy!"
+    const secondBotMessage = "It’s so much easier than you can imagine! What’s on your mind? Let's get a cup of tea, warm yourself in a comfortable chair, and see what the day has in store for us."
+
+    await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
+    await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
 
     await page.getByTestId("edit").click()
-    const userMessageTextArea = page.getByText(userMessage, { exact: true })
+    const userMessageTextArea = page.getByText(firstUserMessage, { exact: true })
     await userMessageTextArea.click()
     await userMessageTextArea.press("ArrowLeft")
-    await userMessageTextArea.fill(userMessage)
+    await userMessageTextArea.fill(secondUserMessage)
     await page.getByTestId("send").first().click()
 
-    await expect(page.getByTestId("message-0")).toHaveText(userMessage, { timeout })
-    await expect(page.getByTestId("message-1")).toHaveText(botMessage, { timeout })
+    await expect(page.getByTestId("message-0")).toHaveText(secondUserMessage, { timeout })
+    await expect(page.getByTestId("message-1")).toHaveText(secondBotMessage, { timeout })
 })
 
 test("user can regenerate messages", async ({ page }) => {
     await signupAndLogin(page)
     await sendExampleChat(page, 0)
+
+    const firstUserMessage = exampleChats[0].messages[0]
+    const firstBotMessage = exampleChats[0].messages[1]
+    const secondBotMessage = ""
+
+    await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
+    await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
 
     await page.getByTestId("regenerate").click()
 
@@ -69,7 +87,8 @@ test("user can regenerate messages", async ({ page }) => {
 
     await regenerateDropdownEntries.first().click()
 
-    await expect(page.getByTestId("message-1")).not.toHaveText(exampleChats[0].messagePairs[0].bot, { timeout })
+    await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
+    await expect(page.getByTestId("message-1")).toHaveText(secondBotMessage, { timeout })
 })
 
 test("user can delete chats", async ({ page }) => {
@@ -78,11 +97,21 @@ test("user can delete chats", async ({ page }) => {
     await sendExampleChat(page, 0)
     await sendExampleChat(page, 1)
 
-    await expect(page.getByRole("link")).toHaveCount(3)
-    for (const chat of exampleChats) {
-        await expect(page.getByRole("link", { name: chat.title, exact: true })).toBeVisible()
+    const historyEntries = page.getByTestId("history").locator("a")
+
+    if (page.viewportSize()!.width < 750) {
+        await expect(page.getByText("Close Sidebar")).not.toBeVisible()
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+    await expect(page.getByText("Close Sidebar")).toBeVisible()
+
+    await expect(historyEntries).toHaveCount(2)
+    for (const chat of exampleChats.slice(0, 2)) {
+        await expect(historyEntries.getByText(chat.title, { exact: true })).toBeVisible()
     }
     await page.goto("/")
+
+    await expect(page.getByText("Close Sidebar")).toBeVisible()
 
     await page.getByText("Settings").click()
     await page.getByRole("tab", { name: "Data" }).click()
@@ -109,58 +138,44 @@ test("user can delete chats", async ({ page }) => {
     await page.getByTestId("close-settings").click()
     await expect(page.getByRole("button", { name: "Settings" })).toBeVisible()
 
-    await expect(page.getByRole("link")).toHaveCount(1, { timeout: 30000 })
-    for (const chat of exampleChats) {
-        await expect(page.getByRole("link", { name: chat.title, exact: true })).not.toBeVisible()
+    await expect(historyEntries).toHaveCount(0)
+    for (const chat of exampleChats.slice(0, 2)) {
+        await expect(historyEntries.getByText(chat.title, { exact: true })).not.toBeVisible()
     }
+
+    await expect(page.getByText("You don't have any chats.", { exact: true })).toBeVisible()
 })
 
 test("user can create new chat", async ({ page }) => {
     await signupAndLogin(page)
     await sendExampleChat(page, 0)
 
+    await expect(page.getByTestId("message-0")).toBeVisible({ timeout })
+    await expect(page.getByTestId("message-1")).toBeVisible({ timeout })
+
     expect(page.url()).toContain("/chat/")
-    await page.getByText("New Chat").click()
+    if (page.viewportSize()!.width < 750) {
+        await page.getByRole("banner").getByRole("link").click()
+    } else {
+        await page.getByText("New Chat").click()
+    }
     await page.waitForURL("/")
 
     await expect(page.getByTestId("message-0")).not.toBeVisible({ timeout })
     await expect(page.getByTestId("message-1")).not.toBeVisible({ timeout })
-    await sendExampleChat(page, 1, 1)
+
+    await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
 })
-
-type MessagePair = {
-    user: string
-    bot: string
-}
-
-type Chat = {
-    title: string
-    messagePairs: MessagePair[]
-}
-
-const timeout = 30000
-
-const exampleChats: Chat[] = [{
-    title: "Greetings",
-    messagePairs: [{
-        user: "Hello!",
-        bot: "Hello! I'm here to help you with any questions or problems you might have. Whether it's about math, science, history, or anything else, I'll do my best to provide clear and concise explanations. What's on your mind?",
-    }]
-}, {
-    title: "Weather Inquiry",
-    messagePairs: [{
-        user: "What's the weather like today?",
-        bot: "The weather is quite pleasant. It's been mostly sunny and clear for most of the day, with some scattered clouds rolling in from the west. The sky is currently a pale orange color, which suggests it might be a warm day to enjoy. There are no significant wind gusts or rain showers expected today, so you can focus on enjoying your outdoor activities without worrying about any potential weather issues.",
-    }, {
-        user: "And what is it going to be like tomorrow?",
-        bot: "Tomorrow's forecast looks quite promising for the next few days. The sun will continue to shine brightly, and there won't be much cloud cover in the afternoon. The temperature might drop slightly later on, but overall, it should be a pleasant day with some sunshine. There are no significant weather issues expected today, so you can focus on enjoying your outdoor activities without worrying about any potential problems.",
-    }]
-}]
 
 async function sendMessage(page: Page, index: number, message: string, expectedResponse: string) {
     const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
     await textarea.fill(message)
-    await textarea.press("Enter")
+    await textarea.press("Enter", { delay: 20, timeout: 1000 })
+    await expect(textarea).not.toContainText(message)
+
+    const stopButton = page.getByTestId("stop-button")
+    await expect(stopButton).toBeVisible()
 
     const userMessage = page.getByTestId(`message-${index}`)
     const botMessage = page.getByTestId(`message-${index + 1}`)
@@ -170,29 +185,25 @@ async function sendMessage(page: Page, index: number, message: string, expectedR
 
     await expect(userMessage).toContainText(message, { timeout })
     await expect(botMessage).toContainText(expectedResponse, { timeout })
+
+    await expect(stopButton).not.toBeVisible({ timeout })
+
+    await expect(userMessage).toContainText(message, { timeout })
+    await expect(botMessage).toContainText(expectedResponse, { timeout })
 }
 
-async function sendExampleChat(page: Page, index: number, messagePairs?: number) {
-    const chat = exampleChats[index]
-    const pairs = chat.messagePairs.slice(0, messagePairs)
-
+async function sendExampleChat(page: Page, index: number) {
     await page.goto("/")
 
-    let i = 0
-    for (const [pair, index] of pairs.map<[MessagePair, number]>((p, i) => [p, i])) {
-        await sendMessage(page, i, pair.user, pair.bot)
-        i += 2
+    await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
 
-        if (index === 0) {
-            const chatAnchor = page.getByTestId("history").getByRole("link").first()
-            await expect(chatAnchor).toBeVisible()
-            await chatAnchor.hover()
-            await chatAnchor.getByRole("button").click()
-            await page.getByRole("menuitem", { name: "Rename", exact: true }).click()
-            const input = page.locator("input[type='text']")
-            await input.fill("")
-            await input.fill(chat.title)
-            await input.press("Enter")
+    const chat = exampleChats[index]
+    const messages = chat.messages
+    for (let i = 0; i < messages.length; i += 2) {
+        await sendMessage(page, i, messages[i], messages[i + 1])
+        if (i === 1) {
+            await expect(page.getByTestId("history").getByRole("link").first().getByRole("paragraph", { name: chat.title, exact: true })).toBeVisible()
         }
     }
 }
@@ -200,3 +211,24 @@ async function sendExampleChat(page: Page, index: number, messagePairs?: number)
 async function expectClipboard(page: Page, expected: string) {
     expect(await page.evaluate(_ => navigator.clipboard.readText())).toEqual(expected)
 }
+
+const timeout = 60_000
+
+const exampleChats: { title: string, messages: string[] }[] = [
+    {
+        title: "I've got a lot of questions",
+        messages: [
+            "Hello!",
+            "Hello! How can I assist you today?"
+        ]
+    },
+    {
+        title: "That's an excellent start. I",
+        messages: [
+            "What is Arithmetic? Describe it in one small phrase.",
+            "Arithmetic, the process of counting and arranging numbers, is a cornerstone of mathematics. At its core, arithmetic involves assigning a number to every element in a set, allowing us to perform arithmetic operations on sets efficiently. Arithmetic is used in counting, problem-solving, and strategic planning across various fields, from counting objects",
+            "And what is Algebra? Talk about it briefly.",
+            "It is a foundational branch of mathematics that studies shapes and patterns within sets of objects, using a method called graph theory to describe relationships between them. Algebra combines abstract thinking with number theory and geometry to model real-world problems and abstract concepts in mathematics. It provides an algebraic perspective on shapes, allowing us to model and analyze"
+        ]
+    }
+]

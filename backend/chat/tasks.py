@@ -5,26 +5,11 @@ import random
 import threading
 from concurrent.futures import CancelledError
 
-logger = logging.getLogger(__name__)
-
 import ollama
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 
-channel_layer = get_channel_layer()
-ollama_client = ollama.AsyncClient("ollama")
-
 from .models import Chat, Message, User
-
-def start_background_loop(loop: asyncio.AbstractEventLoop):
-    asyncio.set_event_loop(loop)
-    loop.run_forever()
-
-event_loop = asyncio.new_event_loop()
-threading.Thread(target = start_background_loop, args = [event_loop], daemon = True).start()
-
-chat_futures: dict[str, asyncio.Future[None]] = {}
-opened_chats: set[str] = set()
 
 def generate_pending_message_in_chat(chat: Chat, should_generate_title: bool = False, should_randomize: bool = False):
     if chat.pending_message is not None:
@@ -44,21 +29,16 @@ def task_done_callback(future: asyncio.Future[None], chat_uuid: str):
         logger.exception("Task failed", exc_info = exception)
 
 async def generate_message(chat: Chat, should_generate_title: bool, should_randomize: bool):
-    model = get_ollama_model(chat.pending_message.model)
-
-    options = {
-        "num_predict": 256,
-        "temperature": random.randint(100, 1000) / 1000 if should_randomize else 0.1,
-        "top_p": random.randint(100, 1000) / 1000 if should_randomize else 0.1
-    }
-
-    if os.getenv("PLAYWRIGHT_TEST") == "True":
-        options["seed"] = 0
-    elif should_randomize:
-        options["seed"] = random.randint(-(10 ** 10), 10 ** 10)
-
     messages: list[dict[str, str]] = await get_messages(chat.pending_message)
     message_index = len(messages) - 1
+
+    model, options = get_ollama_model_and_options(chat.pending_message.model)
+
+    if IS_PLAYWRIGHT_TEST:
+        options["num_predict"] = 64
+        options["seed"] = get_test_seed(chat)
+    elif should_randomize:
+        options["seed"] = random.randint(-(10 ** 10), 10 ** 10)
 
     try:
         async for part in await ollama_client.chat(model, messages, stream = True, options = options):
@@ -93,23 +73,23 @@ async def generate_message(chat: Chat, should_generate_title: bool, should_rando
     await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_end"})
 
 async def generate_title(chat: Chat):
-    model = get_ollama_model("SmolLM2-135M")
+    model, options = get_ollama_model_and_options("SmolLM2-135M")
+
+    options["num_predict"] = 7
+    if IS_PLAYWRIGHT_TEST:
+        options["seed"] = 0
 
     first_message = await chat.messages.afirst()
     last_message = await chat.messages.alast()
 
     messages = [
         {
-            "role": "system",
-            "content": "You are a helpful assistant that generates very concise and accurate titles for chat conversations. The titles should be no longer than 5 words."
-        },
-        {
             "role": "user",
-            "content": f"Generate a concise title for the following conversation:\n\n{first_message.text}\n...\n{last_message.text}\n\nTitle:"
+            "content": f"Generate a descriptive title for the following conversation between a human and their AI personal assistant. The title should be in plain, simple English, it should not contain any punctuations and it should be no longer than seven words:\n\nUser:\n{first_message.text}\n\nAssistant:\n{last_message.text}"
         }
     ]
 
-    response = await ollama_client.chat(model, messages, options = {"num_predict": 10, "temperature": 0.1, "top_p": 0.1})
+    response = await ollama_client.chat(model, messages, options = options)
 
     content = response.message.content
     if type(content) == str:
@@ -208,13 +188,14 @@ def is_any_user_chat_pending(user: User) -> bool:
     pending_chats = Chat.objects.filter(user = user).exclude(pending_message = None)
     return True if pending_chats.count() > 0 else False
 
-def get_ollama_model(model: str):
+def get_ollama_model_and_options(model: str):
+    base_options = {"numa": True, "num_ctx": 512, "num_batch": 1, "logits_all": True, "use_mmap": True, "use_mlock": True, "num_predict": 256}
     if model == "Moondream":
-        return "moondream:1.8b-v2-q2_K"
+        return "moondream:1.8b-v2-q2_K", base_options
     elif model == "SmolLM2-135M":
-        return "smollm2:135m-instruct-q2_K"
+        return "smollm2:135m-instruct-q2_K", {**base_options, "num_keep": 25, "top_k": 10, "top_p": 1.0, "tfs_z": 0.25, "typical_p": 1.5, "repeat_last_n": 5, "temperature": 0.875}
     else:
-        return model.lower().replace("-", ":")
+        return model.lower().replace("-", ":"), base_options
 
 async def safe_save_message_text(message: Message):
     exists = await database_sync_to_async(Message.objects.filter(pk = message.pk).exists)()
@@ -229,3 +210,31 @@ async def safe_save_chat_pending_message(chat: Chat):
         return False
     await chat.asave(update_fields = ["pending_message"])
     return True
+
+IS_PLAYWRIGHT_TEST = os.getenv("PLAYWRIGHT_TEST") == "True"
+
+if IS_PLAYWRIGHT_TEST:
+    test_seeds: dict[str, int] = {}
+
+    def get_test_seed(chat: Chat):
+        seed = test_seeds.get(str(chat.uuid), 0)
+        if seed == 0:
+            test_seeds[str(chat.uuid)] = 1
+        else:
+            test_seeds[str(chat.uuid)] += 1
+        return seed
+
+logger = logging.getLogger(__name__)
+
+channel_layer = get_channel_layer()
+ollama_client = ollama.AsyncClient("ollama")
+
+def start_background_loop(loop: asyncio.AbstractEventLoop):
+    asyncio.set_event_loop(loop)
+    loop.run_forever()
+
+event_loop = asyncio.new_event_loop()
+chat_futures: dict[str, asyncio.Future[None]] = {}
+opened_chats: set[str] = set()
+
+threading.Thread(target = start_background_loop, args = [event_loop], daemon = True).start()
