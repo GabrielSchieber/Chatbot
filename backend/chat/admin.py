@@ -138,8 +138,8 @@ class MessageForm(forms.ModelForm):
 class MessageInline(admin.StackedInline):
 	model = Message
 	form = MessageForm
-	fields = ("text", "files_display", "is_from_user", "model", "last_modified_at", "created_at")
-	readonly_fields = ("files_display", "last_modified_at", "created_at")
+	fields = ("text", "files_display", "is_from_user", "model", "last_modified_at_display", "created_at_display")
+	readonly_fields = ("files_display", "last_modified_at_display", "created_at_display")
 	extra = 0
 	show_change_link = True
 
@@ -175,6 +175,18 @@ class MessageInline(admin.StackedInline):
 		return mark_safe("<ul style=\"list-style:none;padding:0;margin:0;\">" + "".join(items) + "</ul>")
 
 	files_display.short_description = "Files"
+
+	def last_modified_at_display(self, message: Message):
+		field = Message._meta.get_field("last_modified_at")
+		return display_for_field(message.last_modified_at, field, "-")
+
+	last_modified_at_display.short_description = "Last modified"
+
+	def created_at_display(self, message: Message):
+		field = Message._meta.get_field("created_at")
+		return display_for_field(message.created_at, field, "-")
+
+	created_at_display.short_description = "Created"
 
 class ChatAdmin(admin.ModelAdmin):
 	model = Chat
