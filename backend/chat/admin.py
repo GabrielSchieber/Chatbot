@@ -280,7 +280,10 @@ class MessageAdmin(admin.ModelAdmin):
 		js = ("chat/js/autoresize.js",)
 
 	def chat_title(self, obj):
-		return obj.chat.title
+		if not obj or not obj.chat:
+			return ""
+		url = reverse('admin:chat_chat_change', args=[obj.chat.pk])
+		return mark_safe(f"<a href=\"{url}\">{obj.chat.title}</a>")
 
 	chat_title.short_description = "Chat"
 
