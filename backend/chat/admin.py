@@ -200,9 +200,9 @@ class ChatAdmin(admin.ModelAdmin):
 	inlines = (MessageInline,)
 	# show user's email first as a link to the related User admin page
 	# show user's email first as a link to the related User admin page
-	readonly_fields = ("user_link", "uuid", "created_at", "pending_message_display")
+	readonly_fields = ("user_link", "display_uuid", "created_at", "pending_message_display")
 	fieldsets = (
-		(None, {"fields": ("user_link", "uuid", "title", "pending_message_display", "is_archived")} ),
+		(None, {"fields": ("user_link", "display_uuid", "title", "pending_message_display", "is_archived")} ),
 	)
 	list_display = ("title", "user", "is_archived", "created_at")
 	search_fields = ("title", "user__email")
@@ -215,6 +215,12 @@ class ChatAdmin(admin.ModelAdmin):
 		return mark_safe(f"<a href=\"{url}\">{obj.user.email}</a>")
 	user_link.short_description = "User"
 	user_link.admin_order_field = "user__email"
+
+	def display_uuid(self, obj):
+		# Return the UUID value as a string and use an uppercase label
+		return str(obj.uuid) if obj and obj.pk is not None else ""
+
+	display_uuid.short_description = "UUID"
 
 	def pending_message_display(self, obj):
 		# Show a link to the pending Message and a Stop button when present
