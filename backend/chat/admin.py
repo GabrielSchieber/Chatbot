@@ -7,6 +7,14 @@ from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.contrib.auth.models import Group
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
+from django.urls import path, reverse
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+
+from . import tasks
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .models import Chat, Message, MessageFile, User, UserMFA, UserPreferences
 
@@ -192,9 +200,9 @@ class ChatAdmin(admin.ModelAdmin):
 	inlines = (MessageInline,)
 	# show user's email first as a link to the related User admin page
 	# show user's email first as a link to the related User admin page
-	readonly_fields = ("user_link", "uuid", "created_at")
+	readonly_fields = ("user_link", "uuid", "created_at", "pending_message_display")
 	fieldsets = (
-		(None, {"fields": ("user_link", "uuid", "title", "pending_message", "is_archived")} ),
+		(None, {"fields": ("user_link", "uuid", "title", "pending_message_display", "is_archived")} ),
 	)
 	list_display = ("title", "user", "is_archived", "created_at")
 	search_fields = ("title", "user__email")
@@ -207,6 +215,51 @@ class ChatAdmin(admin.ModelAdmin):
 		return mark_safe(f"<a href=\"{url}\">{obj.user.email}</a>")
 	user_link.short_description = "User"
 	user_link.admin_order_field = "user__email"
+
+	def pending_message_display(self, obj):
+		# Show a link to the pending Message and a Stop button when present
+		if not obj.pending_message:
+			return ""
+
+		msg = obj.pending_message
+		msg_url = f"/admin/chat/message/{msg.pk}/change/"
+		stop_url = reverse('admin:chat_chat_stop_pending', args=[obj.pk])
+		button = (
+			f'<button type="button" class="button" '
+			f'onclick="(function(btn){{if(!confirm(\'Stop pending message generation?\'))return;'
+			f'btn.disabled=true;var csr=document.cookie.match(/(^|;)\\s*csrftoken=([^;]+)/);var csrftoken=csr?csr[2]:null;'
+			f'fetch(\'{stop_url}\',{{method:\'POST\',headers:{{\'X-CSRFToken\':csrftoken}},credentials:\'same-origin\'}})'
+			f'.then(function(r){{if(r.ok)location.reload();else{{alert(\'Failed to stop\');btn.disabled=false;}}}})'
+			f'.catch(function(e){{alert(\'Error stopping pending message\');btn.disabled=false;}});}})(this)">Stop</button>'
+		)
+
+		return mark_safe(f'<a href="{msg_url}">Message #{msg.pk}</a> &nbsp; {button}')
+
+	pending_message_display.short_description = "Pending message"
+
+	def get_urls(self):
+		urls = super().get_urls()
+		custom_urls = [
+			path('<path:object_id>/stop-pending/', self.admin_site.admin_view(self.stop_pending_view), name='chat_chat_stop_pending'),
+		]
+		return custom_urls + urls
+
+	def stop_pending_view(self, request, object_id, *args, **kwargs):
+		chat = get_object_or_404(Chat, pk=object_id)
+		# Only allow POST to perform the stop (admin_view enforces auth)
+		if request.method != 'POST':
+			messages.error(request, 'Invalid request method.')
+			return redirect(reverse('admin:chat_chat_change', args=[chat.pk]))
+
+		# Call the task helper to cancel background generation and clear pending_message
+		try:
+			tasks.stop_pending_chat(chat)
+			messages.success(request, 'Pending message generation stopped.')
+		except Exception:
+			logger.exception('Error stopping pending chat')
+			messages.error(request, 'Failed to stop pending message generation.')
+
+		return redirect(reverse('admin:chat_chat_change', args=[chat.pk]))
 
 admin.site.unregister(Group)
 
