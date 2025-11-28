@@ -182,7 +182,7 @@ class ChatAdmin(admin.ModelAdmin):
 	fieldsets = (
 		(None, {"fields": ("user_link", "display_uuid", "title", "pending_message_display", "is_archived")} ),
 	)
-	list_display = ("title", "uuid", "user_link", "is_archived", "created_at")
+	list_display = ("title", "uuid", "user_link", "is_pending", "is_archived_display", "created_at_display")
 	search_fields = ("title", "user__email")
 	ordering = ("-created_at",)
 
@@ -241,6 +241,23 @@ class ChatAdmin(admin.ModelAdmin):
 			messages.error(request, "Failed to stop pending message generation.")
 
 		return redirect(reverse("admin:chat_chat_change", args = [chat.pk]))
+
+	def is_pending(self, chat: Chat):
+		return chat.pending_message is not None
+
+	is_pending.short_description = "Pending"
+	is_pending.boolean = True
+
+	def is_archived_display(self, chat: Chat):
+		return chat.is_archived
+
+	is_archived_display.short_description = "Archived"
+	is_archived_display.boolean = True
+
+	def created_at_display(self, chat: Chat):
+		return chat.created_at
+
+	created_at_display.short_description = "Created"
 
 class MessageAdmin(admin.ModelAdmin):
 	model = Message
