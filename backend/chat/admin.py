@@ -179,9 +179,9 @@ class MessageInline(admin.StackedInline):
 class ChatAdmin(admin.ModelAdmin):
 	model = Chat
 	inlines = (MessageInline,)
-	readonly_fields = ("user_link", "display_uuid", "created_at", "pending_message_display")
+	readonly_fields = ("user_link", "display_uuid", "pending_message_display", "created_at_display")
 	fieldsets = (
-		(None, {"fields": ("user_link", "display_uuid", "title", "pending_message_display", "is_archived")} ),
+		(None, {"fields": ("user_link", "display_uuid", "title", "pending_message_display", "is_archived", "created_at_display")} ),
 	)
 	list_display = ("title", "uuid", "user_link", "is_pending", "is_archived_display", "created_at_display")
 	search_fields = ("title", "user__email")
@@ -256,7 +256,8 @@ class ChatAdmin(admin.ModelAdmin):
 	is_archived_display.boolean = True
 
 	def created_at_display(self, chat: Chat):
-		return chat.created_at
+		field = Chat._meta.get_field("created_at")
+		return display_for_field(chat.created_at, field, "-")
 
 	created_at_display.short_description = "Created"
 
