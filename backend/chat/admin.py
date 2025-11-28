@@ -1,44 +1,40 @@
 import binascii
-
-from django import forms
-from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
-from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from django.contrib.auth.models import Group
-from django.utils.safestring import mark_safe
-from django.utils.translation import gettext_lazy as _
-from django.urls import path, reverse
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-
-from . import tasks
 import logging
 
 logger = logging.getLogger(__name__)
 
-from .models import Chat, Message, MessageFile, User, UserMFA, UserPreferences
+from django import forms
+from django.contrib import admin, messages
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.contrib.auth.forms import ReadOnlyPasswordHashField
+from django.contrib.auth.models import Group
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import path, reverse
+from django.utils.safestring import mark_safe
+
+from .models import Chat, Message, User, UserMFA, UserPreferences
+from .tasks import stop_pending_chat
 
 class UserChangeForm(forms.ModelForm):
-	# Preference fields (use original names from UserPreferences)
-	language = forms.ChoiceField(choices=[(c, c) for c in ["", "English", "Português"]], required=False)
-	theme = forms.ChoiceField(choices=[(c, c) for c in ["System", "Light", "Dark"]], required=False)
-	has_sidebar_open = forms.BooleanField(required=False)
-	custom_instructions = forms.CharField(widget=forms.Textarea, required=False)
-	nickname = forms.CharField(max_length=50, required=False)
-	occupation = forms.CharField(max_length=50, required=False)
-	about = forms.CharField(widget=forms.Textarea, required=False)
+	language = forms.ChoiceField(choices = [[c, c] for c in ["", "English", "Português"]], required = False)
+	theme = forms.ChoiceField(choices = [[c, c] for c in ["System", "Light", "Dark"]], required = False)
+	has_sidebar_open = forms.BooleanField(required = False)
+	custom_instructions = forms.CharField(widget = forms.Textarea, required = False)
+	nickname = forms.CharField(max_length = 50, required = False)
+	occupation = forms.CharField(max_length = 50, required = False)
+	about = forms.CharField(widget = forms.Textarea, required = False)
 
-	# MFA fields (use original names from UserMFA)
-	is_enabled = forms.BooleanField(required=False)
-	secret = forms.CharField(required=False, help_text="Hex-encoded secret (binary). Leave blank to keep current.")
-	backup_codes = forms.CharField(widget=forms.Textarea, required=False, help_text="One code per line (will be stored as JSON list).")
+	is_enabled = forms.BooleanField(required = False)
+	secret = forms.CharField(required = False, help_text = "Hex-encoded secret (binary). Leave blank to keep current.")
+	backup_codes = forms.CharField(widget = forms.Textarea, required = False, help_text = "One code per line (will be stored as JSON list).")
 
-	# show password as the read-only hash field with the sstandard change-password link
-	password = ReadOnlyPasswordHashField(label="Password",
-										help_text=mark_safe(
-											'Raw passwords are not stored, so there is no way to see this user\'s password, '
-											'but you can change the password using <a href="../password/">this form</a>.'
-										))
+	password = ReadOnlyPasswordHashField(
+		label = "Password",
+		help_text = mark_safe(
+			"Raw passwords are not stored, so there is no way to see this user's password, "
+			'but you can change the password using <a href="../password/">this form</a>.'
+		)
+	)
 
 	class Meta:
 		model = User
@@ -47,91 +43,75 @@ class UserChangeForm(forms.ModelForm):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		user = kwargs.get("instance")
-		if user is not None:
-			# Populate preferences
-			try:
-				prefs = user.preferences
-			except Exception:
-				prefs = None
-			if prefs:
-				self.fields["language"].initial = prefs.language
-				self.fields["theme"].initial = prefs.theme
-				self.fields["has_sidebar_open"].initial = prefs.has_sidebar_open
-				self.fields["custom_instructions"].initial = prefs.custom_instructions
-				self.fields["nickname"].initial = prefs.nickname
-				self.fields["occupation"].initial = prefs.occupation
-				self.fields["about"].initial = prefs.about
+		if type(user) == User:
+			preferences = user.preferences
+			if type(preferences) == UserPreferences:
+				self.fields["language"].initial = preferences.language
+				self.fields["theme"].initial = preferences.theme
+				self.fields["has_sidebar_open"].initial = preferences.has_sidebar_open
+				self.fields["custom_instructions"].initial = preferences.custom_instructions
+				self.fields["nickname"].initial = preferences.nickname
+				self.fields["occupation"].initial = preferences.occupation
+				self.fields["about"].initial = preferences.about
 
-			# Populate MFA
-			try:
-				mfa = user.mfa
-			except Exception:
-				mfa = None
-			if mfa:
-				# show secret as hex
+			mfa = user.mfa
+			if type(mfa) == UserMFA:
 				try:
 					self.fields["secret"].initial = binascii.hexlify(mfa.secret).decode() if mfa.secret else ""
-				except Exception:
+				except:
 					self.fields["secret"].initial = ""
-				# backup codes as newline-separated
 				try:
 					self.fields["backup_codes"].initial = "\n".join(mfa.backup_codes or [])
-				except Exception:
+				except:
 					self.fields["backup_codes"].initial = ""
 				self.fields["is_enabled"].initial = mfa.is_enabled
 
-	def save(self, commit=True):
-		user = super().save(commit=commit)
+	def save(self, commit = True):
+		user = super().save(commit = commit)
 
-		# Ensure related instances exist
-		prefs, _ = UserPreferences.objects.get_or_create(user=user)
-		mfa, _ = UserMFA.objects.get_or_create(user=user)
+		preferences, _ = UserPreferences.objects.get_or_create(user = user)
+		mfa, _ = UserMFA.objects.get_or_create(user = user)
 
-		# Save preferences
-		prefs.language = self.cleaned_data.get("language", prefs.language)
-		prefs.theme = self.cleaned_data.get("theme", prefs.theme)
-		prefs.has_sidebar_open = bool(self.cleaned_data.get("has_sidebar_open", prefs.has_sidebar_open))
-		prefs.custom_instructions = self.cleaned_data.get("custom_instructions", prefs.custom_instructions)
-		prefs.nickname = self.cleaned_data.get("nickname", prefs.nickname)
-		prefs.occupation = self.cleaned_data.get("occupation", prefs.occupation)
-		prefs.about = self.cleaned_data.get("about", prefs.about)
-		prefs.save()
+		preferences.language = self.cleaned_data.get("language", preferences.language)
+		preferences.theme = self.cleaned_data.get("theme", preferences.theme)
+		preferences.has_sidebar_open = bool(self.cleaned_data.get("has_sidebar_open", preferences.has_sidebar_open))
+		preferences.custom_instructions = self.cleaned_data.get("custom_instructions", preferences.custom_instructions)
+		preferences.nickname = self.cleaned_data.get("nickname", preferences.nickname)
+		preferences.occupation = self.cleaned_data.get("occupation", preferences.occupation)
+		preferences.about = self.cleaned_data.get("about", preferences.about)
+		preferences.save()
 
-		# Save MFA
 		mfa.is_enabled = bool(self.cleaned_data.get("is_enabled", mfa.is_enabled))
 		secret_val = self.cleaned_data.get("secret", "")
 		if secret_val:
 			try:
 				mfa.secret = binascii.unhexlify(secret_val)
-			except Exception:
-				# if not valid hex, leave unchanged
+			except:
 				pass
-		# parse backup codes: one per line
 		backup_text = self.cleaned_data.get("backup_codes", "")
-		if backup_text is not None:
+		if type(backup_text) == str:
 			lines = [l.strip() for l in backup_text.splitlines() if l.strip()]
 			mfa.backup_codes = lines
 		mfa.save()
 
 		return user
 
-@admin.register(User)
 class UserAdmin(DjangoUserAdmin):
 	model = User
 	form = UserChangeForm
 	fieldsets = (
 		(None, {"fields": ("email", "password")} ),
-		(_("Preferences"), {"fields": ("language", "theme", "has_sidebar_open", "custom_instructions", "nickname", "occupation", "about")} ),
-		(_("MFA"), {"fields": ("is_enabled", "secret", "backup_codes")} ),
-		(_("Permissions"), {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")} ),
-		(_("Important dates"), {"fields": ("last_login",)} ),
+		("Preferences", {"fields": ("language", "theme", "has_sidebar_open", "custom_instructions", "nickname", "occupation", "about")} ),
+		("MFA", {"fields": ("is_enabled", "secret", "backup_codes")} ),
+		("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")} ),
+		("Important dates", {"fields": ("last_login",)} )
 	)
 
 	add_fieldsets = (
 		(None, {
 			"classes": ("wide",),
-			"fields": ("email", "password1", "password2"),
-		}),
+			"fields": ("email", "password1", "password2")
+		})
 	)
 
 	list_display = ("email", "is_staff", "is_superuser", "is_active", "created_at")
@@ -146,12 +126,12 @@ class MessageForm(forms.ModelForm):
 		model = Message
 		fields = "__all__"
 		widgets = {
-			"text": forms.Textarea(attrs={
+			"text": forms.Textarea(attrs = {
 				"class": "chat-autoresize",
 				"rows": "1",
 				"wrap": "off",
-				"style": "resize:none;overflow-x:auto;overflow-y:hidden;white-space:pre;box-sizing:border-box;width:100%;",
-			}),
+				"style": "resize:none;overflow-x:auto;overflow-y:hidden;white-space:pre;box-sizing:border-box;width:100%;"
+			})
 		}
 
 class MessageInline(admin.StackedInline):
@@ -165,30 +145,30 @@ class MessageInline(admin.StackedInline):
 	class Media:
 		js = ("chat/js/autoresize.js",)
 
-	def files_display(self, obj):
-		if not obj.pk:
+	def files_display(self, message: Message):
+		if not message.pk:
 			return ""
-		files = obj.files.all()
+
+		files = message.files.all()
 		if not files:
 			return ""
+
 		items = []
 		for f in files:
-			meta = f"<strong>{f.name}</strong> — {f.content_type} — {f.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
-			# Try to decode content as UTF-8 and show a short preview if printable
+			meta = f"<strong>{f.name}</strong> — {f.content_type} — {f.created_at.strftime("%Y-%m-%d %H:%M:%S")}"
 			preview = "(binary content hidden)"
 			try:
 				data = f.content
 				if isinstance(data, (bytes, bytearray)):
 					try:
 						text = data.decode("utf-8")
-						# show only if text is printable (allow common whitespace)
 						if all(ch.isprintable() or ch in "\n\r\t" for ch in text):
 							preview = "<pre>" + (text[:1000] + ("..." if len(text) > 1000 else "")) + "</pre>"
 					except UnicodeDecodeError:
 						preview = "(binary content hidden)"
 				else:
 					preview = "(binary content hidden)"
-			except Exception:
+			except:
 				preview = "(unable to read content)"
 			items.append(f"<li>{meta}<br/>{preview}</li>")
 		return mark_safe("<ul style=\"list-style:none;padding:0;margin:0;\">" + "".join(items) + "</ul>")
@@ -198,8 +178,6 @@ class MessageInline(admin.StackedInline):
 class ChatAdmin(admin.ModelAdmin):
 	model = Chat
 	inlines = (MessageInline,)
-	# show user's email first as a link to the related User admin page
-	# show user's email first as a link to the related User admin page
 	readonly_fields = ("user_link", "display_uuid", "created_at", "pending_message_display")
 	fieldsets = (
 		(None, {"fields": ("user_link", "display_uuid", "title", "pending_message_display", "is_archived")} ),
@@ -208,28 +186,27 @@ class ChatAdmin(admin.ModelAdmin):
 	search_fields = ("title", "user__email")
 	ordering = ("-created_at",)
 
-	def user_link(self, obj):
-		if not obj.user:
+	def user_link(self, chat: Chat):
+		if not chat.user:
 			return ""
-		url = f"/admin/chat/user/{obj.user.pk}/change/"
-		return mark_safe(f"<a href=\"{url}\">{obj.user.email}</a>")
+		url = f"/admin/chat/user/{chat.user.pk}/change/"
+		return mark_safe(f"<a href=\"{url}\">{chat.user.email}</a>")
+
 	user_link.short_description = "User"
 	user_link.admin_order_field = "user__email"
 
 	def display_uuid(self, obj):
-		# Return the UUID value as a string and use an uppercase label
 		return str(obj.uuid) if obj and obj.pk is not None else ""
 
 	display_uuid.short_description = "UUID"
 
-	def pending_message_display(self, obj):
-		# Show a link to the pending Message and a Stop button when present
-		if not obj.pending_message:
+	def pending_message_display(self, chat: Chat):
+		if not chat.pending_message:
 			return ""
 
-		msg = obj.pending_message
+		msg = chat.pending_message
 		msg_url = f"/admin/chat/message/{msg.pk}/change/"
-		stop_url = reverse('admin:chat_chat_stop_pending', args=[obj.pk])
+		stop_url = reverse("admin:chat_chat_stop_pending", args=[chat.pk])
 		button = (
 			f'<button type="button" class="button" '
 			f'onclick="(function(btn){{if(!confirm(\'Stop pending message generation?\'))return;'
@@ -246,26 +223,24 @@ class ChatAdmin(admin.ModelAdmin):
 	def get_urls(self):
 		urls = super().get_urls()
 		custom_urls = [
-			path('<path:object_id>/stop-pending/', self.admin_site.admin_view(self.stop_pending_view), name='chat_chat_stop_pending'),
+			path("<path:object_id>/stop-pending/", self.admin_site.admin_view(self.stop_pending_view), name="chat_chat_stop_pending"),
 		]
 		return custom_urls + urls
 
 	def stop_pending_view(self, request, object_id, *args, **kwargs):
-		chat = get_object_or_404(Chat, pk=object_id)
-		# Only allow POST to perform the stop (admin_view enforces auth)
-		if request.method != 'POST':
-			messages.error(request, 'Invalid request method.')
-			return redirect(reverse('admin:chat_chat_change', args=[chat.pk]))
+		chat = get_object_or_404(Chat, pk = object_id)
+		if request.method != "POST":
+			messages.error(request, "Invalid request method.")
+			return redirect(reverse("admin:chat_chat_change", args=[chat.pk]))
 
-		# Call the task helper to cancel background generation and clear pending_message
 		try:
-			tasks.stop_pending_chat(chat)
-			messages.success(request, 'Pending message generation stopped.')
-		except Exception:
-			logger.exception('Error stopping pending chat')
-			messages.error(request, 'Failed to stop pending message generation.')
+			stop_pending_chat(chat)
+			messages.success(request, "Pending message generation stopped.")
+		except:
+			logger.exception("Error stopping pending chat")
+			messages.error(request, "Failed to stop pending message generation.")
 
-		return redirect(reverse('admin:chat_chat_change', args=[chat.pk]))
+		return redirect(reverse("admin:chat_chat_change", args = [chat.pk]))
 
 class MessageAdmin(admin.ModelAdmin):
 	model = Message
@@ -279,48 +254,47 @@ class MessageAdmin(admin.ModelAdmin):
 	class Media:
 		js = ("chat/js/autoresize.js",)
 
-	def chat_title(self, obj):
-		if not obj or not obj.chat:
+	def chat_title(self, message: Message):
+		if not message or not message.chat:
 			return ""
-		url = reverse('admin:chat_chat_change', args=[obj.chat.pk])
-		return mark_safe(f"<a href=\"{url}\">{obj.chat.title}</a>")
+		url = reverse("admin:chat_chat_change", args = [message.chat.pk])
+		return mark_safe(f"<a href=\"{url}\">{message.chat.title}</a>")
 
 	chat_title.short_description = "Chat"
 
-	def files_display(self, obj):
-		if not obj.pk:
+	def files_display(self, message: Message):
+		if not message.pk:
 			return ""
-		files = obj.files.all()
+		files = message.files.all()
 		if not files:
 			return ""
 		items = []
 		for f in files:
-			meta = f"<strong>{f.name}</strong> — {f.content_type} — {f.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
-			# Try to decode content as UTF-8 and show a short preview if printable
+			meta = f"<strong>{f.name}</strong> — {f.content_type} — {f.created_at.strftime("%Y-%m-%d %H:%M:%S")}"
 			preview = "(binary content hidden)"
 			try:
 				data = f.content
 				if isinstance(data, (bytes, bytearray)):
 					try:
 						text = data.decode("utf-8")
-						# show only if text is printable (allow common whitespace)
-						if all(ch.isprintable() or ch in "\n\r\t" for ch in text):
+						if all(character.isprintable() or character in "\n\r\t" for character in text):
 							preview = "<pre>" + (text[:1000] + ("..." if len(text) > 1000 else "")) + "</pre>"
 					except UnicodeDecodeError:
 						preview = "(binary content hidden)"
 				else:
 					preview = "(binary content hidden)"
-			except Exception:
+			except:
 				preview = "(unable to read content)"
 			items.append(f"<li>{meta}<br/>{preview}</li>")
 		return mark_safe("<ul style=\"list-style:none;padding:0;margin:0;\">" + "".join(items) + "</ul>")
 
 	files_display.short_description = "Files"
 
-	def summary(self, obj):
-		return obj.text[:25] + ("..." if len(obj.text) > 25 else "")
+	def summary(self, message: Message):
+		return message.text[:25] + ("..." if len(message.text) > 25 else "")
 
 admin.site.unregister(Group)
 
+admin.site.register(User, UserAdmin)
 admin.site.register(Chat, ChatAdmin)
 admin.site.register(Message, MessageAdmin)
