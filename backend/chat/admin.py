@@ -133,8 +133,33 @@ class UserAdmin(DjangoUserAdmin):
 	ordering = ("email",)
 	filter_horizontal = ("groups", "user_permissions")
 
+class MessageInline(admin.StackedInline):
+	model = Message
+	fields = ("text", "is_from_user", "model", "last_modified_at", "created_at")
+	readonly_fields = ("last_modified_at", "created_at")
+	extra = 0
+	show_change_link = True
+
+class ChatAdmin(admin.ModelAdmin):
+	model = Chat
+	inlines = (MessageInline,)
+	# show user's email first as a link to the related User admin page
+	readonly_fields = ("user_link", "created_at")
+	fieldsets = (
+		(None, {"fields": ("user_link", "title", "pending_message", "is_archived")} ),
+	)
+	list_display = ("title", "user", "is_archived", "created_at")
+	search_fields = ("title", "user__email")
+	ordering = ("-created_at",)
+
+	def user_link(self, obj):
+		if not obj.user:
+			return ""
+		url = f"/admin/chat/user/{obj.user.pk}/change/"
+		return mark_safe(f"<a href=\"{url}\">{obj.user.email}</a>")
+	user_link.short_description = "User"
+	user_link.admin_order_field = "user__email"
+
 admin.site.unregister(Group)
 
-admin.site.register(Chat)
-admin.site.register(Message)
-admin.site.register(MessageFile)
+admin.site.register(Chat, ChatAdmin)
