@@ -135,10 +135,40 @@ class UserAdmin(DjangoUserAdmin):
 
 class MessageInline(admin.StackedInline):
 	model = Message
-	fields = ("text", "is_from_user", "model", "last_modified_at", "created_at")
-	readonly_fields = ("last_modified_at", "created_at")
+	fields = ("text", "files_display", "is_from_user", "model", "last_modified_at", "created_at")
+	readonly_fields = ("files_display", "last_modified_at", "created_at")
 	extra = 0
 	show_change_link = True
+
+	def files_display(self, obj):
+		if not obj.pk:
+			return ""
+		files = obj.files.all()
+		if not files:
+			return ""
+		items = []
+		for f in files:
+			meta = f"<strong>{f.name}</strong> — {f.content_type} — {f.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
+			# Try to decode content as UTF-8 and show a short preview if printable
+			preview = "(binary content hidden)"
+			try:
+				data = f.content
+				if isinstance(data, (bytes, bytearray)):
+					try:
+						text = data.decode("utf-8")
+						# show only if text is printable (allow common whitespace)
+						if all(ch.isprintable() or ch in "\n\r\t" for ch in text):
+							preview = "<pre>" + (text[:1000] + ("..." if len(text) > 1000 else "")) + "</pre>"
+					except UnicodeDecodeError:
+						preview = "(binary content hidden)"
+				else:
+					preview = "(binary content hidden)"
+			except Exception:
+				preview = "(unable to read content)"
+			items.append(f"<li>{meta}<br/>{preview}</li>")
+		return mark_safe("<ul style=\"list-style:none;padding:0;margin:0;\">" + "".join(items) + "</ul>")
+
+	files_display.short_description = "Files"
 
 class ChatAdmin(admin.ModelAdmin):
 	model = Chat
