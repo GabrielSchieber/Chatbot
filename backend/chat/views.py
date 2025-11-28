@@ -3,6 +3,7 @@ import json
 from django.contrib.auth import authenticate
 from django.core.validators import validate_email
 from django.db.models import Prefetch, Q
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -67,6 +68,8 @@ class Login(APIView):
             response = Response(status = status.HTTP_200_OK)
             response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
             response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+            user.last_login = timezone.now()
+            user.save(update_fields = ["last_login"])
             return response
 
 class VerifyMFA(APIView):
@@ -91,14 +94,17 @@ class VerifyMFA(APIView):
             pre_auth_token.delete()
             return Response({"error": "mfa.messages.errorInvalidOrExpiredCode"}, status.HTTP_401_UNAUTHORIZED)
 
-        if not pre_auth_token.user.mfa.verify(code):
+        user = pre_auth_token.user
+        if not user.mfa.verify(code):
             return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
 
-        refresh = RefreshToken.for_user(pre_auth_token.user)
+        refresh = RefreshToken.for_user(user)
         response = Response(status = status.HTTP_200_OK)
         response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
         response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
         pre_auth_token.delete()
+        user.last_login = timezone.now()
+        user.save(update_fields = ["last_login"])
         return response
 
 class Logout(APIView):
