@@ -50,6 +50,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     mfa: UserMFA
     preferences: UserPreferences
 
+    def __str__(self):
+        return ""
+
 class UserPreferences(models.Model):
     user = models.OneToOneField(User, models.CASCADE, related_name = "preferences")
     language = models.CharField(choices = [[c, c] for c in ["", "English", "Português"]], default = "")
@@ -122,8 +125,6 @@ class Chat(models.Model):
         return message.last_modified_at if message else self.created_at
 
     def __str__(self):
-        # Return empty string so the admin change page does not show the default
-        # "Chat object (<uuid>)" subtitle. Keep representation minimal.
         return ""
 
 class Message(models.Model):
@@ -135,6 +136,9 @@ class Message(models.Model):
     created_at = models.DateTimeField(auto_now_add = True)
 
     files: BaseManager[MessageFile]
+
+    def __str__(self):
+        return ""
 
 class MessageFile(models.Model):
     message = models.ForeignKey(Message, models.CASCADE, related_name = "files")
