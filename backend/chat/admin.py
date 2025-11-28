@@ -5,6 +5,7 @@ logger = logging.getLogger(__name__)
 
 from django import forms
 from django.contrib import admin, messages
+from django.contrib.admin.utils import display_for_field
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.contrib.auth.models import Group
@@ -262,9 +263,9 @@ class ChatAdmin(admin.ModelAdmin):
 class MessageAdmin(admin.ModelAdmin):
 	model = Message
 	form = MessageForm
-	readonly_fields = ("chat", "chat_title", "is_from_user", "model", "last_modified_at", "created_at", "files_display")
-	fields = ("chat_title", "text", "files_display", "is_from_user", "model", "last_modified_at", "created_at")
-	list_display = ("chat__title", "summary", "is_from_user", "model", "last_modified_at", "created_at")
+	readonly_fields = ("chat", "chat_title", "is_from_user", "model", "last_modified_at_display", "created_at_display", "files_display")
+	fields = ("chat_title", "text", "files_display", "is_from_user", "model", "last_modified_at_display", "created_at_display")
+	list_display = ("chat__title", "summary", "is_from_user", "model", "last_modified_at_display", "created_at_display")
 	search_fields = ("chat__title", "text")
 	ordering = ("-created_at",)
 
@@ -309,6 +310,18 @@ class MessageAdmin(admin.ModelAdmin):
 
 	def summary(self, message: Message):
 		return message.text[:25] + ("..." if len(message.text) > 25 else "")
+
+	def last_modified_at_display(self, message: Message):
+		field = Message._meta.get_field("last_modified_at")
+		return display_for_field(message.last_modified_at, field, "-")
+
+	last_modified_at_display.short_description = "Last modified"
+
+	def created_at_display(self, message: Message):
+		field = Message._meta.get_field("created_at")
+		return display_for_field(message.created_at, field, "-")
+
+	created_at_display.short_description = "Created"
 
 admin.site.unregister(Group)
 
