@@ -102,10 +102,10 @@ class UserAdmin(DjangoUserAdmin):
 	form = UserChangeForm
 	fieldsets = (
 		(None, {"fields": ("email", "password")} ),
-		("Preferences", {"fields": ("language", "theme", "has_sidebar_open", "custom_instructions", "nickname", "occupation", "about")} ),
-		("MFA", {"fields": ("is_enabled", "secret", "backup_codes")} ),
+		(("Preferences"), {"fields": ("language", "theme", "has_sidebar_open", "custom_instructions", "nickname", "occupation", "about")} ),
+		(("MFA"), {"fields": ("mfa_display",)} ),
 		("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")} ),
-		("Important dates", {"fields": ("last_login", "created_at_display")} )
+		(("Important dates"), {"fields": ("last_login", "created_at_display")} )
 	)
 
 	add_fieldsets = (
@@ -117,6 +117,7 @@ class UserAdmin(DjangoUserAdmin):
 
 	list_display = ("email", "is_staff", "is_superuser", "is_active", "created_at_display")
 	readonly_fields = ("email", "last_login", "created_at", "created_at_display")
+	readonly_fields = ("email", "last_login", "created_at", "created_at_display", "mfa_display")
 	list_filter = ("is_staff", "is_superuser", "is_active", "groups")
 	search_fields = ("email",)
 	ordering = ("email",)
@@ -127,6 +128,79 @@ class UserAdmin(DjangoUserAdmin):
 		return display_for_field(user.created_at, field, "-")
 
 	created_at_display.short_description = "Created"
+
+	def mfa_display(self, user: User):
+		try:
+			mfa = user.mfa
+		except:
+			mfa = None
+
+		if not mfa:
+			return ""
+
+		is_enabled = "Yes" if mfa.is_enabled else "No"
+		try:
+			secret_hex = binascii.hexlify(mfa.secret).decode() if mfa.secret else ""
+		except:
+			secret_hex = ""
+		backup_text = "\n".join(mfa.backup_codes or []) if mfa.backup_codes else ""
+
+		parts = [f"<div><strong>Enabled:</strong> {is_enabled}</div>", f"<div><strong>Secret (hex):</strong> <code>{secret_hex}</code></div>"]
+		if backup_text:
+			parts.append(f"<div><strong>Backup codes:</strong><pre style=\"white-space:pre-wrap;\">{backup_text}</pre></div>")
+
+		if mfa.is_enabled:
+			disable_url = reverse("admin:chat_user_disable_mfa", args = [user.pk])
+			button = (
+				f'<button type="button" class="button" '
+				f'onclick="(function(btn){{if(!confirm(\'Disable MFA for this user?\'))return;'
+				f'btn.disabled=true;var csr=document.cookie.match(/(^|;)\\s*csrftoken=([^;]+)/);var csrftoken=csr?csr[2]:null;'
+				f'fetch(\'{disable_url}\',{{method:\'POST\',headers:{{\'X-CSRFToken\':csrftoken}},credentials:\'same-origin\'}})'
+				f'.then(function(r){{if(r.ok)location.reload();else{{alert(\'Failed to disable MFA\');btn.disabled=false;}}}})'
+				f'.catch(function(e){{alert(\'Error disabling MFA\');btn.disabled=false;}});}})(this)">Disable</button>'
+			)
+			parts.append(button)
+
+		style = (
+			"<style>"
+			".form-row.field-mfa_display label{display:none !important;}"
+			".form-row.field-mfa_display .readonly, .form-row.field-mfa_display .field-box{margin-left:0 !important; padding-left:0 !important;}"
+			"</style>"
+		)
+
+		return mark_safe(style + "".join(parts))
+
+	mfa_display.short_description = "MFA"
+	def get_urls(self):
+		urls = super().get_urls()
+		custom_urls = [
+			path("<path:object_id>/disable-mfa/", self.admin_site.admin_view(self.user_disable_mfa_view), name="chat_user_disable_mfa"),
+		]
+		return custom_urls + urls
+
+	def user_disable_mfa_view(self, request, object_id, *args, **kwargs):
+		user = get_object_or_404(User, pk = object_id)
+		if request.method != "POST":
+			messages.error(request, "Invalid request method.")
+			return redirect(reverse("admin:chat_user_change", args = [user.pk]))
+
+		try:
+			mfa = user.mfa
+		except:
+			mfa = None
+
+		if not mfa:
+			messages.error(request, "User has no MFA configured.")
+			return redirect(reverse("admin:chat_user_change", args = [user.pk]))
+
+		try:
+			mfa.disable()
+			messages.success(request, "MFA disabled for user.")
+		except:
+			logger.exception("Error disabling user MFA")
+			messages.error(request, "Failed to disable MFA for user.")
+
+		return redirect(reverse("admin:chat_user_change", args = [user.pk]))
 
 class MessageForm(forms.ModelForm):
 	class Meta:
