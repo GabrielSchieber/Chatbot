@@ -115,12 +115,18 @@ class UserAdmin(DjangoUserAdmin):
 		})
 	)
 
-	list_display = ("email", "is_staff", "is_superuser", "is_active", "created_at")
+	list_display = ("email", "is_staff", "is_superuser", "is_active", "created_at_display")
 	readonly_fields = ("email", "last_login", "created_at")
 	list_filter = ("is_staff", "is_superuser", "is_active", "groups")
 	search_fields = ("email",)
 	ordering = ("email",)
 	filter_horizontal = ("groups", "user_permissions")
+
+	def created_at_display(self, user: User):
+		field = User._meta.get_field("created_at")
+		return display_for_field(user.created_at, field, "-")
+
+	created_at_display.short_description = "Created"
 
 class MessageForm(forms.ModelForm):
 	class Meta:
