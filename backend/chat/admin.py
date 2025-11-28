@@ -261,6 +261,57 @@ class ChatAdmin(admin.ModelAdmin):
 
 		return redirect(reverse('admin:chat_chat_change', args=[chat.pk]))
 
+class MessageAdmin(admin.ModelAdmin):
+	model = Message
+	form = MessageForm
+	readonly_fields = ("chat", "chat_title", "is_from_user", "model", "last_modified_at", "created_at", "files_display")
+	fields = ("chat_title", "text", "files_display", "is_from_user", "model", "last_modified_at", "created_at")
+	list_display = ("chat__title", "summary", "is_from_user", "model", "last_modified_at", "created_at")
+	search_fields = ("chat__title", "text")
+	ordering = ("-created_at",)
+
+	class Media:
+		js = ("chat/js/autoresize.js",)
+
+	def chat_title(self, obj):
+		return obj.chat.title
+
+	chat_title.short_description = "Chat"
+
+	def files_display(self, obj):
+		if not obj.pk:
+			return ""
+		files = obj.files.all()
+		if not files:
+			return ""
+		items = []
+		for f in files:
+			meta = f"<strong>{f.name}</strong> — {f.content_type} — {f.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
+			# Try to decode content as UTF-8 and show a short preview if printable
+			preview = "(binary content hidden)"
+			try:
+				data = f.content
+				if isinstance(data, (bytes, bytearray)):
+					try:
+						text = data.decode("utf-8")
+						# show only if text is printable (allow common whitespace)
+						if all(ch.isprintable() or ch in "\n\r\t" for ch in text):
+							preview = "<pre>" + (text[:1000] + ("..." if len(text) > 1000 else "")) + "</pre>"
+					except UnicodeDecodeError:
+						preview = "(binary content hidden)"
+				else:
+					preview = "(binary content hidden)"
+			except Exception:
+				preview = "(unable to read content)"
+			items.append(f"<li>{meta}<br/>{preview}</li>")
+		return mark_safe("<ul style=\"list-style:none;padding:0;margin:0;\">" + "".join(items) + "</ul>")
+
+	files_display.short_description = "Files"
+
+	def summary(self, obj):
+		return obj.text[:25] + ("..." if len(obj.text) > 25 else "")
+
 admin.site.unregister(Group)
 
 admin.site.register(Chat, ChatAdmin)
+admin.site.register(Message, MessageAdmin)
