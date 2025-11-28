@@ -204,7 +204,7 @@ class ChatAdmin(admin.ModelAdmin):
 	fieldsets = (
 		(None, {"fields": ("user_link", "display_uuid", "title", "pending_message_display", "is_archived")} ),
 	)
-	list_display = ("title", "user_link", "is_archived", "created_at")
+	list_display = ("title", "uuid", "user_link", "is_archived", "created_at")
 	search_fields = ("title", "user__email")
 	ordering = ("-created_at",)
 
