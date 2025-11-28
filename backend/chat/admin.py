@@ -105,7 +105,7 @@ class UserAdmin(DjangoUserAdmin):
 		("Preferences", {"fields": ("language", "theme", "has_sidebar_open", "custom_instructions", "nickname", "occupation", "about")} ),
 		("MFA", {"fields": ("is_enabled", "secret", "backup_codes")} ),
 		("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")} ),
-		("Important dates", {"fields": ("last_login",)} )
+		("Important dates", {"fields": ("last_login", "created_at_display")} )
 	)
 
 	add_fieldsets = (
@@ -116,7 +116,7 @@ class UserAdmin(DjangoUserAdmin):
 	)
 
 	list_display = ("email", "is_staff", "is_superuser", "is_active", "created_at_display")
-	readonly_fields = ("email", "last_login", "created_at")
+	readonly_fields = ("email", "last_login", "created_at", "created_at_display")
 	list_filter = ("is_staff", "is_superuser", "is_active", "groups")
 	search_fields = ("email",)
 	ordering = ("email",)
