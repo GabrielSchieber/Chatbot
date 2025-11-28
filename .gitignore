@@ -2,6 +2,7 @@
 __pycache__/
 chat_temp/
 ssl/
+static_files/
 
 dist/
 node_modules/

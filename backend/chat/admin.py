@@ -133,12 +133,29 @@ class UserAdmin(DjangoUserAdmin):
 	ordering = ("email",)
 	filter_horizontal = ("groups", "user_permissions")
 
+class MessageForm(forms.ModelForm):
+	class Meta:
+		model = Message
+		fields = "__all__"
+		widgets = {
+			"text": forms.Textarea(attrs={
+				"class": "chat-autoresize",
+				"rows": "1",
+				"wrap": "off",
+				"style": "resize:none;overflow-x:auto;overflow-y:hidden;white-space:pre;box-sizing:border-box;width:100%;",
+			}),
+		}
+
 class MessageInline(admin.StackedInline):
 	model = Message
+	form = MessageForm
 	fields = ("text", "files_display", "is_from_user", "model", "last_modified_at", "created_at")
 	readonly_fields = ("files_display", "last_modified_at", "created_at")
 	extra = 0
 	show_change_link = True
+
+	class Media:
+		js = ("chat/js/autoresize.js",)
 
 	def files_display(self, obj):
 		if not obj.pk:
