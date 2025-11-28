@@ -121,6 +121,11 @@ class Chat(models.Model):
         message: Message | None = self.messages.order_by("-last_modified_at").first()
         return message.last_modified_at if message else self.created_at
 
+    def __str__(self):
+        # Return empty string so the admin change page does not show the default
+        # "Chat object (<uuid>)" subtitle. Keep representation minimal.
+        return ""
+
 class Message(models.Model):
     chat = models.ForeignKey(Chat, models.CASCADE, related_name = "messages")
     text = models.TextField()

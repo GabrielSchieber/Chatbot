@@ -144,9 +144,10 @@ class ChatAdmin(admin.ModelAdmin):
 	model = Chat
 	inlines = (MessageInline,)
 	# show user's email first as a link to the related User admin page
-	readonly_fields = ("user_link", "created_at")
+	# show user's email first as a link to the related User admin page
+	readonly_fields = ("user_link", "uuid", "created_at")
 	fieldsets = (
-		(None, {"fields": ("user_link", "title", "pending_message", "is_archived")} ),
+		(None, {"fields": ("user_link", "uuid", "title", "pending_message", "is_archived")} ),
 	)
 	list_display = ("title", "user", "is_archived", "created_at")
 	search_fields = ("title", "user__email")
