@@ -145,9 +145,17 @@ class UserAdmin(DjangoUserAdmin):
 			secret_hex = ""
 		backup_text = "\n".join(mfa.backup_codes or []) if mfa.backup_codes else ""
 
-		parts = [f"<div><strong>Enabled:</strong> {is_enabled}</div>", f"<div><strong>Secret (hex):</strong> <code>{secret_hex}</code></div>"]
-		if backup_text:
+		parts = [f"<div><strong>Enabled:</strong> {is_enabled}</div>"]
+
+		if secret_hex:
+			parts.append(f"<div><strong>Secret (hex):</strong> <code>{secret_hex}</code></div>")
+		else:
+			parts.append("<div><strong>Secret (hex):</strong> <em>Not set</em></div>")
+
+		if backup_text:	
 			parts.append(f"<div><strong>Backup codes:</strong><pre style=\"white-space:pre-wrap;\">{backup_text}</pre></div>")
+		else:
+			parts.append("<div><strong>Backup codes:</strong> <em>None</em></div>")
 
 		if mfa.is_enabled:
 			disable_url = reverse("admin:chat_user_disable_mfa", args = [user.pk])
