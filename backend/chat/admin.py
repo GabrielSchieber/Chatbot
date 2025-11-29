@@ -18,7 +18,7 @@ from .models import Chat, Message, User, UserMFA, UserPreferences
 from .tasks import stop_pending_chat
 
 class UserChangeForm(forms.ModelForm):
-	language = forms.ChoiceField(choices = [[c, c] for c in ["", "English", "Português"]], required = False)
+	language = forms.ChoiceField(choices = [["", "Auto-detect"], ["English", "English"], ["Português", "Português"]], required = False)
 	theme = forms.ChoiceField(choices = [[c, c] for c in ["System", "Light", "Dark"]], required = False)
 	has_sidebar_open = forms.BooleanField(required = False)
 	custom_instructions = forms.CharField(widget = forms.Textarea, required = False)
