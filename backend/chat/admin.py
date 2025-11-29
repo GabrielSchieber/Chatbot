@@ -12,6 +12,7 @@ from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import path, reverse
 from django.utils.safestring import mark_safe
+from django.template.loader import render_to_string
 
 from .models import Chat, Message, User, UserMFA, UserPreferences
 from .tasks import stop_pending_chat
@@ -116,8 +117,12 @@ class UserAdmin(DjangoUserAdmin):
 	)
 
 	list_display = ("email", "is_staff", "is_superuser", "is_active", "created_at_display")
-	readonly_fields = ("email", "last_login", "created_at", "created_at_display")
 	readonly_fields = ("email", "last_login", "created_at", "created_at_display", "mfa_display")
+
+	class Media:
+		css = {"all": ("chat/css/admin_mfa.css",)}
+		js = ("chat/js/admin_mfa.js",)
+
 	list_filter = ("is_staff", "is_superuser", "is_active", "groups")
 	search_fields = ("email",)
 	ordering = ("email",)
@@ -132,7 +137,7 @@ class UserAdmin(DjangoUserAdmin):
 	def mfa_display(self, user: User):
 		try:
 			mfa = user.mfa
-		except:
+		except Exception:
 			mfa = None
 
 		if not mfa:
@@ -141,44 +146,23 @@ class UserAdmin(DjangoUserAdmin):
 		is_enabled = "Yes" if mfa.is_enabled else "No"
 		try:
 			secret_hex = binascii.hexlify(mfa.secret).decode() if mfa.secret else ""
-		except:
+		except Exception:
 			secret_hex = ""
 		backup_text = "\n".join(mfa.backup_codes or []) if mfa.backup_codes else ""
 
-		parts = [f"<div><strong>Enabled:</strong> {is_enabled}</div>"]
-
-		if secret_hex:
-			parts.append(f"<div><strong>Secret (hex):</strong> <code>{secret_hex}</code></div>")
-		else:
-			parts.append("<div><strong>Secret (hex):</strong> <em>Not set</em></div>")
-
-		if backup_text:	
-			parts.append(f"<div><strong>Backup codes:</strong><pre style=\"white-space:pre-wrap;\">{backup_text}</pre></div>")
-		else:
-			parts.append("<div><strong>Backup codes:</strong> <em>None</em></div>")
-
-		if mfa.is_enabled:
-			disable_url = reverse("admin:chat_user_disable_mfa", args = [user.pk])
-			button = (
-				f'<button type="button" class="button" '
-				f'onclick="(function(btn){{if(!confirm(\'Disable MFA for this user?\'))return;'
-				f'btn.disabled=true;var csr=document.cookie.match(/(^|;)\\s*csrftoken=([^;]+)/);var csrftoken=csr?csr[2]:null;'
-				f'fetch(\'{disable_url}\',{{method:\'POST\',headers:{{\'X-CSRFToken\':csrftoken}},credentials:\'same-origin\'}})'
-				f'.then(function(r){{if(r.ok)location.reload();else{{alert(\'Failed to disable MFA\');btn.disabled=false;}}}})'
-				f'.catch(function(e){{alert(\'Error disabling MFA\');btn.disabled=false;}});}})(this)">Disable</button>'
-			)
-			parts.append(button)
-
-		style = (
-			"<style>"
-			".form-row.field-mfa_display label{display:none !important;}"
-			".form-row.field-mfa_display .readonly, .form-row.field-mfa_display .field-box{margin-left:0 !important; padding-left:0 !important;}"
-			"</style>"
-		)
-
-		return mark_safe(style + "".join(parts))
+		disable_url = reverse("admin:chat_user_disable_mfa", args=[user.pk]) if mfa.is_enabled else ""
+		context = {
+			"is_enabled": is_enabled,
+			"secret_hex": secret_hex,
+			"backup_text": backup_text,
+			"show_disable": bool(mfa.is_enabled),
+			"disable_url": disable_url,
+		}
+		rendered = render_to_string("chat/mfa_display.html", context)
+		return mark_safe(rendered)
 
 	mfa_display.short_description = "MFA"
+
 	def get_urls(self):
 		urls = super().get_urls()
 		custom_urls = [
@@ -194,7 +178,7 @@ class UserAdmin(DjangoUserAdmin):
 
 		try:
 			mfa = user.mfa
-		except:
+		except Exception:
 			mfa = None
 
 		if not mfa:
@@ -204,7 +188,7 @@ class UserAdmin(DjangoUserAdmin):
 		try:
 			mfa.disable()
 			messages.success(request, "MFA disabled for user.")
-		except:
+		except Exception:
 			logger.exception("Error disabling user MFA")
 			messages.error(request, "Failed to disable MFA for user.")
 
@@ -244,7 +228,6 @@ class MessageInline(admin.StackedInline):
 
 		items = []
 		for f in files:
-			meta = f"<strong>{f.name}</strong> — {f.content_type} — {f.created_at.strftime("%Y-%m-%d %H:%M:%S")}"
 			preview = "(binary content hidden)"
 			try:
 				data = f.content
@@ -255,12 +238,18 @@ class MessageInline(admin.StackedInline):
 							preview = "<pre>" + (text[:1000] + ("..." if len(text) > 1000 else "")) + "</pre>"
 					except UnicodeDecodeError:
 						preview = "(binary content hidden)"
-				else:
-					preview = "(binary content hidden)"
-			except:
+			except Exception:
 				preview = "(unable to read content)"
-			items.append(f"<li>{meta}<br/>{preview}</li>")
-		return mark_safe("<ul style=\"list-style:none;padding:0;margin:0;\">" + "".join(items) + "</ul>")
+
+			items.append({
+				"name": f.name,
+				"content_type": f.content_type,
+				"created_at": f.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+				"preview": preview,
+			})
+
+		rendered = render_to_string("chat/files_list.html", {"items": items})
+		return mark_safe(rendered)
 
 	files_display.short_description = "Files"
 
@@ -279,6 +268,9 @@ class MessageInline(admin.StackedInline):
 class ChatAdmin(admin.ModelAdmin):
 	model = Chat
 	inlines = (MessageInline,)
+
+	class Media:
+		js = ("chat/js/admin_pending.js",)
 	readonly_fields = ("user_link", "display_uuid", "pending_message_display", "created_at_display")
 	fieldsets = (
 		(None, {"fields": ("user_link", "display_uuid", "title", "pending_message_display", "is_archived", "created_at_display")} ),
@@ -308,14 +300,7 @@ class ChatAdmin(admin.ModelAdmin):
 		msg = chat.pending_message
 		msg_url = f"/admin/chat/message/{msg.pk}/change/"
 		stop_url = reverse("admin:chat_chat_stop_pending", args=[chat.pk])
-		button = (
-			f'<button type="button" class="button" '
-			f'onclick="(function(btn){{if(!confirm(\'Stop pending message generation?\'))return;'
-			f'btn.disabled=true;var csr=document.cookie.match(/(^|;)\\s*csrftoken=([^;]+)/);var csrftoken=csr?csr[2]:null;'
-			f'fetch(\'{stop_url}\',{{method:\'POST\',headers:{{\'X-CSRFToken\':csrftoken}},credentials:\'same-origin\'}})'
-			f'.then(function(r){{if(r.ok)location.reload();else{{alert(\'Failed to stop\');btn.disabled=false;}}}})'
-			f'.catch(function(e){{alert(\'Error stopping pending message\');btn.disabled=false;}});}})(this)">Stop</button>'
-		)
+		button = f'<button type="button" class="button" onclick="chat_admin_stop_pending(\'{stop_url}\', this)">Stop</button>'
 
 		return mark_safe(f'<a href="{msg_url}">Message #{msg.pk}</a> &nbsp; {button}')
 
@@ -389,7 +374,6 @@ class MessageAdmin(admin.ModelAdmin):
 			return ""
 		items = []
 		for f in files:
-			meta = f"<strong>{f.name}</strong> — {f.content_type} — {f.created_at.strftime("%Y-%m-%d %H:%M:%S")}"
 			preview = "(binary content hidden)"
 			try:
 				data = f.content
@@ -400,12 +384,16 @@ class MessageAdmin(admin.ModelAdmin):
 							preview = "<pre>" + (text[:1000] + ("..." if len(text) > 1000 else "")) + "</pre>"
 					except UnicodeDecodeError:
 						preview = "(binary content hidden)"
-				else:
-					preview = "(binary content hidden)"
-			except:
+			except Exception:
 				preview = "(unable to read content)"
-			items.append(f"<li>{meta}<br/>{preview}</li>")
-		return mark_safe("<ul style=\"list-style:none;padding:0;margin:0;\">" + "".join(items) + "</ul>")
+			items.append({
+				"name": f.name,
+				"content_type": f.content_type,
+				"created_at": f.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+				"preview": preview,
+			})
+		rendered = render_to_string("chat/files_list.html", {"items": items})
+		return mark_safe(rendered)
 
 	files_display.short_description = "Files"
 

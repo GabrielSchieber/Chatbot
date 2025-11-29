@@ -1,0 +1,8 @@
+<ul style="list-style:none;padding:0;margin:0;">
+    {% for item in items %}
+    <li>
+        <div><strong>{{ item.name|escape }}</strong> — {{ item.content_type|escape }} — {{ item.created_at }}</div>
+        <div>{{ item.preview|safe }}</div>
+    </li>
+    {% endfor %}
+</ul>

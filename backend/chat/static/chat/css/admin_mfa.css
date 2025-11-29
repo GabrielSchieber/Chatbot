@@ -1,0 +1,17 @@
+.form-row.field-mfa_display label {
+    display: none !important;
+}
+
+.form-row.field-mfa_display .readonly,
+.form-row.field-mfa_display .field-box {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
+.chat-admin-mfa {
+    max-width: 100%;
+}
+
+.chat-admin-mfa pre {
+    margin: 0;
+}
