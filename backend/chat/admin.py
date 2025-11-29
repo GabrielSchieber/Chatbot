@@ -27,8 +27,22 @@ class UserChangeForm(forms.ModelForm):
 		"wrap": "off",
 		"style": "resize:none;overflow-x:auto;overflow-y:hidden;white-space:pre;box-sizing:border-box;width:100%;"
 	}), required = False)
-	nickname = forms.CharField(max_length = 50, required = False)
-	occupation = forms.CharField(max_length = 50, required = False)
+	nickname = forms.CharField(
+		max_length=50,
+		required=False,
+		widget=forms.TextInput(attrs={
+			"class": "vTextField",
+			"style": "box-sizing:border-box;width:100%;",
+		}),
+	)
+	occupation = forms.CharField(
+		max_length=50,
+		required=False,
+		widget=forms.TextInput(attrs={
+			"class": "vTextField",
+			"style": "box-sizing:border-box;width:100%;",
+		}),
+	)
 	about = forms.CharField(widget = forms.Textarea(attrs={
 		"class": "chat-autoresize",
 		"rows": "1",
