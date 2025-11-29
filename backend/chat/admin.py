@@ -21,10 +21,20 @@ class UserChangeForm(forms.ModelForm):
 	language = forms.ChoiceField(choices = [["", "Auto-detect"], ["English", "English"], ["Português", "Português"]], required = False)
 	theme = forms.ChoiceField(choices = [[c, c] for c in ["System", "Light", "Dark"]], required = False)
 	has_sidebar_open = forms.BooleanField(required = False)
-	custom_instructions = forms.CharField(widget = forms.Textarea, required = False)
+	custom_instructions = forms.CharField(widget = forms.Textarea(attrs={
+		"class": "chat-autoresize",
+		"rows": "1",
+		"wrap": "off",
+		"style": "resize:none;overflow-x:auto;overflow-y:hidden;white-space:pre;box-sizing:border-box;width:100%;"
+	}), required = False)
 	nickname = forms.CharField(max_length = 50, required = False)
 	occupation = forms.CharField(max_length = 50, required = False)
-	about = forms.CharField(widget = forms.Textarea, required = False)
+	about = forms.CharField(widget = forms.Textarea(attrs={
+		"class": "chat-autoresize",
+		"rows": "1",
+		"wrap": "off",
+		"style": "resize:none;overflow-x:auto;overflow-y:hidden;white-space:pre;box-sizing:border-box;width:100%;"
+	}), required = False)
 
 	is_enabled = forms.BooleanField(required = False)
 	secret = forms.CharField(required = False, help_text = "Hex-encoded secret (binary). Leave blank to keep current.")
@@ -121,7 +131,7 @@ class UserAdmin(DjangoUserAdmin):
 
 	class Media:
 		css = {"all": ("chat/css/admin_mfa.css",)}
-		js = ("chat/js/admin_mfa.js",)
+		js = ("chat/js/admin_mfa.js", "chat/js/autoresize.js",)
 
 	list_filter = ("is_staff", "is_superuser", "is_active", "groups")
 	search_fields = ("email",)
