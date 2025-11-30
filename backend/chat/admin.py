@@ -7,7 +7,7 @@ from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin.utils import display_for_field
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
-from django.contrib.auth.forms import ReadOnlyPasswordHashField
+from django.contrib.auth.forms import ReadOnlyPasswordHashField, AdminUserCreationForm
 from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import path, reverse
@@ -125,6 +125,16 @@ class UserChangeForm(forms.ModelForm):
 class UserAdmin(DjangoUserAdmin):
 	model = User
 	form = UserChangeForm
+
+	class _AdminUserCreationFormWithMinLength(AdminUserCreationForm):
+		def clean(self):
+			cleaned = super().clean()
+			pw = cleaned.get("password1") or cleaned.get("password2")
+			if pw and len(pw) < 12:
+				self.add_error("password2", forms.ValidationError("Password must have at least 12 characters."))
+			return cleaned
+
+	add_form = _AdminUserCreationFormWithMinLength
 	fieldsets = (
 		(None, {"fields": ("email", "password")} ),
 		(("Preferences"), {"fields": ("language", "theme", "has_sidebar_open", "custom_instructions", "nickname", "occupation", "about")} ),
@@ -132,12 +142,14 @@ class UserAdmin(DjangoUserAdmin):
 		("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")} ),
 		(("Important dates"), {"fields": ("last_login", "created_at_display")} )
 	)
-
 	add_fieldsets = (
-		(None, {
-			"classes": ("wide",),
-			"fields": ("email", "password1", "password2")
-		})
+		(
+			None,
+			{
+				"classes": ("wide",),
+				"fields": ("email", "password1", "password2"),
+			},
+		),
 	)
 
 	list_display = ("email", "is_staff", "is_superuser", "is_active", "created_at_display")
@@ -151,6 +163,27 @@ class UserAdmin(DjangoUserAdmin):
 	search_fields = ("email",)
 	ordering = ("email",)
 	filter_horizontal = ("groups", "user_permissions")
+
+	def get_form(self, request, obj=None, **kwargs):
+		defaults = {}
+		if obj is None:
+			defaults["form"] = self.add_form
+		defaults.update(kwargs)
+		return super().get_form(request, obj, **defaults)
+
+	def get_readonly_fields(self, request, obj=None):
+		readonly = list(self.readonly_fields)
+		if obj is None and "email" in readonly:
+			readonly.remove("email")
+		return tuple(readonly)
+
+	def save_model(self, request, obj, form, change):
+		user = form.save(True)
+		try:
+			UserPreferences.objects.get_or_create(user = user)
+			UserMFA.objects.get_or_create(user = user)
+		except Exception:
+			logger.exception("Error creating related UserPreferences/UserMFA")
 
 	def created_at_display(self, user: User):
 		field = User._meta.get_field("created_at")
