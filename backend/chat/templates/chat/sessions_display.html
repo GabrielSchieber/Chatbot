@@ -6,13 +6,20 @@
     </div>
     {% for number, session in sessions %}
     <div>
-        <div># {{number}}</div>
+        <div style="padding-left: 1px; font-size: 15px;">
+            # {{number}}
+            {% if session.logout_at == "Active" %}
+            <span style="color: limegreen;">Active</span>
+            {% endif %}
+        </div>
         <div>
             <strong>Login:</strong> {{ session.login_at }}
         </div>
+        {% if session.logout_at != "Active" %}
         <div>
             <strong>Logout:</strong> {{ session.logout_at }}
         </div>
+        {% endif %}
         <div>
             <strong>IP:</strong> {{ session.ip_address|default:"N/A" }}
         </div>
