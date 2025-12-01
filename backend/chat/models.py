@@ -103,6 +103,10 @@ class UserMFA(models.Model):
         self.save()
 
 class UserSession(models.Model):
+    class Meta:
+        verbose_name = "User Session"
+        verbose_name_plural = "User Sessions"
+
     uuid = models.UUIDField(primary_key = True, default = uuid.uuid4, editable = False)
     user = models.ForeignKey(User, models.CASCADE, related_name = "sessions")
 
