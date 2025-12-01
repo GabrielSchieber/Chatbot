@@ -16,11 +16,32 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+
+.chat-admin-sessions-content {
+    display: flex;
+    flex-direction: column;
     max-height: 300px;
+    gap: 0.5rem;
+    padding: 8px;
     overflow: auto;
+    border: solid 1px;
+    border-radius: 3px;
 
     &>:not(:first-child) {
         border-top: 1px solid #ccc;
         padding-top: 0.5rem;
     }
+}
+
+.chat-admin-sessions-revoke-button {
+    padding: 7px 0;
+    border: solid 1px;
+    border-radius: 3px;
+    cursor: pointer;
+    background-color: rgb(20, 30, 40);
+}
+
+.chat-admin-sessions-revoke-button:hover {
+    background-color: rgb(25, 35, 45);
 }

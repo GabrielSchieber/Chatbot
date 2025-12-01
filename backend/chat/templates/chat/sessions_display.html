@@ -1,39 +1,47 @@
 <div class="chat-admin-sessions">
-    <div>
-        <p><strong>Total: {{ total }}</strong></p>
-        <p><strong>Active: {{ active }}</strong></p>
-        <p><strong>Inactive: {{ inactive }}</strong></p>
+    <div style="display: flex; flex-direction: column; padding-left: 7px;">
+        <span><strong>Total: </strong>{{ total }}</span>
+        <span><strong>Active: </strong>{{ active }}</span>
+        <span><strong>Inactive: </strong>{{ inactive }}</span>
     </div>
-    {% for number, session in sessions %}
-    <div>
-        <div style="padding-left: 1px; font-size: 15px;">
-            # {{number}}
-            {% if session.logout_at == "Active" %}
-            <span style="color: limegreen;">Active</span>
+    <div class="chat-admin-sessions-content">
+        {% for number, session in sessions %}
+        <div>
+            <div style="padding-left: 1px; font-size: 15px;">
+                # {{number}}
+                {% if session.logout_at == "Active" %}
+                <span style="color: limegreen;">Active</span>
+                {% endif %}
+            </div>
+            <div>
+                <strong>Login:</strong> {{ session.login_at }}
+            </div>
+            {% if session.logout_at != "Active" %}
+            <div>
+                <strong>Logout:</strong> {{ session.logout_at }}
+            </div>
             {% endif %}
+            <div>
+                <strong>IP:</strong> {{ session.ip_address|default:"N/A" }}
+            </div>
+            <div>
+                <strong>Device:</strong> {{ session.device|default:"N/A" }}
+            </div>
+            <div>
+                <strong>Browser:</strong> {{ session.browser|default:"N/A" }}
+            </div>
+            <div>
+                <strong>OS:</strong> {{ session.os|default:"N/A" }}
+            </div>
         </div>
-        <div>
-            <strong>Login:</strong> {{ session.login_at }}
-        </div>
-        {% if session.logout_at != "Active" %}
-        <div>
-            <strong>Logout:</strong> {{ session.logout_at }}
-        </div>
-        {% endif %}
-        <div>
-            <strong>IP:</strong> {{ session.ip_address|default:"N/A" }}
-        </div>
-        <div>
-            <strong>Device:</strong> {{ session.device|default:"N/A" }}
-        </div>
-        <div>
-            <strong>Browser:</strong> {{ session.browser|default:"N/A" }}
-        </div>
-        <div>
-            <strong>OS:</strong> {{ session.os|default:"N/A" }}
-        </div>
+        {% empty %}
+        <div>No sessions found.</div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div>No sessions found.</div>
-    {% endfor %}
+    {% if show_revoke %}
+    <button type="button" class="button chat-admin-sessions-revoke-button"
+        onclick="chat_admin_revoke_sessions('{{ revoke_url }}', this)">
+        Revoke all sessions
+    </button>
+    {% endif %}
 </div>

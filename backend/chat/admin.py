@@ -12,6 +12,7 @@ from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import path, reverse
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
@@ -173,7 +174,7 @@ class UserAdmin(DjangoUserAdmin):
 
     class Media:
         css = {"all": ("chat/css/admin_mfa.css", "chat/css/admin_sessions.css")}
-        js = ("chat/js/admin_mfa.js", "chat/js/autoresize.js")
+        js = ("chat/js/admin_mfa.js", "chat/js/admin_sessions.js", "chat/js/autoresize.js")
 
     list_filter = ("is_staff", "is_superuser", "is_active", "groups")
     search_fields = ("email",)
@@ -206,6 +207,7 @@ class UserAdmin(DjangoUserAdmin):
         active = user.sessions.filter(logout_at = None).count()
         inactive = user.sessions.exclude(logout_at = None).count()
         sessions = user.sessions.filter(user = user).order_by("-login_at")[:10]
+
         items = []
         for s in sessions:
             logout_at = s.logout_at.strftime("%Y-%m-%d %H:%M:%S") if s.logout_at else "Active"
@@ -227,9 +229,18 @@ class UserAdmin(DjangoUserAdmin):
                 "browser": s.browser,
                 "os": s.os,
             })
+
+        revoke_url = reverse("admin:chat_user_revoke_sessions", args = [user.pk])
         rendered = render_to_string(
             "chat/sessions_display.html",
-            {"total": total, "active": active, "inactive": inactive, "sessions": [i for i in enumerate(items, 1)]}
+            {
+                "total": total,
+                "active": active,
+                "inactive": inactive,
+                "sessions": [i for i in enumerate(items, 1)],
+                "revoke_url": revoke_url,
+                "show_revoke": total > 0
+            }
         )
         return mark_safe(rendered)
 
@@ -271,7 +282,8 @@ class UserAdmin(DjangoUserAdmin):
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
-            path("<path:object_id>/disable-mfa/", self.admin_site.admin_view(self.user_disable_mfa_view), name="chat_user_disable_mfa"),
+            path("<path:object_id>/disable-mfa/", self.admin_site.admin_view(self.user_disable_mfa_view), name = "chat_user_disable_mfa"),
+            path("<path:object_id>/revoke-sessions/", self.admin_site.admin_view(self.user_revoke_sessions_view), name = "chat_user_revoke_sessions")
         ]
         return custom_urls + urls
 
@@ -296,6 +308,19 @@ class UserAdmin(DjangoUserAdmin):
         except Exception:
             logger.exception("Error disabling user MFA")
             messages.error(request, "Failed to disable MFA for user.")
+
+        return redirect(reverse("admin:chat_user_change", args = [user.pk]))
+
+    def user_revoke_sessions_view(self, request, object_id, *args, **kwargs):
+        user = get_object_or_404(User, pk = object_id)
+        if request.method != "POST":
+            messages.error(request, "Invalid request method.")
+            return redirect(reverse("admin:chat_user_change", args = [user.pk]))
+
+        user.sessions.filter(user = user, logout_at__isnull = True).update(logout_at = timezone.now())
+        tokens = OutstandingToken.objects.filter(user = user)
+        for token in tokens:
+            BlacklistedToken.objects.get_or_create(token = token)
 
         return redirect(reverse("admin:chat_user_change", args = [user.pk]))
 
