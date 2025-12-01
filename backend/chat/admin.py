@@ -7,7 +7,7 @@ from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin.utils import display_for_field
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
-from django.contrib.auth.forms import AdminUserCreationForm, ReadOnlyPasswordHashField
+from django.contrib.auth.forms import AdminUserCreationForm, ReadOnlyPasswordHashField, AdminPasswordChangeForm
 from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -16,6 +16,19 @@ from django.utils.safestring import mark_safe
 
 from .models import Chat, Message, User, UserMFA, UserPreferences
 from .tasks import stop_pending_chat
+
+class AdminPasswordChangeFormWithMinLength(AdminPasswordChangeForm):
+    def clean(self):
+        cleaned = super().clean()
+        pw = cleaned.get("new_password1") or cleaned.get("password1")
+        if pw and len(pw) < 12:
+            if "new_password2" in self.fields:
+                self.add_error("new_password2", forms.ValidationError("Password must have at least 12 characters."))
+            elif "password2" in self.fields:
+                self.add_error("password2", forms.ValidationError("Password must have at least 12 characters."))
+            else:
+                raise forms.ValidationError("Password must have at least 12 characters.")
+        return cleaned
 
 class UserChangeForm(forms.ModelForm):
     language = forms.ChoiceField(choices = [["", "Auto-detect"], ["English", "English"], ["Português", "Português"]], required = False)
@@ -125,6 +138,7 @@ class UserChangeForm(forms.ModelForm):
 class UserAdmin(DjangoUserAdmin):
     model = User
     form = UserChangeForm
+    change_password_form = AdminPasswordChangeFormWithMinLength
 
     class _AdminUserCreationFormWithMinLength(AdminUserCreationForm):
         def clean(self):
