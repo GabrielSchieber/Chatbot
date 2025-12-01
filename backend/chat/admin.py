@@ -330,22 +330,22 @@ class UserSessionAdmin(admin.ModelAdmin):
     logout_at_display.short_description = "Logout"
 
     def ip_address_display(self, session: UserSession):
-        return session.ip_address or "-"
+        return session.ip_address or "N/A"
 
     ip_address_display.short_description = "IP Address"
 
     def user_agent_display(self, session: UserSession):
-        return session.user_agent or "-"
+        return session.user_agent or "N/A"
 
     user_agent_display.short_description = "User Agent"
 
     def device_display(self, session: UserSession):
         if not session.device:
-            return "-"
+            return "N/A"
 
-        family = session.device.partition("family=")[2].partition(",")[0].replace("'", "")
-        brand = session.device.partition("brand=")[2].partition(",")[0]
-        model = session.device.partition("model=")[2].partition(",")[0].replace(")", "")
+        family = session.device.partition("family=")[2].partition(",")[0].replace("'", "").replace("None", "N/A")
+        brand = session.device.partition("brand=")[2].partition(",")[0].replace("None", "N/A")
+        model = session.device.partition("model=")[2].partition(",")[0].replace(")", "").replace("None", "N/A")
 
         return mark_safe(
             "<pre style=\"white-space:pre-wrap;word-break:break-all;\">"
@@ -356,7 +356,7 @@ class UserSessionAdmin(admin.ModelAdmin):
     device_display.short_description = "Device"
 
     def os_display(self, session: UserSession):
-        return session.os or "-"
+        return session.os or "N/A"
 
     os_display.short_description = "Operating System"
 
