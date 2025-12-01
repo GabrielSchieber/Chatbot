@@ -7,12 +7,12 @@ from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin.utils import display_for_field
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
-from django.contrib.auth.forms import ReadOnlyPasswordHashField, AdminUserCreationForm
+from django.contrib.auth.forms import AdminUserCreationForm, ReadOnlyPasswordHashField
 from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404, redirect
+from django.template.loader import render_to_string
 from django.urls import path, reverse
 from django.utils.safestring import mark_safe
-from django.template.loader import render_to_string
 
 from .models import Chat, Message, User, UserMFA, UserPreferences
 from .tasks import stop_pending_chat
@@ -84,11 +84,11 @@ class UserChangeForm(forms.ModelForm):
 			if type(mfa) == UserMFA:
 				try:
 					self.fields["secret"].initial = binascii.hexlify(mfa.secret).decode() if mfa.secret else ""
-				except:
+				except Exception:
 					self.fields["secret"].initial = ""
 				try:
 					self.fields["backup_codes"].initial = "\n".join(mfa.backup_codes or [])
-				except:
+				except Exception:
 					self.fields["backup_codes"].initial = ""
 				self.fields["is_enabled"].initial = mfa.is_enabled
 
@@ -112,7 +112,7 @@ class UserChangeForm(forms.ModelForm):
 		if secret_val:
 			try:
 				mfa.secret = binascii.unhexlify(secret_val)
-			except:
+			except Exception:
 				pass
 		backup_text = self.cleaned_data.get("backup_codes", "")
 		if type(backup_text) == str:
@@ -157,7 +157,7 @@ class UserAdmin(DjangoUserAdmin):
 
 	class Media:
 		css = {"all": ("chat/css/admin_mfa.css",)}
-		js = ("chat/js/admin_mfa.js", "chat/js/autoresize.js",)
+		js = ("chat/js/admin_mfa.js", "chat/js/autoresize.js")
 
 	list_filter = ("is_staff", "is_superuser", "is_active", "groups")
 	search_fields = ("email",)
@@ -379,7 +379,7 @@ class ChatAdmin(admin.ModelAdmin):
 		try:
 			stop_pending_chat(chat)
 			messages.success(request, "Pending message generation stopped.")
-		except:
+		except Exception:
 			logger.exception("Error stopping pending chat")
 			messages.error(request, "Failed to stop pending message generation.")
 
