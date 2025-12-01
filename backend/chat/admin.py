@@ -206,12 +206,21 @@ class UserAdmin(DjangoUserAdmin):
         items = []
         for s in sessions:
             logout_at = s.logout_at.strftime("%Y-%m-%d %H:%M:%S") if s.logout_at else "Active"
+
+            if s.device:
+                family = s.device.partition("family=")[2].partition(",")[0].replace("'", "")
+                brand = s.device.partition("brand=")[2].partition(",")[0]
+                model = s.device.partition("model=")[2].partition(",")[0].replace(")", "")
+                device_info = f"Family: {family} Brand: {brand} Model: {model}"
+            else:
+                device_info = "N/A"
+
             items.append({
                 "login_at": s.login_at.strftime("%Y-%m-%d %H:%M:%S"),
                 "logout_at": logout_at,
                 "ip_address": s.ip_address,
                 "user_agent": s.user_agent,
-                "device": s.device,
+                "device": device_info,
                 "browser": s.browser,
                 "os": s.os,
             })
