@@ -13,6 +13,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import path, reverse
 from django.utils.safestring import mark_safe
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
 from .models import Chat, Message, User, UserMFA, UserPreferences, UserSession
 from .tasks import stop_pending_chat
@@ -285,9 +286,17 @@ class UserAdmin(DjangoUserAdmin):
 
 class UserSessionAdmin(admin.ModelAdmin):
     model = UserSession
-    readonly_fields = ("user", "user_display", "login_at_display", "logout_at_display", "ip_address", "user_agent", "device", "browser", "os", "refresh_jti")
-    fields = ("user_display", "login_at_display", "logout_at_display", "ip_address", "user_agent", "device", "browser", "os", "refresh_jti")
-    list_display = ("user__email", "login_at_display", "logout_at_display", "ip_address", "device", "browser", "os")
+    readonly_fields = (
+        "user_display", "login_at_display", "logout_at_display", "ip_address_display",
+        "user_agent_display", "device_display", "browser", "os_display", "refresh_jti_display"
+    )
+    fields = (
+        "user_display", "login_at_display", "logout_at_display", "ip_address_display",
+        "user_agent_display", "device_display", "browser", "os_display", "refresh_jti_display"
+    )
+    list_display = (
+        "user__email", "login_at_display", "logout_at_display", "ip_address_display", "device_display", "browser", "os_display"
+    )
     search_fields = ("user__email", "ip_address", "user_agent", "device", "browser", "os")
     ordering = ("-login_at",)
 
@@ -310,6 +319,60 @@ class UserSessionAdmin(admin.ModelAdmin):
         return display_for_field(session.logout_at, field, "Active")
 
     logout_at_display.short_description = "Logout"
+
+    def ip_address_display(self, session: UserSession):
+        return session.ip_address or "-"
+
+    ip_address_display.short_description = "IP Address"
+
+    def user_agent_display(self, session: UserSession):
+        return session.user_agent or "-"
+
+    user_agent_display.short_description = "User Agent"
+
+    def device_display(self, session: UserSession):
+        if not session.device:
+            return "-"
+
+        family = session.device.partition("family=")[2].partition(",")[0].replace("'", "")
+        brand = session.device.partition("brand=")[2].partition(",")[0]
+        model = session.device.partition("model=")[2].partition(",")[0].replace(")", "")
+
+        return mark_safe(
+            "<pre style=\"white-space:pre-wrap;word-break:break-all;\">"
+            f"Family: {family}\nBrand: {brand}\nModel: {model}"
+            "</pre>"
+        )
+
+    device_display.short_description = "Device"
+
+    def os_display(self, session: UserSession):
+        return session.os or "-"
+
+    os_display.short_description = "Operating System"
+
+    def refresh_jti_display(self, session: UserSession):
+        if not session.refresh_jti:
+            return "None"
+
+        blacklisted_token = BlacklistedToken.objects.filter(token__jti = session.refresh_jti).first()
+        outstanding_token = OutstandingToken.objects.filter(jti = session.refresh_jti).first()
+
+        parts = []
+        if blacklisted_token:
+            blacklisted_url = f"/admin/token_blacklist/blacklistedtoken/{blacklisted_token.pk}/change/"
+            parts.append(mark_safe(f'Blacklisted: <a href="{blacklisted_url}">{session.refresh_jti}</a>'))
+        else:
+            parts.append(f"Not blacklisted: {session.refresh_jti}")
+        if outstanding_token:
+            outstanding_url = f"/admin/token_blacklist/outstandingtoken/{outstanding_token.pk}/change/"
+            parts.append(mark_safe(f'Outstanding: <a href="{outstanding_url}">{session.refresh_jti}</a>'))
+        else:
+            parts.append(f"Not outstanding: {session.refresh_jti}")
+
+        return mark_safe("<br>".join(parts))
+
+    refresh_jti_display.short_description = "Refresh JTI"
 
 class MessageForm(forms.ModelForm):
     class Meta:
