@@ -84,6 +84,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                         <Content title={t("settings.security")} isScreenHeightSmall={isScreenHeightSmall}>
                             <Entry name={t("settings.mfa")} item={<MFADialog triggerClassName={entryClasses} />} />
                             <Entry name={t("settings.logout")} item={<LogoutEntryItem />} />
+                            <SessionsEntryItem />
                         </Content>
 
                         <Content title={t("settings.account")} isScreenHeightSmall={isScreenHeightSmall}>
@@ -280,6 +281,37 @@ function LogoutEntryItem() {
         <button className={entryClasses} onClick={handleLogout}>
             {t("settings.logout")}
         </button>
+    )
+}
+
+function SessionsEntryItem() {
+    const { user } = useAuth()
+    const { t } = useTranslation()
+
+    return (
+        <div className="flex flex-col gap-1 my-2 rounded-lg py-1 border border-gray-500">
+            <h3 className="px-2 pb-1 text-lg font-semibold border-b border-gray-500">
+                {t("settings.sessions.title")}
+            </h3>
+            <div className="flex flex-col max-h-100 gap-1 px-2 py-1 overflow-y-auto">
+                {user?.sessions.length === 0 ? (
+                    <p>{t("settings.sessions.noActiveSessions")}</p>
+                ) : (
+                    user?.sessions.map((s, i) => (
+                        <div key={i} className="flex flex-col p-2 border border-gray-500 rounded-lg">
+                            {s.logout_at === null && <p className="text-sm text-green-500">Active Session</p>}
+                            <p><strong>{t("settings.sessions.login")}:</strong> {new Date(s.login_at).toLocaleString()}</p>
+                            {s.logout_at !== null &&
+                                <p><strong>{t("settings.sessions.logout")}:</strong> {new Date(s.logout_at).toLocaleString()}</p>
+                            }
+                            <p><strong>{t("settings.sessions.ipAddress")}:</strong> {s.ip_address}</p>
+                            <p><strong>{t("settings.sessions.browser")}:</strong> {s.browser}</p>
+                            <p><strong>{t("settings.sessions.os")}:</strong> {s.os}</p>
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
     )
 }
 
