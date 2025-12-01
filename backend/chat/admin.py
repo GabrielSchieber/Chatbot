@@ -264,13 +264,12 @@ class UserAdmin(DjangoUserAdmin):
             secret_hex = binascii.hexlify(mfa.secret).decode() if mfa.secret else ""
         except Exception:
             secret_hex = ""
-        backup_text = "\n".join(mfa.backup_codes or []) if mfa.backup_codes else ""
 
-        disable_url = reverse("admin:chat_user_disable_mfa", args=[user.pk]) if mfa.is_enabled else ""
+        disable_url = reverse("admin:chat_user_disable_mfa", args = [user.pk]) if mfa.is_enabled else ""
         context = {
             "is_enabled": is_enabled,
             "secret_hex": secret_hex,
-            "backup_text": backup_text,
+            "backup_codes": mfa.backup_codes,
             "show_disable": bool(mfa.is_enabled),
             "disable_url": disable_url,
         }
