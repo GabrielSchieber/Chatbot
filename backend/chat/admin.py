@@ -202,7 +202,10 @@ class UserAdmin(DjangoUserAdmin):
             logger.exception("Error creating related UserPreferences/UserMFA")
 
     def sessions_display(self, user: User):
-        sessions = UserSession.objects.filter(user = user).order_by("-login_at")[:10]
+        total = user.sessions.count()
+        active = user.sessions.filter(logout_at = None).count()
+        inactive = user.sessions.exclude(logout_at = None).count()
+        sessions = user.sessions.filter(user = user).order_by("-login_at")[:10]
         items = []
         for s in sessions:
             logout_at = s.logout_at.strftime("%Y-%m-%d %H:%M:%S") if s.logout_at else "Active"
@@ -224,7 +227,10 @@ class UserAdmin(DjangoUserAdmin):
                 "browser": s.browser,
                 "os": s.os,
             })
-        rendered = render_to_string("chat/sessions_display.html", {"sessions": items})
+        rendered = render_to_string(
+            "chat/sessions_display.html",
+            {"total": total, "active": active, "inactive": inactive, "sessions": [i for i in enumerate(items, 1)]}
+        )
         return mark_safe(rendered)
 
     def created_at_display(self, user: User):

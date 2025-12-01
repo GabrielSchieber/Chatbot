@@ -1,6 +1,12 @@
 <div class="chat-admin-sessions">
-    {% for session in sessions %}
-    <div class="chat-admin-session">
+    <div>
+        <p><strong>Total: {{ total }}</strong></p>
+        <p><strong>Active: {{ active }}</strong></p>
+        <p><strong>Inactive: {{ inactive }}</strong></p>
+    </div>
+    {% for number, session in sessions %}
+    <div>
+        <div># {{number}}</div>
         <div>
             <strong>Login:</strong> {{ session.login_at }}
         </div>
