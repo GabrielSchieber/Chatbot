@@ -1,0 +1,26 @@
+<div class="chat-admin-sessions">
+    {% for session in sessions %}
+    <div class="chat-admin-session">
+        <div>
+            <strong>Login:</strong> {{ session.login_at }}
+        </div>
+        <div>
+            <strong>Logout:</strong> {{ session.logout_at }}
+        </div>
+        <div>
+            <strong>IP:</strong> {{ session.ip_address|default:"N/A" }}
+        </div>
+        <div>
+            <strong>Device:</strong> {{ session.device|default:"N/A" }}
+        </div>
+        <div>
+            <strong>Browser:</strong> {{ session.browser|default:"N/A" }}
+        </div>
+        <div>
+            <strong>OS:</strong> {{ session.os|default:"N/A" }}
+        </div>
+    </div>
+    {% empty %}
+    <div>No sessions found.</div>
+    {% endfor %}
+</div>

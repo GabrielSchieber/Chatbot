@@ -14,7 +14,7 @@ from django.template.loader import render_to_string
 from django.urls import path, reverse
 from django.utils.safestring import mark_safe
 
-from .models import Chat, Message, User, UserMFA, UserPreferences
+from .models import Chat, Message, User, UserMFA, UserPreferences, UserSession
 from .tasks import stop_pending_chat
 
 class AdminPasswordChangeFormWithMinLength(AdminPasswordChangeForm):
@@ -153,6 +153,7 @@ class UserAdmin(DjangoUserAdmin):
         (None, {"fields": ("email", "password")} ),
         (("Preferences"), {"fields": ("language", "theme", "has_sidebar_open", "custom_instructions", "nickname", "occupation", "about")} ),
         (("MFA"), {"fields": ("mfa_display",)} ),
+        (("Sessions"), {"fields": ("sessions_display",)} ),
         ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")} ),
         (("Important dates"), {"fields": ("last_login", "created_at_display")} )
     )
@@ -167,10 +168,10 @@ class UserAdmin(DjangoUserAdmin):
     )
 
     list_display = ("email", "is_staff", "is_superuser", "is_active", "created_at_display")
-    readonly_fields = ("email", "last_login", "created_at", "created_at_display", "mfa_display")
+    readonly_fields = ("email", "last_login", "created_at", "created_at_display", "mfa_display" ,"sessions_display")
 
     class Media:
-        css = {"all": ("chat/css/admin_mfa.css",)}
+        css = {"all": ("chat/css/admin_mfa.css", "chat/css/admin_sessions.css")}
         js = ("chat/js/admin_mfa.js", "chat/js/autoresize.js")
 
     list_filter = ("is_staff", "is_superuser", "is_active", "groups")
@@ -198,6 +199,23 @@ class UserAdmin(DjangoUserAdmin):
             UserMFA.objects.get_or_create(user = user)
         except Exception:
             logger.exception("Error creating related UserPreferences/UserMFA")
+
+    def sessions_display(self, user: User):
+        sessions = UserSession.objects.filter(user = user).order_by("-login_at")[:10]
+        items = []
+        for s in sessions:
+            logout_at = s.logout_at.strftime("%Y-%m-%d %H:%M:%S") if s.logout_at else "Active"
+            items.append({
+                "login_at": s.login_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "logout_at": logout_at,
+                "ip_address": s.ip_address,
+                "user_agent": s.user_agent,
+                "device": s.device,
+                "browser": s.browser,
+                "os": s.os,
+            })
+        rendered = render_to_string("chat/sessions_display.html", {"sessions": items})
+        return mark_safe(rendered)
 
     def created_at_display(self, user: User):
         field = User._meta.get_field("created_at")
@@ -264,6 +282,34 @@ class UserAdmin(DjangoUserAdmin):
             messages.error(request, "Failed to disable MFA for user.")
 
         return redirect(reverse("admin:chat_user_change", args = [user.pk]))
+
+class UserSessionAdmin(admin.ModelAdmin):
+    model = UserSession
+    readonly_fields = ("user", "user_display", "login_at_display", "logout_at_display", "ip_address", "user_agent", "device", "browser", "os", "refresh_jti")
+    fields = ("user_display", "login_at_display", "logout_at_display", "ip_address", "user_agent", "device", "browser", "os", "refresh_jti")
+    list_display = ("user__email", "login_at_display", "logout_at_display", "ip_address", "device", "browser", "os")
+    search_fields = ("user__email", "ip_address", "user_agent", "device", "browser", "os")
+    ordering = ("-login_at",)
+
+    def user_display(self, session: UserSession):
+        if not session.user:
+            return ""
+        url = f"/admin/chat/user/{session.user.pk}/change/"
+        return mark_safe(f"<a href=\"{url}\">{session.user.email}</a>")
+
+    user_display.short_description = "User"
+
+    def login_at_display(self, session: UserSession):
+        field = UserSession._meta.get_field("login_at")
+        return display_for_field(session.login_at, field, "-")
+
+    login_at_display.short_description = "Login"
+
+    def logout_at_display(self, session: UserSession):
+        field = UserSession._meta.get_field("logout_at")
+        return display_for_field(session.logout_at, field, "Active")
+
+    logout_at_display.short_description = "Logout"
 
 class MessageForm(forms.ModelForm):
     class Meta:
@@ -486,5 +532,6 @@ class MessageAdmin(admin.ModelAdmin):
 admin.site.unregister(Group)
 
 admin.site.register(User, UserAdmin)
+admin.site.register(UserSession, UserSessionAdmin)
 admin.site.register(Chat, ChatAdmin)
 admin.site.register(Message, MessageAdmin)
