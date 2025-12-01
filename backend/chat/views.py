@@ -13,6 +13,7 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 from .serializers import ChatSerializer, MessageSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences, UserSession
@@ -148,6 +149,22 @@ class Logout(APIView):
                 UserSession.objects.filter(refresh_jti = jti, logout_at__isnull = True).update(logout_at = timezone.now())
             except:
                 pass
+
+        response = Response(status = status.HTTP_200_OK)
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
+        return response
+
+class LogoutAllSessions(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request):
+        user: User = request.user
+
+        user.sessions.filter(user = user, logout_at__isnull = True).update(logout_at = timezone.now())
+        tokens = OutstandingToken.objects.filter(user = user)
+        for token in tokens:
+            BlacklistedToken.objects.get_or_create(token = token)
 
         response = Response(status = status.HTTP_200_OK)
         response.delete_cookie("access_token")
