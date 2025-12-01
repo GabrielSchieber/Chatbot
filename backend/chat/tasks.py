@@ -5,26 +5,11 @@ import random
 import threading
 from concurrent.futures import CancelledError
 
-logger = logging.getLogger(__name__)
-
 import ollama
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
-from django.core.exceptions import ObjectDoesNotExist
-
-channel_layer = get_channel_layer()
 
 from .models import Chat, Message, User
-
-def start_background_loop(loop: asyncio.AbstractEventLoop):
-    asyncio.set_event_loop(loop)
-    loop.run_forever()
-
-event_loop = asyncio.new_event_loop()
-threading.Thread(target = start_background_loop, args = [event_loop], daemon = True).start()
-
-chat_futures: dict[str, asyncio.Future[None]] = {}
-opened_chats: set[str] = set()
 
 def generate_pending_message_in_chat(chat: Chat, should_generate_title: bool = False, should_randomize: bool = False):
     if chat.pending_message is not None:
@@ -44,38 +29,34 @@ def task_done_callback(future: asyncio.Future[None], chat_uuid: str):
         logger.exception("Task failed", exc_info = exception)
 
 async def generate_message(chat: Chat, should_generate_title: bool, should_randomize: bool):
-    model = get_ollama_model(chat.pending_message.model)
-    if model not in str(ollama.list()):
-        raise ValueError(f"Model {model} not installed")
-
-    options = {
-        "num_predict": 256,
-        "temperature": random.randint(100, 1000) / 1000 if should_randomize else 0.1,
-        "top_p": random.randint(100, 1000) / 1000 if should_randomize else 0.1
-    }
-
-    if os.getenv("PLAYWRIGHT_TEST") == "True":
-        options["seed"] = 0
-    elif should_randomize:
-        options["seed"] = random.randint(-(10 ** 10), 10 ** 10)
-
     messages: list[dict[str, str]] = await get_messages(chat.pending_message)
     message_index = len(messages) - 1
 
+    model, options = get_ollama_model_and_options(chat.pending_message.model)
+
+    if IS_PLAYWRIGHT_TEST:
+        options["num_predict"] = 64
+        options["seed"] = get_test_seed(chat)
+    elif should_randomize:
+        options["seed"] = random.randint(-(10 ** 10), 10 ** 10)
+
     try:
-        async for part in await ollama.AsyncClient().chat(model, messages, stream = True, options = options):
-            token = part["message"]["content"]
-            chat.pending_message.text += token
-            if not await safe_save_message(chat.pending_message):
-                return
+        async for part in await ollama_client.chat(model, messages, stream = True, options = options):
+            token = part.message.content
+
+            if type(token) == str:
+                chat.pending_message.text += token
+                if not await safe_save_message_text(chat.pending_message):
+                    return
+                await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_token", "token": token, "message_index": message_index})
+
             if str(chat.uuid) in opened_chats:
                 opened_chats.discard(str(chat.uuid))
                 await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": chat.pending_message.text, "message_index": message_index})
-            else:
-                await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_token", "token": token, "message_index": message_index})
     except asyncio.CancelledError:
         chat.pending_message = None
-        await safe_save_chat(chat)
+        if not await safe_save_chat_pending_message(chat):
+            return
         if should_generate_title:
             await generate_title(chat)
         return
@@ -86,62 +67,41 @@ async def generate_message(chat: Chat, should_generate_title: bool, should_rando
         await generate_title(chat)
 
     chat.pending_message = None
-    await chat.asave(update_fields = ["pending_message"])
+    if not await safe_save_chat_pending_message(chat):
+        return
 
     await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_end"})
 
 async def generate_title(chat: Chat):
-    model = get_ollama_model("SmolLM2-135M")
-    if model not in str(ollama.list()):
-        raise ValueError(f"Model {model} not installed")
+    model, options = get_ollama_model_and_options(chat.pending_message.model)
+
+    options["num_predict"] = 10
+    if IS_PLAYWRIGHT_TEST:
+        options["seed"] = 0
 
     first_message = await chat.messages.afirst()
     last_message = await chat.messages.alast()
 
     messages = [
         {
-            "role": "system",
-            "content": "You are a helpful assistant that generates very concise and accurate titles for chat conversations. The titles should be no longer than 5 words."
-        },
-        {
             "role": "user",
-            "content": f"Generate a concise title for the following conversation:\n\n{first_message.text}\n...\n{last_message.text}\n\nTitle:"
+            "content": f"Generate a descriptive and concise title for the following conversation between a human and their AI personal assistant that happened on chatbot web app. The title should be in plain, simple English, it should NOT contain any punctuations and it should be NO longer than ten words:\n\nUser:\n{first_message.text}\n\nAssistant:\n{last_message.text}"
         }
     ]
 
-    response = await ollama.AsyncClient().chat(model, messages, options = {"num_predict": 10})
+    response = await ollama_client.chat(model, messages, options = options)
 
-    title = response["message"]["content"].strip().replace("\n", " ")
-    if title != "":
-        chat.title = title
-        await chat.asave(update_fields = ["title"])
-        await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_title", "title": chat.title})
+    content = response.message.content
+    if type(content) == str:
+        title = content.strip().replace("\n", " ")[:200]
+        if title != "":
+            chat.title = title
+            await chat.asave(update_fields = ["title"])
+            await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_title", "title": chat.title})
 
 @database_sync_to_async
 def get_messages(up_to_message: Message) -> list[dict[str, str]]:
-    system_prompt = "You are a helpful and nice AI personal assistant. Your role is to provide assistance to the user."
-
-    custom_instructions = up_to_message.chat.user.preferences.custom_instructions
-    nickname = up_to_message.chat.user.preferences.nickname
-    occupation = up_to_message.chat.user.preferences.occupation
-    about = up_to_message.chat.user.preferences.about
-
-    if any(map(lambda p: p != "", [custom_instructions, nickname, occupation, about])):
-        system_prompt += f"\nIn addition, you should know the following:"
-
-    if nickname != "":
-        system_prompt += f"\nThe nickname of the user is: {nickname}"
-
-    if occupation != "":
-        system_prompt += f"\nThe user's occupation is: {occupation}"
-
-    if about != "":
-        system_prompt += f"\nThe user has the following to say about them:\n{about}"
-
-    if custom_instructions != "":
-        system_prompt += f"\nYou should follow these instructions:\n{custom_instructions}"
-
-    messages = [{"role": "system", "content": system_prompt}]
+    messages = [{"role": "system", "content": get_system_prompt(up_to_message.chat.user)}]
 
     for message in up_to_message.chat.messages.order_by("created_at"):
         if message.pk == up_to_message.pk:
@@ -174,6 +134,31 @@ def get_message_dict(message: Message) -> dict[str, str]:
     else:
         return {"role": "assistant", "content": message.text}
 
+def get_system_prompt(user: User):
+    system_prompt = "You are a helpful and nice AI personal assistant. Your role is to provide assistance to the user. Always answer the user concisely using one small phrase with simple words."
+
+    custom_instructions = user.preferences.custom_instructions
+    nickname = user.preferences.nickname
+    occupation = user.preferences.occupation
+    about = user.preferences.about
+
+    if any(map(lambda p: p != "", [custom_instructions, nickname, occupation, about])):
+        system_prompt += f"\nIn addition, you should know the following:"
+
+    if nickname != "":
+        system_prompt += f"\nThe nickname of the user is: {nickname}"
+
+    if occupation != "":
+        system_prompt += f"\nThe user's occupation is: {occupation}"
+
+    if about != "":
+        system_prompt += f"\nThe user has the following to say about them:\n{about}"
+
+    if custom_instructions != "":
+        system_prompt += f"\nYou should follow these instructions:\n{custom_instructions}"
+
+    return system_prompt
+
 def stop_pending_chat(chat: Chat):
     if chat.pending_message is not None and str(chat.uuid) in chat_futures:
         chat_futures[str(chat.uuid)].cancel()
@@ -203,25 +188,57 @@ def is_any_user_chat_pending(user: User) -> bool:
     pending_chats = Chat.objects.filter(user = user).exclude(pending_message = None)
     return True if pending_chats.count() > 0 else False
 
-def get_ollama_model(model: str):
-    if model == "Moondream":
-        return "moondream:1.8b-v2-q2_K"
-    else:
-        return model.lower().replace("-", ":")
+def get_ollama_model_and_options(model: str):
+    base_options = {"numa": True, "num_ctx": 512, "num_batch": 1, "logits_all": True, "use_mmap": True, "use_mlock": True, "num_predict": 256}
 
-async def safe_save_message(bot_message: Message):
-    try:
-        exists = await database_sync_to_async(Chat.objects.filter(pk = bot_message.chat_id).exists)()
-        if not exists:
-            return False
-        await bot_message.asave()
-        return True
-    except ObjectDoesNotExist:
+    match model:
+        case "SmolLM2-135M":
+            return "smollm2:135m-instruct-q2_K", base_options
+        case "SmolLM2-360M":
+            return "smollm2:360m-instruct-q2_K", base_options
+        case "SmolLM2-1.7B":
+            return "smollm2:1.7b-instruct-q2_K", {**base_options, "temperature": 0.35}
+        case "Moondream":
+            return "moondream:1.8b-v2-q2_K", base_options
+
+async def safe_save_message_text(message: Message):
+    exists = await database_sync_to_async(Message.objects.filter(pk = message.pk).exists)()
+    if not exists:
         return False
+    await message.asave(update_fields = ["text"])
+    return True
 
-async def safe_save_chat(chat: Chat):
+async def safe_save_chat_pending_message(chat: Chat):
     exists = await database_sync_to_async(Chat.objects.filter(pk = chat.pk).exists)()
     if not exists:
         return False
     await chat.asave(update_fields = ["pending_message"])
     return True
+
+IS_PLAYWRIGHT_TEST = os.getenv("PLAYWRIGHT_TEST") == "True"
+
+if IS_PLAYWRIGHT_TEST:
+    test_seeds: dict[str, int] = {}
+
+    def get_test_seed(chat: Chat):
+        seed = test_seeds.get(str(chat.uuid), 0)
+        if seed == 0:
+            test_seeds[str(chat.uuid)] = 1
+        else:
+            test_seeds[str(chat.uuid)] += 1
+        return seed
+
+logger = logging.getLogger(__name__)
+
+channel_layer = get_channel_layer()
+ollama_client = ollama.AsyncClient("ollama")
+
+def start_background_loop(loop: asyncio.AbstractEventLoop):
+    asyncio.set_event_loop(loop)
+    loop.run_forever()
+
+event_loop = asyncio.new_event_loop()
+chat_futures: dict[str, asyncio.Future[None]] = {}
+opened_chats: set[str] = set()
+
+threading.Thread(target = start_background_loop, args = [event_loop], daemon = True).start()

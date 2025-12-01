@@ -63,7 +63,7 @@ class ViewTests(TestCase):
         def test(email: str):
             response = self.client.post("/api/signup/", {"email": email, "password": "testpassword"})
             self.assertEqual(response.status_code, 400)
-            self.assertEqual(response.json()["error"], "Email is not valid.")
+            self.assertEqual(response.json()["error"], "Email address is invalid.")
             self.assertEqual(User.objects.all().count(), 0)
 
         test("test")
@@ -78,32 +78,32 @@ class ViewTests(TestCase):
         def test(password: str):
             response = self.client.post("/api/signup/", {"email": "test@example.com", "password": password})
             self.assertEqual(response.status_code, 400)
-            self.assertEqual(response.json()["error"], "Password must have between 12 and 100 characters.")
+            self.assertEqual(response.json()["error"], "Password must have between 12 and 1000 characters.")
             self.assertEqual(User.objects.all().count(), 0)
 
         test("")
         test("test")
         test("onepassword")
-        test("someverylongpasswordsomeverylongpasswordsomeverylongpasswordsomeverylongpasswordsomeverylongpassword1")
+        test("".join(["password123" for _ in range(91)]))
 
     def test_login(self):
         _, response = self.create_and_login_user()
         self.assertEqual(response.status_code, 200)
 
     def test_login_with_invalid_credentials(self):
-        error = "Email and/or password are invalid."
+        error = "login.error"
 
         create_user()
         response = self.login_user("someemail@example.com", "somepassword")
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["error"], error)
 
         response = self.login_user("test@example.com", "somepassword")
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["error"], error)
 
         response = self.login_user("someemail@example.com", "testpassword")
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["error"], error)
 
     def test_logout(self):
@@ -466,4 +466,4 @@ class ViewTests(TestCase):
         return user, response
 
 def create_user(email: str = "test@example.com", password: str = "testpassword") -> User:
-    return User.objects.create(email = email, password = password)
+    return User.objects.create_user(email = email, password = password)

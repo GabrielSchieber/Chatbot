@@ -7,22 +7,27 @@ from django.utils.translation import gettext_lazy as _
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
-TOTP_ENCRYPTION_KEY = os.environ.get("TOTP_ENCRYPTION_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("DJANGO_SECRET_KEY environment variable must be defined.")
+
+TOTP_ENCRYPTION_KEY = os.environ.get("DJANGO_TOTP_ENCRYPTION_KEY")
+if not TOTP_ENCRYPTION_KEY:
+    raise RuntimeError("DJANGO_TOTP_ENCRYPTION_KEY environment variable must be defined.")
 
 DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
 
 INSTALLED_APPS = [
     "chat",
     "daphne",
-    "rest_framework_simplejwt.token_blacklist",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "django.contrib.staticfiles"
+    "django.contrib.staticfiles",
+    "rest_framework_simplejwt.token_blacklist"
 ]
 
 MIDDLEWARE = [
@@ -42,7 +47,7 @@ ROOT_URLCONF = "backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [] if DEBUG else ["dist"],
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -68,51 +73,30 @@ DATABASES = {
     }
 }
 
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"
-    }
-]
-
-LANGUAGE_CODE = "en-us"
-
-TIME_ZONE = "UTC"
-
-LANGUAGES = [
-    ("en", _("English")),
-    ("pt", _("Portuguese"))
-]
-
-LANGUAGE_CODE = "en"
-
-USE_I18N = True
-USE_L10N = True
-
-LOCALE_PATHS = [BASE_DIR / "locale"]
-
-USE_TZ = True
-
-STATIC_URL = "assets/"
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "static_files"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+AUTH_USER_MODEL = "chat.User"
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = os.getenv("DJANGO_SECURE_SSL_REDIRECT", "True") != "False"
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [["redis", "6379"]]}
+        "CONFIG": {
+            "hosts": [["redis", "6379"]]
+        }
     }
 }
-
-AUTH_USER_MODEL = "chat.User"
 
 CACHES = {
     "default": {
@@ -139,13 +123,13 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours = 1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes = 5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days = 7),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_COOKIE": "access_token",
     "AUTH_COOKIE_REFRESH": "refresh_token",
     "AUTH_COOKIE_HTTP_ONLY": True,
-    "AUTH_COOKIE_SECURE": False,
+    "AUTH_COOKIE_SECURE": True,
     "AUTH_COOKIE_SAMESITE": "Lax"
 }

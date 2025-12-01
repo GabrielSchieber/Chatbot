@@ -1,12 +1,9 @@
 import json
-from typing import Any
 
 from django.contrib.auth import authenticate
 from django.core.validators import validate_email
 from django.db.models import Prefetch, Q
-from django.shortcuts import render
 from django.utils import timezone
-from django.utils.translation import gettext as _
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -17,7 +14,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, GetChatsGETSerializer, MessageSerializer, UserSerializer
+from .serializers import ChatSerializer, MessageSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -36,15 +33,15 @@ class Signup(APIView):
         try:
             validate_email(email)
         except:
-            return Response({"error": "Email is not valid."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Email address is invalid."}, status.HTTP_400_BAD_REQUEST)
 
         if User.objects.filter(email = email).exists():
-            return Response({"error": _("Email is already registered. Please choose another one.")}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "signup.emailError"}, status.HTTP_400_BAD_REQUEST)
 
-        if len(password) < 12 or len(password) > 100:
-            return Response({"error": "Password must have between 12 and 100 characters."}, status.HTTP_400_BAD_REQUEST)
+        if len(password) < 12 or len(password) > 1000:
+            return Response({"error": "Password must have between 12 and 1000 characters."}, status.HTTP_400_BAD_REQUEST)
 
-        User.objects.create(email = email, password = password)
+        User.objects.create_user(email = email, password = password)
 
         return Response(status = status.HTTP_201_CREATED)
 
@@ -61,7 +58,7 @@ class Login(APIView):
 
         user: User | None = authenticate(request, email = email, password = password)
         if user is None:
-            return Response({"error": _("Email and/or password are invalid.")}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "login.error"}, status.HTTP_401_UNAUTHORIZED)
 
         if user.mfa.is_enabled:
             pre_auth_token = PreAuthToken.objects.create(user = user)
@@ -71,9 +68,12 @@ class Login(APIView):
             response = Response(status = status.HTTP_200_OK)
             response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
             response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+            user.last_login = timezone.now()
+            user.save(update_fields = ["last_login"])
             return response
 
 class VerifyMFA(APIView):
+    authentication_classes = []
     throttle_classes = [IPEmailRateThrottle]
 
     def post(self, request: Request):
@@ -86,21 +86,26 @@ class VerifyMFA(APIView):
         try:
             pre_auth_token = PreAuthToken.objects.get(token = token)
         except PreAuthToken.DoesNotExist:
-            return Response({"error": _("Invalid or expired token.")}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "mfa.messages.errorInvalidOrExpiredCode"}, status.HTTP_401_UNAUTHORIZED)
+        except:
+            return Response({"error": "Invalid token format."}, status.HTTP_400_BAD_REQUEST)
 
         if pre_auth_token.is_expired():
             pre_auth_token.delete()
-            return Response({"error": _("Token expired.")}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "mfa.messages.errorInvalidOrExpiredCode"}, status.HTTP_401_UNAUTHORIZED)
 
-        if pre_auth_token.user.mfa.verify(code):
-            refresh = RefreshToken.for_user(pre_auth_token.user)
-            response = Response(status = status.HTTP_200_OK)
-            response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
-            response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
-            pre_auth_token.delete()
-            return response
-        else:
-            return Response({"error": _("Invalid code.")}, status.HTTP_401_UNAUTHORIZED)
+        user = pre_auth_token.user
+        if not user.mfa.verify(code):
+            return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
+
+        refresh = RefreshToken.for_user(user)
+        response = Response(status = status.HTTP_200_OK)
+        response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
+        response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+        pre_auth_token.delete()
+        user.last_login = timezone.now()
+        user.save(update_fields = ["last_login"])
+        return response
 
 class Logout(APIView):
     permission_classes = [IsAuthenticated]
@@ -112,6 +117,7 @@ class Logout(APIView):
         return response
 
 class Refresh(TokenRefreshView):
+    authentication_classes = []
     throttle_classes = [RefreshRateThrottle]
 
     def post(self, request: Request):
@@ -122,7 +128,7 @@ class Refresh(TokenRefreshView):
         serializer = self.get_serializer(data = {"refresh": refresh_token})
         try:
             serializer.is_valid(raise_exception = True)
-        except Exception:
+        except:
             return Response({"error": "Invalid refresh token."}, status.HTTP_401_UNAUTHORIZED)
 
         access = serializer.validated_data["access"]
@@ -144,25 +150,25 @@ class Me(APIView):
         user: User = request.user
 
         language = request.data.get("language")
-        if language != None: 
+        if language is not None: 
             if language not in [c[0] for c in UserPreferences._meta.get_field("language").choices]:
                 return Response({"error": "Invalid language."}, status.HTTP_400_BAD_REQUEST)
             user.preferences.language = language
 
         theme = request.data.get("theme")
-        if theme != None: 
-            if theme not in ["System", "Light", "Dark"]:
+        if theme is not None: 
+            if theme not in [c[0] for c in UserPreferences._meta.get_field("theme").choices]:
                 return Response({"error": "Invalid theme."}, status.HTTP_400_BAD_REQUEST)
             user.preferences.theme = theme
 
         has_sidebar_open = request.data.get("has_sidebar_open")
-        if has_sidebar_open != None:
+        if has_sidebar_open is not None:
             if type(has_sidebar_open) != bool:
                 return Response({"error": "Invalid data type for 'has_sidebar_open' field."}, status.HTTP_400_BAD_REQUEST)
             user.preferences.has_sidebar_open = has_sidebar_open
 
         custom_instructions = request.data.get("custom_instructions")
-        if custom_instructions != None:
+        if custom_instructions is not None:
             if type(custom_instructions) != str:
                 return Response({"error": "Invalid data type for 'custom_instructions' field."}, status.HTTP_400_BAD_REQUEST)
             if len(custom_instructions) > UserPreferences._meta.get_field("custom_instructions").max_length:
@@ -170,7 +176,7 @@ class Me(APIView):
             user.preferences.custom_instructions = custom_instructions
 
         nickname = request.data.get("nickname")
-        if nickname != None:
+        if nickname is not None:
             if type(nickname) != str:
                 return Response({"error": "Invalid data type for 'nickname' field."}, status.HTTP_400_BAD_REQUEST)
             if len(nickname) > UserPreferences._meta.get_field("nickname").max_length:
@@ -178,7 +184,7 @@ class Me(APIView):
             user.preferences.nickname = nickname
 
         occupation = request.data.get("occupation")
-        if occupation != None:
+        if occupation is not None:
             if type(occupation) != str:
                 return Response({"error": "Invalid data type for 'occupation' field."}, status.HTTP_400_BAD_REQUEST)
             if len(occupation) > UserPreferences._meta.get_field("occupation").max_length:
@@ -186,7 +192,7 @@ class Me(APIView):
             user.preferences.occupation = occupation
 
         about = request.data.get("about")
-        if about != None:
+        if about is not None:
             if type(about) != str:
                 return Response({"error": "Invalid data type for 'about' field."}, status.HTTP_400_BAD_REQUEST)
             if len(about) > UserPreferences._meta.get_field("about").max_length:
@@ -201,7 +207,7 @@ class SetupMFA(APIView):
 
     def post(self, request: Request):
         secret, auth_url = request.user.mfa.setup()
-        return Response({"auth_url": auth_url, "secret": secret})
+        return Response({"auth_url": auth_url, "secret": secret}, status.HTTP_200_OK)
 
 class EnableMFA(APIView):
     permission_classes = [IsAuthenticated]
@@ -210,61 +216,61 @@ class EnableMFA(APIView):
         user: User = request.user
         code = request.data.get("code")
 
-        if user.mfa.verify(code):
-            backup_codes = user.mfa.enable()
-            return Response({"backup_codes": backup_codes}, status.HTTP_200_OK)
-        else:
-            return Response({"error": _("Invalid code.")}, status.HTTP_400_BAD_REQUEST)
+        if not user.mfa.verify(code):
+            return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
+
+        backup_codes = user.mfa.enable()
+        return Response({"backup_codes": backup_codes}, status.HTTP_200_OK)
 
 class DisableMFA(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request):
         user: User = request.user
-        code = request.data.get("code")
 
         if not user.mfa.is_enabled:
             return Response({"error": "MFA is not enabled."}, status.HTTP_400_BAD_REQUEST)
 
-        if user.mfa.verify(code):
-            user.mfa.disable()
-            return Response(status = status.HTTP_200_OK)
-        else:
-            return Response({"error": _("Invalid code.")}, status.HTTP_400_BAD_REQUEST)
+        code = request.data.get("code")
+
+        if not user.mfa.verify(code):
+            return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
+
+        user.mfa.disable()
+        return Response(status = status.HTTP_200_OK)
 
 class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request: Request):
+        user: User = request.user
+
         password = request.data.get("password")
         mfa_code = request.data.get("mfa_code")
 
         if password is None:
             return Response({"error": "'password' field must be provided."}, status.HTTP_400_BAD_REQUEST)
 
-        if not request.user.check_password(password):
-            return Response({"error": _("Invalid password.")}, status.HTTP_401_UNAUTHORIZED)
+        if not user.check_password(password):
+            return Response({"error": "mfa.messages.errorInvalidPassword"}, status.HTTP_403_FORBIDDEN)
 
-        if request.user.mfa.is_enabled:
+        if user.mfa.is_enabled:
             if mfa_code is None:
                 return Response({"error": "MFA code is required."}, status.HTTP_400_BAD_REQUEST)
-            if not request.user.mfa.verify(mfa_code):
-                return Response({"error": _("Invalid MFA code.")}, status.HTTP_401_UNAUTHORIZED)
+            if not user.mfa.verify(mfa_code):
+                return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
 
-        try:
-            request.user.delete()
-            response = Response(status = status.HTTP_204_NO_CONTENT)
-            response.delete_cookie("access_token")
-            response.delete_cookie("refresh_token")
-            return response
-        except Exception:
-            return Response({"error": "Failed to delete account."}, status.HTTP_400_BAD_REQUEST)
+        user.delete()
+        response = Response(status = status.HTTP_204_NO_CONTENT)
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
+        return response
 
 class GetChat(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
-        chat_uuid = request.GET.get("chat_uuid")
+        chat_uuid = request.query_params.get("chat_uuid")
 
         if chat_uuid is None:
             return Response("'chat_uuid' field must be provided.")
@@ -282,14 +288,10 @@ class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
-        query_serializer = GetChatsGETSerializer(data = request.GET)
-        query_serializer.is_valid(raise_exception = True)
-        data: dict[str, Any] = query_serializer.validated_data
-
-        offset = data["offset"]
-        limit = data["limit"]
-        pending = data["pending"]
-        archived = data["archived"]
+        offset = int(request.query_params.get("offset", 0))
+        limit = int(request.query_params.get("limit", 20))
+        pending = request.query_params.get("pending", False) == "true"
+        archived = request.query_params.get("archived", False) == "true"
 
         chats = Chat.objects.filter(user = request.user, is_archived = archived)
         if pending:
@@ -303,9 +305,9 @@ class SearchChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
-        search = request.GET.get("search", "")
-        limit = int(request.GET.get("limit", 20))
-        offset = int(request.GET.get("offset", 0))
+        search = request.query_params.get("search", "")
+        offset = int(request.query_params.get("offset", 0))
+        limit = int(request.query_params.get("limit", 20))
 
         matched_messages = Message.objects.filter(chat__user = request.user, text__icontains = search).order_by("created_at")
 
@@ -456,11 +458,11 @@ class GetMessageFileContent(APIView):
     renderer_classes = [BinaryFileRenderer]
 
     def get(self, request: Request):
-        chat_uuid = request.GET.get("chat_uuid")
+        chat_uuid = request.query_params.get("chat_uuid")
         if chat_uuid is None:
             return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
 
-        message_file_id = request.GET.get("message_file_id")
+        message_file_id = request.query_params.get("message_file_id")
         if message_file_id is None:
             return Response({"error": "'message_file_id' field must be provided."}, status.HTTP_400_BAD_REQUEST)
         message_file_id = int(message_file_id)
@@ -483,7 +485,7 @@ class GetMessages(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
-        chat_uuid = request.GET.get("chat_uuid")
+        chat_uuid = request.query_params.get("chat_uuid")
         if not chat_uuid:
             return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
 
@@ -559,7 +561,7 @@ class EditMessage(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
 
-    def patch(self, request):
+    def patch(self, request: Request):
         if is_any_user_chat_pending(request.user):
             return Response({"error": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
 
@@ -622,12 +624,10 @@ class EditMessage(APIView):
         MessageFile.objects.bulk_create(
             [MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type) for file in added_files]
         )
-        user_message.last_modified_at = timezone.now()
         user_message.save()
 
         bot_message.text = ""
         bot_message.model = model
-        bot_message.last_modified_at = timezone.now()
         bot_message.save()
 
         chat.pending_message = bot_message
@@ -672,7 +672,6 @@ class RegenerateMessage(APIView):
 
         bot_message.text = ""
         bot_message.model = model
-        bot_message.last_modified_at = timezone.now()
         bot_message.save()
 
         chat.pending_message = bot_message
@@ -682,6 +681,3 @@ class RegenerateMessage(APIView):
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, status.HTTP_200_OK)
-
-def index(request):
-    return render(request, "index.html")

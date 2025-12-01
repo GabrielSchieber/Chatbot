@@ -1,15 +1,14 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router"
 import { useEffect, useState } from "react"
 
-import { useAuth } from "./context/AuthProvider"
-import { NotificationProvider } from "./context/NotificationProvider"
+import { useAuth } from "./providers/AuthProvider"
+import { NotificationProvider } from "./providers/NotificationProvider"
 import Index from "./pages/Index"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
-import { getLanguageAbbreviation } from "./utils/language"
-import { applyTheme } from "./utils/theme"
+import i18n from "./utils/i18n"
+import { applyTheme, getLanguageAbbreviation } from "./utils/misc"
 import "./App.css"
-import i18n from "./i18n"
 
 export default function App() {
     const { user, loading, isLoggedIn } = useAuth()

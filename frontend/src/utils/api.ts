@@ -1,4 +1,4 @@
-import type { Language, Model, Theme } from "../types"
+import type { Language, Model, Theme } from "../utils/types"
 
 export function signup(email: string, password: string) {
     return fetch("/api/signup/", {

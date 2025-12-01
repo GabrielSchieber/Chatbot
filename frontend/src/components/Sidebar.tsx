@@ -1,25 +1,25 @@
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "@radix-ui/react-icons"
 import { useRef } from "react"
-import { useTranslation } from "react-i18next"
 
-import History from "./sidebar/History"
-import Search from "./sidebar/Search"
-import Settings from "./sidebar/Settings"
-import { useAuth } from "../context/AuthProvider"
-import { useChat } from "../context/ChatProvider"
+import { NewChat, ToggleSidebar } from "./Buttons"
+import History from "./History"
+import Search from "./Search"
+import Settings from "./Settings"
+import { useAuth } from "../providers/AuthProvider"
+import { useChat } from "../providers/ChatProvider"
 import { me } from "../utils/api"
 
 export default function Sidebar() {
     const { user, setUser } = useAuth()
     const { isMobile } = useChat()
-    const { t } = useTranslation()
 
     const ref = useRef<HTMLDivElement | null>(null)
 
     const isOpen = user ? user.preferences.has_sidebar_open : true
-    const setIsOpen = (value: boolean) => setUser(previous => previous ? { ...previous, preferences: { ...previous.preferences, has_sidebar_open: value } } : previous)
 
-    const itemClassNames = "flex gap-1 p-2 items-center rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"
+    function setIsOpen(value: boolean) {
+        me(undefined, undefined, value)
+        setUser(previous => previous ? { ...previous, preferences: { ...previous.preferences, has_sidebar_open: value } } : previous)
+    }
 
     return (
         <>
@@ -31,38 +31,21 @@ export default function Sidebar() {
             <div
                 ref={ref}
                 className={`
-                    flex flex-col justify-between overflow-x-hidden overflow-y-auto bg-gray-800 light:bg-gray-200
-                    transition-all duration-300 ${isOpen ? "min-w-[250px] max-w-[250px]" : isMobile ? "min-w-0 max-w-0" : "min-w-[50px] max-w-[50px]"}
+                    flex flex-col justify-between overflow-x-hidden overflow-y-auto duration-300 ease-in-out bg-gray-800 light:bg-gray-200
+                    ${isOpen ? "min-w-[250px] max-w-[250px]" : isMobile ? "min-w-0 max-w-0" : "min-w-[50px] max-w-[50px]"}
                     ${isMobile && "fixed inset-0"}
                 `}
             >
                 <div className={`sticky flex flex-col top-0 gap-1 p-2 bg-gray-800 light:bg-gray-200 ${isOpen && "border-b"}`}>
-                    <button
-                        className={itemClassNames}
-                        onClick={_ => {
-                            me(undefined, undefined, !isOpen)
-                            setIsOpen(!isOpen)
-                        }}
-                        data-testid="toggle-sidebar"
-                    >
-                        {isOpen ? (
-                            <><ChevronLeftIcon className="size-5" />{t("sidebar.closeSidebar")}</>
-                        ) : (
-                            <ChevronRightIcon className="size-5" />
-                        )}
-                    </button>
-
-                    <a className={itemClassNames} href="/" data-testid="new-chat">
-                        <PlusIcon className="size-5" /> {isOpen && t("sidebar.newChat")}
-                    </a>
-
-                    <Search showLabel={isOpen} itemClassNames={itemClassNames} />
+                    <ToggleSidebar withLabel={isOpen} onClick={() => setIsOpen(!isOpen)} />
+                    <NewChat withLabel={isOpen} />
+                    <Search openButtonWithLabel={isOpen} />
                 </div>
 
                 <History isSidebarOpen={isOpen} sidebarRef={ref} />
 
                 <div className={`sticky flex flex-col bottom-0 p-2 bg-gray-800 light:bg-gray-200 ${isOpen && "border-t"}`}>
-                    <Settings isSidebarOpen={isOpen} itemClassNames={itemClassNames} />
+                    <Settings isSidebarOpen={isOpen} />
                 </div>
             </div>
         </>

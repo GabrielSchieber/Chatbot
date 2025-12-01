@@ -9,85 +9,226 @@ const openSettingsText = "Settings"
 test("user can see and toggle sidebar", async ({ page }) => {
     await signupAndLogin(page)
 
-    const toggleSidebar = page.getByTestId("toggle-sidebar")
-    const newChat = page.getByTestId("new-chat")
-    const searchChats = page.getByTestId("search-chats")
-    const openSettings = page.getByTestId("open-settings")
+    const isWidthSmall = page.viewportSize()!.width < 750
 
-    await expect(toggleSidebar).toBeVisible()
-    await expect(newChat).toBeVisible()
-    await expect(searchChats).toBeVisible()
-    await expect(openSettings).toBeVisible()
+    const toggleSidebar = page.getByRole("button", { name: toggleSidebarText })
+    const newChat = page.getByRole("link", { name: newChatText })
+    const searchChats = page.getByRole("button", { name: searchChatsText })
+    const openSettings = page.getByRole("button", { name: openSettingsText })
+    const historyParagraph = page.getByRole("paragraph").getByText("You don't have any chats.", { exact: true })
 
-    await expect(toggleSidebar).toContainText(toggleSidebarText)
-    await expect(newChat).toContainText(newChatText)
-    await expect(searchChats).toContainText(searchChatsText)
-    await expect(openSettings).toContainText(openSettingsText)
+    const header = page.getByRole("banner")
+    await expect(header).toHaveCount(1)
 
-    await toggleSidebar.click()
-    await expect(toggleSidebar).not.toContainText(toggleSidebarText)
-    await expect(newChat).not.toContainText(newChatText)
-    await expect(searchChats).not.toContainText(searchChatsText)
-    await expect(openSettings).not.toContainText(openSettingsText)
+    await expect(header.getByRole("button")).toHaveCount(isWidthSmall ? 2 : 0)
+    await expect(header.getByRole("link")).toHaveCount(isWidthSmall ? 1 : 0)
 
-    await toggleSidebar.click()
-    await expect(toggleSidebar).toContainText(toggleSidebarText)
-    await expect(newChat).toContainText(newChatText)
-    await expect(searchChats).toContainText(searchChatsText)
-    await expect(openSettings).toContainText(openSettingsText)
+    const headerToggleSidebar = header.getByRole("button").first()
+    const headerNewChat = header.getByRole("link")
+    const headerSearchChats = header.getByRole("button").last()
+
+    function successfulMeResponse() {
+        return page.waitForResponse(response =>
+            response.url().endsWith("/api/me/") && response.status() === 200 && response.request().method() === "PATCH"
+        )
+    }
+
+    if (isWidthSmall) {
+        await expect(toggleSidebar).not.toBeVisible()
+        await expect(newChat).not.toBeVisible()
+        await expect(searchChats).not.toBeVisible()
+        await expect(openSettings).not.toBeVisible()
+
+        await expect(headerToggleSidebar).toBeVisible()
+        await expect(headerNewChat).toBeVisible()
+        await expect(headerSearchChats).toBeVisible()
+
+        const response1 = successfulMeResponse()
+        await headerToggleSidebar.click()
+        await response1
+
+        await expect(toggleSidebar).toBeVisible()
+        await expect(newChat).toBeVisible()
+        await expect(searchChats).toBeVisible()
+        await expect(openSettings).toBeVisible()
+        await expect(historyParagraph).toBeVisible()
+
+        const response2 = successfulMeResponse()
+        await toggleSidebar.click()
+        await response2
+
+        await expect(toggleSidebar).not.toBeVisible()
+        await expect(newChat).not.toBeVisible()
+        await expect(searchChats).not.toBeVisible()
+        await expect(openSettings).not.toBeVisible()
+
+        await expect(headerToggleSidebar).toBeVisible()
+        await expect(headerNewChat).toBeVisible()
+        await expect(headerSearchChats).toBeVisible()
+    } else {
+        await expect(toggleSidebar).toBeVisible()
+        await expect(newChat).toBeVisible()
+        await expect(searchChats).toBeVisible()
+        await expect(openSettings).toBeVisible()
+        await expect(historyParagraph).toBeVisible()
+
+        const response1 = successfulMeResponse()
+        await toggleSidebar.click()
+        await response1
+
+        await expect(toggleSidebar).not.toBeVisible()
+        await expect(newChat).not.toBeVisible()
+        await expect(searchChats).not.toBeVisible()
+        await expect(openSettings).not.toBeVisible()
+        await expect(historyParagraph).not.toBeVisible()
+
+        await expect(headerToggleSidebar).not.toBeVisible()
+        await expect(headerNewChat).not.toBeVisible()
+        await expect(headerSearchChats).not.toBeVisible()
+
+        const response2 = successfulMeResponse()
+        await page.getByRole("button").first().click()
+        await response2
+
+        await expect(toggleSidebar).toBeVisible()
+        await expect(newChat).toBeVisible()
+        await expect(searchChats).toBeVisible()
+        await expect(openSettings).toBeVisible()
+        await expect(historyParagraph).toBeVisible()
+    }
 })
 
-test("user can see and toggle sidebar with chats", async ({ page }) => {
+test("user can see and toggle sidebar with chats", async ({ page }, testInfo) => {
     const user = await signupAndLogin(page, true)
 
-    const toggleSidebar = page.getByTestId("toggle-sidebar")
-    const newChat = page.getByTestId("new-chat")
-    const searchChats = page.getByTestId("search-chats")
-    const openSettings = page.getByTestId("open-settings")
+    const isWidthSmall = page.viewportSize()!.width < 750
 
-    await expect(toggleSidebar).toBeVisible()
-    await expect(newChat).toBeVisible()
-    await expect(searchChats).toBeVisible()
-    await expect(openSettings).toBeVisible()
+    const toggleSidebar = page.getByRole("button", { name: toggleSidebarText })
+    const newChat = page.getByRole("link", { name: newChatText })
+    const searchChats = page.getByRole("button", { name: searchChatsText })
+    const openSettings = page.getByRole("button", { name: openSettingsText })
 
-    await expect(toggleSidebar).toContainText(toggleSidebarText)
-    await expect(newChat).toContainText(newChatText)
-    await expect(searchChats).toContainText(searchChatsText)
-    await expect(openSettings).toContainText(openSettingsText)
-    for (const chat of user.chats) {
-        await expect(page.getByRole("link", { name: chat.title })).toBeVisible()
+    const historyParagraph = page.getByRole("paragraph").getByText("You don't have any chats.", { exact: true })
+    const visibleChatEntries = page.getByTestId("history").getByRole("link").filter({ visible: true })
+    const visibleToggleChatOptions = page.getByLabel("Toggle chat options", { exact: true }).filter({ visible: true })
+
+    const header = page.getByRole("banner")
+    await expect(header).toHaveCount(1)
+
+    await expect(header.getByRole("button")).toHaveCount(isWidthSmall ? 2 : 0)
+    await expect(header.getByRole("link")).toHaveCount(isWidthSmall ? 1 : 0)
+
+    const headerToggleSidebar = header.getByRole("button").first()
+    const headerNewChat = header.getByRole("link")
+    const headerSearchChats = header.getByRole("button").last()
+
+    function successfulMeResponse() {
+        return page.waitForResponse(response =>
+            response.url().endsWith("/api/me/") && response.status() === 200 && response.request().method() === "PATCH"
+        )
     }
 
-    await toggleSidebar.click()
-    await expect(toggleSidebar).not.toContainText(toggleSidebarText)
-    await expect(newChat).not.toContainText(newChatText)
-    await expect(searchChats).not.toContainText(searchChatsText)
-    await expect(openSettings).not.toContainText(openSettingsText)
-    for (const chat of user.chats) {
-        await expect(page.getByRole("link", { name: chat.title })).not.toBeVisible()
-    }
+    if (isWidthSmall) {
+        await expect(toggleSidebar).not.toBeVisible()
+        await expect(newChat).not.toBeVisible()
+        await expect(searchChats).not.toBeVisible()
+        await expect(openSettings).not.toBeVisible()
 
-    await toggleSidebar.click()
-    await expect(toggleSidebar).toContainText(toggleSidebarText)
-    await expect(newChat).toContainText(newChatText)
-    await expect(searchChats).toContainText(searchChatsText)
-    await expect(openSettings).toContainText(openSettingsText)
-    for (const chat of user.chats) {
-        await expect(page.getByRole("link", { name: chat.title })).toBeVisible()
+        await expect(historyParagraph).not.toBeVisible()
+        await expect(visibleChatEntries).toHaveCount(0)
+        await expect(visibleToggleChatOptions).toHaveCount(0)
+
+        await expect(headerToggleSidebar).toBeVisible()
+        await expect(headerNewChat).toBeVisible()
+        await expect(headerSearchChats).toBeVisible()
+
+        const response1 = successfulMeResponse()
+        await headerToggleSidebar.click()
+        await response1
+
+        await expect(toggleSidebar).toBeVisible()
+        await expect(newChat).toBeVisible()
+        await expect(searchChats).toBeVisible()
+        await expect(openSettings).toBeVisible()
+
+        await expect(historyParagraph).not.toBeVisible()
+        await expect(visibleChatEntries).toHaveCount(user.chats.length)
+        await expect(visibleToggleChatOptions).toHaveCount(testInfo.project.use.isMobile! ? user.chats.length : 0)
+
+        const response2 = successfulMeResponse()
+        await toggleSidebar.click()
+        await response2
+
+        await expect(toggleSidebar).not.toBeVisible()
+        await expect(newChat).not.toBeVisible()
+        await expect(searchChats).not.toBeVisible()
+        await expect(openSettings).not.toBeVisible()
+
+        await expect(historyParagraph).not.toBeVisible()
+        await expect(visibleChatEntries).toHaveCount(0)
+        await expect(visibleToggleChatOptions).toHaveCount(0)
+
+        await expect(headerToggleSidebar).toBeVisible()
+        await expect(headerNewChat).toBeVisible()
+        await expect(headerSearchChats).toBeVisible()
+    } else {
+        await expect(toggleSidebar).toBeVisible()
+        await expect(newChat).toBeVisible()
+        await expect(searchChats).toBeVisible()
+        await expect(openSettings).toBeVisible()
+
+        await expect(historyParagraph).not.toBeVisible()
+        await expect(visibleChatEntries).toHaveCount(user.chats.length)
+        await expect(visibleToggleChatOptions).toHaveCount(testInfo.project.use.isMobile! ? user.chats.length : 0)
+
+        const response1 = successfulMeResponse()
+        await toggleSidebar.click()
+        await response1
+
+        await expect(toggleSidebar).not.toBeVisible()
+        await expect(newChat).not.toBeVisible()
+        await expect(searchChats).not.toBeVisible()
+        await expect(openSettings).not.toBeVisible()
+
+        await expect(historyParagraph).not.toBeVisible()
+        await expect(visibleChatEntries).toHaveCount(0)
+        await expect(visibleToggleChatOptions).toHaveCount(0)
+
+        await expect(headerToggleSidebar).not.toBeVisible()
+        await expect(headerNewChat).not.toBeVisible()
+        await expect(headerSearchChats).not.toBeVisible()
+
+        const response2 = successfulMeResponse()
+        await page.getByRole("button").first().click()
+        await response2
+
+        await expect(toggleSidebar).toBeVisible()
+        await expect(newChat).toBeVisible()
+        await expect(searchChats).toBeVisible()
+        await expect(openSettings).toBeVisible()
+
+        await expect(historyParagraph).not.toBeVisible()
+        await expect(visibleChatEntries).toHaveCount(user.chats.length)
+        await expect(visibleToggleChatOptions).toHaveCount(testInfo.project.use.isMobile! ? user.chats.length : 0)
     }
 })
 
-test("user can rename chats", async ({ page }) => {
+test("user can rename chats", async ({ page }, testInfo) => {
     const user = await signupAndLogin(page, true)
+
+    if (page.viewportSize()!.width < 750) {
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
 
     const chat = user.chats[0]
     const link = page.getByRole("link").nth(1)
     await expect(link).toContainText(chat.title)
-    await expect(link.getByRole("button", { includeHidden: true })).toHaveCount(1)
+    await expect(link.getByRole("button", { includeHidden: !testInfo.project.use.isMobile! })).toHaveCount(1)
 
-    await link.hover()
+    if (!testInfo.project.use.isMobile!) {
+        await link.hover()
+    }
     await link.getByRole("button").click()
-
     await page.getByRole("menuitem", { name: "Rename", exact: true }).click()
 
     const renameInput = page.locator("input[type='text']")
@@ -96,7 +237,7 @@ test("user can rename chats", async ({ page }) => {
     await renameInput.press("Enter")
     await expect(renameInput).not.toBeVisible()
 
-    const renamedChatLink = page.getByRole("link", { name: "Renamed Chat", exact: true })
+    const renamedChatLink = page.locator("a").getByText("Renamed Chat", { exact: true })
     await expect(renamedChatLink).toBeVisible()
 
     await page.reload()
@@ -104,14 +245,20 @@ test("user can rename chats", async ({ page }) => {
     await expect(renamedChatLink).toBeVisible()
 })
 
-test("user can archive chats", async ({ page }) => {
+test("user can archive chats", async ({ page }, testInfo) => {
     const user = await signupAndLogin(page, true)
+
+    if (page.viewportSize()!.width < 750) {
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
 
     const chat = user.chats[0]
     const link = page.getByRole("link", { name: chat.title })
-    await expect(link.getByRole("button", { includeHidden: true })).toHaveCount(1)
+    await expect(link.getByRole("button", { includeHidden: !testInfo.project.use.isMobile! })).toHaveCount(1)
 
-    await link.hover()
+    if (!testInfo.project.use.isMobile!) {
+        await link.hover()
+    }
     await link.getByRole("button").click()
     await page.getByRole("menuitem", { name: "Archive", exact: true }).click()
 
@@ -127,14 +274,20 @@ test("user can archive chats", async ({ page }) => {
     await expect(page.getByRole("link", { name: chat.title, exact: true })).toBeVisible()
 })
 
-test("user can delete chats", async ({ page }) => {
+test("user can delete chats", async ({ page }, testInfo) => {
     const user = await signupAndLogin(page, true)
+
+    if (page.viewportSize()!.width < 750) {
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
 
     const chat = user.chats[0]
     const link = page.getByRole("link", { name: chat.title })
-    await expect(link.getByRole("button", { includeHidden: true })).toHaveCount(1)
+    await expect(link.getByRole("button", { includeHidden: !testInfo.project.use.isMobile! })).toHaveCount(1)
 
-    await link.hover()
+    if (!testInfo.project.use.isMobile) {
+        await link.hover()
+    }
     await link.getByRole("button").click()
     await page.getByRole("menuitem", { name: "Delete", exact: true }).click()
 

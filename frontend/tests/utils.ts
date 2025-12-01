@@ -9,28 +9,46 @@ export function getRandomEmail() {
     return `user_${crypto.randomUUID()}@example.com`
 }
 
-export async function signup() {
+export async function signupAndLogin(page: Page, withChats: boolean = false): Promise<User> {
     const email = getRandomEmail()
     const password = "testpassword"
-    const response = await apiFetch("/api/signup/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-    })
-    expect(response.status).toBe(201)
-    return [email, password]
-}
 
-export async function signupAndLogin(page: Page, withChats: boolean = false): Promise<User> {
-    const [email, password] = await signup()
+    await page.goto("/signup")
 
-    await page.goto("/login")
+    await page.getByLabel("Email", { exact: true }).fill(email)
+    await page.getByLabel("Password", { exact: true }).fill(password)
+    await page.getByLabel("Confirm Password", { exact: true }).fill(password)
 
-    await page.fill("input[type='email']", email)
-    await page.fill("input[type='password']", password)
+    const shouldWaitForMeResponse = page.viewportSize()!.width < 750
 
-    await page.click("button")
+    const signupResponse = page.waitForResponse(response =>
+        response.url().endsWith("/api/signup/") && response.status() === 201 && response.request().method() === "POST"
+    )
+    const loginResponse = page.waitForResponse(response =>
+        response.url().endsWith("/api/login/") && response.status() === 200 && response.request().method() === "POST"
+    )
+
+    let meResponse
+    if (shouldWaitForMeResponse) {
+        meResponse = page.waitForResponse(response =>
+            response.url().endsWith("/api/me/") && response.status() === 200 && response.request().method() === "PATCH"
+        )
+    }
+
+    await page.getByRole("button", { name: "Sign up", exact: true }).click()
+    await signupResponse
+    await loginResponse
+    if (shouldWaitForMeResponse) {
+        await meResponse
+    }
+
+    async function waitForPageToLoad() {
+        await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
+        await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
+    }
+
     await page.waitForURL("/")
+    await waitForPageToLoad()
 
     let chats: Chat[] = []
     if (withChats) {
@@ -46,6 +64,7 @@ export async function signupAndLogin(page: Page, withChats: boolean = false): Pr
     }
 
     await page.reload()
+    await waitForPageToLoad()
 
     return { email, password, chats }
 }
@@ -55,27 +74,29 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
 
     const user = await signupAndLogin(page)
 
-    await page.getByTestId("open-settings").click()
-    await page.getByRole("tab", { name: "Security" }).click()
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
 
+    await page.getByRole("tab", { name: "Security" }).click()
     await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
     await expect(page.getByText("Step 1: Setup", { exact: true })).toBeVisible()
 
     await page.getByText("Generate QR and secret codes", { exact: true }).click()
-    await expect(page.getByText("Step 2: Verify", { exact: true })).toBeVisible()
+    await expect(page.getByText("Step 2: Verify", { exact: true })).toBeVisible({ timeout: 10_000 })
 
-    const secretText = await page.getByText(/Secret:/).textContent()
-    const secret = secretText?.split("Secret:")[1].trim()!
-
-    const code = authenticator.generate(secret)
+    const secret = await page.getByTestId("mfa-secret").textContent()
+    const code = authenticator.generate(secret!)
 
     await page.getByPlaceholder("6-digit code", { exact: true }).fill(code)
     await page.getByRole("button", { name: "Enable", exact: true }).click()
 
     await expect(page.getByText("Enabling", { exact: true })).toBeVisible()
-    await expect(page.getByText("Step 3: Backup", { exact: true })).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText("Step 3: Backup", { exact: true })).toBeVisible({ timeout: 20_000 })
 
-    await page.getByRole("list").getByRole("button").first().click()
+    await page.getByRole("button").first().click()
 
     const clipboard = await page.evaluate(_ => navigator.clipboard.readText())
     expect(clipboard.length).toEqual(6 * 2 * 10 + 9)
@@ -87,6 +108,8 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
     await page.getByRole("button", { name: "Close", exact: true }).click()
 
     await page.reload()
+    await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
 
     return { user, backupCodes }
 }
@@ -94,7 +117,12 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
 export async function signupWithMFAEnabled(page: Page) {
     const user = await signupWithMFAEnabledAndLogin(page)
 
-    await page.getByTestId("open-settings").click()
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("button").first().click()
+    }
+    await settingsButton.click()
+
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByRole("button", { name: "Log out", exact: true }).click()
     await page.waitForURL("/login")

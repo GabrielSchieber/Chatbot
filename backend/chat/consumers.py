@@ -13,7 +13,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         self.chat_uuid = ""
 
         if self.user is None or isinstance(self.user, AnonymousUser):
-            return await self.close(401, "User not authenticated")
+            return await self.close(401, "User not authenticated.")
 
         await self.accept()
 
@@ -23,14 +23,19 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.channel_layer.group_discard(f"chat_{self.chat_uuid}", self.channel_name)
 
     async def receive_json(self, content):
-        if self.chat_uuid == "":
-            self.chat_uuid = str(content.get("chat_uuid", ""))
-            try:
-                if await database_sync_to_async(self.user.chats.filter(uuid = self.chat_uuid).exists)():
-                    await self.channel_layer.group_add(f"chat_{self.chat_uuid}", self.channel_name)
-                    opened_chats.add(self.chat_uuid)
-            except:
-                await self.close()
+        if self.chat_uuid != "": return
+
+        if type(content) != dict:
+            return await self.close()
+
+        chat_uuid = content.get("chat_uuid")
+        if type(chat_uuid) != str:
+            return await self.close()
+
+        if await database_sync_to_async(self.user.chats.filter(uuid = chat_uuid).exists)():
+            self.chat_uuid = chat_uuid
+            await self.channel_layer.group_add(f"chat_{chat_uuid}", self.channel_name)
+            opened_chats.add(chat_uuid)
 
     async def send_token(self, event):
         await self.send_json({"token": event["token"], "message_index": event["message_index"]})

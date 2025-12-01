@@ -1,28 +1,6 @@
-# Node modules
-node_modules/
-.npm/
-.npmrc
-
-# Build output
 dist/
+node_modules/
+test-results/
 
-# Logs
-*.log
-
-# Git and Docker
-.git/
-.gitignore
 .dockerignore
-Dockerfile
 dockerfile
-docker-compose.*
-compose.*
-
-# Environment files
-.env
-.env.*
-
-# OS and editor files
-.vscode/
-.DS_Store
-*.swp

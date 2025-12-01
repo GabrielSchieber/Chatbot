@@ -1,9 +1,9 @@
 import { t } from "i18next"
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 
 import { Button, Email, Error, Form, Header, Password, Recommendation } from "../components/Auth"
-import { useNotify } from "../context/NotificationProvider"
-import { login, signup } from "../utils/api"
+import { useNotify } from "../providers/NotificationProvider"
+import { login, me, signup } from "../utils/api"
 
 export default function Signup() {
     const notify = useNotify()
@@ -17,10 +17,11 @@ export default function Signup() {
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
+        setError("")
         setIsVerifying(true)
 
         if (password !== confirmPassword) {
-            setError("Passwords do not match.")
+            setError(t("signup.passwordsNoMatch"))
             setIsVerifying(false)
             return
         }
@@ -29,6 +30,9 @@ export default function Signup() {
         if (response.ok) {
             const response = await login(email, password)
             if (response.ok) {
+                if (window.innerWidth < 750) {
+                    await me(undefined, undefined, false)
+                }
                 location.href = "/"
             } else {
                 notify(t("signup.error"), "error")
@@ -36,10 +40,12 @@ export default function Signup() {
             }
         } else {
             const data = await response.json()
-            setError(data.error)
+            setError(t(data.error))
             setIsVerifying(false)
         }
     }
+
+    useEffect(() => setError(""), [email, password, confirmPassword])
 
     return (
         <Form handleSubmit={handleSubmit}>
@@ -51,7 +57,7 @@ export default function Signup() {
                 label={t("signup.password")}
                 id="password"
                 minLength={12}
-                maxLength={100}
+                maxLength={1000}
             />
             <Password
                 password={confirmPassword}

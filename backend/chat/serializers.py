@@ -57,9 +57,3 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ["id", "text", "is_from_user", "files", "model"]
-
-class GetChatsGETSerializer(serializers.Serializer):
-    offset = serializers.IntegerField(required = False, default = 0, min_value = 0)
-    limit = serializers.IntegerField(required = False, default = 20, min_value = 1)
-    pending = serializers.BooleanField(required = False, default = False)
-    archived = serializers.BooleanField(required = False, default = False)

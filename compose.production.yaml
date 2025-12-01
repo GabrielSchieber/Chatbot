@@ -1,0 +1,12 @@
+services:
+    backend:
+        env_file: .env.production
+
+    postgres:
+        env_file: .env.production
+
+    cloudflared:
+        image: cloudflare/cloudflared:latest
+        depends_on:
+            - nginx
+        command: tunnel --no-autoupdate --no-tls-verify --url https://nginx:443
