@@ -49,6 +49,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     chats: BaseManager[Chat]
     mfa: UserMFA
     preferences: UserPreferences
+    sessions: BaseManager[UserSession]
 
     def __str__(self):
         return ""

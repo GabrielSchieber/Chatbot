@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Chat, Message, MessageFile, User, UserMFA, UserPreferences
+from .models import Chat, Message, MessageFile, User, UserMFA, UserPreferences, UserSession
 
 class UserPreferencesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,13 +12,24 @@ class UserMFASerializer(serializers.ModelSerializer):
         model = UserMFA
         fields = ["is_enabled"]
 
+class UserSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSession
+        fields = ["login_at", "logout_at", "ip_address", "browser", "os"]
+
 class UserSerializer(serializers.ModelSerializer):
     preferences = UserPreferencesSerializer(many = False, read_only = True)
     mfa = UserMFASerializer(many = False, read_only = True)
+    sessions = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["email", "preferences", "mfa"]
+        fields = ["email", "preferences", "mfa", "sessions"]
+
+    def get_sessions(self, user: User):
+        active_sessions = user.sessions.filter(logout_at__isnull = True).count()
+        sessions = user.sessions.order_by("-login_at")[:active_sessions + 5]
+        return UserSessionSerializer(sessions, many = True).data
 
 class ChatSerializer(serializers.ModelSerializer):
     pending_message_id = serializers.SerializerMethodField()
