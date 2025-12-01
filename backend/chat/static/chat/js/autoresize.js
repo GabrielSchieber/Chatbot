@@ -5,7 +5,7 @@
         }
 
         element.style.height = "auto"
-        const newHeight = element.scrollHeight
+        let newHeight = element.scrollHeight
         try {
             const scrollbarSize = getScrollbarSize()
             if (element.scrollWidth > element.clientWidth) {
