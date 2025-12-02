@@ -8,5 +8,5 @@ urlpatterns = [
     path("api/", include("chat.urls"))
 ]
 
-if os.getenv("PLAYWRIGHT_TEST") == "True":
+if os.getenv("DJANGO_TEST") == "True" or os.getenv("PLAYWRIGHT_TEST") == "True":
     urlpatterns.append(path("test/", include("chat.urls_test")))

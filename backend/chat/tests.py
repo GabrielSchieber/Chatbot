@@ -1,3 +1,7 @@
+import os
+
+os.environ["DJANGO_TEST"] = "True"
+
 import uuid
 from datetime import datetime, timedelta, timezone as dt_timezone
 
