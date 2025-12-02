@@ -99,6 +99,8 @@ class ViewTests(TestCase):
     def test_login(self):
         _, response = self.create_and_login_user()
         self.assertEqual(response.status_code, 200)
+        self.assertIn("access_token", self.client.cookies)
+        self.assertIn("refresh_token", self.client.cookies)
 
     def test_login_with_invalid_credentials(self):
         error = "login.error"
