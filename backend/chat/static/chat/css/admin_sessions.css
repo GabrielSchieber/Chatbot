@@ -33,15 +33,3 @@
         padding-top: 0.5rem;
     }
 }
-
-.chat-admin-sessions-revoke-button {
-    padding: 7px 0;
-    border: solid 1px;
-    border-radius: 3px;
-    cursor: pointer;
-    background-color: rgb(20, 30, 40);
-}
-
-.chat-admin-sessions-revoke-button:hover {
-    background-color: rgb(25, 35, 45);
-}

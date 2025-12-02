@@ -39,8 +39,7 @@
         {% endfor %}
     </div>
     {% if show_revoke %}
-    <button type="button" class="button chat-admin-sessions-revoke-button"
-        onclick="chat_admin_revoke_sessions('{{ revoke_url }}', this)">
+    <button type="button" class="button" onclick="chat_admin_revoke_sessions('{{ revoke_url }}', this)">
         Revoke all sessions
     </button>
     {% endif %}

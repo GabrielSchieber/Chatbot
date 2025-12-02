@@ -17,7 +17,8 @@
         {% endfor %}
     </div>
     {% if show_disable %}
-    <button type="button" class="button chat-admin-mfa-disable-button"
-        onclick="chat_admin_disable_mfa('{{ disable_url }}', this)">Disable</button>
+    <button type="button" class="button" onclick="chat_admin_disable_mfa('{{ disable_url }}', this)">
+        Disable
+    </button>
     {% endif %}
 </div>

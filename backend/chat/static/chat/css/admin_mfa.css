@@ -17,11 +17,3 @@
 .chat-admin-mfa pre {
     margin: 0;
 }
-
-.chat-admin-mfa-disable-button {
-    padding: 7px 0;
-    border: solid 1px;
-    border-radius: 3px;
-    cursor: pointer;
-    background-color: rgb(20, 30, 40);
-}
