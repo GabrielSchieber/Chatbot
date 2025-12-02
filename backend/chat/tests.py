@@ -8,7 +8,9 @@ from datetime import datetime, timedelta, timezone as dt_timezone
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
 from django.test import TestCase
+from django.utils import timezone
 from freezegun import freeze_time
+from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Chat, Message, User
@@ -228,6 +230,30 @@ class ViewTests(TestCase):
         self.client.cookies["refresh_token"] = str(RefreshToken.for_user(create_user()))
         response = self.client.post("/api/refresh/")
         self.assertIsNotNone(response.cookies["access_token"]["expires"])
+
+    def test_refresh_flow_issues_new_access_cookie(self):
+        time_to_freeze = timezone.datetime(2025, 1, 1, 12)
+        with freeze_time(time_to_freeze):
+            _, response = self.create_and_login_user()
+            self.assertEqual(response.status_code, 200)
+            access_cookie = self.client.cookies["access_token"]
+
+        access_lifetime = jwt_settings.ACCESS_TOKEN_LIFETIME
+        expire_at = time_to_freeze + access_lifetime + timedelta(seconds = 1)
+
+        with freeze_time(expire_at):
+            response = self.client.get("/api/me/")
+            self.assertEqual(response.status_code, 401)
+
+            response = self.client.post("/api/refresh/")
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("access_token", self.client.cookies)
+
+            new_access_cookie = self.client.cookies["access_token"].value
+            self.assertNotEqual(new_access_cookie, access_cookie.value)
+
+            response = self.client.post("/api/refresh/")
+            self.assertEqual(response.status_code, 200)
 
     def test_me(self):
         user, _ = self.create_and_login_user()
