@@ -9,5 +9,6 @@ from . import views_test
 
 urlpatterns = [
     path("create-chats/", views_test.CreateChats.as_view()),
-    path("get-mfa-secret/", views_test.GetMFASecret.as_view())
+    path("get-mfa-secret/", views_test.GetMFASecret.as_view()),
+    path("echo-auth/", views_test.EchoAuthHeaderView.as_view())
 ]
