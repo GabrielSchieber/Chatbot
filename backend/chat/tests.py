@@ -183,7 +183,7 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"error": "Invalid refresh token."})
 
-    def test_refresh_with_expired_or_blacklisted_cookie(self):
+    def test_refresh_with_blacklisted_cookie(self):
         refresh = RefreshToken.for_user(create_user())
         refresh.blacklist()
         self.client.cookies["refresh_token"] = str(refresh)
