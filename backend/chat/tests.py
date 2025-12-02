@@ -230,6 +230,20 @@ class ViewTests(TestCase):
             self.assertEqual(response.status_code, 401)
             self.assertEqual(response.json(), {"error": "Invalid refresh token."})
 
+    def test_refresh_with_tampered_cookie(self):
+        refresh = RefreshToken.for_user(create_user())
+
+        original = str(refresh)
+        tampered = original[:-1] + ("A" if original[-1] != "A" else "B")
+
+        self.client.cookies["refresh"] = tampered
+
+        response = self.client.post("/api/refresh/")
+        self.assertEqual(response.status_code, 401)
+        self.assertNotIn("access_token", self.client.cookies)
+        self.assertNotIn("refresh_token", self.client.cookies)
+        self.assertEqual(len(response.cookies.items()), 0)
+
     def test_refresh_with_login(self):
         _, response = self.create_and_login_user()
         self.assertEqual(response.status_code, 200)
