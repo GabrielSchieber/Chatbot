@@ -218,6 +218,11 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("access_token", response.cookies)
 
+    def test_refresh_cookie_expiry_header(self):
+        self.client.cookies["refresh_token"] = str(RefreshToken.for_user(create_user()))
+        response = self.client.post("/api/refresh/")
+        self.assertIsNotNone(response.cookies["access_token"]["expires"])
+
     def test_me(self):
         user, _ = self.create_and_login_user()
         response = self.client.get("/api/me/")
