@@ -160,10 +160,10 @@ def get_system_prompt(user: User):
     return system_prompt
 
 def stop_pending_chat(chat: Chat):
-    if chat.pending_message is not None and str(chat.uuid) in chat_futures:
+    if str(chat.uuid) in chat_futures:
         chat_futures[str(chat.uuid)].cancel()
-        chat.pending_message = None
-        chat.save(update_fields = ["pending_message"])
+    chat.pending_message = None
+    chat.save(update_fields = ["pending_message"])
 
 def stop_user_pending_chats(user: User):
     pending_chats = Chat.objects.filter(user = user).exclude(pending_message = None)
