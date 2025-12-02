@@ -159,9 +159,24 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_logout(self):
-        self.create_and_login_user()
+        response = self.client.post("/api/logout/")
+        self.assertEqual(response.status_code, 401)
+
+        _, response = self.create_and_login_user()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.cookies.items()), 2)
+        self.assertIn("access_token", response.cookies)
+        self.assertIn("refresh_token", response.cookies)
+        self.assertNotEqual(response.cookies["access_token"].value, "")
+        self.assertNotEqual(response.cookies["refresh_token"].value, "")
+        self.assertEqual(str(response.cookies["access_token"]).split("; ")[1], "HttpOnly")
+        self.assertEqual(str(response.cookies["refresh_token"]).split("; ")[1], "HttpOnly")
+
         response = self.client.post("/api/logout/")
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.cookies.items()), 2)
+        self.assertEqual(response.cookies["access_token"].value, "")
+        self.assertEqual(response.cookies["refresh_token"].value, "")
 
     def test_logout_without_being_authenticated(self):
         response = self.client.post("/api/logout/")
