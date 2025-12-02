@@ -190,6 +190,17 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"error": "Invalid refresh token."})
 
+    def test_refresh_with_login(self):
+        _, response = self.create_and_login_user()
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("refresh_token", response.cookies)
+
+        self.client.cookies = response.cookies
+
+        response = self.client.post("/api/refresh/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("access_token", response.cookies)
+
     def test_me(self):
         user, _ = self.create_and_login_user()
         response = self.client.get("/api/me/")
