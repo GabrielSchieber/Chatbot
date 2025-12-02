@@ -1,8 +1,10 @@
 import uuid
+from datetime import datetime, timedelta, timezone as dt_timezone
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
 from django.test import TestCase
+from freezegun import freeze_time
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Chat, Message, User
@@ -206,6 +208,20 @@ class ViewTests(TestCase):
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["email"], user.email)
+
+    def test_me_with_expired_cookie(self):
+        refresh = RefreshToken.for_user(create_user())
+        self.client.cookies["access_token"] = str(refresh.access_token)
+
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 200)
+
+        exp_timestamp = refresh.access_token["exp"]
+        exp_datetime = datetime.fromtimestamp(exp_timestamp, dt_timezone.utc)
+
+        with freeze_time(exp_datetime + timedelta(seconds = 1)):
+            response = self.client.get("/api/me/")
+            self.assertEqual(response.status_code, 401)
 
     def test_get_messages(self):
         response = self.client.get("/api/get-messages/")
