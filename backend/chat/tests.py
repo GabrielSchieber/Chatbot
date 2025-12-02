@@ -10,6 +10,7 @@ from django.contrib.auth.hashers import check_password
 from django.test import TestCase
 from django.utils import timezone
 from freezegun import freeze_time
+from rest_framework_simplejwt.backends import TokenBackend
 from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -254,6 +255,18 @@ class ViewTests(TestCase):
         response = self.client.post("/api/refresh/")
         self.assertEqual(response.status_code, 200)
         self.assertIn("access_token", response.cookies)
+
+    def test_refresh_with_token_signed_with_wrong_key(self):
+        real_refresh = RefreshToken.for_user(create_user())
+        wrong_backend = TokenBackend("HS256", "not-the-real-secret-key")
+        wrong_token = wrong_backend.encode(real_refresh.payload)
+        self.client.cookies["refresh_token"] = wrong_token
+
+        response = self.client.post("/api/refresh/")
+        self.assertEqual(response.status_code, 401)
+        self.assertNotIn("access_token", self.client.cookies)
+        self.assertEqual(self.client.cookies["refresh_token"].value, wrong_token)
+        self.assertEqual(len(self.client.cookies.items()), 1)
 
     def test_refresh_cookie_expiry_header(self):
         self.client.cookies["refresh_token"] = str(RefreshToken.for_user(create_user()))
