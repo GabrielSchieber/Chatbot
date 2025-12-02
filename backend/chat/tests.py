@@ -169,6 +169,11 @@ class ViewTests(TestCase):
 
         self.assertNotEqual(response.cookies["refresh_token"].value, str(refresh))
 
+    def test_refresh_without_cookie(self):
+        response = self.client.post("/api/refresh/")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"error": "'refresh_token' field must be provided."})
+
     def test_me(self):
         user, _ = self.create_and_login_user()
         response = self.client.get("/api/me/")
