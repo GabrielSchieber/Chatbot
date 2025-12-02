@@ -192,6 +192,21 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"error": "Invalid refresh token."})
 
+    def test_refresh_with_expired_cookie(self):
+        refresh = RefreshToken.for_user(create_user())
+        self.client.cookies["refresh_token"] = str(refresh)
+
+        response = self.client.post("/api/refresh/")
+        self.assertEqual(response.status_code, 200)
+
+        exp_timestamp = refresh["exp"]
+        exp_datetime = datetime.fromtimestamp(exp_timestamp, dt_timezone.utc)
+
+        with freeze_time(exp_datetime + timedelta(seconds = 1)):
+            response = self.client.post("/api/refresh/")
+            self.assertEqual(response.status_code, 401)
+            self.assertEqual(response.json(), {"error": "Invalid refresh token."})
+
     def test_refresh_with_login(self):
         _, response = self.create_and_login_user()
         self.assertEqual(response.status_code, 200)
