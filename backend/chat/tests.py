@@ -309,6 +309,19 @@ class ViewTests(TestCase):
             response = self.client.get("/api/me/")
             self.assertEqual(response.status_code, 401)
 
+    def test_me_uses_access_cookie_via_middleware(self):
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 401)
+
+        _, response = self.create_and_login_user()
+        self.assertEqual(response.status_code, 200)
+
+        self.assertIn("access_token", self.client.cookies)
+
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["email"], "test@example.com")
+
     def test_get_messages(self):
         response = self.client.get("/api/get-messages/")
         self.assertEqual(response.status_code, 401)
