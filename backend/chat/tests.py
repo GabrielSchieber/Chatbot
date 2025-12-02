@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
 from django.test import TestCase
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Chat, Message, User
 from .totp_utils import generate_code
@@ -156,6 +157,17 @@ class ViewTests(TestCase):
         response = self.client.post("/api/logout/")
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["detail"], "Authentication credentials were not provided.")
+
+    def test_refresh(self):
+        refresh = RefreshToken.for_user(create_user())
+        self.client.cookies["refresh_token"] = str(refresh)
+
+        response = self.client.post("/api/refresh/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("access_token", response.cookies)
+        self.assertIn("refresh_token", response.cookies)
+
+        self.assertNotEqual(response.cookies["refresh_token"].value, str(refresh))
 
     def test_me(self):
         user, _ = self.create_and_login_user()
