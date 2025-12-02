@@ -1,8 +1,11 @@
+import uuid
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
 from django.test import TestCase
 
-from chat.models import Chat, Message, User
+from .models import Chat, Message, User
+from .totp_utils import generate_code
 
 class UserTests(TestCase):
     def test_creation(self):
@@ -105,6 +108,44 @@ class ViewTests(TestCase):
         response = self.login_user("someemail@example.com", "testpassword")
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["error"], error)
+
+    def test_verify_mfa(self):
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 401)
+
+        email = "test@example.com"
+        password = "testpassword"
+        user =  User.objects.create_user(email = email, password = password)
+        user.mfa.setup()
+        user.mfa.enable()
+
+        response = self.login_user(email, password)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.cookies), 0)
+        token = response.json()["token"]
+        self.assertEqual(type(token), str)
+        try:
+            uuid.UUID(token, version = 4)
+        except ValueError:
+            raise ValueError("Invalid token when logging in user with MFA enabled.")
+
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 401)
+
+        response = self.client.post("/api/verify-mfa/", {"token": token, "code": generate_code(user.mfa.secret)})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.cookies), 2)
+
+        access_token = dict(response.cookies["access_token"].items())
+        self.assertTrue(access_token["httponly"])
+        self.assertEqual(access_token["samesite"], "Lax")
+
+        refresh_token = dict(response.cookies["refresh_token"].items())
+        self.assertTrue(refresh_token["httponly"])
+        self.assertEqual(refresh_token["samesite"], "Lax")
+
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 200)
 
     def test_logout(self):
         self.create_and_login_user()
