@@ -174,6 +174,13 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"error": "'refresh_token' field must be provided."})
 
+    def test_refresh_with_invalid_cookie(self):
+        self.client.cookies["refresh_token"] = "not-a-real-token"
+
+        response = self.client.post("/api/refresh/")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"error": "Invalid refresh token."})
+
     def test_me(self):
         user, _ = self.create_and_login_user()
         response = self.client.get("/api/me/")
