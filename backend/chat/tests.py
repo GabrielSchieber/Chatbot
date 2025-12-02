@@ -268,6 +268,23 @@ class ViewTests(TestCase):
         self.assertEqual(self.client.cookies["refresh_token"].value, wrong_token)
         self.assertEqual(len(self.client.cookies.items()), 1)
 
+    def test_refresh_with_used_cookie(self):
+        _, response = self.create_and_login_user()
+        self.assertEqual(response.status_code, 200)
+
+        old_refresh = self.client.cookies["refresh_token"].value
+
+        response = self.client.post("/api/refresh/")
+        self.assertEqual(response.status_code, 200)
+
+        new_refresh = self.client.cookies["refresh_token"].value
+        self.assertNotEqual(old_refresh, new_refresh)
+
+        self.client.cookies["refresh_token"] = old_refresh
+
+        response = self.client.post("/api/refresh/")
+        self.assertEqual(response.status_code, 401)
+
     def test_refresh_cookie_expiry_header(self):
         self.client.cookies["refresh_token"] = str(RefreshToken.for_user(create_user()))
         response = self.client.post("/api/refresh/")
