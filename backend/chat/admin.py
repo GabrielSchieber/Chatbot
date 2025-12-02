@@ -489,7 +489,9 @@ class ChatAdmin(admin.ModelAdmin):
     inlines = (MessageInline,)
 
     class Media:
+        css = {"all": ("chat/css/admin_pending_message.css",)}
         js = ("chat/js/admin_pending.js",)
+
     readonly_fields = ("user_link", "display_uuid", "pending_message_display", "created_at_display")
     fieldsets = (
         (None, {"fields": ("user_link", "display_uuid", "title", "pending_message_display", "is_archived", "created_at_display")} ),
@@ -515,13 +517,10 @@ class ChatAdmin(admin.ModelAdmin):
     def pending_message_display(self, chat: Chat):
         if not chat.pending_message:
             return ""
-
-        msg = chat.pending_message
-        msg_url = f"/admin/chat/message/{msg.pk}/change/"
-        stop_url = reverse("admin:chat_chat_stop_pending", args=[chat.pk])
-        button = f'<button type="button" class="button" onclick="chat_admin_stop_pending(\'{stop_url}\', this)">Stop</button>'
-
-        return mark_safe(f'<a href="{msg_url}">Message #{msg.pk}</a> &nbsp; {button}')
+        message_pk = chat.pending_message.pk
+        message_url = f"/admin/chat/message/{message_pk}/change/"
+        stop_url = reverse("admin:chat_chat_stop_pending", args = [chat.pk])
+        return mark_safe(render_to_string("chat/pending_message_display.html", {"message_url": message_url, "stop_url": stop_url, "message_pk": message_pk}))
 
     pending_message_display.short_description = "Pending message"
 

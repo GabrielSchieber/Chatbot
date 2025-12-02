@@ -1,0 +1,8 @@
+<div class="chat-admin-pending-message">
+    <a href="{{ message_url }}">
+        Message #{{ message_pk }}
+    </a>
+    <button type="button" class="button" onclick="chat_admin_stop_pending('{{ stop_url }}', this)">
+        Stop Generation
+    </button>
+</div>
