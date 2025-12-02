@@ -250,6 +250,38 @@ class ViewTests(TestCase):
 
         self.assertEqual(response.json(), expected_json)
 
+    def test_me_patch(self):
+        user, _ = self.create_and_login_user()
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 200)
+
+        expected_json = {
+            "email": user.email,
+            "preferences": {
+                "language": "",
+                "theme": "System",
+                "has_sidebar_open": True,
+                "custom_instructions": "",
+                "nickname": "",
+                "occupation": "",
+                "about": ""
+            },
+            "mfa": {
+                "is_enabled": False
+            }
+        }
+
+        self.assertEqual(response.json(), expected_json)
+
+        response = self.client.patch("/api/me/", {"language": "Português"}, "application/json")
+        self.assertEqual(response.status_code, 200)
+
+        expected_json["preferences"]["language"] = "Português"
+
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), expected_json)
+
     def test_me_with_expired_cookie(self):
         refresh = RefreshToken.for_user(create_user())
         self.client.cookies["access_token"] = str(refresh.access_token)
