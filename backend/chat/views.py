@@ -273,7 +273,7 @@ class GetChat(APIView):
         chat_uuid = request.query_params.get("chat_uuid")
 
         if chat_uuid is None:
-            return Response("'chat_uuid' field must be provided.")
+            return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
 
         try:
             chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
