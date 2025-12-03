@@ -32,6 +32,13 @@ class UserPreferences(TestCase):
         for a in ["language", "custom_instructions", "nickname", "occupation", "about"]:
             self.assertEqual(getattr(user.preferences, a), "")
 
+class UserMFA(TestCase):
+    def test_creation(self):
+        user = create_user()
+        self.assertEqual(user.mfa.secret, b"")
+        self.assertEqual(user.mfa.backup_codes, [])
+        self.assertFalse(user.mfa.is_enabled)
+
 class Chat(TestCase):
     def test_creation(self):
         user = create_user()
