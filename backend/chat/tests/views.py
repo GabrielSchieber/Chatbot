@@ -11,7 +11,7 @@ from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .utils import create_user
-from ..models import Chat, Message, User
+from ..models import Chat, Message, MessageFile, User
 from ..totp_utils import generate_code
 
 class TestCase(DjangoTestCase):
@@ -1077,6 +1077,61 @@ class StopPendingChats(TestCase):
             self.assertIsNone(c.pending_message)
         for c in Chat.objects.filter(user__email = "test@example.com"):
             self.assertIsNotNone(c.pending_message)
+
+class GetMessageFileContent(TestCase):
+    def test(self):
+        response = self.client.get("/api/get-message-file-content/")
+        self.assertEqual(response.status_code, 401)
+
+        user = create_user()
+        response = self.client.get("/api/get-message-file-content/")
+        self.assertEqual(response.status_code, 401)
+
+        self.login_user()
+        response = self.client.get("/api/get-message-file-content/")
+        self.assertEqual(response.status_code, 400)
+
+        chat1 = Chat.objects.create(user = user, title = "File Analysis")
+        message1 = Message.objects.create(chat = chat1, text = "Describe the file.", is_from_user = True)
+        message_file1 = MessageFile.objects.create(
+            message = message1,
+            name = "document.txt",
+            content = "This is a document about...".encode(),
+            content_type = "text/plain"
+        )
+
+        response = self.client.get(f"/api/get-message-file-content/?chat_uuid={chat1.uuid}&message_file_id={message_file1.id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, "This is a document about...".encode())
+
+        chat2 = Chat.objects.create(user = user, title = "Another File Analysis")
+        message2 = Message.objects.create(chat = chat2, text = "Describe the files.", is_from_user = True)
+        message_file2 = MessageFile.objects.create(
+            message = message2,
+            name = "another_document.txt",
+            content = "This is another document about...".encode(),
+            content_type = "text/plain"
+        )
+        message_file3 = MessageFile.objects.create(
+            message = message2,
+            name = "yet_another_document.txt",
+            content = "This is yet another document about...".encode(),
+            content_type = "text/plain"
+        )
+
+        response = self.client.get(f"/api/get-message-file-content/?chat_uuid={chat2.uuid}&message_file_id={message_file2.id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, "This is another document about...".encode())
+
+        response = self.client.get(f"/api/get-message-file-content/?chat_uuid={chat2.uuid}&message_file_id={message_file3.id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, "This is yet another document about...".encode())
+
+        response = self.client.get(f"/api/get-message-file-content/?chat_uuid={chat1.uuid}&message_file_id={message_file3.id}")
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.get(f"/api/get-message-file-content/?chat_uuid={chat2.uuid}&message_file_id={message_file1.id}")
+        self.assertEqual(response.status_code, 404)
 
 class GetMessages(TestCase):
     def test(self):
