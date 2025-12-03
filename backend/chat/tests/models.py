@@ -101,6 +101,36 @@ class Chat(TestCase):
         self.assertEqual(chat.messages.count(), 0)
         self.assertEqual(chat.last_modified_at(), chat.created_at)
 
+    def test_last_modified_at(self):
+        user = create_user()
+
+        time_to_freeze = timezone.datetime(2025, 1, 1, 12)
+        with freeze_time(time_to_freeze):
+            chat = models.Chat.objects.create(user = user, title = "Test chat")
+            self.assertEqual(chat.last_modified_at(), chat.created_at)
+
+        with freeze_time(time_to_freeze + timedelta(minutes = 5)):
+            user_message = models.Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
+            self.assertEqual(chat.last_modified_at(), user_message.last_modified_at)
+            self.assertEqual(chat.last_modified_at(), user_message.created_at)
+
+        with freeze_time(time_to_freeze + timedelta(minutes = 10)):
+            bot_message = models.Message.objects.create(chat = chat, text = "Hello! How are you?", is_from_user = False)
+            self.assertEqual(chat.last_modified_at(), bot_message.last_modified_at)
+            self.assertEqual(chat.last_modified_at(), bot_message.created_at)
+
+        with freeze_time(time_to_freeze + timedelta(minutes = 15)):
+            user_message.text = "Hi!"
+            user_message.save()
+            self.assertEqual(chat.last_modified_at(), user_message.last_modified_at)
+            self.assertNotEqual(chat.last_modified_at(), user_message.created_at)
+
+        with freeze_time(time_to_freeze + timedelta(minutes = 20)):
+            bot_message.text = "Hi! How are you?"
+            bot_message.save()
+            self.assertEqual(chat.last_modified_at(), bot_message.last_modified_at)
+            self.assertNotEqual(chat.last_modified_at(), bot_message.created_at)
+
 class Message(TestCase):
     def test_creation(self):
         user = create_user()
