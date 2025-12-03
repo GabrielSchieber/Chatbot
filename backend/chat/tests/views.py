@@ -383,6 +383,30 @@ class Me(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["email"], "test@example.com")
 
+class SetupMFA(TestCase):
+    def test(self):
+        user, response = self.create_and_login_user()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(user.mfa.secret, b"")
+        self.assertEqual(user.mfa.backup_codes, [])
+        self.assertFalse(user.mfa.is_enabled)
+
+        response = self.client.post("/api/setup-mfa/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 2)
+
+        auth_url = response.json()["auth_url"]
+        secret = response.json()["secret"]
+
+        self.assertEqual(auth_url, f"otpauth://totp/Chatbot:test%40example.com?secret={secret}&issuer=Chatbot")
+        self.assertNotEqual(secret, user.mfa.secret)
+
+        user = User.objects.get(email = "test@example.com")
+        self.assertNotEqual(user.mfa.secret, b"")
+        self.assertEqual(len(user.mfa.secret), 140)
+        self.assertEqual(user.mfa.backup_codes, [])
+        self.assertFalse(user.mfa.is_enabled)
+
 class DeleteAccount(TestCase):
    def test(self):
         response = self.client.delete("/api/delete-account/")
