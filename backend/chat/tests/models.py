@@ -97,6 +97,9 @@ class Chat(TestCase):
         self.assertEqual(chat.user, user)
         self.assertEqual(chat.title, "Test chat")
         self.assertIsNone(chat.pending_message)
+        self.assertHasAttr(chat, "messages")
+        self.assertEqual(chat.messages.count(), 0)
+        self.assertEqual(chat.last_modified_at(), chat.created_at)
 
 class Message(TestCase):
     def test_creation(self):
