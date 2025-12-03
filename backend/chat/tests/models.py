@@ -62,6 +62,15 @@ class UserMFA(TestCase):
             self.assertEqual(type(backup_code), str)
             self.assertEqual(type(hashed_backup_code), str)
 
+    def test_disable(self):
+        user = create_user()
+        user.mfa.setup()
+        user.mfa.enable()
+        user.mfa.disable()
+        self.assertEqual(user.mfa.secret, b"")
+        self.assertEqual(user.mfa.backup_codes, [])
+        self.assertFalse(user.mfa.is_enabled)
+
 class Chat(TestCase):
     def test_creation(self):
         user = create_user()
