@@ -450,6 +450,24 @@ class EnableMFA(TestCase):
         assert_response(self.client.post("/api/enable-mfa/", {"code": "12345"}))
         assert_response(self.client.post("/api/enable-mfa/", {"code": "1234567"}))
 
+class DisableMFA(TestCase):
+    def test(self):
+        user, response = self.create_and_login_user()
+        user.mfa.setup()
+        user.mfa.enable()
+        self.assertNotEqual(user.mfa.secret, b"")
+        self.assertNotEqual(user.mfa.backup_codes, [])
+        self.assertTrue(user.mfa.is_enabled)
+
+        response = self.client.post("/api/disable-mfa/", {"code": generate_code(user.mfa.secret)})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"")
+
+        user = User.objects.get(email = "test@example.com")
+        self.assertEqual(user.mfa.secret, b"")
+        self.assertEqual(user.mfa.backup_codes, [])
+        self.assertFalse(user.mfa.is_enabled)
+
 class DeleteAccount(TestCase):
    def test(self):
         response = self.client.delete("/api/delete-account/")
