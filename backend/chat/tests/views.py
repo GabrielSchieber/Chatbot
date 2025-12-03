@@ -1,61 +1,32 @@
-import os
-
-os.environ["DJANGO_TEST"] = "True"
-
 import uuid
 from datetime import datetime, timedelta, timezone as dt_timezone
 
-from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
-from django.test import TestCase
+from django.test import TestCase as DjangoTestCase
 from django.utils import timezone
 from freezegun import freeze_time
 from rest_framework_simplejwt.backends import TokenBackend
 from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Chat, Message, User
-from .totp_utils import generate_code
+from .utils import create_user
+from ..models import Chat, Message, User
+from ..totp_utils import generate_code
 
-class UserTests(TestCase):
-    def test_creation(self):
-        user = create_user()
-        self.assertEqual(user.email, "test@example.com")
-        self.assertNotEqual(user.password, "testpassword")
-        self.assertTrue(check_password("testpassword", user.password))
-        self.assertTrue(user.is_active)
-        self.assertFalse(user.is_staff)
+class TestCase(DjangoTestCase):
+    def login_user(self, email: str = "test@example.com", password: str = "testpassword"):
+        return self.client.post("/api/login/", {"email": email, "password": password})
 
-    def test_authentication(self):
-        create_user()
-        user = authenticate(email = "test@example.com", password = "testpassword")
-        self.assertEqual(type(user), User)
-        self.assertEqual(user.email, "test@example.com")
-        self.assertNotEqual(user.email, "testpassword")
+    def logout_user(self):
+        return self.client.post("/api/logout/")
 
-class ChatTests(TestCase):
-    def test_creation(self):
-        user = create_user()
-        chat = Chat.objects.create(user = user, title = "Test chat")
-        self.assertEqual(chat.user, user)
-        self.assertEqual(chat.title, "Test chat")
-        self.assertIsNone(chat.pending_message)
+    def create_and_login_user(self, email: str = "test@example.com", password: str = "testpassword"):
+        user = create_user(email, password)
+        response = self.login_user(email, password)
+        return user, response
 
-class MessageTests(TestCase):
-    def test_creation(self):
-        user = create_user()
-        chat = Chat.objects.create(user = user, title = "Test chat")
-        user_message = Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
-        bot_message = Message.objects.create(chat = chat, text = "Hi!", is_from_user = False)
-        self.assertEqual(user_message.chat, chat)
-        self.assertEqual(bot_message.chat, chat)
-        self.assertEqual(user_message.text, "Hello!")
-        self.assertEqual(bot_message.text, "Hi!")
-        self.assertTrue(user_message.is_from_user)
-        self.assertFalse(bot_message.is_from_user)
-
-class ViewTests(TestCase):
-    def test_signup(self):
+class Signup(TestCase):
+    def test(self):
         response = self.client.post("/api/signup/", {"email": "test@example.com", "password": "testpassword"})
         self.assertEqual(response.status_code, 201)
         self.assertEqual(User.objects.all().count(), 1)
@@ -66,13 +37,13 @@ class ViewTests(TestCase):
         self.assertTrue(user.is_active)
         self.assertFalse(user.is_staff)
 
-    def test_signup_with_existing_email(self):
+    def test_with_existing_email(self):
         create_user()
         response = self.client.post("/api/signup/", {"email": "test@example.com", "password": "testpassword"})
         self.assertEqual(response.status_code, 400)
         self.assertEqual(User.objects.all().count(), 1)
 
-    def test_signup_with_invalid_email(self):
+    def test_with_invalid_email(self):
         def test(email: str):
             response = self.client.post("/api/signup/", {"email": email, "password": "testpassword"})
             self.assertEqual(response.status_code, 400)
@@ -87,7 +58,7 @@ class ViewTests(TestCase):
         test("test@.com")
         test("@.com")
 
-    def test_signup_with_invalid_password(self):
+    def test_with_invalid_password(self):
         def test(password: str):
             response = self.client.post("/api/signup/", {"email": "test@example.com", "password": password})
             self.assertEqual(response.status_code, 400)
@@ -99,13 +70,14 @@ class ViewTests(TestCase):
         test("onepassword")
         test("".join(["password123" for _ in range(91)]))
 
-    def test_login(self):
+class Login(TestCase):
+    def test(self):
         _, response = self.create_and_login_user()
         self.assertEqual(response.status_code, 200)
         self.assertIn("access_token", self.client.cookies)
         self.assertIn("refresh_token", self.client.cookies)
 
-    def test_login_with_invalid_credentials(self):
+    def test_with_invalid_credentials(self):
         error = "login.error"
 
         create_user()
@@ -121,7 +93,8 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["error"], error)
 
-    def test_verify_mfa(self):
+class VerifyMFA(TestCase):
+    def test(self):
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 401)
 
@@ -159,7 +132,8 @@ class ViewTests(TestCase):
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
 
-    def test_logout(self):
+class Logout(TestCase):
+    def test(self):
         response = self.client.post("/api/logout/")
         self.assertEqual(response.status_code, 401)
 
@@ -179,12 +153,13 @@ class ViewTests(TestCase):
         self.assertEqual(response.cookies["access_token"].value, "")
         self.assertEqual(response.cookies["refresh_token"].value, "")
 
-    def test_logout_without_being_authenticated(self):
+    def test_without_being_authenticated(self):
         response = self.client.post("/api/logout/")
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["detail"], "Authentication credentials were not provided.")
 
-    def test_refresh(self):
+class Refresh(TestCase):
+    def test(self):
         refresh = RefreshToken.for_user(create_user())
         self.client.cookies["refresh_token"] = str(refresh)
 
@@ -195,19 +170,19 @@ class ViewTests(TestCase):
 
         self.assertNotEqual(response.cookies["refresh_token"].value, str(refresh))
 
-    def test_refresh_without_cookie(self):
+    def test_without_cookie(self):
         response = self.client.post("/api/refresh/")
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"error": "'refresh_token' field must be provided."})
 
-    def test_refresh_with_invalid_cookie(self):
+    def test_with_invalid_cookie(self):
         self.client.cookies["refresh_token"] = "not-a-real-token"
 
         response = self.client.post("/api/refresh/")
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"error": "Invalid refresh token."})
 
-    def test_refresh_with_blacklisted_cookie(self):
+    def test_with_blacklisted_cookie(self):
         refresh = RefreshToken.for_user(create_user())
         refresh.blacklist()
         self.client.cookies["refresh_token"] = str(refresh)
@@ -216,7 +191,7 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"error": "Invalid refresh token."})
 
-    def test_refresh_with_expired_cookie(self):
+    def test_with_expired_cookie(self):
         refresh = RefreshToken.for_user(create_user())
         self.client.cookies["refresh_token"] = str(refresh)
 
@@ -231,7 +206,7 @@ class ViewTests(TestCase):
             self.assertEqual(response.status_code, 401)
             self.assertEqual(response.json(), {"error": "Invalid refresh token."})
 
-    def test_refresh_with_tampered_cookie(self):
+    def test_with_tampered_cookie(self):
         refresh = RefreshToken.for_user(create_user())
 
         original = str(refresh)
@@ -245,7 +220,7 @@ class ViewTests(TestCase):
         self.assertNotIn("refresh_token", self.client.cookies)
         self.assertEqual(len(response.cookies.items()), 0)
 
-    def test_refresh_with_login(self):
+    def test_with_login(self):
         _, response = self.create_and_login_user()
         self.assertEqual(response.status_code, 200)
         self.assertIn("refresh_token", response.cookies)
@@ -256,7 +231,7 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("access_token", response.cookies)
 
-    def test_refresh_with_token_signed_with_wrong_key(self):
+    def test_with_token_signed_with_wrong_key(self):
         real_refresh = RefreshToken.for_user(create_user())
         wrong_backend = TokenBackend("HS256", "not-the-real-secret-key")
         wrong_token = wrong_backend.encode(real_refresh.payload)
@@ -268,7 +243,7 @@ class ViewTests(TestCase):
         self.assertEqual(self.client.cookies["refresh_token"].value, wrong_token)
         self.assertEqual(len(self.client.cookies.items()), 1)
 
-    def test_refresh_with_used_cookie(self):
+    def test_with_used_cookie(self):
         _, response = self.create_and_login_user()
         self.assertEqual(response.status_code, 200)
 
@@ -285,12 +260,12 @@ class ViewTests(TestCase):
         response = self.client.post("/api/refresh/")
         self.assertEqual(response.status_code, 401)
 
-    def test_refresh_cookie_expiry_header(self):
+    def test_cookie_expiry_header(self):
         self.client.cookies["refresh_token"] = str(RefreshToken.for_user(create_user()))
         response = self.client.post("/api/refresh/")
         self.assertIsNotNone(response.cookies["access_token"]["expires"])
 
-    def test_refresh_flow_issues_new_access_cookie(self):
+    def test_flow_issues_new_access_cookie(self):
         time_to_freeze = timezone.datetime(2025, 1, 1, 12)
         with freeze_time(time_to_freeze):
             _, response = self.create_and_login_user()
@@ -314,7 +289,8 @@ class ViewTests(TestCase):
             response = self.client.post("/api/refresh/")
             self.assertEqual(response.status_code, 200)
 
-    def test_me(self):
+class Me(TestCase):
+    def test(self):
         user, _ = self.create_and_login_user()
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
@@ -337,7 +313,7 @@ class ViewTests(TestCase):
 
         self.assertEqual(response.json(), expected_json)
 
-    def test_me_patch(self):
+    def test_patch(self):
         user, _ = self.create_and_login_user()
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
@@ -380,7 +356,7 @@ class ViewTests(TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json(), expected_json)
 
-    def test_me_with_expired_cookie(self):
+    def test_with_expired_cookie(self):
         refresh = RefreshToken.for_user(create_user())
         self.client.cookies["access_token"] = str(refresh.access_token)
 
@@ -394,7 +370,7 @@ class ViewTests(TestCase):
             response = self.client.get("/api/me/")
             self.assertEqual(response.status_code, 401)
 
-    def test_me_uses_access_cookie_via_middleware(self):
+    def test_uses_access_cookie_via_middleware(self):
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 401)
 
@@ -407,53 +383,31 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["email"], "test@example.com")
 
-    def test_get_messages(self):
-        response = self.client.get("/api/get-messages/")
+class DeleteAccount(TestCase):
+   def test(self):
+        response = self.client.delete("/api/delete-account/")
         self.assertEqual(response.status_code, 401)
 
-        response = self.client.get("/api/get-messages/?chat_uuid=849087f8-4b3f-47f1-980d-5a5a3d325912")
+        create_user()
+        response = self.client.delete("/api/delete-account/")
         self.assertEqual(response.status_code, 401)
 
-        user, _ = self.create_and_login_user()
-        response = self.client.get("/api/get-messages/?chat_uuid=849087f8-4b3f-47f1-980d-5a5a3d325912")
-        self.assertEqual(response.status_code, 404)
+        self.login_user()
+        response = self.client.delete("/api/delete-account/", {"password": "testpassword"}, "application/json")
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(User.objects.count(), 0)
 
-        chat = Chat.objects.create(user = user, title = "Test chat")
-        response = self.client.get("/api/get-messages/?chat_uuid=invalid_uuid")
-        self.assertEqual(response.status_code, 400)
+        create_user()
+        user = create_user("someone@example.com", "somepassword")
 
-        chat = Chat.objects.create(user = user, title = "Test chat")
-        response = self.client.get(f"/api/get-messages/?chat_uuid={str(chat.uuid)}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), [])
+        self.login_user("test@example.com", "testpassword")
+        response = self.client.delete("/api/delete-account/", {"password": "testpassword"}, "application/json")
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(User.objects.count(), 1)
+        self.assertEqual(User.objects.first(), user)
 
-        user_message_1 = Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
-        bot_message_1 = Message.objects.create(chat = chat, text = "Hi!", is_from_user = False)
-
-        response = self.client.get(f"/api/get-messages/?chat_uuid={str(chat.uuid)}")
-        self.assertEqual(response.status_code, 200)
-
-        expected_messages = [
-            {"id": user_message_1.id, "text": "Hello!", "is_from_user": True, "files": [], "model": None},
-            {"id": bot_message_1.id, "text": "Hi!", "is_from_user": False, "files": [], "model": None}
-        ]
-        self.assertEqual(response.json(), expected_messages)
-
-        user_message_2 = Message.objects.create(chat = chat, text = "Hello again!", is_from_user = True)
-        bot_message_2 = Message.objects.create(chat = chat, text = "Hi again!", is_from_user = False)
-
-        response = self.client.get(f"/api/get-messages/?chat_uuid={str(chat.uuid)}")
-        self.assertEqual(response.status_code, 200)
-
-        expected_messages = [
-            {"id": user_message_1.id, "text": "Hello!", "is_from_user": True, "files": [], "model": None},
-            {"id": bot_message_1.id, "text": "Hi!", "is_from_user": False, "files": [], "model": None},
-            {"id": user_message_2.id, "text": "Hello again!", "is_from_user": True, "files": [], "model": None},
-            {"id": bot_message_2.id, "text": "Hi again!", "is_from_user": False, "files": [], "model": None}
-        ]
-        self.assertEqual(response.json(), expected_messages)
-
-    def test_get_chats(self):
+class GetChats(TestCase):
+    def test(self):
         response = self.client.get("/api/get-chats/")
         self.assertEqual(response.status_code, 401)
 
@@ -506,7 +460,8 @@ class ViewTests(TestCase):
         ]
         self.assertEqual(response.json()["chats"], expected_chats)
 
-    def test_search_chats(self):
+class SearchChats(TestCase):
+    def test(self):
         response = self.client.get("/api/search-chats/")
         self.assertEqual(response.status_code, 401)
 
@@ -615,7 +570,8 @@ class ViewTests(TestCase):
         }]
         self.assertEqual(response.json()["entries"], expected_etries)
 
-    def test_rename_chat(self):
+class RenameChat(TestCase):
+    def test(self):
         response = self.client.patch("/api/rename-chat/")
         self.assertEqual(response.status_code, 401)
 
@@ -646,7 +602,8 @@ class ViewTests(TestCase):
         self.assertIn("Some title", [Chat.objects.first().title, Chat.objects.last().title])
         self.assertIn("Some other chat", [Chat.objects.first().title, Chat.objects.last().title])
 
-    def test_delete_chat(self):
+class DeleteChat(TestCase):
+    def test(self):
         response = self.client.delete("/api/delete-chat/", content_type = "application/json")
         self.assertEqual(response.status_code, 401)
 
@@ -680,7 +637,8 @@ class ViewTests(TestCase):
         self.assertEqual(Chat.objects.count(), 1)
         self.assertEqual(Chat.objects.first().user, user1)
 
-    def test_delete_chats(self):
+class DeleteChats(TestCase):
+    def test(self):
         response = self.client.delete("/api/delete-chats/")
         self.assertEqual(response.status_code, 401)
 
@@ -717,51 +675,49 @@ class ViewTests(TestCase):
         self.assertEqual(Chat.objects.first().user, user1)
         self.assertEqual(Chat.objects.last().user, user1)
 
-    def test_delete_account(self):
-        response = self.client.delete("/api/delete-account/")
+class GetMessages(TestCase):
+    def test(self):
+        response = self.client.get("/api/get-messages/")
         self.assertEqual(response.status_code, 401)
 
-        create_user()
-        response = self.client.delete("/api/delete-account/")
+        response = self.client.get("/api/get-messages/?chat_uuid=849087f8-4b3f-47f1-980d-5a5a3d325912")
         self.assertEqual(response.status_code, 401)
 
-        self.login_user()
-        response = self.client.delete("/api/delete-account/", {"password": "testpassword"}, "application/json")
-        self.assertEqual(response.status_code, 204)
-        self.assertEqual(User.objects.count(), 0)
+        user, _ = self.create_and_login_user()
+        response = self.client.get("/api/get-messages/?chat_uuid=849087f8-4b3f-47f1-980d-5a5a3d325912")
+        self.assertEqual(response.status_code, 404)
 
-        create_user()
-        user = create_user("someone@example.com", "somepassword")
+        chat = Chat.objects.create(user = user, title = "Test chat")
+        response = self.client.get("/api/get-messages/?chat_uuid=invalid_uuid")
+        self.assertEqual(response.status_code, 400)
 
-        self.login_user("test@example.com", "testpassword")
-        response = self.client.delete("/api/delete-account/", {"password": "testpassword"}, "application/json")
-        self.assertEqual(response.status_code, 204)
-        self.assertEqual(User.objects.count(), 1)
-        self.assertEqual(User.objects.first(), user)
-
-    def login_user(self, email: str = "test@example.com", password: str = "testpassword"):
-        return self.client.post("/api/login/", {"email": email, "password": password})
-
-    def logout_user(self):
-        return self.client.post("/api/logout/")
-
-    def create_and_login_user(self, email: str = "test@example.com", password: str = "testpassword"):
-        user = create_user(email, password)
-        response = self.login_user(email, password)
-        return user, response
-
-class JWTAuthCookieMiddlewareTests(TestCase):
-    def test_auth_header_is_added_when_access_token_cookie_exists(self):
-        self.client.cookies["access_token"] = "abc123"
-
-        response = self.client.get("/test/echo-auth/")
+        chat = Chat.objects.create(user = user, title = "Test chat")
+        response = self.client.get(f"/api/get-messages/?chat_uuid={str(chat.uuid)}")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["auth"], "Bearer abc123")
+        self.assertEqual(response.json(), [])
 
-    def test_auth_header_is_not_added_if_cookie_missing(self):
-        response = self.client.get("/test/echo-auth/")
+        user_message_1 = Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
+        bot_message_1 = Message.objects.create(chat = chat, text = "Hi!", is_from_user = False)
+
+        response = self.client.get(f"/api/get-messages/?chat_uuid={str(chat.uuid)}")
         self.assertEqual(response.status_code, 200)
-        self.assertIsNone(response.json()["auth"])
 
-def create_user(email: str = "test@example.com", password: str = "testpassword") -> User:
-    return User.objects.create_user(email = email, password = password)
+        expected_messages = [
+            {"id": user_message_1.id, "text": "Hello!", "is_from_user": True, "files": [], "model": None},
+            {"id": bot_message_1.id, "text": "Hi!", "is_from_user": False, "files": [], "model": None}
+        ]
+        self.assertEqual(response.json(), expected_messages)
+
+        user_message_2 = Message.objects.create(chat = chat, text = "Hello again!", is_from_user = True)
+        bot_message_2 = Message.objects.create(chat = chat, text = "Hi again!", is_from_user = False)
+
+        response = self.client.get(f"/api/get-messages/?chat_uuid={str(chat.uuid)}")
+        self.assertEqual(response.status_code, 200)
+
+        expected_messages = [
+            {"id": user_message_1.id, "text": "Hello!", "is_from_user": True, "files": [], "model": None},
+            {"id": bot_message_1.id, "text": "Hi!", "is_from_user": False, "files": [], "model": None},
+            {"id": user_message_2.id, "text": "Hello again!", "is_from_user": True, "files": [], "model": None},
+            {"id": bot_message_2.id, "text": "Hi again!", "is_from_user": False, "files": [], "model": None}
+        ]
+        self.assertEqual(response.json(), expected_messages)
