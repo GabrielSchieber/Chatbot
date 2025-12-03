@@ -890,6 +890,54 @@ class DeleteChat(TestCase):
         self.assertEqual(Chat.objects.count(), 1)
         self.assertEqual(Chat.objects.first().user, user1)
 
+class ArchiveChats(TestCase):
+    def test(self):
+        response = self.client.patch("/api/archive-chats/")
+        self.assertEqual(response.status_code, 401)
+
+        user1 = create_user()
+        response = self.client.patch("/api/archive-chats/")
+        self.assertEqual(response.status_code, 401)
+
+        self.login_user()
+        response = self.client.patch("/api/archive-chats/")
+        self.assertEqual(response.status_code, 200)
+
+        Chat.objects.create(user = user1, title = "Greetings")
+
+        response = self.client.patch("/api/archive-chats/")
+        self.assertEqual(response.status_code, 200)
+
+        self.assertTrue(Chat.objects.get(user = user1, title = "Greetings").is_archived)
+
+        Chat.objects.create(user = user1, title = "Travel Advice")
+        Chat.objects.create(user = user1, title = "Math Help")
+
+        response = self.client.patch("/api/archive-chats/")
+        self.assertEqual(response.status_code, 200)
+
+        self.assertTrue(Chat.objects.get(user = user1, title = "Travel Advice").is_archived)
+        self.assertTrue(Chat.objects.get(user = user1, title = "Math Help").is_archived)
+
+        user1.chats.update(is_archived = False)
+        for c in Chat.objects.filter(user__email = "test@example.com"):
+            self.assertFalse(c.is_archived)
+
+        self.logout_user()
+
+        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+
+        Chat.objects.create(user = user2, title = "Math Question")
+        Chat.objects.create(user = user2, title = "Recipe Suggestion")
+
+        response = self.client.patch("/api/archive-chats/")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Chat.objects.get(user = user2, title = "Math Question").is_archived)
+        self.assertTrue(Chat.objects.get(user = user2, title = "Recipe Suggestion").is_archived)
+
+        for c in Chat.objects.filter(user__email = "test@example.com"):
+            self.assertFalse(c.is_archived)
+
 class DeleteChats(TestCase):
     def test(self):
         response = self.client.delete("/api/delete-chats/")
