@@ -24,6 +24,14 @@ class User(TestCase):
         self.assertEqual(user.email, "test@example.com")
         self.assertNotEqual(user.password, "testpassword")
 
+class UserPreferences(TestCase):
+    def test_creation(self):
+        user = create_user()
+        self.assertEqual(user.preferences.theme, "System")
+        self.assertTrue(user.preferences.has_sidebar_open)
+        for a in ["language", "custom_instructions", "nickname", "occupation", "about"]:
+            self.assertEqual(getattr(user.preferences, a), "")
+
 class Chat(TestCase):
     def test_creation(self):
         user = create_user()
