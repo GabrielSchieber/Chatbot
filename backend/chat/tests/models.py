@@ -13,13 +13,16 @@ class User(TestCase):
         self.assertTrue(check_password("testpassword", user.password))
         self.assertTrue(user.is_active)
         self.assertFalse(user.is_staff)
+        self.assertHasAttr(user, "chats")
+        self.assertHasAttr(user, "mfa")
+        self.assertHasAttr(user, "preferences")
 
     def test_authentication(self):
         create_user()
         user = authenticate(email = "test@example.com", password = "testpassword")
         self.assertEqual(type(user), models.User)
         self.assertEqual(user.email, "test@example.com")
-        self.assertNotEqual(user.email, "testpassword")
+        self.assertNotEqual(user.password, "testpassword")
 
 class Chat(TestCase):
     def test_creation(self):
