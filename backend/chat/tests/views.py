@@ -491,6 +491,74 @@ class DeleteAccount(TestCase):
         self.assertEqual(User.objects.count(), 1)
         self.assertEqual(User.objects.first(), user)
 
+class GetChat(TestCase):
+    def test(self):
+        response = self.client.get("/api/get-chat/")
+        self.assertEqual(response.status_code, 401)
+
+        user1 = create_user()
+        response = self.client.get("/api/get-chat/")
+        self.assertEqual(response.status_code, 401)
+
+        self.login_user()
+        response = self.client.get("/api/get-chat/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "'chat_uuid' field must be provided."})
+
+        chat1 = Chat.objects.create(user = user1, title = "Greetings")
+        response = self.client.get(f"/api/get-chat/?chat_uuid={chat1.uuid}")
+        self.assertEqual(response.status_code, 200)
+        expected_json = {"uuid": str(chat1.uuid), "title": "Greetings", "pending_message_id": None, "is_archived": False, "index": 0}
+        self.assertEqual(response.json(), expected_json)
+
+        chat2 = Chat.objects.create(user = user1, title = "Math Question")
+        response = self.client.get(f"/api/get-chat/?chat_uuid={chat2.uuid}")
+        self.assertEqual(response.status_code, 200)
+        expected_json = {"uuid": str(chat2.uuid),"title": "Math Question", "pending_message_id": None, "is_archived": False, "index": 0}
+        self.assertEqual(response.json(), expected_json)
+
+        chat3 = Chat.objects.create(user = user1, title = "Weather Inquiry", is_archived = True)
+        response = self.client.get(f"/api/get-chat/?chat_uuid={chat3.uuid}")
+        self.assertEqual(response.status_code, 200)
+        expected_json = {"uuid": str(chat3.uuid),"title": "Weather Inquiry", "pending_message_id": None, "is_archived": True, "index": 0}
+        self.assertEqual(response.json(), expected_json)
+
+        chat4 = Chat.objects.create(user = user1, title = "Joke Request")
+        chat4.pending_message = Message.objects.create(chat = chat4, text = "Tell me a joke.", is_from_user = True)
+        chat4.save()
+        response = self.client.get(f"/api/get-chat/?chat_uuid={chat4.uuid}")
+        self.assertEqual(response.status_code, 200)
+        expected_json = {"uuid": str(chat4.uuid),"title": "Joke Request", "pending_message_id": 1, "is_archived": False, "index": 0}
+        self.assertEqual(response.json(), expected_json)
+
+        response = self.client.get(f"/api/get-chat/?chat_uuid={chat1.uuid}")
+        self.assertEqual(response.status_code, 200)
+        expected_json = {"uuid": str(chat1.uuid), "title": "Greetings", "pending_message_id": None, "is_archived": False, "index": 3}
+        self.assertEqual(response.json(), expected_json)
+
+        self.logout_user()
+        response = self.client.get("/api/get-chat/")
+        self.assertEqual(response.status_code, 401)
+
+        user2 = create_user("someone@example.com", "somepassword")
+        response = self.client.get("/api/get-chat/")
+        self.assertEqual(response.status_code, 401)
+
+        self.login_user("someone@example.com", "somepassword")
+        response = self.client.get("/api/get-chat/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "'chat_uuid' field must be provided."})
+
+        chat5 = Chat.objects.create(user = user2, title = "Travel Advice")
+        response = self.client.get(f"/api/get-chat/?chat_uuid={chat5.uuid}")
+        self.assertEqual(response.status_code, 200)
+        expected_json = {"uuid": str(chat5.uuid), "title": "Travel Advice", "pending_message_id": None, "is_archived": False, "index": 0}
+        self.assertEqual(response.json(), expected_json)
+
+        response = self.client.get(f"/api/get-chat/?chat_uuid={chat1.uuid}")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"error": "Chat was not found."})
+
 class GetChats(TestCase):
     def test(self):
         response = self.client.get("/api/get-chats/")
