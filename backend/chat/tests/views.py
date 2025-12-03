@@ -755,6 +755,56 @@ class RenameChat(TestCase):
         self.assertIn("Some title", [Chat.objects.first().title, Chat.objects.last().title])
         self.assertIn("Some other chat", [Chat.objects.first().title, Chat.objects.last().title])
 
+class ArchiveChat(TestCase):
+    def test(self):
+        content_type = "application/json"
+
+        response = self.client.patch("/api/archive-chat/")
+        self.assertEqual(response.status_code, 401)
+
+        response = self.client.patch("/api/archive-chat/", {"chat_uuid": "test-uuid"})
+        self.assertEqual(response.status_code, 401)
+
+        user1 = create_user()
+        response = self.client.patch("/api/archive-chat/", {"chat_uuid": "test-uuid"})
+        self.assertEqual(response.status_code, 401)
+
+        self.login_user()
+        response = self.client.patch("/api/archive-chat/", {"chat_uuid": "test-uuid"}, content_type)
+        self.assertEqual(response.status_code, 400)
+
+        chat1 = Chat.objects.create(user = user1, title = "Greetings")
+        chat2 = Chat.objects.create(user = user1, title = "Math Help")
+        self.assertFalse(chat1.is_archived)
+        self.assertFalse(chat2.is_archived)
+
+        response = self.client.patch("/api/archive-chat/", {"chat_uuid": chat1.uuid}, content_type)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"")
+
+        chat1 = Chat.objects.get(user = user1, title = "Greetings")
+        chat2 = Chat.objects.get(user = user1, title = "Math Help")
+        self.assertTrue(chat1.is_archived)
+        self.assertFalse(chat2.is_archived)
+
+        self.logout_user()
+
+        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        chat3 = Chat.objects.create(user = user2, title = "Travel Advice")
+        self.assertFalse(chat3.is_archived)
+
+        response = self.client.patch("/api/archive-chat/", {"chat_uuid": chat3.uuid}, content_type)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"")
+
+        chat3 = Chat.objects.get(user = user2, title = "Travel Advice")
+        self.assertTrue(chat3.is_archived)
+
+        chat1 = Chat.objects.get(user = user1, title = "Greetings")
+        chat2 = Chat.objects.get(user = user1, title = "Math Help")
+        self.assertTrue(chat1.is_archived)
+        self.assertFalse(chat2.is_archived)
+
 class DeleteChat(TestCase):
     def test(self):
         response = self.client.delete("/api/delete-chat/", content_type = "application/json")
