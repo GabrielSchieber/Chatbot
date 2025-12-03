@@ -1,6 +1,10 @@
+from datetime import timedelta
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
 from django.test import TestCase
+from django.utils import timezone
+from freezegun import freeze_time
 
 from .utils import create_user
 from .. import models
@@ -70,6 +74,21 @@ class UserMFA(TestCase):
         self.assertEqual(user.mfa.secret, b"")
         self.assertEqual(user.mfa.backup_codes, [])
         self.assertFalse(user.mfa.is_enabled)
+
+class PreAuthToken(TestCase):
+    def test_is_expired(self):
+        user = create_user()
+
+        time_to_freeze = timezone.datetime(2025, 1, 1, 12)
+        with freeze_time(time_to_freeze):
+            pre_auth_token = models.PreAuthToken.objects.create(user = user)
+            self.assertFalse(pre_auth_token.is_expired())
+
+        with freeze_time(time_to_freeze + timedelta(minutes = 4, seconds = 59)):
+            self.assertFalse(pre_auth_token.is_expired())
+
+        with freeze_time(time_to_freeze + timedelta(minutes = 5, seconds = 1)):
+            self.assertTrue(pre_auth_token.is_expired())
 
 class Chat(TestCase):
     def test_creation(self):
