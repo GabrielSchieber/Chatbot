@@ -48,6 +48,20 @@ class UserMFA(TestCase):
         self.assertNotEqual(secret, user.mfa.secret)
         self.assertEqual(auth_url, f"otpauth://totp/Chatbot:test%40example.com?secret={secret}&issuer=Chatbot")
 
+    def test_enable(self):
+        user = create_user()
+        backup_codes = user.mfa.enable()
+        self.assertEqual(user.mfa.secret, b"")
+        self.assertEqual(len(user.mfa.backup_codes), 10)
+        self.assertTrue(user.mfa.is_enabled)
+        self.assertEqual(len(backup_codes), 10)
+        for backup_code, hashed_backup_code in zip(backup_codes, user.mfa.backup_codes):
+            self.assertNotEqual(backup_code, hashed_backup_code)
+            self.assertEqual(len(backup_code), 12)
+            self.assertEqual(len(hashed_backup_code), 89)
+            self.assertEqual(type(backup_code), str)
+            self.assertEqual(type(hashed_backup_code), str)
+
 class Chat(TestCase):
     def test_creation(self):
         user = create_user()
