@@ -407,6 +407,31 @@ class SetupMFA(TestCase):
         self.assertEqual(user.mfa.backup_codes, [])
         self.assertFalse(user.mfa.is_enabled)
 
+class EnableMFA(TestCase):
+    def test(self):
+        user, response = self.create_and_login_user()
+        self.assertEqual(response.status_code, 200)
+
+        user.mfa.setup()
+        response = self.client.post("/api/enable-mfa/", {"code": generate_code(user.mfa.secret)})
+        self.assertEqual(response.status_code, 200)
+
+        backup_codes = response.json()["backup_codes"]
+        self.assertEqual(type(backup_codes), list)
+        self.assertEqual(len(backup_codes), 10)
+        for backup_code in backup_codes:
+            self.assertEqual(type(backup_code), str)
+            self.assertEqual(len(backup_code), 12)
+
+        user = User.objects.get(email = "test@example.com")
+        self.assertEqual(len(user.mfa.backup_codes), 10)
+        for hashed_backup_code in user.mfa.backup_codes:
+            self.assertEqual(len(hashed_backup_code), 89)
+        self.assertTrue(user.mfa.is_enabled)
+
+        for backup_code, hashed_backup_code in zip(backup_codes, user.mfa.backup_codes):
+            self.assertNotEqual(backup_code, hashed_backup_code)
+
 class DeleteAccount(TestCase):
    def test(self):
         response = self.client.delete("/api/delete-account/")
