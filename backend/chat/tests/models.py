@@ -149,3 +149,19 @@ class Message(TestCase):
         self.assertHasAttr(bot_message, "files")
         self.assertEqual(user_message.files.count(), 0)
         self.assertEqual(bot_message.files.count(), 0)
+
+class MessageFile(TestCase):
+    def test_creation(self):
+        user = create_user()
+        chat = models.Chat.objects.create(user = user, title = "Test chat")
+        message = models.Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
+        message_file = models.MessageFile.objects.create(
+            message = message,
+            name = "document.txt",
+            content = "This is a document about...".encode(),
+            content_type = "text/plain"
+        )
+        self.assertEqual(message_file.message, message)
+        self.assertEqual(message_file.name, "document.txt")
+        self.assertEqual(message_file.content, "This is a document about...".encode())
+        self.assertEqual(message_file.content_type, "text/plain")
