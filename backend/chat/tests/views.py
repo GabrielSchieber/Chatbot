@@ -1024,6 +1024,60 @@ class DeleteChats(TestCase):
         self.assertEqual(Chat.objects.first().user, user1)
         self.assertEqual(Chat.objects.last().user, user1)
 
+class StopPendingChats(TestCase):
+    def test(self):
+        response = self.client.patch("/api/stop-pending-chats/")
+        self.assertEqual(response.status_code, 401)
+
+        user1, _ = self.create_and_login_user()
+
+        chat1 = Chat.objects.create(user = user1, title = "Greetings")
+        chat2 = Chat.objects.create(user = user1, title = "Math Help")
+
+        chat1.pending_message = Message.objects.create(chat = chat1, text = "Hello!", is_from_user = True)
+        chat1.save()
+        chat2.pending_message = Message.objects.create(chat = chat2, text = "What is 2 + 5?", is_from_user = True)
+        chat2.save()
+
+        for c in Chat.objects.all():
+            self.assertIsNotNone(c.pending_message)
+
+        response = self.client.patch("/api/stop-pending-chats/")
+        self.assertEqual(response.status_code, 200)
+
+        for c in Chat.objects.all():
+            self.assertIsNone(c.pending_message)
+
+        chat1.pending_message = Message.objects.filter(chat__user = user1).first()
+        chat1.save()
+        chat2.pending_message = Message.objects.filter(chat__user = user1).last()
+        chat2.save()
+
+        for c in Chat.objects.all():
+            self.assertIsNotNone(c.pending_message)
+
+        self.logout_user()
+
+        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        chat3 = Chat.objects.create(user = user2, title = "Travel Advice")
+        chat4 = Chat.objects.create(user = user2, title = "Recipe Suggestion")
+
+        chat3.pending_message = Message.objects.create(chat = chat1, text = "Where should I travel to?", is_from_user = True)
+        chat3.save()
+        chat4.pending_message = Message.objects.create(chat = chat2, text = "I have eggs and spinach. What can I make?", is_from_user = True)
+        chat4.save()
+
+        for c in Chat.objects.all():
+            self.assertIsNotNone(c.pending_message)
+
+        response = self.client.patch("/api/stop-pending-chats/")
+        self.assertEqual(response.status_code, 200)
+
+        for c in Chat.objects.filter(user__email = "someone@example.com"):
+            self.assertIsNone(c.pending_message)
+        for c in Chat.objects.filter(user__email = "test@example.com"):
+            self.assertIsNotNone(c.pending_message)
+
 class GetMessages(TestCase):
     def test(self):
         response = self.client.get("/api/get-messages/")
