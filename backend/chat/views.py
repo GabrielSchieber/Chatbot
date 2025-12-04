@@ -615,6 +615,8 @@ class EditMessage(APIView):
             return Response({"error": "Total number of files exceeds the limit of 10."}, status.HTTP_400_BAD_REQUEST)
 
         total_size = 0
+        for file in user_message.files.all():
+            total_size += len(file.content)
         for file in added_files:
             total_size += file.size
         for file in removed_files:
