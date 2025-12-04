@@ -1,7 +1,9 @@
 import uuid
 from datetime import datetime, timedelta, timezone as dt_timezone
+from unittest.mock import patch
 
 from django.contrib.auth.hashers import check_password
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse
 from django.test import TestCase as DjangoTestCase
 from django.utils import timezone
@@ -1179,3 +1181,54 @@ class GetMessages(TestCase):
             {"id": bot_message_2.id, "text": "Hi again!", "is_from_user": False, "files": [], "model": None}
         ]
         self.assertEqual(response.json(), expected_messages)
+
+class NewMessage(TestCase):
+    @patch("chat.views.generate_pending_message_in_chat")
+    def test(self, mock_generate):
+        user, response = self.create_and_login_user()
+        self.assertEqual(response.status_code, 200)
+
+        file1 = SimpleUploadedFile("file1.txt", b"hello world", "text/plain")
+        data = {"chat_uuid": "", "text": "Hello assistant!", "model": "SmolLM2-135M", "files": [file1]}
+
+        response = self.client.post("/api/new-message/", data, format = "multipart")
+        self.assertEqual(response.status_code, 200)
+
+        chats = Chat.objects.filter(user = user)
+        self.assertEqual(chats.count(), 1)
+
+        chat = chats.first()
+        self.assertIsNotNone(chat)
+
+        self.assertIn("uuid", response.data)
+        self.assertEqual(response.data["uuid"], str(chat.uuid))
+
+        messages = Message.objects.filter(chat = chat).order_by("created_at")
+        self.assertEqual(messages.count(), 2)
+
+        user_message = messages[0]
+        bot_message = messages[1]
+
+        self.assertTrue(user_message.is_from_user)
+        self.assertEqual(user_message.text, "Hello assistant!")
+
+        self.assertFalse(bot_message.is_from_user)
+        self.assertEqual(bot_message.model, "SmolLM2-135M")
+        self.assertEqual(bot_message.text, "")
+
+        chat.refresh_from_db()
+        self.assertEqual(chat.pending_message, bot_message)
+
+        files = MessageFile.objects.filter(message = user_message)
+        self.assertEqual(files.count(), 1)
+
+        file = files.first()
+        self.assertEqual(file.name, "file1.txt")
+        self.assertEqual(file.content, b"hello world")
+        self.assertEqual(file.content_type, "text/plain")
+
+        mock_generate.assert_called_once()
+        call_arguments = mock_generate.call_args[0]
+
+        self.assertEqual(call_arguments[0], chat)
+        self.assertTrue(call_arguments[1])
