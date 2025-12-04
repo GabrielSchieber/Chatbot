@@ -1309,3 +1309,12 @@ class NewMessage(TestCase):
         response = self.client.post("/api/new-message/", {"chat_uuid": "", "text": "hello", "model": "INVALID"}, format = "multipart")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"error": "Invalid model."})
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_too_many_files(self, _):
+        self.create_and_login_user()
+        files = [SimpleUploadedFile(f"file{i + 1}.txt", f"Document {i + 1}".encode(), "text/plain") for i in range(11)]
+        data = {"chat_uuid": "", "text": "Describe the files.", "model": "SmolLM2-135M", "files": files}
+        response = self.client.post("/api/new-message/", data, format = "multipart")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "Total number of files exceeds the limit of 10."})
