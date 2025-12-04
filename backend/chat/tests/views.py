@@ -1243,3 +1243,31 @@ class NewMessage(TestCase):
         response = self.client.post("/api/new-message/")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"error": "A chat is already pending."})
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    @patch("chat.views.generate_pending_message_in_chat")
+    def test_empty_chat_uuid_creates_new_chat(self, mock_task, _):
+        self.create_and_login_user()
+
+        response = self.client.post("/api/new-message/", {"chat_uuid": "", "text": "Hello!"}, format = "multipart")
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(Chat.objects.count(), 1)
+        self.assertEqual(Message.objects.count(), 2)
+
+        user_message = Message.objects.first()
+        self.assertEqual(user_message.text, "Hello!")
+        self.assertTrue(user_message.is_from_user)
+
+        bot_message = Message.objects.last()
+        self.assertEqual(bot_message.text, "")
+        self.assertFalse(bot_message.is_from_user)
+
+        chat = Chat.objects.first()
+        self.assertEqual(chat.pending_message, bot_message)
+
+        mock_task.assert_called_once()
+        arguments, _ = mock_task.call_args
+
+        self.assertEqual(arguments[0], chat)
+        self.assertTrue(arguments[1])
