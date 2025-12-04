@@ -536,6 +536,9 @@ class NewMessage(APIView):
         if type(files) != list:
             return Response({"error": "Invalid data type for 'files'."}, status.HTTP_400_BAD_REQUEST)
 
+        if len(files) > 10:
+            return Response({"error": "Total number of files exceeds the limit of 10."}, status.HTTP_400_BAD_REQUEST)
+
         total_size = 0
         for file in files:
             total_size += file.size
@@ -607,6 +610,9 @@ class EditMessage(APIView):
             removed_message_file = MessageFile.objects.filter(message = user_message, id = removed_file_id).first()
             if removed_message_file:
                 removed_files.append(removed_message_file)
+
+        if user_message.files.count() + len(added_files) - len(removed_files) > 10:
+            return Response({"error": "Total number of files exceeds the limit of 10."}, status.HTTP_400_BAD_REQUEST)
 
         total_size = 0
         for file in added_files:
