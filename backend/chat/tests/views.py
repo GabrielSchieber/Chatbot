@@ -6,6 +6,7 @@ from django.contrib.auth.hashers import check_password
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse
 from django.test import TestCase as DjangoTestCase
+from django.test.client import encode_multipart, BOUNDARY
 from django.utils import timezone
 from freezegun import freeze_time
 from rest_framework_simplejwt.backends import TokenBackend
@@ -1343,3 +1344,36 @@ class NewMessage(TestCase):
             for i, s in enumerate(sizes):
                 files.append(SimpleUploadedFile(f"file{i + 1}.txt", bytes([b % 255 for b in range(s)]), "text/plain"))
             post_and_assert(files)
+
+class EditMessage(TestCase):
+    @patch("chat.views.generate_pending_message_in_chat")
+    def test(self, mock_generate):
+        user, response = self.create_and_login_user()
+        self.assertEqual(response.status_code, 200)
+
+        chat = Chat.objects.create(user = user, title = "Greetings")
+        user_message = Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
+        bot_message = Message.objects.create(chat = chat, text = "Hello! How can I help you today?", is_from_user = False)
+
+        data = {"chat_uuid": str(chat.uuid), "text": "Hello! How are you?", "index": "0", "removed_file_ids": "[]"}
+
+        body = encode_multipart(BOUNDARY, data)
+        content_type = f"multipart/form-data; boundary={BOUNDARY}"
+
+        response = self.client.patch("/api/edit-message/", body, content_type)
+        self.assertEqual(response.status_code, 200)
+
+        chat.refresh_from_db()
+        user_message.refresh_from_db()
+        bot_message.refresh_from_db()
+        self.assertEqual(chat.title, "Greetings")
+        self.assertEqual(chat.pending_message, bot_message)
+        self.assertEqual(user_message.text, "Hello! How are you?")
+        self.assertEqual(bot_message.text, "")
+        self.assertEqual(Chat.objects.count(), 1)
+        self.assertEqual(Message.objects.count(), 2)
+
+        mock_generate.assert_called_once()
+        call_arguments = mock_generate.call_args[0]
+
+        self.assertEqual(call_arguments[0], chat)
