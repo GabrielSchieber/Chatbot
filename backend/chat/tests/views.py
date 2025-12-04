@@ -1288,3 +1288,10 @@ class NewMessage(TestCase):
         mock_task.assert_called_once()
         arguments, _ = mock_task.call_args
         self.assertFalse(arguments[1])
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_chat_was_not_found(self, _):
+        self.create_and_login_user()
+        response = self.client.post("/api/new-message/", {"chat_uuid": str(uuid.uuid4()), "text": "hello"}, format = "multipart")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"error": "Chat was not found."})
