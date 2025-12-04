@@ -1302,3 +1302,10 @@ class NewMessage(TestCase):
         response = self.client.post("/api/new-message/", {"chat_uuid": "NOT-A-UUID", "text": "hello"}, format = "multipart")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"error": "Invalid chat UUID."})
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_invalid_model(self, _):
+        self.create_and_login_user()
+        response = self.client.post("/api/new-message/", {"chat_uuid": "", "text": "hello", "model": "INVALID"}, format = "multipart")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "Invalid model."})
