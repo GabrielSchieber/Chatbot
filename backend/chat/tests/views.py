@@ -1236,3 +1236,10 @@ class NewMessage(TestCase):
     def test_requires_authentication(self):
         response = self.client.post("/api/new-message/")
         self.assertEqual(response.status_code, 401)
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = True)
+    def test_cannot_post_while_a_chat_is_pending(self, _):
+        self.create_and_login_user()
+        response = self.client.post("/api/new-message/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "A chat is already pending."})
