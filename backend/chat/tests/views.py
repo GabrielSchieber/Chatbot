@@ -1232,3 +1232,7 @@ class NewMessage(TestCase):
 
         self.assertEqual(call_arguments[0], chat)
         self.assertTrue(call_arguments[1])
+
+    def test_requires_authentication(self):
+        response = self.client.post("/api/new-message/")
+        self.assertEqual(response.status_code, 401)
