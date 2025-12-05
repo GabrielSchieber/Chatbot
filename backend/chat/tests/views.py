@@ -1517,3 +1517,7 @@ class RegenerateMessage(TestCase):
 
         self.assertEqual(mock_generate.call_args[0][0], chat)
         self.assertTrue(mock_generate.call_args[1]["should_randomize"])
+
+    def test_requires_authentication(self):
+        response = self.client.patch("/api/regenerate-message/")
+        self.assertEqual(response.status_code, 401)
