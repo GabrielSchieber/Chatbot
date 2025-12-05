@@ -1554,3 +1554,13 @@ class RegenerateMessage(TestCase):
         response = self.client.patch("/api/regenerate-message/", body, content_type)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json(), {"error": "Chat was not found."})
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_requires_index(self, _):
+        user, _ = self.create_and_login_user()
+        chat = Chat.objects.create(user = user, title = "Greetings")
+        body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid)})
+        content_type = f"multipart/form-data; boundary={BOUNDARY}"
+        response = self.client.patch("/api/regenerate-message/", body, content_type)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "Index field must be provided."})

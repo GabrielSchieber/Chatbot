@@ -667,7 +667,7 @@ class RegenerateMessage(APIView):
 
         index = request.data.get("index")
         if not index:
-            return Response({"error": "Index is must be provided."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Index field must be provided."}, status.HTTP_400_BAD_REQUEST)
         index = int(index)
 
         model = request.data.get("model", "SmolLM2-135M")
