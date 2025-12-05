@@ -1564,3 +1564,15 @@ class RegenerateMessage(TestCase):
         response = self.client.patch("/api/regenerate-message/", body, content_type)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"error": "Index field must be provided."})
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_requires_valid_model(self, _):
+        user, _ = self.create_and_login_user()
+        chat = Chat.objects.create(user = user, title = "Greetings")
+        Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
+        Message.objects.create(chat = chat, text = "Hello! How can I help you today?", is_from_user = False)
+        body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid)," index": 1, "model": "INVALID"})
+        content_type = f"multipart/form-data; boundary={BOUNDARY}"
+        response = self.client.patch("/api/regenerate-message/", body, content_type)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "Invalid model."})
