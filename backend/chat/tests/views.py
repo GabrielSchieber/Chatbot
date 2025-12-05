@@ -1453,3 +1453,31 @@ class EditMessage(TestCase):
         response = self.client.patch("/api/edit-message/", body, content_type)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"error": "Total number of files exceeds the limit of 10."})
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_files_too_large(self, _):
+        user, _ = self.create_and_login_user()
+        chat = Chat.objects.create(user = user, title = "File Analysis")
+        Message.objects.create(chat = chat, text = "Describe the files.", is_from_user = True)
+
+        def post_and_assert(files: list[SimpleUploadedFile]):
+            body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid), "text": "Describe the files.", "index": 0, "added_files": files})
+            content_type = f"multipart/form-data; boundary={BOUNDARY}"
+            response = self.client.patch("/api/edit-message/", body, content_type)
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json(), {"error": "Total file size exceeds limit of 5 MB."})
+
+        test_sizes = [
+            [5_000_001],
+            [2_500_000, 2_500_001],
+            [1_000_000 for _ in range(5)],
+            [1_000_000 for _ in range(10)]
+        ]
+        test_sizes[2][-1] += 1
+        test_sizes[3][-1] += 1
+
+        for sizes in test_sizes:
+            files = []
+            for i, s in enumerate(sizes):
+                files.append(SimpleUploadedFile(f"file{i + 1}.txt", bytes([b % 255 for b in range(s)]), "text/plain"))
+            post_and_assert(files)
