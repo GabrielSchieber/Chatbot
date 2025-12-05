@@ -598,7 +598,7 @@ class EditMessage(APIView):
         if type(added_files) != list:
             return Response({"error": "Invalid data type for 'added_files' field."}, status.HTTP_400_BAD_REQUEST)
 
-        removed_file_ids = json.loads(request.data.get("removed_file_ids", []))
+        removed_file_ids = json.loads(request.data.get("removed_file_ids", "[]"))
         if type(removed_file_ids) != list:
             return Response({"error": "Invalid data type for 'removed_files_ids' field."}, status.HTTP_400_BAD_REQUEST)
 
