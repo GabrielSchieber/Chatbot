@@ -1405,3 +1405,12 @@ class EditMessage(TestCase):
             response = self.client.patch("/api/edit-message/", body, content_type)
             self.assertEqual(response.status_code, 400)
             self.assertEqual(response.json(), {"error": "Invalid chat UUID."})
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_chat_was_not_found(self, _):
+        self.create_and_login_user()
+        body = encode_multipart(BOUNDARY, {"chat_uuid": str(uuid.uuid4())})
+        content_type = f"multipart/form-data; boundary={BOUNDARY}"
+        response = self.client.patch("/api/edit-message/", body, content_type)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"error": "Chat was not found."})
