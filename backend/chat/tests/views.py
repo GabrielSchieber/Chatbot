@@ -1435,3 +1435,21 @@ class EditMessage(TestCase):
         response = self.client.patch("/api/edit-message/", body, content_type)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"error": "Invalid model."})
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_too_many_files(self, _):
+        user, _ = self.create_and_login_user()
+
+        chat = Chat.objects.create(user = user, title = "File Analysis")
+        message = Message.objects.create(chat = chat, text = "Describe the files.", is_from_user = True)
+        MessageFile.objects.bulk_create([
+            MessageFile(message = message, name = f"file{i + 1}.txt", content = f"Document {i + 1}".encode(), content_type = "text/plain")
+            for i in range(5)
+        ])
+
+        files = [SimpleUploadedFile(f"file{i + 6}.txt", f"Document {i + 6}".encode(), "text/plain") for i in range(6)]
+        body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid), "text": "Describe the files.", "index": 0, "added_files": files})
+        content_type = f"multipart/form-data; boundary={BOUNDARY}"
+        response = self.client.patch("/api/edit-message/", body, content_type)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "Total number of files exceeds the limit of 10."})
