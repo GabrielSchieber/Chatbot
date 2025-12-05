@@ -1388,3 +1388,10 @@ class EditMessage(TestCase):
         response = self.client.patch("/api/edit-message/")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"error": "A chat is already pending."})
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_requires_chat_uuid(self, _):
+        self.create_and_login_user()
+        response = self.client.patch("/api/edit-message/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "Invalid data type for 'chat_uuid' field."})
