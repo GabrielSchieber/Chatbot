@@ -1535,3 +1535,13 @@ class RegenerateMessage(TestCase):
         response = self.client.patch("/api/regenerate-message/")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"error": "Invalid data type for 'chat_uuid' field."})
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_requires_valid_chat_uuid(self, _):
+        self.create_and_login_user()
+        for chat_uuid in ["", "NOT-A-UUID", "123", "abdc5678"]:
+            body = encode_multipart(BOUNDARY, {"chat_uuid": chat_uuid})
+            content_type = f"multipart/form-data; boundary={BOUNDARY}"
+            response = self.client.patch("/api/regenerate-message/", body, content_type)
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json(), {"error": "Invalid chat UUID."})
