@@ -1377,3 +1377,7 @@ class EditMessage(TestCase):
         call_arguments = mock_generate.call_args[0]
 
         self.assertEqual(call_arguments[0], chat)
+
+    def test_requires_authentication(self):
+        response = self.client.patch("/api/edit-message/")
+        self.assertEqual(response.status_code, 401)
