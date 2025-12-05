@@ -1481,3 +1481,39 @@ class EditMessage(TestCase):
             for i, s in enumerate(sizes):
                 files.append(SimpleUploadedFile(f"file{i + 1}.txt", bytes([b % 255 for b in range(s)]), "text/plain"))
             post_and_assert(files)
+
+class RegenerateMessage(TestCase):
+    @patch("chat.views.generate_pending_message_in_chat")
+    def test(self, mock_generate):
+        user, _ = self.create_and_login_user()
+        chat = Chat.objects.create(user = user, title = "Greetings")
+        user_message = Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
+        bot_message = Message.objects.create(chat = chat, text = "Hello! How can I help you today?", is_from_user = False, model = "SmolLM2-135M")
+
+        body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid), "index": 1, "model": "SmolLM2-360M"})
+        content_type = f"multipart/form-data; boundary={BOUNDARY}"
+        response = self.client.patch("/api/regenerate-message/", body, content_type)
+        self.assertEqual(response.status_code, 200)
+
+        chat.refresh_from_db()
+        user_message.refresh_from_db()
+        bot_message.refresh_from_db()
+
+        self.assertEqual(chat.title, "Greetings")
+        self.assertEqual(chat.pending_message, bot_message)
+
+        self.assertTrue(user_message.text, "Hello!")
+        self.assertTrue(user_message.is_from_user)
+
+        self.assertEqual(bot_message.text, "")
+        self.assertFalse(bot_message.is_from_user)
+        self.assertEqual(bot_message.model, "SmolLM2-360M")
+
+        self.assertEqual(Chat.objects.count(), 1)
+        self.assertEqual(Message.objects.count(), 2)
+        self.assertEqual(MessageFile.objects.count(), 0)
+
+        mock_generate.assert_called_once()
+
+        self.assertEqual(mock_generate.call_args[0][0], chat)
+        self.assertTrue(mock_generate.call_args[1]["should_randomize"])
