@@ -55,6 +55,16 @@ class User(TestCase):
         test("".join(["password123" for _ in range(91)]))
         self.assertEqual(models.User.objects.count(), 0)
 
+    def test_existing_email(self):
+        create_user()
+        self.assertEqual(models.User.objects.count(), 1)
+
+        with self.assertRaises(ValueError) as cm:
+            create_user()
+        self.assertEqual(str(cm.exception), "Email is already registered.")
+
+        self.assertEqual(models.User.objects.count(), 1)
+
 class UserPreferences(TestCase):
     def test_creation(self):
         user = create_user()
