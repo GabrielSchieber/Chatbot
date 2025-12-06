@@ -11,15 +11,31 @@ from .. import models
 
 class User(TestCase):
     def test_creation(self):
-        user = create_user()
-        self.assertEqual(user.email, "test@example.com")
-        self.assertNotEqual(user.password, "testpassword")
-        self.assertTrue(check_password("testpassword", user.password))
-        self.assertTrue(user.is_active)
-        self.assertFalse(user.is_staff)
-        self.assertHasAttr(user, "chats")
-        self.assertHasAttr(user, "mfa")
-        self.assertHasAttr(user, "preferences")
+        def test(email: str, is_staff: bool, is_superuser: bool, user: models.User | None = None):
+            if user is None:
+                initial_count = models.User.objects.count()
+                user = models.User.objects.create_user(email, "testpassword", is_staff, is_superuser)
+
+            self.assertEqual(user.email, email)
+            self.assertNotEqual(user.password, "testpassword")
+            self.assertTrue(check_password("testpassword", user.password))
+            self.assertTrue(user.is_active)
+            self.assertEqual(user.is_staff, is_staff)
+            self.assertEqual(user.is_superuser, is_superuser)
+
+            self.assertHasAttr(user, "chats")
+            self.assertHasAttr(user, "mfa")
+            self.assertHasAttr(user, "preferences")
+
+            if user is None:
+                self.assertEqual(models.User.objects.count(), initial_count + 1)
+
+        test("test1@example.com", False, False)
+        test("test2@example.com", True, False)
+        test("test3@example.com", False, True)
+        test("test4@example.com", True, True)
+        test("test5@example.com", True, True, models.User.objects.create_superuser("test5@example.com", "testpassword"))
+        self.assertEqual(models.User.objects.count(), 5)
 
     def test_authentication(self):
         create_user()
