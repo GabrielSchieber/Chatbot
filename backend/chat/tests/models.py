@@ -28,6 +28,21 @@ class User(TestCase):
         self.assertEqual(user.email, "test@example.com")
         self.assertNotEqual(user.password, "testpassword")
 
+    def test_invalid_email(self):
+        def test(email: str):
+            with self.assertRaises(ValueError) as cm:
+                create_user(email)
+            self.assertEqual(str(cm.exception), "Email address is invalid.")
+
+        test("test")
+        test("example.com")
+        test("test@example")
+        test("@example")
+        test("test@")
+        test("test@.com")
+        test("@.com")
+        self.assertEqual(models.User.objects.count(), 0)
+
 class UserPreferences(TestCase):
     def test_creation(self):
         user = create_user()
