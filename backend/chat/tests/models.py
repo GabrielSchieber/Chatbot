@@ -16,6 +16,8 @@ class User(TestCase):
             if user is None:
                 initial_count = models.User.objects.count()
                 user = models.User.objects.create_user(email, "testpassword", is_staff, is_superuser)
+            else:
+                initial_count = None
 
             self.assertEqual(user.email, email)
             self.assertNotEqual(user.password, "testpassword")
@@ -28,7 +30,7 @@ class User(TestCase):
             self.assertHasAttr(user, "mfa")
             self.assertHasAttr(user, "preferences")
 
-            if user is None:
+            if initial_count is not None:
                 self.assertEqual(models.User.objects.count(), initial_count + 1)
 
         test("test1@example.com", False, False)
