@@ -43,6 +43,18 @@ class User(TestCase):
         test("@.com")
         self.assertEqual(models.User.objects.count(), 0)
 
+    def test_invalid_password(self):
+        def test(password: str):
+            with self.assertRaises(ValueError) as cm:
+                create_user(password = password)
+            self.assertEqual(str(cm.exception), "Password must have between 12 and 1000 characters.")
+
+        test("")
+        test("test")
+        test("onepassword")
+        test("".join(["password123" for _ in range(91)]))
+        self.assertEqual(models.User.objects.count(), 0)
+
 class UserPreferences(TestCase):
     def test_creation(self):
         user = create_user()
