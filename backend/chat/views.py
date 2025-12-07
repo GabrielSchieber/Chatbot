@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, EditMessageSerializer, GetMessagesSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, UserSerializer
+from .serializers import ChatSerializer, EditMessageSerializer, GetMessageFileContentSerializer, GetMessagesSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -456,28 +456,25 @@ class GetMessageFileContent(APIView):
     renderer_classes = [BinaryFileRenderer]
 
     def get(self, request: Request):
-        chat_uuid = request.query_params.get("chat_uuid")
-        if chat_uuid is None:
-            return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
+        user: User = request.user
 
-        message_file_id = request.query_params.get("message_file_id")
-        if message_file_id is None:
-            return Response({"error": "'message_file_id' field must be provided."}, status.HTTP_400_BAD_REQUEST)
-        message_file_id = int(message_file_id)
+        qs = GetMessageFileContentSerializer(data = request.query_params)
+        qs.is_valid(raise_exception = True)
+
+        chat_uuid = qs.validated_data["chat_uuid"]
+        message_file_id = qs.validated_data["message_file_id"]
 
         try:
-            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-        except:
-            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
-        message_file = MessageFile.objects.filter(message__chat = chat, id = message_file_id).first()
+        try:
+            message_file = MessageFile.objects.get(message__chat = chat, id = message_file_id)
+        except MessageFile.DoesNotExist:
+            return Response({"error": "Message file was not found."}, status.HTTP_404_NOT_FOUND)
 
-        if message_file is not None:
-            return Response(message_file.content, status.HTTP_200_OK, content_type = message_file.content_type)
-        else:
-            return Response({"error": "File was not found."}, status.HTTP_404_NOT_FOUND)
+        return Response(message_file.content, status.HTTP_200_OK, content_type = message_file.content_type)
 
 class GetMessages(APIView):
     permission_classes = [IsAuthenticated]
