@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, ChatUUIDSerializer, EditMessageSerializer, GetMessageFileContentSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, UserSerializer
+from .serializers import ChatSerializer, ChatUUIDSerializer, EditMessageSerializer, GetMessageFileContentSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -333,18 +333,18 @@ class RenameChat(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request: Request):
-        chat_uuid = request.data.get("chat_uuid")
-        new_title = request.data.get("new_title")
+        user: User = request.user
 
-        if chat_uuid is None or new_title is None:
-            return Response({"error": "Both 'chat_uuid' and 'new_title' fields must be provided."}, status.HTTP_400_BAD_REQUEST)
+        qs = RenameChatSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        chat_uuid = qs.validated_data["chat_uuid"]
+        new_title = qs.validated_data["new_title"]
 
         try:
-            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-        except:
-            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
         chat.title = new_title
         chat.save()

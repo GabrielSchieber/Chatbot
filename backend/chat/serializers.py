@@ -61,6 +61,10 @@ class MessageSerializer(serializers.ModelSerializer):
 class ChatUUIDSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
 
+class RenameChatSerializer(serializers.Serializer):
+    chat_uuid = serializers.UUIDField()
+    new_title = serializers.CharField()
+
 class GetMessageFileContentSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
     message_file_id = serializers.IntegerField(min_value = 1)
