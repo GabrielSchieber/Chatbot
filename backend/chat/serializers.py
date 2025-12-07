@@ -58,6 +58,9 @@ class MessageSerializer(serializers.ModelSerializer):
         model = Message
         fields = ["id", "text", "is_from_user", "files", "model"]
 
+class GetMessagesSerializer(serializers.Serializer):
+    chat_uuid = serializers.UUIDField()
+
 class NewMessageSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField(required = False)
     text = serializers.CharField(default = "")

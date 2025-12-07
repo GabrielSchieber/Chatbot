@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, EditMessageSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, UserSerializer
+from .serializers import ChatSerializer, EditMessageSerializer, GetMessagesSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -483,18 +483,19 @@ class GetMessages(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
-        chat_uuid = request.query_params.get("chat_uuid")
-        if not chat_uuid:
-            return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
+        user: User = request.user
+
+        qs = GetMessagesSerializer(data = request.query_params)
+        qs.is_valid(raise_exception = True)
+
+        chat_uuid = qs.validated_data["chat_uuid"]
 
         try:
-            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-        except:
-            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
-        messages = Message.objects.filter(chat = chat).order_by("created_at").prefetch_related("files")
+        messages = chat.messages.order_by("created_at").prefetch_related("files")
         serializer = MessageSerializer(messages, many = True)
         return Response(serializer.data, status.HTTP_200_OK)
 
