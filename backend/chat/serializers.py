@@ -61,6 +61,15 @@ class MessageSerializer(serializers.ModelSerializer):
 class ChatUUIDSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
 
+class MeSerializer(serializers.Serializer):
+    language = serializers.ChoiceField(UserPreferences.available_languages(), required = False)
+    theme = serializers.ChoiceField(UserPreferences.available_themes(), required = False)
+    has_sidebar_open = serializers.BooleanField(required = False)
+    custom_instructions = serializers.CharField(max_length = 1000, required = False)
+    nickname = serializers.CharField(max_length = 50, required = False)
+    occupation = serializers.CharField(max_length = 50, required = False)
+    about = serializers.CharField(max_length = 1000, required = False)
+
 class DeleteAccountSerializer(serializers.Serializer):
     password = serializers.CharField()
     mfa_code = serializers.CharField(required = False)

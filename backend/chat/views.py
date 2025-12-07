@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, ChatUUIDSerializer, DeleteAccountSerializer, EditMessageSerializer, GetChatsSerializer, GetMessageFileContentSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, SearchChatsSerializer, UserSerializer
+from .serializers import ChatSerializer, ChatUUIDSerializer, DeleteAccountSerializer, EditMessageSerializer, GetChatsSerializer, GetMessageFileContentSerializer, MeSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, SearchChatsSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -147,55 +147,13 @@ class Me(APIView):
     def patch(self, request: Request):
         user: User = request.user
 
-        language = request.data.get("language")
-        if language is not None: 
-            if language not in [c[0] for c in UserPreferences._meta.get_field("language").choices]:
-                return Response({"error": "Invalid language."}, status.HTTP_400_BAD_REQUEST)
-            user.preferences.language = language
+        qs = MeSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
 
-        theme = request.data.get("theme")
-        if theme is not None: 
-            if theme not in [c[0] for c in UserPreferences._meta.get_field("theme").choices]:
-                return Response({"error": "Invalid theme."}, status.HTTP_400_BAD_REQUEST)
-            user.preferences.theme = theme
-
-        has_sidebar_open = request.data.get("has_sidebar_open")
-        if has_sidebar_open is not None:
-            if type(has_sidebar_open) != bool:
-                return Response({"error": "Invalid data type for 'has_sidebar_open' field."}, status.HTTP_400_BAD_REQUEST)
-            user.preferences.has_sidebar_open = has_sidebar_open
-
-        custom_instructions = request.data.get("custom_instructions")
-        if custom_instructions is not None:
-            if type(custom_instructions) != str:
-                return Response({"error": "Invalid data type for 'custom_instructions' field."}, status.HTTP_400_BAD_REQUEST)
-            if len(custom_instructions) > UserPreferences._meta.get_field("custom_instructions").max_length:
-                return Response({"error": "Invalid length for 'custom_instructions' field."}, status.HTTP_400_BAD_REQUEST)
-            user.preferences.custom_instructions = custom_instructions
-
-        nickname = request.data.get("nickname")
-        if nickname is not None:
-            if type(nickname) != str:
-                return Response({"error": "Invalid data type for 'nickname' field."}, status.HTTP_400_BAD_REQUEST)
-            if len(nickname) > UserPreferences._meta.get_field("nickname").max_length:
-                return Response({"error": "Invalid length for 'nickname' field."}, status.HTTP_400_BAD_REQUEST)
-            user.preferences.nickname = nickname
-
-        occupation = request.data.get("occupation")
-        if occupation is not None:
-            if type(occupation) != str:
-                return Response({"error": "Invalid data type for 'occupation' field."}, status.HTTP_400_BAD_REQUEST)
-            if len(occupation) > UserPreferences._meta.get_field("occupation").max_length:
-                return Response({"error": "Invalid length for 'occupation' field."}, status.HTTP_400_BAD_REQUEST)
-            user.preferences.occupation = occupation
-
-        about = request.data.get("about")
-        if about is not None:
-            if type(about) != str:
-                return Response({"error": "Invalid data type for 'about' field."}, status.HTTP_400_BAD_REQUEST)
-            if len(about) > UserPreferences._meta.get_field("about").max_length:
-                return Response({"error": "Invalid length for 'about' field."}, status.HTTP_400_BAD_REQUEST)
-            user.preferences.about = about
+        for key in ["language", "theme", "has_sidebar_open", "custom_instructions", "nickname", "occupation", "about"]:
+            value = qs.validated_data.get(key)
+            if value is not None:
+                setattr(user.preferences, key, value)
 
         user.preferences.save()
         return Response(status = status.HTTP_200_OK)

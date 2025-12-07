@@ -63,6 +63,14 @@ class UserPreferences(models.Model):
     occupation = models.CharField(max_length = 50)
     about = models.CharField(max_length = 1000)
 
+    @staticmethod
+    def available_languages() -> list[str]:
+        return [c[0] for c in UserPreferences._meta.get_field("language").choices]
+
+    @staticmethod
+    def available_themes() -> list[str]:
+        return [c[0] for c in UserPreferences._meta.get_field("theme").choices]
+
 class UserMFA(models.Model):
     user = models.OneToOneField(User, models.CASCADE, related_name = "mfa")
     secret = models.BinaryField(max_length = 32)
