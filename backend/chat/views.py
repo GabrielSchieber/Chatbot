@@ -1,5 +1,4 @@
 from django.contrib.auth import authenticate
-from django.core.validators import validate_email
 from django.db.models import Prefetch, Q
 from django.utils import timezone
 from rest_framework import status
@@ -218,7 +217,7 @@ class GetChat(APIView):
     def get(self, request: Request):
         user: User = request.user
 
-        qs = ChatUUIDSerializer(data = request.data)
+        qs = ChatUUIDSerializer(data = request.query_params)
         qs.is_valid(raise_exception = True)
 
         chat_uuid = qs.validated_data["chat_uuid"]

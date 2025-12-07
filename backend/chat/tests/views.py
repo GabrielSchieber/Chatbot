@@ -508,7 +508,7 @@ class GetChat(TestCase):
         self.login_user()
         response = self.client.get("/api/get-chat/")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "'chat_uuid' field must be provided."})
+        self.assertEqual(response.json(), {"chat_uuid": ["This field is required."]})
 
         chat1 = Chat.objects.create(user = user1, title = "Greetings")
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat1.uuid}")
@@ -552,7 +552,7 @@ class GetChat(TestCase):
         self.login_user("someone@example.com", "somepassword")
         response = self.client.get("/api/get-chat/")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "'chat_uuid' field must be provided."})
+        self.assertEqual(response.json(), {"chat_uuid": ["This field is required."]})
 
         chat5 = Chat.objects.create(user = user2, title = "Travel Advice")
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat5.uuid}")
