@@ -9,11 +9,12 @@ from rest_framework.renderers import BaseRenderer, JSONRenderer
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .serializers import ChatSerializer, ChatUUIDSerializer, DeleteAccountSerializer, EditMessageSerializer, GetChatsSerializer, GetMessageFileContentSerializer, MeSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, SearchChatsSerializer, UserSerializer
-from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
+from .models import Chat, Message, MessageFile, PreAuthToken, User
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
 
@@ -120,22 +121,21 @@ class Refresh(TokenRefreshView):
 
     def post(self, request: Request):
         refresh_token = request.COOKIES.get("refresh_token")
-        if not refresh_token:
-            return Response({"error": "'refresh_token' field must be provided."}, status.HTTP_401_UNAUTHORIZED)
+        if refresh_token is None:
+            return Response({"error": "Refresh token is required to be present in cookies."}, status.HTTP_400_BAD_REQUEST)
 
-        serializer = self.get_serializer(data = {"refresh": refresh_token})
+        qs = TokenRefreshSerializer(data = {"refresh": refresh_token})
         try:
-            serializer.is_valid(raise_exception = True)
-        except:
+            qs.is_valid(raise_exception = True)
+        except Exception:
             return Response({"error": "Invalid refresh token."}, status.HTTP_401_UNAUTHORIZED)
 
-        access = serializer.validated_data["access"]
-        new_refresh = serializer.validated_data.get("refresh")
+        access_token = qs.validated_data["access"]
+        refresh_token = qs.validated_data["refresh"]
 
         response = Response(status = status.HTTP_200_OK)
-        response.set_cookie("access_token", access, httponly = True, samesite = "Lax")
-        if new_refresh:
-            response.set_cookie("refresh_token", new_refresh, httponly = True, samesite = "Lax")
+        response.set_cookie("access_token", access_token, httponly = True, samesite = "Lax")
+        response.set_cookie("refresh_token", refresh_token, httponly = True, samesite = "Lax")
         return response
 
 class Me(APIView):

@@ -176,8 +176,8 @@ class Refresh(TestCase):
 
     def test_without_cookie(self):
         response = self.client.post("/api/refresh/")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"error": "'refresh_token' field must be provided."})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "Refresh token is required to be present in cookies."})
 
     def test_with_invalid_cookie(self):
         self.client.cookies["refresh_token"] = "not-a-real-token"
@@ -216,13 +216,15 @@ class Refresh(TestCase):
         original = str(refresh)
         tampered = original[:-1] + ("A" if original[-1] != "A" else "B")
 
-        self.client.cookies["refresh"] = tampered
+        self.client.cookies["refresh_token"] = tampered
 
         response = self.client.post("/api/refresh/")
         self.assertEqual(response.status_code, 401)
-        self.assertNotIn("access_token", self.client.cookies)
-        self.assertNotIn("refresh_token", self.client.cookies)
         self.assertEqual(len(response.cookies.items()), 0)
+
+        self.assertNotIn("access_token", self.client.cookies)
+        self.assertIn("refresh_token", self.client.cookies)
+        self.assertEqual(len(self.client.cookies.items()), 1)
 
     def test_with_login(self):
         _, response = self.create_and_login_user()
