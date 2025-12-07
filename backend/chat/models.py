@@ -137,6 +137,10 @@ class Message(models.Model):
 
     files: BaseManager[MessageFile]
 
+    @staticmethod
+    def available_models() -> list[str]:
+        return [c[0] for c in Message._meta.get_field("model").choices]
+
     def __str__(self):
         return ""
 
@@ -146,3 +150,11 @@ class MessageFile(models.Model):
     content = models.BinaryField(max_length = 5_000_000)
     content_type = models.CharField(max_length = 100)
     created_at = models.DateTimeField(auto_now_add = True)
+
+    @staticmethod
+    def max_content_size() -> int:
+        return MessageFile._meta.get_field("content").max_length
+
+    @staticmethod
+    def max_content_size_str() -> str:
+        return "5 MB"
