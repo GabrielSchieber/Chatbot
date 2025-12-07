@@ -1530,26 +1530,26 @@ class RegenerateMessage(TestCase):
         self.assertEqual(response.json(), {"error": "A chat is already pending."})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
-    def test_requires_chat_uuid(self, _):
+    def test_requires_chat_uuid_and_index(self, _):
         self.create_and_login_user()
         response = self.client.patch("/api/regenerate-message/")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "Invalid data type for 'chat_uuid' field."})
+        self.assertEqual(response.json(), {"chat_uuid": ["This field is required."], "index": ["This field is required."]})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_requires_valid_chat_uuid(self, _):
         self.create_and_login_user()
         for chat_uuid in ["", "NOT-A-UUID", "123", "abdc5678"]:
-            body = encode_multipart(BOUNDARY, {"chat_uuid": chat_uuid})
+            body = encode_multipart(BOUNDARY, {"chat_uuid": chat_uuid, "index": 0})
             content_type = f"multipart/form-data; boundary={BOUNDARY}"
             response = self.client.patch("/api/regenerate-message/", body, content_type)
             self.assertEqual(response.status_code, 400)
-            self.assertEqual(response.json(), {"error": "Invalid chat UUID."})
+            self.assertEqual(response.json(), {"chat_uuid": ["Must be a valid UUID."]})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_chat_was_not_found(self, _):
         self.create_and_login_user()
-        body = encode_multipart(BOUNDARY, {"chat_uuid": str(uuid.uuid4())})
+        body = encode_multipart(BOUNDARY, {"chat_uuid": str(uuid.uuid4()), "index": 0})
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/regenerate-message/", body, content_type)
         self.assertEqual(response.status_code, 404)
@@ -1563,7 +1563,7 @@ class RegenerateMessage(TestCase):
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/regenerate-message/", body, content_type)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "Index field must be provided."})
+        self.assertEqual(response.json(), {"index": ["This field is required."]})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_requires_valid_model(self, _):
@@ -1575,4 +1575,4 @@ class RegenerateMessage(TestCase):
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/regenerate-message/", body, content_type)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "Invalid model."})
+        self.assertEqual(response.json(), {"model": ['"INVALID" is not a valid choice.']})

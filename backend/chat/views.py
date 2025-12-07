@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, EditMessageSerializer, MessageSerializer, NewMessageSerializer, UserSerializer
+from .serializers import ChatSerializer, EditMessageSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -608,33 +608,24 @@ class RegenerateMessage(APIView):
     parser_classes = [MultiPartParser]
 
     def patch(self, request: Request):
-        if is_any_user_chat_pending(request.user):
+        user: User = request.user
+
+        if is_any_user_chat_pending(user):
             return Response({"error": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
 
-        chat_uuid = request.data.get("chat_uuid")
-        if type(chat_uuid) == str:
-            try:
-                chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            except Chat.DoesNotExist:
-                return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-            except:
-                return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({"error": "Invalid data type for 'chat_uuid' field."}, status.HTTP_400_BAD_REQUEST)
+        qs = RegenerateMessageSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
 
-        index = request.data.get("index")
-        if not index:
-            return Response({"error": "Index field must be provided."}, status.HTTP_400_BAD_REQUEST)
-        index = int(index)
+        chat_uuid = qs.validated_data["chat_uuid"]
+        index = qs.validated_data["index"]
+        model = qs.validated_data["model"]
 
-        model = request.data.get("model", "SmolLM2-135M")
-        if type(model) != str:
-            return Response({"error": "Invalid data type for 'model' field."}, status.HTTP_400_BAD_REQUEST)
-        if model not in [c[0] for c in Message._meta.get_field("model").choices]:
-            return Response({"error": "Invalid model."}, status.HTTP_400_BAD_REQUEST)
+        try:
+            chat = user.chats.get(uuid = chat_uuid)
+        except Chat.DoesNotExist:
+            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
-        bot_message = Message.objects.filter(chat = chat).order_by("created_at")[index]
-
+        bot_message: Message = chat.messages.order_by("created_at")[index]
         bot_message.text = ""
         bot_message.model = model
         bot_message.save()
