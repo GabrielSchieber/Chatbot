@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, MessageSerializer, UserSerializer
+from .serializers import ChatSerializer, MessageSerializer, NewMessageSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -505,57 +505,38 @@ class NewMessage(APIView):
     parser_classes = [MultiPartParser]
 
     def post(self, request: Request):
-        if is_any_user_chat_pending(request.user):
+        user: User = request.user
+
+        if is_any_user_chat_pending(user):
             return Response({"error": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
 
-        chat_uuid = request.data.get("chat_uuid", "")
-        if type(chat_uuid) == str:
-            if chat_uuid == "":
-                chat = Chat.objects.create(user = request.user, title = f"Chat {Chat.objects.filter(user = request.user).count() + 1}")
-            else:
-                try:
-                    chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-                except Chat.DoesNotExist:
-                    return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-                except:
-                    return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
+        qs = NewMessageSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        chat_uuid = qs.validated_data.get("chat_uuid")
+        text = qs.validated_data["text"]
+        model = qs.validated_data["model"]
+        files = qs.validated_data["files"]
+
+        if chat_uuid is None:
+            chat = user.chats.create(title = f"Chat {user.chats.count() + 1}")
         else:
-            return Response({"error": "Invalid data type for 'chat_uuid' field."}, status.HTTP_400_BAD_REQUEST)
+            try:
+                chat = user.chats.get(uuid = chat_uuid)
+            except Chat.DoesNotExist:
+                return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
-        text = request.data.get("text", "")
-        if type(text) != str:
-            return Response({"error": "Invalid data type for 'text' field."}, status.HTTP_400_BAD_REQUEST)
-
-        model = request.data.get("model", "SmolLM2-135M")
-        if type(model) != str:
-            return Response({"error": "Invalid data type for 'model' field."}, status.HTTP_400_BAD_REQUEST)
-        if model not in [c[0] for c in Message._meta.get_field("model").choices]:
-            return Response({"error": "Invalid model."}, status.HTTP_400_BAD_REQUEST)
-
-        files = request.FILES.getlist("files")
-        if type(files) != list:
-            return Response({"error": "Invalid data type for 'files'."}, status.HTTP_400_BAD_REQUEST)
-
-        if len(files) > 10:
-            return Response({"error": "Total number of files exceeds the limit of 10."}, status.HTTP_400_BAD_REQUEST)
-
-        total_size = 0
-        for file in files:
-            total_size += file.size
-        if total_size > 5_000_000:
-            return Response({"error": "Total file size exceeds limit of 5 MB."}, status.HTTP_400_BAD_REQUEST)
-
-        user_message = Message.objects.create(chat = chat, text = text, is_from_user = True)
+        user_message = chat.messages.create(text = text, is_from_user = True)
         if len(files) > 0:
-            MessageFile.objects.bulk_create(
+            user_message.files.bulk_create(
                 [MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type) for file in files]
             )
-        bot_message = Message.objects.create(chat = chat, text = "", is_from_user = False, model = model)
+        bot_message = chat.messages.create(text = "", is_from_user = False, model = model)
 
         chat.pending_message = bot_message
         chat.save()
 
-        generate_pending_message_in_chat(chat, chat_uuid == "")
+        generate_pending_message_in_chat(chat, chat_uuid == None)
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, status.HTTP_200_OK)

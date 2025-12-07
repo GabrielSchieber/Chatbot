@@ -1247,10 +1247,10 @@ class NewMessage(TestCase):
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     @patch("chat.views.generate_pending_message_in_chat")
-    def test_empty_chat_uuid_creates_new_chat(self, mock_task, _):
+    def test_creates_new_chat_without_chat_uuid(self, mock_task, _):
         self.create_and_login_user()
 
-        response = self.client.post("/api/new-message/", {"chat_uuid": "", "text": "Hello!"}, format = "multipart")
+        response = self.client.post("/api/new-message/", {"text": "Hello!"}, format = "multipart")
         self.assertEqual(response.status_code, 200)
 
         self.assertEqual(Chat.objects.count(), 1)
@@ -1302,14 +1302,14 @@ class NewMessage(TestCase):
         self.create_and_login_user()
         response = self.client.post("/api/new-message/", {"chat_uuid": "NOT-A-UUID", "text": "hello"}, format = "multipart")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "Invalid chat UUID."})
+        self.assertEqual(response.json(), {"chat_uuid": ["Must be a valid UUID."]})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_invalid_model(self, _):
         self.create_and_login_user()
         response = self.client.post("/api/new-message/", {"chat_uuid": "", "text": "hello", "model": "INVALID"}, format = "multipart")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "Invalid model."})
+        self.assertEqual(response.json(), {"model": ['"INVALID" is not a valid choice.']})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_too_many_files(self, _):
@@ -1318,7 +1318,7 @@ class NewMessage(TestCase):
         data = {"chat_uuid": "", "text": "Describe the files.", "model": "SmolLM2-135M", "files": files}
         response = self.client.post("/api/new-message/", data, format = "multipart")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "Total number of files exceeds the limit of 10."})
+        self.assertEqual(response.json(), {"files": ["Ensure this field has no more than 10 elements."]})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_files_too_large(self, _):
@@ -1328,7 +1328,7 @@ class NewMessage(TestCase):
             data = {"chat_uuid": "", "text": "Describe the file.", "model": "SmolLM2-135M", "files": files}
             response = self.client.post("/api/new-message/", data, format = "multipart")
             self.assertEqual(response.status_code, 400)
-            self.assertEqual(response.json(), {"error": "Total file size exceeds limit of 5 MB."})
+            self.assertEqual(response.json(), {"files": ["Total file size exceeds limit of 5 MB."]})
 
         test_sizes = [
             [5_000_001],

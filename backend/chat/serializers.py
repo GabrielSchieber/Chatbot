@@ -57,3 +57,14 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ["id", "text", "is_from_user", "files", "model"]
+
+class NewMessageSerializer(serializers.Serializer):
+    chat_uuid = serializers.UUIDField(required = False)
+    text = serializers.CharField(default = "")
+    model = serializers.ChoiceField(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"], default = "SmolLM2-135M")
+    files = serializers.ListField(child = serializers.FileField(max_length = 5_000_000), max_length = 10, default = [])
+
+    def validate_files(self, value: serializers.ListField):
+        if sum([v.size for v in value]) > 5_000_000:
+            raise serializers.ValidationError("Total file size exceeds limit of 5 MB.")
+        return value
