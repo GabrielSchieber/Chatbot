@@ -58,15 +58,12 @@ class MessageSerializer(serializers.ModelSerializer):
         model = Message
         fields = ["id", "text", "is_from_user", "files", "model"]
 
-class DeleteChatSerializer(serializers.Serializer):
+class ChatUUIDSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
 
 class GetMessageFileContentSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
     message_file_id = serializers.IntegerField(min_value = 1)
-
-class GetMessagesSerializer(serializers.Serializer):
-    chat_uuid = serializers.UUIDField()
 
 class NewMessageSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField(required = False)

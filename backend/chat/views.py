@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, DeleteChatSerializer, EditMessageSerializer, GetMessageFileContentSerializer, GetMessagesSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, UserSerializer
+from .serializers import ChatSerializer, ChatUUIDSerializer, EditMessageSerializer, GetMessageFileContentSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -268,19 +268,20 @@ class GetChat(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
-        chat_uuid = request.query_params.get("chat_uuid")
+        user: User = request.user
 
-        if chat_uuid is None:
-            return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
+        qs = ChatUUIDSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        chat_uuid = qs.validated_data["chat_uuid"]
 
         try:
-            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-        except:
-            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
-        return Response(ChatSerializer(chat, many = False).data, status.HTTP_200_OK)
+        serializer = ChatSerializer(chat, many = False)
+        return Response(serializer.data, status.HTTP_200_OK)
 
 class GetChats(APIView):
     permission_classes = [IsAuthenticated]
@@ -353,17 +354,17 @@ class ArchiveChat(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request: Request):
-        chat_uuid = request.data.get("chat_uuid")
+        user: User = request.user
 
-        if chat_uuid is None:
-            return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
+        qs = ChatUUIDSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        chat_uuid = qs.validated_data["chat_uuid"]
 
         try:
-            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-        except:
-            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
         stop_pending_chat(chat)
         chat.is_archived = True
@@ -374,17 +375,17 @@ class UnarchiveChat(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request: Request):
-        chat_uuid = request.data.get("chat_uuid")
+        user: User = request.user
 
-        if chat_uuid is None:
-            return Response({"error": "'chat_uuid' field must be provided."}, status.HTTP_400_BAD_REQUEST)
+        qs = ChatUUIDSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        chat_uuid = qs.validated_data["chat_uuid"]
 
         try:
-            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+            chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
             return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-        except:
-            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
 
         stop_pending_chat(chat)
         chat.is_archived = False
@@ -397,7 +398,7 @@ class DeleteChat(APIView):
     def delete(self, request: Request):
         user: User = request.user
 
-        qs = DeleteChatSerializer(data = request.data)
+        qs = ChatUUIDSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
 
         chat_uuid = qs.validated_data["chat_uuid"]
@@ -482,7 +483,7 @@ class GetMessages(APIView):
     def get(self, request: Request):
         user: User = request.user
 
-        qs = GetMessagesSerializer(data = request.query_params)
+        qs = ChatUUIDSerializer(data = request.query_params)
         qs.is_valid(raise_exception = True)
 
         chat_uuid = qs.validated_data["chat_uuid"]
