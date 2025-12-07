@@ -51,7 +51,7 @@ class Signup(TestCase):
         def test(email: str):
             response = self.client.post("/api/signup/", {"email": email, "password": "testpassword"})
             self.assertEqual(response.status_code, 400)
-            self.assertEqual(response.json()["error"], "Email address is invalid.")
+            self.assertEqual(response.json(), {"email": ["Enter a valid email address."]})
             self.assertEqual(User.objects.all().count(), 0)
 
         test("test")
@@ -63,16 +63,16 @@ class Signup(TestCase):
         test("@.com")
 
     def test_with_invalid_password(self):
-        def test(password: str):
+        def test(password: str, excected_json):
             response = self.client.post("/api/signup/", {"email": "test@example.com", "password": password})
             self.assertEqual(response.status_code, 400)
-            self.assertEqual(response.json()["error"], "Password must have between 12 and 1000 characters.")
+            self.assertEqual(response.json(), excected_json)
             self.assertEqual(User.objects.all().count(), 0)
 
-        test("")
-        test("test")
-        test("onepassword")
-        test("".join(["password123" for _ in range(91)]))
+        test("", {"password": ["This field may not be blank."]})
+        test("test", {"password": ["Ensure this field has at least 12 characters."]})
+        test("onepassword", {"password": ["Ensure this field has at least 12 characters."]})
+        test("".join(["password123" for _ in range(91)]), {"password": ["Ensure this field has no more than 1000 characters."]})
 
 class Login(TestCase):
     def test(self):

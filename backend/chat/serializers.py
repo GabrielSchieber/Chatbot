@@ -61,6 +61,14 @@ class MessageSerializer(serializers.ModelSerializer):
 class ChatUUIDSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
 
+class SignupSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(min_length = 12, max_length = 1000)
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
 class VerifyMFASerializer(serializers.Serializer):
     token = serializers.UUIDField()
     code = serializers.CharField()

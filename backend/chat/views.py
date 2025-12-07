@@ -13,7 +13,7 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, ChatUUIDSerializer, DeleteAccountSerializer, EditMessageSerializer, GetChatsSerializer, GetMessageFileContentSerializer, MeSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, SearchChatsSerializer, UserSerializer, VerifyMFASerializer
+from .serializers import ChatSerializer, ChatUUIDSerializer, DeleteAccountSerializer, EditMessageSerializer, GetChatsSerializer, GetMessageFileContentSerializer, LoginSerializer, MeSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, SearchChatsSerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -23,22 +23,14 @@ class Signup(APIView):
     throttle_classes = [SignupRateThrottle]
 
     def post(self, request: Request):
-        email = request.data.get("email")
-        password = request.data.get("password")
+        qs = SignupSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
 
-        if email is None or password is None:
-            return Response({"error": "Both 'email' and 'password' fields must be provided."}, status.HTTP_400_BAD_REQUEST)
-
-        try:
-            validate_email(email)
-        except:
-            return Response({"error": "Email address is invalid."}, status.HTTP_400_BAD_REQUEST)
+        email = qs.validated_data["email"]
+        password = qs.validated_data["password"]
 
         if User.objects.filter(email = email).exists():
             return Response({"error": "signup.emailError"}, status.HTTP_400_BAD_REQUEST)
-
-        if len(password) < 12 or len(password) > 1000:
-            return Response({"error": "Password must have between 12 and 1000 characters."}, status.HTTP_400_BAD_REQUEST)
 
         User.objects.create_user(email = email, password = password)
 
@@ -49,11 +41,11 @@ class Login(APIView):
     throttle_classes = [IPEmailRateThrottle]
 
     def post(self, request: Request):
-        email = request.data.get("email")
-        password = request.data.get("password")
+        qs = LoginSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
 
-        if email is None or password is None:
-            return Response({"error": "Both 'email' and 'password' fields must be provided."}, status.HTTP_400_BAD_REQUEST)
+        email = qs.validated_data["email"]
+        password = qs.validated_data["password"]
 
         user: User | None = authenticate(request, email = email, password = password)
         if user is None:
