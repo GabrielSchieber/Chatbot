@@ -61,6 +61,10 @@ class MessageSerializer(serializers.ModelSerializer):
 class ChatUUIDSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
 
+class DeleteAccountSerializer(serializers.Serializer):
+    password = serializers.CharField()
+    mfa_code = serializers.CharField(required = False)
+
 class GetChatsSerializer(serializers.Serializer):
     offset = serializers.IntegerField(min_value = 0, default = 0)
     limit = serializers.IntegerField(min_value = 1, default = 20)

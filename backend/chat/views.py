@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, ChatUUIDSerializer, EditMessageSerializer, GetChatsSerializer, GetMessageFileContentSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, SearchChatsSerializer, UserSerializer
+from .serializers import ChatSerializer, ChatUUIDSerializer, DeleteAccountSerializer, EditMessageSerializer, GetChatsSerializer, GetMessageFileContentSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, SearchChatsSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -243,11 +243,11 @@ class DeleteAccount(APIView):
     def delete(self, request: Request):
         user: User = request.user
 
-        password = request.data.get("password")
-        mfa_code = request.data.get("mfa_code")
+        qs = DeleteAccountSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
 
-        if password is None:
-            return Response({"error": "'password' field must be provided."}, status.HTTP_400_BAD_REQUEST)
+        password = qs.validated_data["password"]
+        mfa_code = qs.validated_data.get("mfa_code")
 
         if not user.check_password(password):
             return Response({"error": "mfa.messages.errorInvalidPassword"}, status.HTTP_403_FORBIDDEN)
