@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, ChatUUIDSerializer, EditMessageSerializer, GetMessageFileContentSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, UserSerializer
+from .serializers import ChatSerializer, ChatUUIDSerializer, EditMessageSerializer, GetMessageFileContentSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, SearchChatsSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -304,15 +304,17 @@ class SearchChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
-        search = request.query_params.get("search", "")
-        offset = int(request.query_params.get("offset", 0))
-        limit = int(request.query_params.get("limit", 20))
+        user: User = request.user
 
-        matched_messages = Message.objects.filter(chat__user = request.user, text__icontains = search).order_by("created_at")
+        qs = SearchChatsSerializer(data = request.query_params)
+        qs.is_valid(raise_exception = True)
 
-        chats = Chat.objects.filter(user = request.user).filter(
-            Q(title__icontains = search) | Q(messages__text__icontains = search)
-        ).distinct().order_by("-created_at")
+        search = qs.validated_data["search"]
+        offset = qs.validated_data["offset"]
+        limit = qs.validated_data["limit"]
+
+        matched_messages = Message.objects.filter(chat__user = user, text__icontains = search).order_by("created_at")
+        chats = user.chats.filter(Q(title__icontains = search) | Q(messages__text__icontains = search)).distinct().order_by("-created_at")
 
         total = chats.count()
         chats = chats[offset:offset + limit]
