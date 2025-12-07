@@ -61,6 +61,10 @@ class MessageSerializer(serializers.ModelSerializer):
 class ChatUUIDSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
 
+class VerifyMFASerializer(serializers.Serializer):
+    token = serializers.UUIDField()
+    code = serializers.CharField()
+
 class MeSerializer(serializers.Serializer):
     language = serializers.ChoiceField(UserPreferences.available_languages(), required = False)
     theme = serializers.ChoiceField(UserPreferences.available_themes(), required = False)
