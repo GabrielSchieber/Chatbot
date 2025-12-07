@@ -1,6 +1,12 @@
 {
     "python.testing.autoTestDiscoverOnSaveEnabled": true,
     "python.testing.cwd": "${workspaceFolder}/backend",
+    "python.testing.pytestArgs": [
+        "-n",
+        "auto",
+        "--maxfail=1",
+        "."
+    ],
     "python.testing.pytestEnabled": true,
     "python.testing.unittestEnabled": false
 }

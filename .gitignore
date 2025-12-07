@@ -8,5 +8,7 @@ dist/
 node_modules/
 test-results/
 
+.coverage
+.coverage.*
 .env
 .env.*
