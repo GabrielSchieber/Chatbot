@@ -1,5 +1,3 @@
-import json
-
 from django.contrib.auth import authenticate
 from django.core.validators import validate_email
 from django.db.models import Prefetch, Q
@@ -14,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, MessageSerializer, NewMessageSerializer, UserSerializer
+from .serializers import ChatSerializer, EditMessageSerializer, MessageSerializer, NewMessageSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -546,75 +544,53 @@ class EditMessage(APIView):
     parser_classes = [MultiPartParser]
 
     def patch(self, request: Request):
-        if is_any_user_chat_pending(request.user):
+        user: User = request.user
+
+        if is_any_user_chat_pending(user):
             return Response({"error": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
 
-        chat_uuid = request.data.get("chat_uuid")
-        if type(chat_uuid) == str:
-            try:
-                chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
-            except Chat.DoesNotExist:
-                return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
-            except:
-                return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({"error": "Invalid data type for 'chat_uuid' field."}, status.HTTP_400_BAD_REQUEST)
+        qs = EditMessageSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
 
-        text = request.data.get("text", "")
-        if type(text) != str:
-            return Response({"error": "Invalid data type for 'text' field."}, status.HTTP_400_BAD_REQUEST)
+        chat_uuid = qs.validated_data["chat_uuid"]
+        index = qs.validated_data["index"]
+        text = qs.validated_data["text"]
+        model = qs.validated_data["model"]
+        added_files = qs.validated_data["added_files"]
+        removed_file_ids = qs.validated_data["removed_file_ids"]
 
-        index = request.data.get("index")
-        if not index:
-            return Response({"error": "Index field must be provided."}, status.HTTP_400_BAD_REQUEST)
-        index = int(index)
+        try:
+            chat = user.chats.get(uuid = chat_uuid)
+        except Chat.DoesNotExist:
+            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
-        model = request.data.get("model", "SmolLM2-135M")
-        if type(model) != str:
-            return Response({"error": "Invalid data type for 'model' field."}, status.HTTP_400_BAD_REQUEST)
-        if model not in [c[0] for c in Message._meta.get_field("model").choices]:
-            return Response({"error": "Invalid model."}, status.HTTP_400_BAD_REQUEST)
-
-        added_files = request.FILES.getlist("added_files")
-        if type(added_files) != list:
-            return Response({"error": "Invalid data type for 'added_files' field."}, status.HTTP_400_BAD_REQUEST)
-
-        removed_file_ids = json.loads(request.data.get("removed_file_ids", "[]"))
-        if type(removed_file_ids) != list:
-            return Response({"error": "Invalid data type for 'removed_files_ids' field."}, status.HTTP_400_BAD_REQUEST)
-
-        messages = Message.objects.filter(chat = chat).order_by("created_at")
-        user_message = messages[index]
+        messages = chat.messages.order_by("created_at")
+        user_message: Message = messages[index]
 
         removed_files: list[MessageFile] = []
         for removed_file_id in removed_file_ids:
-            removed_message_file = MessageFile.objects.filter(message = user_message, id = removed_file_id).first()
+            removed_message_file = user_message.files.filter(id = removed_file_id).first()
             if removed_message_file:
                 removed_files.append(removed_message_file)
 
         if user_message.files.count() + len(added_files) - len(removed_files) > 10:
             return Response({"error": "Total number of files exceeds the limit of 10."}, status.HTTP_400_BAD_REQUEST)
 
-        total_size = 0
-        for file in user_message.files.all():
-            total_size += len(file.content)
-        for file in added_files:
-            total_size += file.size
-        for file in removed_files:
-            total_size -= len(file.content)
+        total_size = sum([len(f.content) for f in user_message.files.all()])
+        total_size += sum([f.size for f in added_files])
+        total_size -= sum([len(f.content) for f in removed_files])
         if total_size > 5_000_000:
             return Response({"error": "Total file size exceeds limit of 5 MB."}, status.HTTP_400_BAD_REQUEST)
-
-        bot_message = messages[index + 1]
 
         user_message.text = text
         for removed_file in removed_files:
             removed_file.delete()
-        MessageFile.objects.bulk_create(
-            [MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type) for file in added_files]
+        user_message.files.bulk_create(
+            [MessageFile(name = file.name, content = file.read(), content_type = file.content_type) for file in added_files]
         )
         user_message.save()
 
+        bot_message: Message = messages[index + 1]
         bot_message.text = ""
         bot_message.model = model
         bot_message.save()

@@ -68,3 +68,11 @@ class NewMessageSerializer(serializers.Serializer):
         if sum([v.size for v in value]) > MessageFile.max_content_size():
             raise serializers.ValidationError(f"Total file size exceeds limit of {MessageFile.max_content_size_str()}.")
         return value
+
+class EditMessageSerializer(serializers.Serializer):
+    chat_uuid = serializers.UUIDField()
+    index = serializers.IntegerField()
+    text = serializers.CharField(default = "")
+    model = serializers.ChoiceField(Message.available_models(), default = "SmolLM2-135M")
+    added_files = serializers.ListField(child = serializers.FileField(max_length = MessageFile.max_content_size()), max_length = 10, default = [])
+    removed_file_ids = serializers.ListField(child = serializers.IntegerField(min_value = 1), default = [])

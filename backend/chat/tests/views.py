@@ -1355,7 +1355,7 @@ class EditMessage(TestCase):
         user_message = Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
         bot_message = Message.objects.create(chat = chat, text = "Hello! How can I help you today?", is_from_user = False)
 
-        data = {"chat_uuid": str(chat.uuid), "text": "Hello! How are you?", "index": "0", "removed_file_ids": "[]"}
+        data = {"chat_uuid": str(chat.uuid), "index": 0, "text": "Hi! How are you?"}
 
         body = encode_multipart(BOUNDARY, data)
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
@@ -1368,7 +1368,7 @@ class EditMessage(TestCase):
         bot_message.refresh_from_db()
         self.assertEqual(chat.title, "Greetings")
         self.assertEqual(chat.pending_message, bot_message)
-        self.assertEqual(user_message.text, "Hello! How are you?")
+        self.assertEqual(user_message.text, "Hi! How are you?")
         self.assertEqual(bot_message.text, "")
         self.assertEqual(Chat.objects.count(), 1)
         self.assertEqual(Message.objects.count(), 2)
@@ -1390,26 +1390,26 @@ class EditMessage(TestCase):
         self.assertEqual(response.json(), {"error": "A chat is already pending."})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
-    def test_requires_chat_uuid(self, _):
+    def test_requires_chat_uuid_and_index(self, _):
         self.create_and_login_user()
         response = self.client.patch("/api/edit-message/")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "Invalid data type for 'chat_uuid' field."})
+        self.assertEqual(response.json(), {"chat_uuid": ["This field is required."], "index": ["This field is required."]})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_requires_valid_chat_uuid(self, _):
         self.create_and_login_user()
         for chat_uuid in ["", "NOT-A-UUID", "123", "abdc5678"]:
-            body = encode_multipart(BOUNDARY, {"chat_uuid": chat_uuid})
+            body = encode_multipart(BOUNDARY, {"chat_uuid": chat_uuid, "index": 0})
             content_type = f"multipart/form-data; boundary={BOUNDARY}"
             response = self.client.patch("/api/edit-message/", body, content_type)
             self.assertEqual(response.status_code, 400)
-            self.assertEqual(response.json(), {"error": "Invalid chat UUID."})
+            self.assertEqual(response.json(), {"chat_uuid": ["Must be a valid UUID."]})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_chat_was_not_found(self, _):
         self.create_and_login_user()
-        body = encode_multipart(BOUNDARY, {"chat_uuid": str(uuid.uuid4())})
+        body = encode_multipart(BOUNDARY, {"chat_uuid": str(uuid.uuid4()), "index": 0})
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/edit-message/", body, content_type)
         self.assertEqual(response.status_code, 404)
@@ -1423,7 +1423,7 @@ class EditMessage(TestCase):
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/edit-message/", body, content_type)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "Index field must be provided."})
+        self.assertEqual(response.json(), {"index": ["This field is required."]})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_requires_valid_model(self, _):
@@ -1434,7 +1434,7 @@ class EditMessage(TestCase):
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/edit-message/", body, content_type)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "Invalid model."})
+        self.assertEqual(response.json(), {"model": ['"INVALID" is not a valid choice.']})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_too_many_files(self, _):
