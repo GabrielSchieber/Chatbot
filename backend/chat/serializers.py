@@ -61,6 +61,12 @@ class MessageSerializer(serializers.ModelSerializer):
 class ChatUUIDSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
 
+class GetChatsSerializer(serializers.Serializer):
+    offset = serializers.IntegerField(min_value = 0, default = 0)
+    limit = serializers.IntegerField(min_value = 1, default = 20)
+    pending = serializers.BooleanField(default = False)
+    archived = serializers.BooleanField(default = False)
+
 class SearchChatsSerializer(serializers.Serializer):
     search = serializers.CharField(default = "")
     offset = serializers.IntegerField(min_value = 0, default = 0)

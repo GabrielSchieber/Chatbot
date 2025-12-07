@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import ChatSerializer, ChatUUIDSerializer, EditMessageSerializer, GetMessageFileContentSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, SearchChatsSerializer, UserSerializer
+from .serializers import ChatSerializer, ChatUUIDSerializer, EditMessageSerializer, GetChatsSerializer, GetMessageFileContentSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, SearchChatsSerializer, UserSerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User, UserPreferences
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
@@ -287,12 +287,17 @@ class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
-        offset = int(request.query_params.get("offset", 0))
-        limit = int(request.query_params.get("limit", 20))
-        pending = request.query_params.get("pending", False) == "true"
-        archived = request.query_params.get("archived", False) == "true"
+        user: User = request.user
 
-        chats = Chat.objects.filter(user = request.user, is_archived = archived)
+        qs = GetChatsSerializer(data = request.query_params)
+        qs.is_valid(raise_exception = True)
+
+        offset = qs.validated_data["offset"]
+        limit = qs.validated_data["limit"]
+        pending = qs.validated_data["pending"]
+        archived = qs.validated_data["archived"]
+
+        chats = user.chats.filter(is_archived = archived)
         if pending:
             chats = chats.exclude(pending_message = None)
         chats = chats.order_by("-created_at")
