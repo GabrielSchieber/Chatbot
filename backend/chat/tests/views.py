@@ -1083,18 +1083,28 @@ class StopPendingChats(TestCase):
 
 class GetMessageFileContent(TestCase):
     def test(self):
-        response = self.client.get("/api/get-message-file-content/")
+        response = self.client.get("/api/get-message-file-content/", **{"HTTP_ACCEPT": "application/json"})
         self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
 
-        user = create_user()
-        response = self.client.get("/api/get-message-file-content/")
-        self.assertEqual(response.status_code, 401)
-
-        self.login_user()
-        response = self.client.get("/api/get-message-file-content/")
+        user, _ = self.create_and_login_user()
+        response = self.client.get("/api/get-message-file-content/", **{"HTTP_ACCEPT": "application/json"})
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"chat_uuid": ["This field is required."], "message_file_id": ["This field is required."]})
+
+        response = self.client.get("/api/get-message-file-content/?chat_uuid=123", **{"HTTP_ACCEPT": "application/json"})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"chat_uuid": ["Must be a valid UUID."], "message_file_id": ["This field is required."]})
+
+        response = self.client.get(f"/api/get-message-file-content/?chat_uuid={uuid.uuid4()}&message_file_id=1", **{"HTTP_ACCEPT": "application/json"})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"error": "Chat was not found."})
 
         chat1 = Chat.objects.create(user = user, title = "File Analysis")
+        response = self.client.get(f"/api/get-message-file-content/?chat_uuid={chat1.uuid}&message_file_id=1", **{"HTTP_ACCEPT": "application/json"})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"error": "Message file was not found."})
+
         message1 = Message.objects.create(chat = chat1, text = "Describe the file.", is_from_user = True)
         message_file1 = MessageFile.objects.create(
             message = message1,

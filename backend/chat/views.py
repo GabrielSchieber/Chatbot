@@ -5,7 +5,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.renderers import BaseRenderer
+from rest_framework.renderers import BaseRenderer, JSONRenderer
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
@@ -453,7 +453,7 @@ class BinaryFileRenderer(BaseRenderer):
 
 class GetMessageFileContent(APIView):
     permission_classes = [IsAuthenticated]
-    renderer_classes = [BinaryFileRenderer]
+    renderer_classes = [BinaryFileRenderer, JSONRenderer]
 
     def get(self, request: Request):
         user: User = request.user
