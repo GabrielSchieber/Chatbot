@@ -84,7 +84,7 @@ class MeSerializer(serializers.Serializer):
 
 class DeleteAccountSerializer(serializers.Serializer):
     password = serializers.CharField()
-    mfa_code = serializers.CharField(required = False)
+    mfa_code = serializers.CharField(required = False, allow_blank = True)
 
 class GetChatsSerializer(serializers.Serializer):
     offset = serializers.IntegerField(min_value = 0, default = 0)
