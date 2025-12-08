@@ -513,6 +513,16 @@ class DisableMFA(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"error": "MFA is not enabled."})
 
+    def test_requires_valid_code(self):
+        user, _ = self.create_and_login_user()
+        user.mfa.setup()
+        user.mfa.enable()
+
+        for code in ["", "1", "-1", "12345", "-12345", "1234567", "-1234567", "a", "abcdef"]:
+            response = self.client.post("/api/disable-mfa/", {"code": code})
+            self.assertEqual(response.status_code, 403)
+            self.assertEqual(response.json(), {"error": "mfa.messages.errorInvalidCode"})
+
 class DeleteAccount(TestCase):
    def test(self):
         response = self.client.delete("/api/delete-account/")
