@@ -159,6 +159,10 @@ class EnableMFA(APIView):
 
     def post(self, request: Request):
         user: User = request.user
+
+        if user.mfa.is_enabled:
+            return Response({"error": "MFA is already enabled for the current user."}, status.HTTP_400_BAD_REQUEST)
+
         code = request.data.get("code")
 
         if not user.mfa.verify(code):
