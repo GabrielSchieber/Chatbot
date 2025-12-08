@@ -1113,53 +1113,62 @@ class ArchiveChat(TestCase):
 
 class UnarchiveChat(TestCase):
     def test(self):
-        content_type = "application/json"
+        def unarchive(chat: Chat):
+            response = self.client.patch("/api/unarchive-chat/", {"chat_uuid": str(chat.uuid)}, "application/json")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.content, b"")
 
-        response = self.client.patch("/api/unarchive-chat/")
-        self.assertEqual(response.status_code, 401)
-
-        response = self.client.patch("/api/unarchive-chat/", {"chat_uuid": "test-uuid"})
-        self.assertEqual(response.status_code, 401)
-
-        user1 = create_user()
-        response = self.client.patch("/api/unarchive-chat/", {"chat_uuid": "test-uuid"})
-        self.assertEqual(response.status_code, 401)
-
-        self.login_user()
-        response = self.client.patch("/api/unarchive-chat/", {"chat_uuid": "test-uuid"}, content_type)
-        self.assertEqual(response.status_code, 400)
-
-        chat1 = Chat.objects.create(user = user1, title = "Greetings", is_archived = True)
-        chat2 = Chat.objects.create(user = user1, title = "Math Help", is_archived = True)
+        user1 = self.create_and_login_user()
+        chat1 = user1.chats.create(title = "Greetings", is_archived = True)
+        chat2 = user1.chats.create(title = "Math Help", is_archived = True)
         self.assertTrue(chat1.is_archived)
         self.assertTrue(chat2.is_archived)
 
-        response = self.client.patch("/api/unarchive-chat/", {"chat_uuid": chat1.uuid}, content_type)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content, b"")
-
-        chat1 = Chat.objects.get(user = user1, title = "Greetings")
-        chat2 = Chat.objects.get(user = user1, title = "Math Help")
+        unarchive(chat1)
+        chat1.refresh_from_db()
+        chat2.refresh_from_db()
         self.assertFalse(chat1.is_archived)
         self.assertTrue(chat2.is_archived)
 
         self.logout_user()
 
         user2 = self.create_and_login_user("someone@example.com", "somepassword")
-        chat3 = Chat.objects.create(user = user2, title = "Travel Advice", is_archived = True)
-        self.assertTrue(chat3.is_archived)
+        chat3 = user2.chats.create(title = "Travel Advice", is_archived = True)
+        chat4 = user2.chats.create(title = "Recipe Suggestion", is_archived = True)
 
-        response = self.client.patch("/api/unarchive-chat/", {"chat_uuid": chat3.uuid}, content_type)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content, b"")
-
-        chat3 = Chat.objects.get(user = user2, title = "Travel Advice")
+        unarchive(chat3)
+        chat3.refresh_from_db()
+        chat4.refresh_from_db()
         self.assertFalse(chat3.is_archived)
+        self.assertTrue(chat4.is_archived)
 
-        chat1 = Chat.objects.get(user = user1, title = "Greetings")
-        chat2 = Chat.objects.get(user = user1, title = "Math Help")
+        chat1.refresh_from_db()
+        chat2.refresh_from_db()
         self.assertFalse(chat1.is_archived)
         self.assertTrue(chat2.is_archived)
+
+    def test_requires_authentication(self):
+        response = self.client.patch("/api/unarchive-chat/")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
+
+    def test_requires_chat_uuid(self):
+        self.create_and_login_user()
+        response = self.client.patch("/api/unarchive-chat/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"chat_uuid": ["This field is required."]})
+
+    def test_invalid_chat_uuid(self):
+        self.create_and_login_user()
+        response = self.client.patch("/api/unarchive-chat/", {"chat_uuid": "invalid"}, "application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"chat_uuid": ["Must be a valid UUID."]})
+
+    def test_chat_was_not_found(self):
+        self.create_and_login_user()
+        response = self.client.patch("/api/unarchive-chat/", {"chat_uuid": str(uuid.uuid4())}, "application/json")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"detail": "Chat was not found."})
 
 class DeleteChat(TestCase):
     def test(self):
