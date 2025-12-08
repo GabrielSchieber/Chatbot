@@ -1172,38 +1172,49 @@ class UnarchiveChat(TestCase):
 
 class DeleteChat(TestCase):
     def test(self):
-        response = self.client.delete("/api/delete-chat/", content_type = "application/json")
-        self.assertEqual(response.status_code, 401)
+        def delete(chat: Chat):
+            response = self.client.delete("/api/delete-chat/", {"chat_uuid": str(chat.uuid)}, "application/json")
+            self.assertEqual(response.status_code, 204)
+            self.assertEqual(response.content, b"")
 
-        response = self.client.delete("/api/delete-chat/", {"chat_uuid": "test-uuid"}, content_type = "application/json")
-        self.assertEqual(response.status_code, 401)
+        user1 = self.create_and_login_user()
+        chat1 = user1.chats.create(title = "Greetings")
+        chat2 = user1.chats.create(title = "Math Help")
 
-        user1 = create_user()
-        response = self.client.delete("/api/delete-chat/", {"chat_uuid": "test-uuid"}, content_type = "application/json")
-        self.assertEqual(response.status_code, 401)
-
-        self.login_user()
-        response = self.client.delete("/api/delete-chat/", {"chat_uuid": "test-uuid"}, content_type = "application/json")
-        self.assertEqual(response.status_code, 400)
-
-        chat1 = Chat.objects.create(user = user1, title = "Test chat 1")
-
-        response = self.client.delete("/api/delete-chat/", {"chat_uuid": "test-uuid"}, content_type = "application/json")
-        self.assertEqual(response.status_code, 400)
-
-        response = self.client.delete("/api/delete-chat/", {"chat_uuid": chat1.uuid}, content_type = "application/json")
-        self.assertEqual(response.status_code, 204)
-        self.assertEqual(Chat.objects.count(), 0)
-
-        Chat.objects.create(user = user1, title = "Test chat 2")
+        delete(chat1)
+        self.assertEqual(list(Chat.objects.all()), [chat2])
 
         self.logout_user()
+
         user2 = self.create_and_login_user("someone@example.com", "somepassword")
-        chat3 = Chat.objects.create(user = user2, title = "Test chat 3")
-        response = self.client.delete("/api/delete-chat/", {"chat_uuid": chat3.uuid}, content_type = "application/json")
-        self.assertEqual(response.status_code, 204)
-        self.assertEqual(Chat.objects.count(), 1)
-        self.assertEqual(Chat.objects.first().user, user1)
+        chat3 = user2.chats.create(title = "Travel Advice")
+        chat4 = user2.chats.create(title = "Recipe Suggestion")
+
+        delete(chat3)
+        self.assertEqual(list(Chat.objects.all()), [chat2, chat4])
+
+    def test_requires_authentication(self):
+        response = self.client.delete("/api/delete-chat/")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
+
+    def test_requires_chat_uuid(self):
+        self.create_and_login_user()
+        response = self.client.delete("/api/delete-chat/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"chat_uuid": ["This field is required."]})
+
+    def test_invalid_chat_uuid(self):
+        self.create_and_login_user()
+        response = self.client.delete("/api/delete-chat/", {"chat_uuid": "invalid"}, "application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"chat_uuid": ["Must be a valid UUID."]})
+
+    def test_chat_was_not_found(self):
+        self.create_and_login_user()
+        response = self.client.delete("/api/delete-chat/", {"chat_uuid": str(uuid.uuid4())}, "application/json")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"detail": "Chat was not found."})
 
 class ArchiveChats(TestCase):
     def test(self):
