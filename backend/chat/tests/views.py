@@ -436,6 +436,11 @@ class SetupMFA(TestCase):
         self.assertEqual(user.mfa.backup_codes, [])
         self.assertFalse(user.mfa.is_enabled)
 
+    def test_requires_authentication(self):
+        response = self.client.post("/api/setup-mfa/")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
+
 class EnableMFA(TestCase):
     def test(self):
         user, response = self.create_and_login_user()
