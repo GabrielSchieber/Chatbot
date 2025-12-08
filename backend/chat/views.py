@@ -526,6 +526,9 @@ class EditMessage(APIView):
         except Chat.DoesNotExist:
             return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
+        if index + 1 >= chat.messages.count():
+            return Response({"detail": "Index out of range."}, status.HTTP_404_NOT_FOUND)
+
         messages = chat.messages.order_by("created_at")
         user_message: Message = messages[index]
 
