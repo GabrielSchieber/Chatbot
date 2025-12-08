@@ -842,6 +842,124 @@ class SearchChats(TestCase):
         }]
         self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
 
+    def test_requires_authentication(self):
+        response = self.client.post("/api/search-chats/")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
+
+    def test_user_without_chats(self):
+        self.create_and_login_user()
+        response = self.client.get("/api/search-chats/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"entries": [], "has_more": False})
+
+    def test_user_with_chats(self):
+        user = self.create_and_login_user()
+        self.create_example_chats_for_user(user)
+
+        response = self.client.get("/api/search-chats/")
+        self.assertEqual(response.status_code, 200)
+
+        expected_entries = [
+            {
+                "uuid": str(chat.uuid),
+                "title": chat.title,
+                "matches": [m.text for m in chat.messages.all()],
+                "is_archived": False,
+                "last_modified_at": chat.last_modified_at().isoformat()
+            }
+            for chat in user.chats.order_by("-created_at")
+        ]
+        self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
+
+    def test_search(self):
+        user = self.create_and_login_user()
+        self.create_example_chats_for_user(user)
+
+        response = self.client.get("/api/search-chats/?search=Hello")
+        self.assertEqual(response.status_code, 200)
+
+        expected_chat = user.chats.get(title = "Greetings")
+        expected_entries = [
+            {
+                "uuid": str(expected_chat.uuid),
+                "title": expected_chat.title,
+                "matches": [m.text for m in expected_chat.messages.all()],
+                "is_archived": False,
+                "last_modified_at": expected_chat.last_modified_at().isoformat()
+            }
+        ]
+        self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
+
+        response = self.client.get("/api/search-chats/?search=are")
+        self.assertEqual(response.status_code, 200)
+
+        expected_chats = [user.chats.get(title = "Travel Advice"), user.chats.get(title = "Greetings")]
+        expected_entries = [
+            {
+                "uuid": str(chat.uuid),
+                "title": chat.title,
+                "matches": [m.text for m in chat.messages.filter(text__icontains = "are")],
+                "is_archived": False,
+                "last_modified_at": chat.last_modified_at().isoformat()
+            }
+            for chat in expected_chats
+        ]
+        self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
+
+    def test_offset(self):
+        user = self.create_and_login_user()
+        user.chats.bulk_create([Chat(user = user, title = f"Chat {i + 1}") for i in range(10)])
+
+        response = self.client.get(f"/api/search-chats/?offset={5}")
+        self.assertEqual(response.status_code, 200)
+
+        expected_entries = [
+            {
+                "uuid": str(chat.uuid),
+                "title": chat.title,
+                "matches": [],
+                "is_archived": False,
+                "last_modified_at": chat.last_modified_at().isoformat()
+            }
+            for chat in user.chats.order_by("-created_at")[5:]
+        ]
+        self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
+
+    def test_limit(self):
+        user = self.create_and_login_user()
+        user.chats.bulk_create([Chat(user = user, title = f"Chat {i + 1}") for i in range(10)])
+
+        response = self.client.get(f"/api/search-chats/?limit={5}")
+        self.assertEqual(response.status_code, 200)
+
+        expected_entries = [
+            {
+                "uuid": str(chat.uuid),
+                "title": chat.title,
+                "matches": [],
+                "is_archived": False,
+                "last_modified_at": chat.last_modified_at().isoformat()
+            }
+            for chat in user.chats.order_by("-created_at")[:5]
+        ]
+        self.assertEqual(response.json(), {"entries": expected_entries, "has_more": True})
+
+    def create_example_chats_for_user(self, user: User):
+        chat = user.chats.create(title = "Greetings")
+        chat.messages.create(text = "Hello!", is_from_user = True)
+        chat.messages.create(text = "Hello! How are you?", is_from_user = False)
+
+        chat = user.chats.create(title = "Weather Inquiry")
+        chat.messages.create(text = "What's the weather like today?", is_from_user = True)
+        chat.messages.create(text = "It's sunny with a high of 28°C.", is_from_user = False)
+
+        chat = user.chats.create(title = "Travel Advice")
+        chat.messages.create(text = "What's the best time to visit Japan?", is_from_user = True)
+        chat.messages.create(text = "Spring and autumn are ideal for pleasant weather and beautiful scenery.", is_from_user = False)
+        chat.messages.create(text = "Thanks! I'll plan for April.", is_from_user = True)
+        chat.messages.create(text = "Great choice! Cherry blossoms are stunning that time of year.", is_from_user = False)
+
 class RenameChat(TestCase):
     def test(self):
         response = self.client.patch("/api/rename-chat/")
