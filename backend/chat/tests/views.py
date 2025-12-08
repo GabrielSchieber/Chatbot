@@ -136,6 +136,35 @@ class VerifyMFA(TestCase):
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
 
+    def test_invalid_or_expired_code(self):
+        response = self.client.post("/api/verify-mfa/", {"token": str(uuid.uuid4()), "code": "123456"})
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"error": "mfa.messages.errorInvalidOrExpiredCode"})
+
+        time_to_freeze = timezone.datetime(2025, 1, 1, 12)
+        with freeze_time(time_to_freeze):
+            user = create_user()
+            user.mfa.setup()
+            user.mfa.enable()
+
+            response = self.login_user()
+            self.assertEqual(len(response.cookies), 0)
+            token = response.json()["token"]
+
+            response = self.client.post("/api/verify-mfa/", {"token": token, "code": "123456"})
+            self.assertEqual(response.status_code, 401)
+            self.assertEqual(response.json(), {"error": "mfa.messages.errorInvalidCode"})
+
+        with freeze_time(time_to_freeze + timedelta(minutes = 5)):
+            response = self.client.post("/api/verify-mfa/", {"token": token, "code": "123456"})
+            self.assertEqual(response.status_code, 401)
+            self.assertEqual(response.json(), {"error": "mfa.messages.errorInvalidCode"})
+
+        with freeze_time(time_to_freeze + timedelta(minutes = 5, seconds = 1)):
+            response = self.client.post("/api/verify-mfa/", {"token": token, "code": "123456"})
+            self.assertEqual(response.status_code, 401)
+            self.assertEqual(response.json(), {"error": "mfa.messages.errorInvalidOrExpiredCode"})
+
 class Logout(TestCase):
     def test(self):
         response = self.client.post("/api/logout/")
