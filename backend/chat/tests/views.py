@@ -467,22 +467,28 @@ class EnableMFA(TestCase):
         for backup_code, hashed_backup_code in zip(backup_codes, user.mfa.backup_codes):
             self.assertNotEqual(backup_code, hashed_backup_code)
 
-    def test_requires_valid_code(self):
-        user, response = self.create_and_login_user()
-        self.assertEqual(response.status_code, 200)
+    def test_requires_authentication(self):
+        response = self.client.post("/api/enable-mfa/")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
 
+    def test_requires_to_be_disabled(self):
+        user, _ = self.create_and_login_user()
+        user.mfa.setup()
+        user.mfa.enable()
+
+        response = self.client.post("/api/enable-mfa/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "MFA is already enabled for the current user."})
+
+    def test_requires_valid_code(self):
+        user, _ = self.create_and_login_user()
         user.mfa.setup()
 
-        def assert_response(response: HttpResponse):
+        for code in ["", "1", "-1", "12345", "-12345", "1234567", "-1234567", "a", "abcdef"]:
+            response = self.client.post("/api/enable-mfa/", {"code": code})
             self.assertEqual(response.status_code, 403)
-            self.assertEqual(len(response.json()), 1)
-            self.assertEqual(response.json()["error"], "mfa.messages.errorInvalidCode")
-
-        assert_response(self.client.post("/api/enable-mfa/"))
-        assert_response(self.client.post("/api/enable-mfa/", {"code": "invalid-code"}))
-        assert_response(self.client.post("/api/enable-mfa/", {"code": "1"}))
-        assert_response(self.client.post("/api/enable-mfa/", {"code": "12345"}))
-        assert_response(self.client.post("/api/enable-mfa/", {"code": "1234567"}))
+            self.assertEqual(response.json(), {"error": "mfa.messages.errorInvalidCode"})
 
 class DisableMFA(TestCase):
     def test(self):
