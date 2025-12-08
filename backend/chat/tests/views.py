@@ -1813,6 +1813,30 @@ class EditMessage(TestCase):
                 files.append(SimpleUploadedFile(f"file{i + 1}.txt", bytes([b % 255 for b in range(s)]), "text/plain"))
             post_and_assert(files)
 
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_remove_files(self, _):
+        user = self.create_and_login_user()
+        chat = user.chats.create(user = user, title = "File Analysis")
+        message = chat.messages.create(chat = chat, text = "Describe the files.", is_from_user = True)
+        message.files.bulk_create([
+            MessageFile(message = message, name = f"File {i + 1}.txt", content = f"Content {i + 1}".encode(), content_type = "text/plain") 
+            for i in range(5)
+        ])
+        chat.messages.create(chat = chat, text = "The files are about...", is_from_user = False)
+
+        self.assertEqual(MessageFile.objects.count(), 5)
+        for i, f in enumerate(MessageFile.objects.all()):
+            self.assertEqual(f"File {i + 1}.txt", f.name)
+
+        body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid), "text": "Describe the files.", "index": 0, "removed_file_ids": [2, 4]})
+        content_type = f"multipart/form-data; boundary={BOUNDARY}"
+        response = self.client.patch("/api/edit-message/", body, content_type)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(MessageFile.objects.count(), 3)
+        for i, f in zip([1, 3, 5], MessageFile.objects.all()):
+            self.assertEqual(f"File {i}.txt", f.name)
+
 class RegenerateMessage(TestCase):
     @patch("chat.views.generate_pending_message_in_chat")
     def test(self, mock_generate):
