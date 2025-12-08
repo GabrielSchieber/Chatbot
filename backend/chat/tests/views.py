@@ -605,6 +605,16 @@ class DeleteAccount(TestCase):
         self.assertEqual(User.objects.count(), 1)
         self.assertEqual(User.objects.first(), user)
 
+    def test_invalid_mfa_code(self):
+        user = self.create_and_login_user()
+        user.mfa.setup()
+        user.mfa.enable()
+        response = self.client.delete("/api/delete-account/", {"password": "testpassword", "mfa_code": "12345"}, "application/json")
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidCode"})
+        self.assertEqual(User.objects.count(), 1)
+        self.assertEqual(User.objects.first(), user)
+
 class GetChat(TestCase):
     def test(self):
         response = self.client.get("/api/get-chat/")
