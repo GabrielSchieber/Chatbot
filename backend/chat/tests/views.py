@@ -1102,6 +1102,29 @@ class ArchiveChat(TestCase):
         self.assertTrue(chat1.is_archived)
         self.assertFalse(chat2.is_archived)
 
+    def test_requires_authentication(self):
+        response = self.client.patch("/api/archive-chat/")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
+
+    def test_requires_chat_uuid(self):
+        self.create_and_login_user()
+        response = self.client.patch("/api/archive-chat/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"chat_uuid": ["This field is required."]})
+
+    def test_invalid_chat_uuid(self):
+        self.create_and_login_user()
+        response = self.client.patch("/api/archive-chat/", {"chat_uuid": "invalid"}, "application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"chat_uuid": ["Must be a valid UUID."]})
+
+    def test_chat_was_not_found(self):
+        self.create_and_login_user()
+        response = self.client.patch("/api/archive-chat/", {"chat_uuid": str(uuid.uuid4())}, "application/json")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"detail": "Chat was not found."})
+
 class UnarchiveChat(TestCase):
     def test(self):
         content_type = "application/json"
