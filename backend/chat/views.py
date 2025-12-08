@@ -587,6 +587,9 @@ class RegenerateMessage(APIView):
         except Chat.DoesNotExist:
             return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
+        if index >= chat.messages.count():
+            return Response({"detail": "Index out of range."}, status.HTTP_404_NOT_FOUND)
+
         bot_message: Message = chat.messages.order_by("created_at")[index]
         bot_message.text = ""
         bot_message.model = model
