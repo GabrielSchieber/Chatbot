@@ -174,7 +174,7 @@ class DisableMFA(APIView):
         user: User = request.user
 
         if not user.mfa.is_enabled:
-            return Response({"error": "MFA is not enabled."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "MFA is already disabled for the current user."}, status.HTTP_400_BAD_REQUEST)
 
         code = request.data.get("code")
 

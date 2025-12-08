@@ -511,7 +511,7 @@ class DisableMFA(TestCase):
         self.create_and_login_user()
         response = self.client.post("/api/disable-mfa/")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "MFA is not enabled."})
+        self.assertEqual(response.json(), {"error": "MFA is already disabled for the current user."})
 
     def test_requires_valid_code(self):
         user, _ = self.create_and_login_user()
