@@ -1855,6 +1855,16 @@ class EditMessage(TestCase):
         chat.messages.create(text = "Hello! How can I help you today?", is_from_user = False)
         test(chat, 1)
 
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_negative_index(self, _):
+        user = self.create_and_login_user()
+        chat = user.chats.create(title = "Greetings")
+        body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid), "index": -1})
+        content_type = f"multipart/form-data; boundary={BOUNDARY}"
+        response = self.client.patch("/api/edit-message/", body, content_type)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"index": ["Ensure this value is greater than or equal to 0."]})
+
 class RegenerateMessage(TestCase):
     @patch("chat.views.generate_pending_message_in_chat")
     def test(self, mock_generate):
@@ -1966,3 +1976,13 @@ class RegenerateMessage(TestCase):
         chat.messages.create(text = "Hello!", is_from_user = True)
         chat.messages.create(text = "Hello! How can I help you today?", is_from_user = False)
         test(chat, 2)
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_negative_index(self, _):
+        user = self.create_and_login_user()
+        chat = user.chats.create(title = "Greetings")
+        body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid), "index": -1})
+        content_type = f"multipart/form-data; boundary={BOUNDARY}"
+        response = self.client.patch("/api/regenerate-message/", body, content_type)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"index": ["Ensure this value is greater than or equal to 0."]})
