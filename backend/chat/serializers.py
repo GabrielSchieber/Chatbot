@@ -118,7 +118,7 @@ class NewMessageSerializer(serializers.Serializer):
 
 class EditMessageSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
-    index = serializers.IntegerField()
+    index = serializers.IntegerField(min_value = 0)
     text = serializers.CharField(default = "")
     model = serializers.ChoiceField(Message.available_models(), default = "SmolLM2-135M")
     added_files = serializers.ListField(child = serializers.FileField(max_length = MessageFile.max_content_size()), max_length = 10, default = [])
@@ -126,5 +126,5 @@ class EditMessageSerializer(serializers.Serializer):
 
 class RegenerateMessageSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
-    index = serializers.IntegerField()
+    index = serializers.IntegerField(min_value = 0)
     model = serializers.ChoiceField(Message.available_models(), default = "SmolLM2-135M")
