@@ -507,6 +507,12 @@ class DisableMFA(TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
 
+    def test_requires_to_be_enabled(self):
+        self.create_and_login_user()
+        response = self.client.post("/api/disable-mfa/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "MFA is not enabled."})
+
 class DeleteAccount(TestCase):
    def test(self):
         response = self.client.delete("/api/delete-account/")
