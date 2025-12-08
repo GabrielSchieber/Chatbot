@@ -719,25 +719,25 @@ class SearchChats(TestCase):
 
         response = self.client.get("/api/search-chats/?search=What is math?")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [])
+        self.assertEqual(response.json(), {"entries": [], "has_more": False})
 
         chat = Chat.objects.create(user = user, title = "A question about math")
 
         response = self.client.get("/api/search-chats/?search=What is math?")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [])
+        self.assertEqual(response.json(), {"entries": [], "has_more": False})
 
         response = self.client.get("/api/search-chats/?search=A question about math")
         self.assertEqual(response.status_code, 200)
 
-        expected_etries = [{
+        expected_entries = [{
             "uuid": str(chat.uuid),
             "title": "A question about math",
             "matches": [],
             "is_archived": False,
             "last_modified_at": chat.last_modified_at().isoformat()
         }]
-        self.assertEqual(response.json()["entries"], expected_etries)
+        self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
 
         Message.objects.create(chat = chat, text = "What is math?", is_from_user = True)
         Message.objects.create(chat = chat, text = "Math is...", is_from_user = False)
@@ -745,48 +745,48 @@ class SearchChats(TestCase):
         response = self.client.get("/api/search-chats/?search=What is math?")
         self.assertEqual(response.status_code, 200)
 
-        expected_etries = [{
+        expected_entries = [{
             "uuid": str(chat.uuid),
             "title": "A question about math",
             "matches": ["What is math?"],
             "is_archived": False,
             "last_modified_at": chat.last_modified_at().isoformat()
         }]
-        self.assertEqual(response.json()["entries"], expected_etries)
+        self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
 
         response = self.client.get("/api/search-chats/?search=math")
         self.assertEqual(response.status_code, 200)
 
-        expected_etries = [{
+        expected_entries = [{
             "uuid": str(chat.uuid),
             "title": "A question about math",
             "matches": ["What is math?", "Math is..."],
             "is_archived": False,
             "last_modified_at": chat.last_modified_at().isoformat()
         }]
-        self.assertEqual(response.json()["entries"], expected_etries)
+        self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
 
         response = self.client.get("/api/search-chats/?search=What is geometry?")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [])
+        self.assertEqual(response.json(), {"entries": [], "has_more": False})
 
         chat = Chat.objects.create(user = user, title = "Geometry question")
 
         response = self.client.get("/api/search-chats/?search=Question about geometry")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["entries"], [])
+        self.assertEqual(response.json(), {"entries": [], "has_more": False})
 
         response = self.client.get("/api/search-chats/?search=Geometry question")
         self.assertEqual(response.status_code, 200)
 
-        expected_etries = [{
+        expected_entries = [{
             "uuid": str(chat.uuid),
             "title": "Geometry question",
             "matches": [],
             "is_archived": False,
             "last_modified_at": chat.last_modified_at().isoformat()
         }]
-        self.assertEqual(response.json()["entries"], expected_etries)
+        self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
 
         Message.objects.create(chat = chat, text = "What is geometry?", is_from_user = True)
         Message.objects.create(chat = chat, text = "Geometry is...", is_from_user = False)
@@ -794,26 +794,26 @@ class SearchChats(TestCase):
         response = self.client.get("/api/search-chats/?search=What is geometry?")
         self.assertEqual(response.status_code, 200)
 
-        expected_etries = [{
+        expected_entries = [{
             "uuid": str(chat.uuid),
             "title": "Geometry question",
             "matches": ["What is geometry?"],
             "is_archived": False,
             "last_modified_at": chat.last_modified_at().isoformat()
         }]
-        self.assertEqual(response.json()["entries"], expected_etries)
+        self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
 
         response = self.client.get("/api/search-chats/?search=geometry")
         self.assertEqual(response.status_code, 200)
 
-        expected_etries = [{
+        expected_entries = [{
             "uuid": str(chat.uuid),
             "title": "Geometry question",
             "matches": ["What is geometry?", "Geometry is..."],
             "is_archived": False,
             "last_modified_at": chat.last_modified_at().isoformat()
         }]
-        self.assertEqual(response.json()["entries"], expected_etries)
+        self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
 
 class RenameChat(TestCase):
     def test(self):
