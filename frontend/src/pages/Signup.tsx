@@ -35,12 +35,12 @@ export default function Signup() {
                 }
                 location.href = "/"
             } else {
-                notify(t("signup.error"), "error")
+                notify(t("signup.loginAfterSignupError"), "error")
                 setIsVerifying(false)
             }
         } else {
             const data = await response.json()
-            setError(t(data.error))
+            setError(t(data.detail))
             setIsVerifying(false)
         }
     }

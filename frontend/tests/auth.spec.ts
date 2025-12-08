@@ -74,7 +74,7 @@ test("user can enable multi-factor authentication", async ({ page }) => {
 
     const settingsButton = page.getByText("Settings")
     if (!(await settingsButton.isVisible())) {
-        await page.getByRole("button").first().click()
+        await page.getByRole("banner").getByRole("button").first().click()
     }
     await settingsButton.click()
 
@@ -131,7 +131,7 @@ test("user can disable multi-factor authentication", async ({ page }) => {
 
     const settingsButton = page.getByText("Settings")
     if (!(await settingsButton.isVisible())) {
-        await page.getByRole("button").first().click()
+        await page.getByRole("banner").getByRole("button").first().click()
     }
     await settingsButton.click()
 
@@ -228,7 +228,7 @@ test("user can disable multi-factor authentication with a backup code", async ({
 
     const settingsButton = page.getByText("Settings")
     if (!(await settingsButton.isVisible())) {
-        await page.getByRole("button").first().click()
+        await page.getByRole("banner").getByRole("button").first().click()
     }
     await settingsButton.click()
 

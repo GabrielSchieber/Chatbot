@@ -29,7 +29,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
             location.href = "/"
         } else {
             const data = await response.json()
-            setError(t(data.error))
+            setError(t(data.detail))
             setIsDeleting(false)
         }
     }
