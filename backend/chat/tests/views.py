@@ -450,6 +450,24 @@ class SetupMFA(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"detail": "MFA is already enabled for the current user. First disable MFA before setting it up again."})
 
+    def test_overwrites_secret(self):
+        user, _ = self.create_and_login_user()
+        user.mfa.setup()
+        previous_encrypted_secret = user.mfa.secret
+
+        response = self.client.post("/api/setup-mfa/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 2)
+
+        auth_url = response.json()["auth_url"]
+        secret = response.json()["secret"]
+
+        self.assertEqual(auth_url, f"otpauth://totp/Chatbot:test%40example.com?secret={secret}&issuer=Chatbot")
+
+        user.refresh_from_db()
+        self.assertNotEqual(secret, user.mfa.secret)
+        self.assertNotEqual(previous_encrypted_secret, user.mfa.secret)
+
 class EnableMFA(TestCase):
     def test(self):
         user, response = self.create_and_login_user()
