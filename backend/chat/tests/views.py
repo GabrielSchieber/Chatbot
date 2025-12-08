@@ -551,7 +551,7 @@ class DisableMFA(TestCase):
             self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidCode"})
 
 class DeleteAccount(TestCase):
-   def test(self):
+    def test(self):
         response = self.client.delete("/api/delete-account/")
         self.assertEqual(response.status_code, 401)
 
@@ -572,6 +572,30 @@ class DeleteAccount(TestCase):
         self.assertEqual(response.status_code, 204)
         self.assertEqual(User.objects.count(), 1)
         self.assertEqual(User.objects.first(), user)
+
+    def test_requires_authentication(self):
+        response = self.client.post("/api/delete-account/")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
+
+    def test_requires_password(self):
+        self.create_and_login_user()
+        response = self.client.delete("/api/delete-account/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"password": ["This field is required."]})
+
+    def test_requires_password_and_mfa_code_if_mfa_is_enabled(self):
+        user = self.create_and_login_user()
+        user.mfa.setup()
+        user.mfa.enable()
+
+        response = self.client.delete("/api/delete-account/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"password": ["This field is required."]})
+
+        response = self.client.delete("/api/delete-account/", {"password": "testpassword"}, "application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"detail": "MFA code is required."})
 
 class GetChat(TestCase):
     def test(self):
