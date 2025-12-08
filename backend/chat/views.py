@@ -151,7 +151,12 @@ class SetupMFA(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request):
-        secret, auth_url = request.user.mfa.setup()
+        user: User = request.user
+
+        if user.mfa.is_enabled:
+            return Response({"detail": "MFA is already enabled for the current user. First disable MFA before setting it up again."}, status.HTTP_400_BAD_REQUEST)
+
+        secret, auth_url = user.mfa.setup()
         return Response({"auth_url": auth_url, "secret": secret}, status.HTTP_200_OK)
 
 class EnableMFA(APIView):
