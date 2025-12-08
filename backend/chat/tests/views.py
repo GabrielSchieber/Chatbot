@@ -552,26 +552,26 @@ class DisableMFA(TestCase):
 
 class DeleteAccount(TestCase):
     def test(self):
-        response = self.client.delete("/api/delete-account/")
-        self.assertEqual(response.status_code, 401)
-
-        create_user()
-        response = self.client.delete("/api/delete-account/")
-        self.assertEqual(response.status_code, 401)
-
-        self.login_user()
+        self.create_and_login_user()
         response = self.client.delete("/api/delete-account/", {"password": "testpassword"}, "application/json")
         self.assertEqual(response.status_code, 204)
         self.assertEqual(User.objects.count(), 0)
 
-        create_user()
-        user = create_user("someone@example.com", "somepassword")
+        user1 = self.create_and_login_user("someone@example.com")
 
-        self.login_user("test@example.com", "testpassword")
+        self.create_and_login_user()
         response = self.client.delete("/api/delete-account/", {"password": "testpassword"}, "application/json")
         self.assertEqual(response.status_code, 204)
         self.assertEqual(User.objects.count(), 1)
-        self.assertEqual(User.objects.first(), user)
+        self.assertEqual(User.objects.first(), user1)
+
+        user2 = self.create_and_login_user()
+        user2.mfa.setup()
+        user2.mfa.enable()
+        response = self.client.delete("/api/delete-account/", {"password": "testpassword", "mfa_code": generate_code(user2.mfa.secret)}, "application/json")
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(User.objects.count(), 1)
+        self.assertEqual(User.objects.first(), user1)
 
     def test_requires_authentication(self):
         response = self.client.post("/api/delete-account/")
