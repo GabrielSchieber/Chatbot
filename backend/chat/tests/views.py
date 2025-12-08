@@ -26,7 +26,12 @@ class TestCase(DjangoTestCase):
     def create_and_login_user(self, email: str = "test@example.com", password: str = "testpassword"):
         user = create_user(email, password)
         response = self.login_user(email, password)
-        return user, response
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"")
+        self.assertEqual(len(response.cookies.items()), 2)
+        self.assertIn("access_token", response.cookies)
+        self.assertIn("refresh_token", response.cookies)
+        return user
 
 class Signup(TestCase):
     def test(self):
@@ -75,10 +80,7 @@ class Signup(TestCase):
 
 class Login(TestCase):
     def test(self):
-        _, response = self.create_and_login_user()
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("access_token", self.client.cookies)
-        self.assertIn("refresh_token", self.client.cookies)
+        self.create_and_login_user()
 
     def test_with_invalid_credentials(self):
         def test(email: str, password: str):
@@ -164,7 +166,8 @@ class Logout(TestCase):
         response = self.client.post("/api/logout/")
         self.assertEqual(response.status_code, 401)
 
-        _, response = self.create_and_login_user()
+        create_user()
+        response = self.login_user()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.cookies.items()), 2)
         self.assertIn("access_token", response.cookies)
@@ -250,10 +253,8 @@ class Refresh(TestCase):
         self.assertEqual(len(self.client.cookies.items()), 1)
 
     def test_with_login(self):
-        _, response = self.create_and_login_user()
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("refresh_token", response.cookies)
-
+        create_user()
+        response = self.login_user()
         self.client.cookies = response.cookies
 
         response = self.client.post("/api/refresh/")
@@ -273,8 +274,7 @@ class Refresh(TestCase):
         self.assertEqual(len(self.client.cookies.items()), 1)
 
     def test_with_used_cookie(self):
-        _, response = self.create_and_login_user()
-        self.assertEqual(response.status_code, 200)
+        self.create_and_login_user()
 
         old_refresh = self.client.cookies["refresh_token"].value
 
@@ -297,8 +297,7 @@ class Refresh(TestCase):
     def test_flow_issues_new_access_cookie(self):
         time_to_freeze = timezone.datetime(2025, 1, 1, 12)
         with freeze_time(time_to_freeze):
-            _, response = self.create_and_login_user()
-            self.assertEqual(response.status_code, 200)
+            self.create_and_login_user()
             access_cookie = self.client.cookies["access_token"]
 
         access_lifetime = jwt_settings.ACCESS_TOKEN_LIFETIME
@@ -320,7 +319,7 @@ class Refresh(TestCase):
 
 class Me(TestCase):
     def test(self):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
 
@@ -343,7 +342,7 @@ class Me(TestCase):
         self.assertEqual(response.json(), expected_json)
 
     def test_patch(self):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
 
@@ -403,9 +402,7 @@ class Me(TestCase):
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 401)
 
-        _, response = self.create_and_login_user()
-        self.assertEqual(response.status_code, 200)
-
+        self.create_and_login_user()
         self.assertIn("access_token", self.client.cookies)
 
         response = self.client.get("/api/me/")
@@ -414,8 +411,7 @@ class Me(TestCase):
 
 class SetupMFA(TestCase):
     def test(self):
-        user, response = self.create_and_login_user()
-        self.assertEqual(response.status_code, 200)
+        user = self.create_and_login_user()
         self.assertEqual(user.mfa.secret, b"")
         self.assertEqual(user.mfa.backup_codes, [])
         self.assertFalse(user.mfa.is_enabled)
@@ -442,7 +438,7 @@ class SetupMFA(TestCase):
         self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
 
     def test_requires_to_be_disabled(self):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         user.mfa.setup()
         user.mfa.enable()
 
@@ -451,7 +447,7 @@ class SetupMFA(TestCase):
         self.assertEqual(response.json(), {"detail": "MFA is already enabled for the current user. First disable MFA before setting it up again."})
 
     def test_overwrites_secret(self):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         user.mfa.setup()
         previous_encrypted_secret = user.mfa.secret
 
@@ -470,8 +466,7 @@ class SetupMFA(TestCase):
 
 class EnableMFA(TestCase):
     def test(self):
-        user, response = self.create_and_login_user()
-        self.assertEqual(response.status_code, 200)
+        user = self.create_and_login_user()
 
         user.mfa.setup()
         response = self.client.post("/api/enable-mfa/", {"code": generate_code(user.mfa.secret)})
@@ -499,7 +494,7 @@ class EnableMFA(TestCase):
         self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
 
     def test_requires_to_be_disabled(self):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         user.mfa.setup()
         user.mfa.enable()
 
@@ -508,7 +503,7 @@ class EnableMFA(TestCase):
         self.assertEqual(response.json(), {"detail": "MFA is already enabled for the current user."})
 
     def test_requires_valid_code(self):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         user.mfa.setup()
 
         for code in ["", "1", "-1", "12345", "-12345", "1234567", "-1234567", "a", "abcdef"]:
@@ -518,7 +513,7 @@ class EnableMFA(TestCase):
 
 class DisableMFA(TestCase):
     def test(self):
-        user, response = self.create_and_login_user()
+        user = self.create_and_login_user()
         user.mfa.setup()
         user.mfa.enable()
         self.assertNotEqual(user.mfa.secret, b"")
@@ -546,7 +541,7 @@ class DisableMFA(TestCase):
         self.assertEqual(response.json(), {"detail": "MFA is already disabled for the current user."})
 
     def test_requires_valid_code(self):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         user.mfa.setup()
         user.mfa.enable()
 
@@ -678,7 +673,7 @@ class GetChats(TestCase):
         self.assertEqual(response.json(),  {"chats": expected_chats, "has_more": False})
 
         self.logout_user()
-        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        user2 = self.create_and_login_user("someone@example.com", "somepassword")
         response = self.client.get("/api/get-chats/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(),  {"chats": [], "has_more": False})
@@ -745,7 +740,7 @@ class SearchChats(TestCase):
         response = self.client.get("/api/search-chats/?search=What is math")
         self.assertEqual(response.status_code, 401)
 
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         response = self.client.get("/api/search-chats/")
         self.assertEqual(response.status_code, 200)
 
@@ -872,7 +867,7 @@ class RenameChat(TestCase):
         self.assertEqual(Chat.objects.first().title, "Some title")
 
         self.logout_user()
-        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        user2 = self.create_and_login_user("someone@example.com", "somepassword")
         chat2 = Chat.objects.create(user = user2, title = "Some chat")
         response = self.client.patch("/api/rename-chat/", {"chat_uuid": chat2.uuid, "new_title": "Some other chat"}, content_type = "application/json")
         self.assertEqual(response.status_code, 200)
@@ -913,7 +908,7 @@ class ArchiveChat(TestCase):
 
         self.logout_user()
 
-        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        user2 = self.create_and_login_user("someone@example.com", "somepassword")
         chat3 = Chat.objects.create(user = user2, title = "Travel Advice")
         self.assertFalse(chat3.is_archived)
 
@@ -963,7 +958,7 @@ class UnarchiveChat(TestCase):
 
         self.logout_user()
 
-        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        user2 = self.create_and_login_user("someone@example.com", "somepassword")
         chat3 = Chat.objects.create(user = user2, title = "Travel Advice", is_archived = True)
         self.assertTrue(chat3.is_archived)
 
@@ -1007,7 +1002,7 @@ class DeleteChat(TestCase):
         Chat.objects.create(user = user1, title = "Test chat 2")
 
         self.logout_user()
-        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        user2 = self.create_and_login_user("someone@example.com", "somepassword")
         chat3 = Chat.objects.create(user = user2, title = "Test chat 3")
         response = self.client.delete("/api/delete-chat/", {"chat_uuid": chat3.uuid}, content_type = "application/json")
         self.assertEqual(response.status_code, 204)
@@ -1049,7 +1044,7 @@ class ArchiveChats(TestCase):
 
         self.logout_user()
 
-        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        user2 = self.create_and_login_user("someone@example.com", "somepassword")
 
         Chat.objects.create(user = user2, title = "Math Question")
         Chat.objects.create(user = user2, title = "Recipe Suggestion")
@@ -1097,7 +1092,7 @@ class UnarchiveChats(TestCase):
 
         self.logout_user()
 
-        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        user2 = self.create_and_login_user("someone@example.com", "somepassword")
 
         Chat.objects.create(user = user2, title = "Math Question", is_archived = True)
         Chat.objects.create(user = user2, title = "Recipe Suggestion", is_archived = True)
@@ -1139,7 +1134,7 @@ class DeleteChats(TestCase):
         Chat.objects.create(user = user1, title = "Test chat 5")
 
         self.logout_user()
-        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        user2 = self.create_and_login_user("someone@example.com", "somepassword")
         Chat.objects.create(user = user2, title = "Test chat 6")
         Chat.objects.create(user = user2, title = "Test chat 7")
         response = self.client.delete("/api/delete-chats/")
@@ -1153,7 +1148,7 @@ class StopPendingChats(TestCase):
         response = self.client.patch("/api/stop-pending-chats/")
         self.assertEqual(response.status_code, 401)
 
-        user1, _ = self.create_and_login_user()
+        user1 = self.create_and_login_user()
 
         chat1 = Chat.objects.create(user = user1, title = "Greetings")
         chat2 = Chat.objects.create(user = user1, title = "Math Help")
@@ -1182,7 +1177,7 @@ class StopPendingChats(TestCase):
 
         self.logout_user()
 
-        user2, _ = self.create_and_login_user("someone@example.com", "somepassword")
+        user2 = self.create_and_login_user("someone@example.com", "somepassword")
         chat3 = Chat.objects.create(user = user2, title = "Travel Advice")
         chat4 = Chat.objects.create(user = user2, title = "Recipe Suggestion")
 
@@ -1208,7 +1203,7 @@ class GetMessageFileContent(TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
 
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         response = self.client.get("/api/get-message-file-content/", **{"HTTP_ACCEPT": "application/json"})
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"chat_uuid": ["This field is required."], "message_file_id": ["This field is required."]})
@@ -1275,7 +1270,7 @@ class GetMessages(TestCase):
         response = self.client.get("/api/get-messages/?chat_uuid=849087f8-4b3f-47f1-980d-5a5a3d325912")
         self.assertEqual(response.status_code, 401)
 
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         response = self.client.get("/api/get-messages/?chat_uuid=849087f8-4b3f-47f1-980d-5a5a3d325912")
         self.assertEqual(response.status_code, 404)
 
@@ -1317,8 +1312,7 @@ class GetMessages(TestCase):
 class NewMessage(TestCase):
     @patch("chat.views.generate_pending_message_in_chat")
     def test(self, mock_generate):
-        user, response = self.create_and_login_user()
-        self.assertEqual(response.status_code, 200)
+        user = self.create_and_login_user()
 
         file1 = SimpleUploadedFile("file1.txt", b"hello world", "text/plain")
         data = {"chat_uuid": "", "text": "Hello assistant!", "model": "SmolLM2-135M", "files": [file1]}
@@ -1407,7 +1401,7 @@ class NewMessage(TestCase):
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     @patch("chat.views.generate_pending_message_in_chat")
     def test_post_to_existing_chat(self, mock_task, _):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         chat = Chat.objects.create(user = user, title = "Test Chat")
 
         response = self.client.post("/api/new-message/", {"chat_uuid": str(chat.uuid), "text": "hello"}, format = "multipart")
@@ -1479,8 +1473,7 @@ class NewMessage(TestCase):
 class EditMessage(TestCase):
     @patch("chat.views.generate_pending_message_in_chat")
     def test(self, mock_generate):
-        user, response = self.create_and_login_user()
-        self.assertEqual(response.status_code, 200)
+        user = self.create_and_login_user()
 
         chat = Chat.objects.create(user = user, title = "Greetings")
         user_message = Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
@@ -1548,7 +1541,7 @@ class EditMessage(TestCase):
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_requires_index(self, _):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         chat = Chat.objects.create(user = user, title = "Greetings")
         body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid)})
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
@@ -1558,7 +1551,7 @@ class EditMessage(TestCase):
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_requires_valid_model(self, _):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         chat = Chat.objects.create(user = user, title = "Greetings")
         Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
         body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid)," index": 0, "model": "INVALID"})
@@ -1569,7 +1562,7 @@ class EditMessage(TestCase):
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_too_many_files(self, _):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
 
         chat = Chat.objects.create(user = user, title = "File Analysis")
         message = Message.objects.create(chat = chat, text = "Describe the files.", is_from_user = True)
@@ -1587,7 +1580,7 @@ class EditMessage(TestCase):
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_files_too_large(self, _):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         chat = Chat.objects.create(user = user, title = "File Analysis")
         Message.objects.create(chat = chat, text = "Describe the files.", is_from_user = True)
 
@@ -1616,7 +1609,7 @@ class EditMessage(TestCase):
 class RegenerateMessage(TestCase):
     @patch("chat.views.generate_pending_message_in_chat")
     def test(self, mock_generate):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         chat = Chat.objects.create(user = user, title = "Greetings")
         user_message = Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
         bot_message = Message.objects.create(chat = chat, text = "Hello! How can I help you today?", is_from_user = False, model = "SmolLM2-135M")
@@ -1688,7 +1681,7 @@ class RegenerateMessage(TestCase):
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_requires_index(self, _):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         chat = Chat.objects.create(user = user, title = "Greetings")
         body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid)})
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
@@ -1698,7 +1691,7 @@ class RegenerateMessage(TestCase):
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_requires_valid_model(self, _):
-        user, _ = self.create_and_login_user()
+        user = self.create_and_login_user()
         chat = Chat.objects.create(user = user, title = "Greetings")
         Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
         Message.objects.create(chat = chat, text = "Hello! How can I help you today?", is_from_user = False)
