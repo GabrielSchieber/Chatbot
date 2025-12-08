@@ -1770,13 +1770,13 @@ class EditMessage(TestCase):
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_too_many_files(self, _):
         user = self.create_and_login_user()
-
-        chat = Chat.objects.create(user = user, title = "File Analysis")
-        message = Message.objects.create(chat = chat, text = "Describe the files.", is_from_user = True)
-        MessageFile.objects.bulk_create([
+        chat = user.chats.create(title = "File Analysis")
+        message = chat.messages.create(text = "Describe the files.", is_from_user = True)
+        message.files.bulk_create([
             MessageFile(message = message, name = f"file{i + 1}.txt", content = f"Document {i + 1}".encode(), content_type = "text/plain")
             for i in range(5)
         ])
+        chat.messages.create(text = "The files are about...", is_from_user = False)
 
         files = [SimpleUploadedFile(f"file{i + 6}.txt", f"Document {i + 6}".encode(), "text/plain") for i in range(6)]
         body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid), "text": "Describe the files.", "index": 0, "added_files": files})
@@ -1788,8 +1788,9 @@ class EditMessage(TestCase):
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_files_too_large(self, _):
         user = self.create_and_login_user()
-        chat = Chat.objects.create(user = user, title = "File Analysis")
-        Message.objects.create(chat = chat, text = "Describe the files.", is_from_user = True)
+        chat = user.chats.create(title = "File Analysis")
+        chat.messages.create(text = "Describe the files.", is_from_user = True)
+        chat.messages.create(text = "The files are about...", is_from_user = False)
 
         def post_and_assert(files: list[SimpleUploadedFile]):
             body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid), "text": "Describe the files.", "index": 0, "added_files": files})
