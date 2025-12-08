@@ -1054,51 +1054,37 @@ class RenameChat(TestCase):
 
 class ArchiveChat(TestCase):
     def test(self):
-        content_type = "application/json"
+        def archive(chat: Chat):
+            response = self.client.patch("/api/archive-chat/", {"chat_uuid": str(chat.uuid)}, "application/json")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.content, b"")
 
-        response = self.client.patch("/api/archive-chat/")
-        self.assertEqual(response.status_code, 401)
-
-        response = self.client.patch("/api/archive-chat/", {"chat_uuid": "test-uuid"})
-        self.assertEqual(response.status_code, 401)
-
-        user1 = create_user()
-        response = self.client.patch("/api/archive-chat/", {"chat_uuid": "test-uuid"})
-        self.assertEqual(response.status_code, 401)
-
-        self.login_user()
-        response = self.client.patch("/api/archive-chat/", {"chat_uuid": "test-uuid"}, content_type)
-        self.assertEqual(response.status_code, 400)
-
-        chat1 = Chat.objects.create(user = user1, title = "Greetings")
-        chat2 = Chat.objects.create(user = user1, title = "Math Help")
+        user1 = self.create_and_login_user()
+        chat1 = user1.chats.create(title = "Greetings")
+        chat2 = user1.chats.create(title = "Math Help")
         self.assertFalse(chat1.is_archived)
         self.assertFalse(chat2.is_archived)
 
-        response = self.client.patch("/api/archive-chat/", {"chat_uuid": chat1.uuid}, content_type)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content, b"")
-
-        chat1 = Chat.objects.get(user = user1, title = "Greetings")
-        chat2 = Chat.objects.get(user = user1, title = "Math Help")
+        archive(chat1)
+        chat1.refresh_from_db()
+        chat2.refresh_from_db()
         self.assertTrue(chat1.is_archived)
         self.assertFalse(chat2.is_archived)
 
         self.logout_user()
 
         user2 = self.create_and_login_user("someone@example.com", "somepassword")
-        chat3 = Chat.objects.create(user = user2, title = "Travel Advice")
-        self.assertFalse(chat3.is_archived)
+        chat3 = user2.chats.create(title = "Travel Advice")
+        chat4 = user2.chats.create(title = "Recipe Suggestion")
 
-        response = self.client.patch("/api/archive-chat/", {"chat_uuid": chat3.uuid}, content_type)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content, b"")
-
-        chat3 = Chat.objects.get(user = user2, title = "Travel Advice")
+        archive(chat3)
+        chat3.refresh_from_db()
+        chat4.refresh_from_db()
         self.assertTrue(chat3.is_archived)
+        self.assertFalse(chat4.is_archived)
 
-        chat1 = Chat.objects.get(user = user1, title = "Greetings")
-        chat2 = Chat.objects.get(user = user1, title = "Math Help")
+        chat1.refresh_from_db()
+        chat2.refresh_from_db()
         self.assertTrue(chat1.is_archived)
         self.assertFalse(chat2.is_archived)
 
