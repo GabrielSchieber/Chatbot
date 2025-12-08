@@ -1931,3 +1931,20 @@ class RegenerateMessage(TestCase):
         response = self.client.patch("/api/regenerate-message/", body, content_type)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"model": ['"INVALID" is not a valid choice.']})
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_index_out_of_range(self, _):
+        def test(chat: Chat, index: int):
+            body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid), "index": index})
+            content_type = f"multipart/form-data; boundary={BOUNDARY}"
+            response = self.client.patch("/api/regenerate-message/", body, content_type)
+            self.assertEqual(response.status_code, 404)
+            self.assertEqual(response.json(), {"detail": "Index out of range."})
+
+        user = self.create_and_login_user()
+        chat = user.chats.create(title = "Greetings")
+        test(chat, 0)
+
+        chat.messages.create(text = "Hello!", is_from_user = True)
+        chat.messages.create(text = "Hello! How can I help you today?", is_from_user = False)
+        test(chat, 2)
