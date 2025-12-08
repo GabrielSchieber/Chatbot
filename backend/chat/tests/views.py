@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 from django.contrib.auth.hashers import check_password
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.http import HttpResponse
 from django.test import TestCase as DjangoTestCase
 from django.test.client import encode_multipart, BOUNDARY
 from django.utils import timezone
@@ -82,20 +81,15 @@ class Login(TestCase):
         self.assertIn("refresh_token", self.client.cookies)
 
     def test_with_invalid_credentials(self):
-        error = "login.error"
+        def test(email: str, password: str):
+            response = self.login_user(email, password)
+            self.assertEqual(response.status_code, 401)
+            self.assertEqual(response.json(), {"detail": "login.error"})
 
         create_user()
-        response = self.login_user("someemail@example.com", "somepassword")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json()["error"], error)
-
-        response = self.login_user("test@example.com", "somepassword")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json()["error"], error)
-
-        response = self.login_user("someemail@example.com", "testpassword")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json()["error"], error)
+        test("someemail@example.com", "somepassword")
+        test("test@example.com", "somepassword")
+        test("someemail@example.com", "testpassword")
 
 class VerifyMFA(TestCase):
     def test(self):
@@ -139,7 +133,7 @@ class VerifyMFA(TestCase):
     def test_invalid_or_expired_code(self):
         response = self.client.post("/api/verify-mfa/", {"token": str(uuid.uuid4()), "code": "123456"})
         self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"error": "mfa.messages.errorInvalidOrExpiredCode"})
+        self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidOrExpiredCode"})
 
         time_to_freeze = timezone.datetime(2025, 1, 1, 12)
         with freeze_time(time_to_freeze):
@@ -153,17 +147,17 @@ class VerifyMFA(TestCase):
 
             response = self.client.post("/api/verify-mfa/", {"token": token, "code": "123456"})
             self.assertEqual(response.status_code, 401)
-            self.assertEqual(response.json(), {"error": "mfa.messages.errorInvalidCode"})
+            self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidCode"})
 
         with freeze_time(time_to_freeze + timedelta(minutes = 5)):
             response = self.client.post("/api/verify-mfa/", {"token": token, "code": "123456"})
             self.assertEqual(response.status_code, 401)
-            self.assertEqual(response.json(), {"error": "mfa.messages.errorInvalidCode"})
+            self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidCode"})
 
         with freeze_time(time_to_freeze + timedelta(minutes = 5, seconds = 1)):
             response = self.client.post("/api/verify-mfa/", {"token": token, "code": "123456"})
             self.assertEqual(response.status_code, 401)
-            self.assertEqual(response.json(), {"error": "mfa.messages.errorInvalidOrExpiredCode"})
+            self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidOrExpiredCode"})
 
 class Logout(TestCase):
     def test(self):
@@ -189,7 +183,7 @@ class Logout(TestCase):
     def test_without_being_authenticated(self):
         response = self.client.post("/api/logout/")
         self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json()["detail"], "Authentication credentials were not provided.")
+        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
 
 class Refresh(TestCase):
     def test(self):
@@ -206,14 +200,14 @@ class Refresh(TestCase):
     def test_without_cookie(self):
         response = self.client.post("/api/refresh/")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "Refresh token is required to be present in cookies."})
+        self.assertEqual(response.json(), {"detail": "Refresh token is required to be present in cookies."})
 
     def test_with_invalid_cookie(self):
         self.client.cookies["refresh_token"] = "not-a-real-token"
 
         response = self.client.post("/api/refresh/")
         self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"error": "Invalid refresh token."})
+        self.assertEqual(response.json(), {"detail": "Invalid refresh token."})
 
     def test_with_blacklisted_cookie(self):
         refresh = RefreshToken.for_user(create_user())
@@ -222,7 +216,7 @@ class Refresh(TestCase):
 
         response = self.client.post("/api/refresh/")
         self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"error": "Invalid refresh token."})
+        self.assertEqual(response.json(), {"detail": "Invalid refresh token."})
 
     def test_with_expired_cookie(self):
         refresh = RefreshToken.for_user(create_user())
@@ -237,7 +231,7 @@ class Refresh(TestCase):
         with freeze_time(exp_datetime + timedelta(seconds = 1)):
             response = self.client.post("/api/refresh/")
             self.assertEqual(response.status_code, 401)
-            self.assertEqual(response.json(), {"error": "Invalid refresh token."})
+            self.assertEqual(response.json(), {"detail": "Invalid refresh token."})
 
     def test_with_tampered_cookie(self):
         refresh = RefreshToken.for_user(create_user())
@@ -479,7 +473,7 @@ class EnableMFA(TestCase):
 
         response = self.client.post("/api/enable-mfa/")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "MFA is already enabled for the current user."})
+        self.assertEqual(response.json(), {"detail": "MFA is already enabled for the current user."})
 
     def test_requires_valid_code(self):
         user, _ = self.create_and_login_user()
@@ -488,7 +482,7 @@ class EnableMFA(TestCase):
         for code in ["", "1", "-1", "12345", "-12345", "1234567", "-1234567", "a", "abcdef"]:
             response = self.client.post("/api/enable-mfa/", {"code": code})
             self.assertEqual(response.status_code, 403)
-            self.assertEqual(response.json(), {"error": "mfa.messages.errorInvalidCode"})
+            self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidCode"})
 
 class DisableMFA(TestCase):
     def test(self):
@@ -517,7 +511,7 @@ class DisableMFA(TestCase):
         self.create_and_login_user()
         response = self.client.post("/api/disable-mfa/")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "MFA is already disabled for the current user."})
+        self.assertEqual(response.json(), {"detail": "MFA is already disabled for the current user."})
 
     def test_requires_valid_code(self):
         user, _ = self.create_and_login_user()
@@ -527,7 +521,7 @@ class DisableMFA(TestCase):
         for code in ["", "1", "-1", "12345", "-12345", "1234567", "-1234567", "a", "abcdef"]:
             response = self.client.post("/api/disable-mfa/", {"code": code})
             self.assertEqual(response.status_code, 403)
-            self.assertEqual(response.json(), {"error": "mfa.messages.errorInvalidCode"})
+            self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidCode"})
 
 class DeleteAccount(TestCase):
    def test(self):
@@ -618,7 +612,7 @@ class GetChat(TestCase):
 
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat1.uuid}")
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"error": "Chat was not found."})
+        self.assertEqual(response.json(), {"detail": "Chat was not found."})
 
 class GetChats(TestCase):
     def test(self):
@@ -1156,12 +1150,12 @@ class GetMessageFileContent(TestCase):
 
         response = self.client.get(f"/api/get-message-file-content/?chat_uuid={uuid.uuid4()}&message_file_id=1", **{"HTTP_ACCEPT": "application/json"})
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"error": "Chat was not found."})
+        self.assertEqual(response.json(), {"detail": "Chat was not found."})
 
         chat1 = Chat.objects.create(user = user, title = "File Analysis")
         response = self.client.get(f"/api/get-message-file-content/?chat_uuid={chat1.uuid}&message_file_id=1", **{"HTTP_ACCEPT": "application/json"})
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"error": "Message file was not found."})
+        self.assertEqual(response.json(), {"detail": "Message file was not found."})
 
         message1 = Message.objects.create(chat = chat1, text = "Describe the file.", is_from_user = True)
         message_file1 = MessageFile.objects.create(
@@ -1311,7 +1305,7 @@ class NewMessage(TestCase):
         self.create_and_login_user()
         response = self.client.post("/api/new-message/")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "A chat is already pending."})
+        self.assertEqual(response.json(), {"detail": "A chat is already pending."})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     @patch("chat.views.generate_pending_message_in_chat")
@@ -1363,7 +1357,7 @@ class NewMessage(TestCase):
         self.create_and_login_user()
         response = self.client.post("/api/new-message/", {"chat_uuid": str(uuid.uuid4()), "text": "hello"}, format = "multipart")
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"error": "Chat was not found."})
+        self.assertEqual(response.json(), {"detail": "Chat was not found."})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_invalid_chat_uuid_format(self, _):
@@ -1455,7 +1449,7 @@ class EditMessage(TestCase):
         self.create_and_login_user()
         response = self.client.patch("/api/edit-message/")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "A chat is already pending."})
+        self.assertEqual(response.json(), {"detail": "A chat is already pending."})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_requires_chat_uuid_and_index(self, _):
@@ -1481,7 +1475,7 @@ class EditMessage(TestCase):
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/edit-message/", body, content_type)
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"error": "Chat was not found."})
+        self.assertEqual(response.json(), {"detail": "Chat was not found."})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_requires_index(self, _):
@@ -1520,7 +1514,7 @@ class EditMessage(TestCase):
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/edit-message/", body, content_type)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "Total number of files exceeds the limit of 10."})
+        self.assertEqual(response.json(), {"detail": "Total number of files exceeds the limit of 10."})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_files_too_large(self, _):
@@ -1533,7 +1527,7 @@ class EditMessage(TestCase):
             content_type = f"multipart/form-data; boundary={BOUNDARY}"
             response = self.client.patch("/api/edit-message/", body, content_type)
             self.assertEqual(response.status_code, 400)
-            self.assertEqual(response.json(), {"error": "Total file size exceeds limit of 5 MB."})
+            self.assertEqual(response.json(), {"detail": "Total file size exceeds limit of 5 MB."})
 
         test_sizes = [
             [5_000_001],
@@ -1595,7 +1589,7 @@ class RegenerateMessage(TestCase):
         self.create_and_login_user()
         response = self.client.patch("/api/regenerate-message/")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "A chat is already pending."})
+        self.assertEqual(response.json(), {"detail": "A chat is already pending."})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_requires_chat_uuid_and_index(self, _):
@@ -1621,7 +1615,7 @@ class RegenerateMessage(TestCase):
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/regenerate-message/", body, content_type)
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json(), {"error": "Chat was not found."})
+        self.assertEqual(response.json(), {"detail": "Chat was not found."})
 
     @patch("chat.views.is_any_user_chat_pending", return_value = False)
     def test_requires_index(self, _):

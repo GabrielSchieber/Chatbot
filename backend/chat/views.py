@@ -29,7 +29,7 @@ class Signup(APIView):
         password = qs.validated_data["password"]
 
         if User.objects.filter(email = email).exists():
-            return Response({"error": "signup.emailError"}, status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "signup.emailError"}, status.HTTP_400_BAD_REQUEST)
 
         User.objects.create_user(email = email, password = password)
 
@@ -48,7 +48,7 @@ class Login(APIView):
 
         user: User | None = authenticate(request, email = email, password = password)
         if user is None:
-            return Response({"error": "login.error"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"detail": "login.error"}, status.HTTP_401_UNAUTHORIZED)
 
         if user.mfa.is_enabled:
             pre_auth_token = PreAuthToken.objects.create(user = user)
@@ -76,15 +76,15 @@ class VerifyMFA(APIView):
         try:
             pre_auth_token = PreAuthToken.objects.get(token = token)
         except PreAuthToken.DoesNotExist:
-            return Response({"error": "mfa.messages.errorInvalidOrExpiredCode"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"detail": "mfa.messages.errorInvalidOrExpiredCode"}, status.HTTP_401_UNAUTHORIZED)
 
         if pre_auth_token.is_expired():
             pre_auth_token.delete()
-            return Response({"error": "mfa.messages.errorInvalidOrExpiredCode"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"detail": "mfa.messages.errorInvalidOrExpiredCode"}, status.HTTP_401_UNAUTHORIZED)
 
         user = pre_auth_token.user
         if not user.mfa.verify(code):
-            return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"detail": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
 
         refresh = RefreshToken.for_user(user)
         response = Response(status = status.HTTP_200_OK)
@@ -111,13 +111,13 @@ class Refresh(TokenRefreshView):
     def post(self, request: Request):
         refresh_token = request.COOKIES.get("refresh_token")
         if refresh_token is None:
-            return Response({"error": "Refresh token is required to be present in cookies."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Refresh token is required to be present in cookies."}, status.HTTP_400_BAD_REQUEST)
 
         qs = TokenRefreshSerializer(data = {"refresh": refresh_token})
         try:
             qs.is_valid(raise_exception = True)
         except Exception:
-            return Response({"error": "Invalid refresh token."}, status.HTTP_401_UNAUTHORIZED)
+            return Response({"detail": "Invalid refresh token."}, status.HTTP_401_UNAUTHORIZED)
 
         access_token = qs.validated_data["access"]
         refresh_token = qs.validated_data["refresh"]
@@ -161,12 +161,12 @@ class EnableMFA(APIView):
         user: User = request.user
 
         if user.mfa.is_enabled:
-            return Response({"error": "MFA is already enabled for the current user."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "MFA is already enabled for the current user."}, status.HTTP_400_BAD_REQUEST)
 
         code = request.data.get("code")
 
         if not user.mfa.verify(code):
-            return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
 
         backup_codes = user.mfa.enable()
         return Response({"backup_codes": backup_codes}, status.HTTP_200_OK)
@@ -178,12 +178,12 @@ class DisableMFA(APIView):
         user: User = request.user
 
         if not user.mfa.is_enabled:
-            return Response({"error": "MFA is already disabled for the current user."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "MFA is already disabled for the current user."}, status.HTTP_400_BAD_REQUEST)
 
         code = request.data.get("code")
 
         if not user.mfa.verify(code):
-            return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
 
         user.mfa.disable()
         return Response(status = status.HTTP_200_OK)
@@ -201,13 +201,13 @@ class DeleteAccount(APIView):
         mfa_code = qs.validated_data.get("mfa_code")
 
         if not user.check_password(password):
-            return Response({"error": "mfa.messages.errorInvalidPassword"}, status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "mfa.messages.errorInvalidPassword"}, status.HTTP_403_FORBIDDEN)
 
         if user.mfa.is_enabled:
             if mfa_code is None:
-                return Response({"error": "MFA code is required."}, status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "MFA code is required."}, status.HTTP_400_BAD_REQUEST)
             if not user.mfa.verify(mfa_code):
-                return Response({"error": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
+                return Response({"detail": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
 
         user.delete()
         response = Response(status = status.HTTP_204_NO_CONTENT)
@@ -229,7 +229,7 @@ class GetChat(APIView):
         try:
             chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
-            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, status.HTTP_200_OK)
@@ -302,7 +302,7 @@ class RenameChat(APIView):
         try:
             chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
-            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
         chat.title = new_title
         chat.save()
@@ -322,7 +322,7 @@ class ArchiveChat(APIView):
         try:
             chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
-            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
         stop_pending_chat(chat)
         chat.is_archived = True
@@ -343,7 +343,7 @@ class UnarchiveChat(APIView):
         try:
             chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
-            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
         stop_pending_chat(chat)
         chat.is_archived = False
@@ -364,7 +364,7 @@ class DeleteChat(APIView):
         try:
             chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
-            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
         stop_pending_chat(chat)
         chat.delete()
@@ -426,12 +426,12 @@ class GetMessageFileContent(APIView):
         try:
             chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
-            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
         try:
             message_file = MessageFile.objects.get(message__chat = chat, id = message_file_id)
         except MessageFile.DoesNotExist:
-            return Response({"error": "Message file was not found."}, status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Message file was not found."}, status.HTTP_404_NOT_FOUND)
 
         return Response(message_file.content, status.HTTP_200_OK, content_type = message_file.content_type)
 
@@ -449,7 +449,7 @@ class GetMessages(APIView):
         try:
             chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
-            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
         messages = chat.messages.order_by("created_at").prefetch_related("files")
         serializer = MessageSerializer(messages, many = True)
@@ -463,7 +463,7 @@ class NewMessage(APIView):
         user: User = request.user
 
         if is_any_user_chat_pending(user):
-            return Response({"error": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
 
         qs = NewMessageSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
@@ -479,7 +479,7 @@ class NewMessage(APIView):
             try:
                 chat = user.chats.get(uuid = chat_uuid)
             except Chat.DoesNotExist:
-                return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+                return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
         user_message = chat.messages.create(text = text, is_from_user = True)
         if len(files) > 0:
@@ -504,7 +504,7 @@ class EditMessage(APIView):
         user: User = request.user
 
         if is_any_user_chat_pending(user):
-            return Response({"error": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
 
         qs = EditMessageSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
@@ -519,7 +519,7 @@ class EditMessage(APIView):
         try:
             chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
-            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
         messages = chat.messages.order_by("created_at")
         user_message: Message = messages[index]
@@ -531,13 +531,13 @@ class EditMessage(APIView):
                 removed_files.append(removed_message_file)
 
         if user_message.files.count() + len(added_files) - len(removed_files) > 10:
-            return Response({"error": "Total number of files exceeds the limit of 10."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Total number of files exceeds the limit of 10."}, status.HTTP_400_BAD_REQUEST)
 
         total_size = sum([len(f.content) for f in user_message.files.all()])
         total_size += sum([f.size for f in added_files])
         total_size -= sum([len(f.content) for f in removed_files])
         if total_size > 5_000_000:
-            return Response({"error": "Total file size exceeds limit of 5 MB."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Total file size exceeds limit of 5 MB."}, status.HTTP_400_BAD_REQUEST)
 
         user_message.text = text
         for removed_file in removed_files:
@@ -568,7 +568,7 @@ class RegenerateMessage(APIView):
         user: User = request.user
 
         if is_any_user_chat_pending(user):
-            return Response({"error": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "A chat is already pending."}, status.HTTP_400_BAD_REQUEST)
 
         qs = RegenerateMessageSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
@@ -580,7 +580,7 @@ class RegenerateMessage(APIView):
         try:
             chat = user.chats.get(uuid = chat_uuid)
         except Chat.DoesNotExist:
-            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
         bot_message: Message = chat.messages.order_by("created_at")[index]
         bot_message.text = ""
