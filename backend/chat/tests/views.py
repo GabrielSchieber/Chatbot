@@ -962,35 +962,53 @@ class SearchChats(TestCase):
 
 class RenameChat(TestCase):
     def test(self):
-        response = self.client.patch("/api/rename-chat/")
-        self.assertEqual(response.status_code, 401)
+        def rename(chat_uuid: str, new_title: str):
+            response =  self.client.patch("/api/rename-chat/", {"chat_uuid": chat_uuid, "new_title": new_title}, "application/json")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.content, b"")
 
-        response = self.client.patch("/api/rename-chat/", {"chat_uuid": "test-uuid", "new_title": "Some title"}, content_type = "application/json")
-        self.assertEqual(response.status_code, 401)
-
-        user1 = create_user()
-        response = self.client.patch("/api/rename-chat/", {"chat_uuid": "test-uuid", "new_title": "Some title"}, content_type = "application/json")
-        self.assertEqual(response.status_code, 401)
-
-        self.login_user()
-        response = self.client.patch("/api/rename-chat/", {"chat_uuid": "test-uuid", "new_title": "Some title"}, content_type = "application/json")
-        self.assertEqual(response.status_code, 400)
-
+        user1 = self.create_and_login_user()
         chat1 = Chat.objects.create(user = user1, title = "Test title")
-        response = self.client.patch("/api/rename-chat/", {"chat_uuid": "test-uuid", "new_title": "Some title"}, content_type = "application/json")
-        self.assertEqual(response.status_code, 400)
 
-        response = self.client.patch("/api/rename-chat/", {"chat_uuid": chat1.uuid, "new_title": "Some title"}, content_type = "application/json")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(Chat.objects.first().title, "Some title")
+        rename(chat1.uuid, "Greetings")
+        self.assertEqual(Chat.objects.first().title, "Greetings")
 
         self.logout_user()
+
         user2 = self.create_and_login_user("someone@example.com", "somepassword")
         chat2 = Chat.objects.create(user = user2, title = "Some chat")
-        response = self.client.patch("/api/rename-chat/", {"chat_uuid": chat2.uuid, "new_title": "Some other chat"}, content_type = "application/json")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("Some title", [Chat.objects.first().title, Chat.objects.last().title])
-        self.assertIn("Some other chat", [Chat.objects.first().title, Chat.objects.last().title])
+
+        rename(chat2.uuid, "Travel Advice")
+
+        chats = Chat.objects.order_by("created_at")
+        self.assertEqual(chats.last().title, "Travel Advice")
+        self.assertEqual(chats.first().title, "Greetings")
+
+        self.assertEqual(chats.first().user, user1)
+        self.assertEqual(chats.last().user, user2)
+
+    def test_requires_authentication(self):
+        response = self.client.patch("/api/rename-chat/")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
+
+    def test_requires_chat_uuid_and_new_title(self):
+        self.create_and_login_user()
+        response = self.client.patch("/api/rename-chat/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"chat_uuid": ["This field is required."], "new_title": ["This field is required."]})
+
+    def test_invalid_chat_uuid(self):
+        self.create_and_login_user()
+        response = self.client.patch("/api/rename-chat/", {"chat_uuid": "invalid", "new_title": "Some Chat"}, "application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"chat_uuid": ["Must be a valid UUID."]})
+
+    def test_chat_was_not_found(self):
+        self.create_and_login_user()
+        response = self.client.patch("/api/rename-chat/", {"chat_uuid": str(uuid.uuid4()), "new_title": "Some Chat"}, "application/json")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"detail": "Chat was not found."})
 
 class ArchiveChat(TestCase):
     def test(self):
