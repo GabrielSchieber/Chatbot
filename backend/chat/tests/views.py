@@ -94,6 +94,34 @@ class Login(TestCase):
         test("test@example.com", "somepassword")
         test("someemail@example.com", "testpassword")
 
+    def test_with_mfa_enabled(self):
+        user = create_user()
+        user.mfa.setup()
+        user.mfa.enable()
+
+        response = self.login_user()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        for cookies in [response.cookies, self.client.cookies]:
+            self.assertEqual(len(cookies), 0)
+
+        token = response.json()["token"]
+        response = self.client.post("/api/verify-mfa/", {"token": token, "code": generate_code(user.mfa.secret)})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"")
+
+        for cookies in [response.cookies, self.client.cookies]:
+            self.assertEqual(len(cookies), 2)
+            self.assertIn("access_token", cookies)
+            self.assertIn("refresh_token", cookies)
+
+            for _, cookie in cookies.items():
+                self.assertTrue(cookie["httponly"])
+                self.assertEqual(cookie["samesite"], "Lax")
+
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 200)
+
 class VerifyMFA(TestCase):
     def test(self):
         def is_valid_uuid4(value: str):
