@@ -131,17 +131,15 @@ class VerifyMFA(TestCase):
                 return False
             return True
 
-        email = "test@example.com"
-        password = "testpassword"
-        user =  User.objects.create_user(email = email, password = password)
+        user = create_user()
         user.mfa.setup()
         user.mfa.enable()
 
-        response = self.login_user(email, password)
+        response = self.login_user()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.cookies), 0)
         self.assertEqual(len(response.json()), 1)
-        self.assertEqual(len(self.client.cookies), 0)
+        for cookies in [response.cookies, self.client.cookies]:
+            self.assertEqual(len(cookies), 0)
 
         token = response.json()["token"]
         self.assertEqual(type(token), str)
@@ -152,15 +150,16 @@ class VerifyMFA(TestCase):
 
         response = self.client.post("/api/verify-mfa/", {"token": token, "code": generate_code(user.mfa.secret)})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.cookies), 2)
+        self.assertEqual(response.content, b"")
 
-        access_token = dict(response.cookies["access_token"].items())
-        self.assertTrue(access_token["httponly"])
-        self.assertEqual(access_token["samesite"], "Lax")
+        for cookies in [response.cookies, self.client.cookies]:
+            self.assertEqual(len(cookies), 2)
+            self.assertIn("access_token", cookies)
+            self.assertIn("refresh_token", cookies)
 
-        refresh_token = dict(response.cookies["refresh_token"].items())
-        self.assertTrue(refresh_token["httponly"])
-        self.assertEqual(refresh_token["samesite"], "Lax")
+            for _, cookie in cookies.items():
+                self.assertTrue(cookie["httponly"])
+                self.assertEqual(cookie["samesite"], "Lax")
 
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
