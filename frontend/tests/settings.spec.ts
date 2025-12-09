@@ -7,7 +7,7 @@ test("user can open settings", async ({ page }) => {
 
     const settingsButton = page.getByText("Settings")
     if (!(await settingsButton.isVisible())) {
-        await page.getByRole("button").first().click()
+        await page.getByRole("banner").getByRole("button").first().click()
     }
     await settingsButton.click()
 
@@ -63,7 +63,7 @@ test("user can change theme", async ({ page }) => {
 
     const settingsButton = page.getByText("Settings")
     if (!(await settingsButton.isVisible())) {
-        await page.getByRole("button").first().click()
+        await page.getByRole("banner").getByRole("button").first().click()
     }
     await settingsButton.click()
 
@@ -128,7 +128,7 @@ test("user can change language", async ({ page }) => {
 
     const settingsButton = page.getByText("Settings")
     if (!(await settingsButton.isVisible())) {
-        await page.getByRole("button").first().click()
+        await page.getByRole("banner").getByRole("button").first().click()
     }
     await settingsButton.click()
 
@@ -286,7 +286,7 @@ test("user can delete account", async ({ page }) => {
 
     const settingsButton = page.getByText("Settings")
     if (!(await settingsButton.isVisible())) {
-        await page.getByRole("button").first().click()
+        await page.getByRole("banner").getByRole("button").first().click()
     }
     await settingsButton.click()
 
@@ -505,7 +505,7 @@ test("user can log out", async ({ page }) => {
 
     const settingsButton = page.getByText("Settings")
     if (!(await settingsButton.isVisible())) {
-        await page.getByRole("button").first().click()
+        await page.getByRole("banner").getByRole("button").first().click()
     }
     await settingsButton.click()
 
@@ -530,7 +530,7 @@ async function archiveOrUnarchiveAllChats(page: Page, user: User, action: "archi
 
     const settingsButton = page.getByText("Settings")
     if (!(await settingsButton.isVisible())) {
-        await page.getByRole("button").first().click()
+        await page.getByRole("banner").getByRole("button").first().click()
     }
     await settingsButton.click()
 

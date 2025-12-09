@@ -76,7 +76,7 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
 
     const settingsButton = page.getByText("Settings")
     if (!(await settingsButton.isVisible())) {
-        await page.getByRole("button").first().click()
+        await page.getByRole("banner").getByRole("button").first().click()
     }
     await settingsButton.click()
 
