@@ -96,6 +96,13 @@ class Login(TestCase):
 
 class VerifyMFA(TestCase):
     def test(self):
+        def is_valid_uuid4(value: str):
+            try:
+                uuid.UUID(value, version = 4)
+            except ValueError:
+                return False
+            return True
+
         email = "test@example.com"
         password = "testpassword"
         user =  User.objects.create_user(email = email, password = password)
@@ -105,12 +112,12 @@ class VerifyMFA(TestCase):
         response = self.login_user(email, password)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.cookies), 0)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(len(self.client.cookies), 0)
+
         token = response.json()["token"]
         self.assertEqual(type(token), str)
-        try:
-            uuid.UUID(token, version = 4)
-        except ValueError:
-            raise ValueError("Invalid token when logging in user with MFA enabled.")
+        self.assertTrue(is_valid_uuid4(token))
 
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 401)
