@@ -166,6 +166,64 @@ class VerifyMFA(TestCase):
             self.assertEqual(response.status_code, 401)
             self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidOrExpiredCode"})
 
+    def test_backup_codes(self):
+        def assert_empty_cookies():
+            if len(response.cookies.items()) != 0:
+                self.assertEqual(len(response.cookies.items()), 2)
+                self.assertEqual(response.cookies["access_token"].value, "")
+                self.assertEqual(response.cookies["refresh_token"].value, "")
+
+            self.assertEqual(len(self.client.cookies.items()), 2)
+            self.assertEqual(self.client.cookies["access_token"].value, "")
+            self.assertEqual(self.client.cookies["refresh_token"].value, "")
+
+        user = create_user()
+        user.mfa.setup()
+        backup_codes = user.mfa.enable()
+
+        for backup_code in backup_codes:
+            response = self.client.get("/api/me/")
+            self.assertEqual(response.status_code, 401)
+
+            response = self.login_user()
+            self.assertEqual(response.status_code, 200)
+            token = response.json()["token"]
+
+            response = self.client.post("/api/verify-mfa/", {"token": token, "code": backup_code})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.cookies), 2)
+            self.assertEqual(len(self.client.cookies), 2)
+
+            access_token = dict(response.cookies["access_token"].items())
+            self.assertTrue(access_token["httponly"])
+            self.assertEqual(access_token["samesite"], "Lax")
+
+            refresh_token = dict(response.cookies["refresh_token"].items())
+            self.assertTrue(refresh_token["httponly"])
+            self.assertEqual(refresh_token["samesite"], "Lax")
+
+            response = self.client.get("/api/me/")
+            self.assertEqual(response.status_code, 200)
+
+            response = self.client.post("/api/logout/")
+            self.assertEqual(response.status_code, 200)
+            assert_empty_cookies()
+
+        for backup_code in backup_codes:
+            response = self.client.get("/api/me/")
+            self.assertEqual(response.status_code, 401)
+
+            response = self.login_user()
+            self.assertEqual(response.status_code, 200)
+            token = response.json()["token"]
+
+            response = self.client.post("/api/verify-mfa/", {"token": token, "code": backup_code})
+            self.assertEqual(response.status_code, 401)
+            assert_empty_cookies()
+
+            response = self.client.get("/api/me/")
+            self.assertEqual(response.status_code, 401)
+
 class Logout(TestCase):
     def test(self):
         create_user()
