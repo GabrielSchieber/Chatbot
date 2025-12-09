@@ -15,6 +15,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import create_user
 from ..models import Chat, Message, MessageFile, User
 from ..totp_utils import generate_code
+from ..urls import urlpatterns
 
 class TestCase(DjangoTestCase):
     def login_user(self, email: str = "test@example.com", password: str = "testpassword"):
@@ -95,9 +96,6 @@ class Login(TestCase):
 
 class VerifyMFA(TestCase):
     def test(self):
-        response = self.client.get("/api/me/")
-        self.assertEqual(response.status_code, 401)
-
         email = "test@example.com"
         password = "testpassword"
         user =  User.objects.create_user(email = email, password = password)
@@ -163,9 +161,6 @@ class VerifyMFA(TestCase):
 
 class Logout(TestCase):
     def test(self):
-        response = self.client.post("/api/logout/")
-        self.assertEqual(response.status_code, 401)
-
         create_user()
         response = self.login_user()
         self.assertEqual(response.status_code, 200)
@@ -182,11 +177,6 @@ class Logout(TestCase):
         self.assertEqual(len(response.cookies.items()), 2)
         self.assertEqual(response.cookies["access_token"].value, "")
         self.assertEqual(response.cookies["refresh_token"].value, "")
-
-    def test_without_being_authenticated(self):
-        response = self.client.post("/api/logout/")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
 
 class Refresh(TestCase):
     def test(self):
@@ -432,11 +422,6 @@ class SetupMFA(TestCase):
         self.assertEqual(user.mfa.backup_codes, [])
         self.assertFalse(user.mfa.is_enabled)
 
-    def test_requires_authentication(self):
-        response = self.client.post("/api/setup-mfa/")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
-
     def test_requires_to_be_disabled(self):
         user = self.create_and_login_user()
         user.mfa.setup()
@@ -488,11 +473,6 @@ class EnableMFA(TestCase):
         for backup_code, hashed_backup_code in zip(backup_codes, user.mfa.backup_codes):
             self.assertNotEqual(backup_code, hashed_backup_code)
 
-    def test_requires_authentication(self):
-        response = self.client.post("/api/enable-mfa/")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
-
     def test_requires_to_be_disabled(self):
         user = self.create_and_login_user()
         user.mfa.setup()
@@ -528,11 +508,6 @@ class DisableMFA(TestCase):
         self.assertEqual(user.mfa.secret, b"")
         self.assertEqual(user.mfa.backup_codes, [])
         self.assertFalse(user.mfa.is_enabled)
-
-    def test_requires_authentication(self):
-        response = self.client.post("/api/disable-mfa/")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
 
     def test_requires_to_be_enabled(self):
         self.create_and_login_user()
@@ -573,11 +548,6 @@ class DeleteAccount(TestCase):
         self.assertEqual(User.objects.count(), 1)
         self.assertEqual(User.objects.first(), user1)
 
-    def test_requires_authentication(self):
-        response = self.client.post("/api/delete-account/")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
-
     def test_requires_password(self):
         self.create_and_login_user()
         response = self.client.delete("/api/delete-account/")
@@ -617,14 +587,7 @@ class DeleteAccount(TestCase):
 
 class GetChat(TestCase):
     def test(self):
-        response = self.client.get("/api/get-chat/")
-        self.assertEqual(response.status_code, 401)
-
-        user1 = create_user()
-        response = self.client.get("/api/get-chat/")
-        self.assertEqual(response.status_code, 401)
-
-        self.login_user()
+        user1 = self.create_and_login_user()
         response = self.client.get("/api/get-chat/")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"chat_uuid": ["This field is required."]})
@@ -661,14 +624,8 @@ class GetChat(TestCase):
         self.assertEqual(response.json(), expected_json)
 
         self.logout_user()
-        response = self.client.get("/api/get-chat/")
-        self.assertEqual(response.status_code, 401)
 
-        user2 = create_user("someone@example.com", "somepassword")
-        response = self.client.get("/api/get-chat/")
-        self.assertEqual(response.status_code, 401)
-
-        self.login_user("someone@example.com", "somepassword")
+        user2 = self.create_and_login_user("someone@example.com", "somepassword")
         response = self.client.get("/api/get-chat/")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"chat_uuid": ["This field is required."]})
@@ -696,11 +653,6 @@ class GetChats(TestCase):
             for i, chat in enumerate(user.chats.order_by("-created_at"))
         ]
         self.assertEqual(response.json(), {"chats": expected_chats, "has_more": False})
-
-    def test_requires_authentication(self):
-        response = self.client.post("/api/enable-mfa/")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
 
     def test_user_without_chats(self):
         self.create_and_login_user()
@@ -776,12 +728,6 @@ class GetChats(TestCase):
 
 class SearchChats(TestCase):
     def test(self):
-        response = self.client.get("/api/search-chats/")
-        self.assertEqual(response.status_code, 401)
-
-        response = self.client.get("/api/search-chats/?search=What is math")
-        self.assertEqual(response.status_code, 401)
-
         user = self.create_and_login_user()
         response = self.client.get("/api/search-chats/")
         self.assertEqual(response.status_code, 200)
@@ -883,11 +829,6 @@ class SearchChats(TestCase):
             "last_modified_at": chat.last_modified_at().isoformat()
         }]
         self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
-
-    def test_requires_authentication(self):
-        response = self.client.post("/api/search-chats/")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
 
     def test_user_without_chats(self):
         self.create_and_login_user()
@@ -1029,11 +970,6 @@ class RenameChat(TestCase):
         self.assertEqual(chats.first().user, user1)
         self.assertEqual(chats.last().user, user2)
 
-    def test_requires_authentication(self):
-        response = self.client.patch("/api/rename-chat/")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
-
     def test_requires_chat_uuid_and_new_title(self):
         self.create_and_login_user()
         response = self.client.patch("/api/rename-chat/")
@@ -1087,11 +1023,6 @@ class ArchiveChat(TestCase):
         chat2.refresh_from_db()
         self.assertTrue(chat1.is_archived)
         self.assertFalse(chat2.is_archived)
-
-    def test_requires_authentication(self):
-        response = self.client.patch("/api/archive-chat/")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
 
     def test_requires_chat_uuid(self):
         self.create_and_login_user()
@@ -1147,11 +1078,6 @@ class UnarchiveChat(TestCase):
         self.assertFalse(chat1.is_archived)
         self.assertTrue(chat2.is_archived)
 
-    def test_requires_authentication(self):
-        response = self.client.patch("/api/unarchive-chat/")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
-
     def test_requires_chat_uuid(self):
         self.create_and_login_user()
         response = self.client.patch("/api/unarchive-chat/")
@@ -1193,11 +1119,6 @@ class DeleteChat(TestCase):
         delete(chat3)
         self.assertEqual(list(Chat.objects.all()), [chat2, chat4])
 
-    def test_requires_authentication(self):
-        response = self.client.delete("/api/delete-chat/")
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
-
     def test_requires_chat_uuid(self):
         self.create_and_login_user()
         response = self.client.delete("/api/delete-chat/")
@@ -1218,14 +1139,7 @@ class DeleteChat(TestCase):
 
 class ArchiveChats(TestCase):
     def test(self):
-        response = self.client.patch("/api/archive-chats/")
-        self.assertEqual(response.status_code, 401)
-
-        user1 = create_user()
-        response = self.client.patch("/api/archive-chats/")
-        self.assertEqual(response.status_code, 401)
-
-        self.login_user()
+        user1 = self.create_and_login_user()
         response = self.client.patch("/api/archive-chats/")
         self.assertEqual(response.status_code, 200)
 
@@ -1266,14 +1180,7 @@ class ArchiveChats(TestCase):
 
 class UnarchiveChats(TestCase):
     def test(self):
-        response = self.client.patch("/api/unarchive-chats/")
-        self.assertEqual(response.status_code, 401)
-
-        user1 = create_user()
-        response = self.client.patch("/api/unarchive-chats/")
-        self.assertEqual(response.status_code, 401)
-
-        self.login_user()
+        user1 = self.create_and_login_user()
         response = self.client.patch("/api/unarchive-chats/")
         self.assertEqual(response.status_code, 200)
 
@@ -1314,14 +1221,7 @@ class UnarchiveChats(TestCase):
 
 class DeleteChats(TestCase):
     def test(self):
-        response = self.client.delete("/api/delete-chats/")
-        self.assertEqual(response.status_code, 401)
-
-        user1 = create_user()
-        response = self.client.delete("/api/delete-chats/")
-        self.assertEqual(response.status_code, 401)
-
-        self.login_user()
+        user1 = self.create_and_login_user()
         response = self.client.delete("/api/delete-chats/")
         self.assertEqual(response.status_code, 204)
 
@@ -1352,9 +1252,6 @@ class DeleteChats(TestCase):
 
 class StopPendingChats(TestCase):
     def test(self):
-        response = self.client.patch("/api/stop-pending-chats/")
-        self.assertEqual(response.status_code, 401)
-
         user1 = self.create_and_login_user()
 
         chat1 = Chat.objects.create(user = user1, title = "Greetings")
@@ -1406,10 +1303,6 @@ class StopPendingChats(TestCase):
 
 class GetMessageFileContent(TestCase):
     def test(self):
-        response = self.client.get("/api/get-message-file-content/", **{"HTTP_ACCEPT": "application/json"})
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
-
         user = self.create_and_login_user()
         response = self.client.get("/api/get-message-file-content/", **{"HTTP_ACCEPT": "application/json"})
         self.assertEqual(response.status_code, 400)
@@ -1471,12 +1364,6 @@ class GetMessageFileContent(TestCase):
 
 class GetMessages(TestCase):
     def test(self):
-        response = self.client.get("/api/get-messages/")
-        self.assertEqual(response.status_code, 401)
-
-        response = self.client.get("/api/get-messages/?chat_uuid=849087f8-4b3f-47f1-980d-5a5a3d325912")
-        self.assertEqual(response.status_code, 401)
-
         user = self.create_and_login_user()
         response = self.client.get("/api/get-messages/?chat_uuid=849087f8-4b3f-47f1-980d-5a5a3d325912")
         self.assertEqual(response.status_code, 404)
@@ -1565,10 +1452,6 @@ class NewMessage(TestCase):
 
         self.assertEqual(call_arguments[0], chat)
         self.assertTrue(call_arguments[1])
-
-    def test_requires_authentication(self):
-        response = self.client.post("/api/new-message/")
-        self.assertEqual(response.status_code, 401)
 
     @patch("chat.views.is_any_user_chat_pending", return_value = True)
     def test_cannot_send_while_a_chat_is_pending(self, _):
@@ -1708,10 +1591,6 @@ class EditMessage(TestCase):
         call_arguments = mock_generate.call_args[0]
 
         self.assertEqual(call_arguments[0], chat)
-
-    def test_requires_authentication(self):
-        response = self.client.patch("/api/edit-message/")
-        self.assertEqual(response.status_code, 401)
 
     @patch("chat.views.is_any_user_chat_pending", return_value = True)
     def test_cannot_edit_while_a_chat_is_pending(self, _):
@@ -1901,10 +1780,6 @@ class RegenerateMessage(TestCase):
         self.assertEqual(mock_generate.call_args[0][0], chat)
         self.assertTrue(mock_generate.call_args[1]["should_randomize"])
 
-    def test_requires_authentication(self):
-        response = self.client.patch("/api/regenerate-message/")
-        self.assertEqual(response.status_code, 401)
-
     @patch("chat.views.is_any_user_chat_pending", return_value = True)
     def test_cannot_regenerate_while_a_chat_is_pending(self, _):
         self.create_and_login_user()
@@ -1986,3 +1861,19 @@ class RegenerateMessage(TestCase):
         response = self.client.patch("/api/regenerate-message/", body, content_type)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"index": ["Ensure this value is greater than or equal to 0."]})
+
+class TestRequireAuthentication(TestCase):
+    def test(self):
+        urls = [f"/api/{p.pattern}" for p in urlpatterns]
+        for url in ["/api/signup/", "/api/login/", "/api/verify-mfa/", "/api/refresh/"]:
+            urls.remove(url)
+
+        for url in urls:
+            responses = [
+                method(url, **{"HTTP_ACCEPT": "application/json"})
+                for method in [self.client.get, self.client.post, self.client.patch, self.client.delete]
+            ]
+
+            for response in responses:
+                self.assertEqual(response.status_code, 401)
+                self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
