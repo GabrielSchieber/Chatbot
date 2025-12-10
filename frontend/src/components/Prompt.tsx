@@ -21,7 +21,7 @@ export default function Prompt() {
 
     const [text, setText] = useState("")
     const [files, setFiles] = useState<File[]>([])
-    const [model, setModel] = useState<Model>("SmolLM2-1.7B")
+    const [model, setModel] = useState<Model>("SmolLM2-135M")
 
     const [shouldShowPendingNotification, setShouldShowPendingNotification] = useState(false)
 
