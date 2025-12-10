@@ -96,6 +96,22 @@ async def test_receive_send_title_event(db):
     await ws.disconnect()
 
 @pytest.mark.parametrize("anyio_backend", ["asyncio"])
+async def test_receive_send_end_event(db):
+    user, ws = await connect_to_communicator_with_user()
+    chat = await user.chats.acreate(title = "Chat")
+
+    await ws.send_json_to({"chat_uuid": str(chat.uuid)})
+    await assert_in(str(chat.uuid), opened_chats)
+
+    channel_layer = get_channel_layer()
+    await channel_layer.group_send(f"chat_{chat.uuid}", {"type": "send_end"})
+
+    response = await ws.receive_json_from()
+    assert response == "end"
+
+    await ws.disconnect()
+
+@pytest.mark.parametrize("anyio_backend", ["asyncio"])
 async def test_disconnect_removes_opened_chat(db):
     user, ws = await connect_to_communicator_with_user()
     chat = await user.chats.acreate(title = "Chat")
