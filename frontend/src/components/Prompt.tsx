@@ -8,7 +8,7 @@ import { MAX_FILE_SIZE, MAX_FILES } from "./Chat"
 import Composer from "./Composer"
 import { useChat } from "../providers/ChatProvider"
 import { useNotify } from "../providers/NotificationProvider"
-import { newMessage, unarchiveChat } from "../utils/api"
+import { getMessageFileIDs, newMessage, unarchiveChat } from "../utils/api"
 import { getFileSize } from "../utils/misc"
 import type { Model } from "../utils/types"
 
@@ -59,6 +59,16 @@ export default function Prompt() {
                         navigate(`/chat/${chat.uuid}`)
                         setChats(previous => [...previous.map(c => ({ ...c, index: c.index + 1 })), chat])
                     }
+
+                    getMessageFileIDs(chat.uuid).then(response => {
+                        if (response.ok) {
+                            response.json().then((file_ids: number[][]) =>
+                                setMessages(previous =>
+                                    previous.map((m, i) => ({ ...m, files: m.files.map((f, j) => ({ ...f, id: file_ids[i][j] })) }))
+                                )
+                            )
+                        }
+                    })
                 })
             } else {
                 notify("Failed to send message.", "error")
