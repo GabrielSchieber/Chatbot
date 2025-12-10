@@ -20,6 +20,10 @@ export function logout() {
     return apiFetch("logout/", { method: "POST" })
 }
 
+export function logoutAllSessions() {
+    return apiFetch("logout-all-sessions/", { method: "POST" })
+}
+
 export function me(language?: Language, theme?: Theme, hasSidebarOpen?: boolean, customInstructions?: string, nickname?: string, occupation?: string, about?: string) {
     if ([language, theme, hasSidebarOpen, customInstructions, nickname, occupation, about].every(f => f === undefined)) {
         return apiFetch("me/")
@@ -126,6 +130,10 @@ export function deleteChats() {
 
 export function stopPendingChats() {
     return apiFetch("stop-pending-chats/", { method: "PATCH" })
+}
+
+export function getMessageFileIDs(chatUUID: string) {
+    return apiFetch(`get-message-file-ids/?chat_uuid=${chatUUID}`)
 }
 
 export function getMessageFileContent(chatUUID: string, messageFileID: number) {

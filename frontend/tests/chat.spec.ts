@@ -29,7 +29,7 @@ test("user can chat with bot with a file", async ({ page }) => {
     const message = "Describe the following file in a concise way."
     const fileName = "about-cats.txt"
     const fileContent = "The purpose of this file is to describe cats and their behavior."
-    const expectedResponse = "This file contains information about the purpose, content, and how it should be used for the file on which you are interested in learning more about the cat."
+    const expectedResponse = 'This file defines "about" for cats, explains how they behave (e.g., how quiet or aggressive), identifies different breeds by size and color, lists the colors of their coats, and includes some information about what kinds are allowed in certain areas of the home based on a code ("Code 120'
 
     await page.setInputFiles("input[type='file']", {
         name: fileName,
@@ -73,7 +73,12 @@ test("user can chat with bot with multiple files", async ({ page }) => {
     const file1Content = "The purpose of this file is to describe cats and their behavior."
     const file2Name = "about-dogs.txt"
     const file2Content = "The purpose of this file is to describe dogs and their behavior."
-    const expectedResponse = "Cats are the perfect companions for many, as they provide a unique mix of independence and loyalty that makes them an ideal companion for those who love to play fetch or even just sit in front of the computer without looking at the cat's picture too much."
+    const expectedResponse = `You've found a list of files that match the provided criteria, containing information on cats, including description fields.
+pythonCopy# cat_list.pyx
+def create_cat_object():
+    cat1 = Cat("purriform")
+    cat2 = Cat(squeeful)
+    cat3`
 
     for (const [fileName, fileContent] of [[file1Name, file1Content], [file2Name, file2Content]]) {
         await page.setInputFiles("input[type='file']", {
@@ -116,7 +121,7 @@ test("user can remove attached file before sending message", async ({ page }) =>
     const message = "Hello!"
     const fileName = "about-cats.txt"
     const fileContent = "The purpose of this file is to describe cats and their behavior."
-    const expectedResponse = "How can I help you today?"
+    const expectedResponse = "Hello, welcome back from school! I hope you've been enjoying our discussions so far. Is there a particular topic or area where you'd like me to explain something interesting?"
 
     await page.setInputFiles("input[type='file']", {
         name: fileName,
@@ -164,7 +169,11 @@ test("user can remove one attached file from many existing ones before sending m
     const file2Content = "The purpose of this file is to describe dogs and their behavior."
     const file3Name = "about-birds.txt"
     const file3Content = "The purpose of this file is to describe birds and their behavior."
-    const expectedResponse = "Cats are about-about-pets.txt, about-about-about-paws.txt. They like to play with the paws and they want to be a part of your family."
+    const expectedResponse = `Here's the information for each file:
+languageCopy  File:  1089_about-cats.txt
+Contents: 1 - About Cats
+File:  3427_helpful@example.com.xml
+Purpose of this file to provide assistance on cat care and`
 
     for (const [fileName, fileContent] of [[file1Name, file1Content], [file2Name, file2Content], [file3Name, file3Content]]) {
         await page.setInputFiles("input[type='file']", {
@@ -231,8 +240,8 @@ test("user can edit their message", async ({ page }) => {
 
     const firstUserMessage = exampleChats[0].messages[0]
     const firstBotMessage = exampleChats[0].messages[1]
-    const secondUserMessage = "Howdy!"
-    const secondBotMessage = "What do I need to do?"
+    const secondUserMessage = "Hi!"
+    const secondBotMessage = "That's me - I'm a great-for-me type of person too! You don't get it."
 
     await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
     await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
@@ -263,7 +272,14 @@ test("user can edit their message and attach a file", async ({ page }) => {
     const secondUserMessage = "Describe the following file in a concise way."
     const fileName = "about-cats.txt"
     const fileContent = "The purpose of this file is to describe cats and their behavior."
-    const secondBotMessage = "(1)\nHere's what you are about to read: (2)\n\n\n\nThe purpose of this text is to provide information about the world of cats, including how they behave in different situations."
+    const secondBotMessage = `File "about" describes what happens when they encounter you.
+
+
+Please, tell me whether your website uses the following methods on a daily basis.
+
+
+===== 1:   Use it for a day ===
+Use it in a day === A lot of times, most days, but more often`
 
     await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
     await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
@@ -298,10 +314,10 @@ test("user can edit their message and remove a file", async ({ page }) => {
     const userMessage1 = "Describe the following file in a concise way."
     const fileName = "about-cats.txt"
     const fileContent = "The purpose of this file is to describe cats and their behavior."
-    const botMessage1 = "This file contains information about the purpose, content, and how it should be used for the file on which you are interested in learning more about the cat."
+    const botMessage1 = 'This file defines "about" for cats, explains how they behave (e.g., how quiet or aggressive), identifies different breeds by size and color, lists the colors of their coats, and includes some information about what kinds are allowed in certain areas of the home based on a code ("Code 120'
 
     const userMessage2 = "Hello!"
-    const botMessage2 = "Is that all you have to say?"
+    const botMessage2 = "Dear Sir/MRS.S, please inform me about your visit? We appreciate your consideration. Thank you for visiting us today!\n\n\nI'm glad of your request. I'd be happy to assist in any way that suits your needs and preferences. Please come later if you're interested?"
 
     await page.setInputFiles("input[type='file']", {
         name: fileName,
@@ -541,8 +557,20 @@ async function sendExampleChat(page: Page, index: number) {
     const messages = chat.messages
     for (let i = 0; i < messages.length; i += 2) {
         await sendMessage(page, i, messages[i], messages[i + 1])
-        if (i === 1) {
-            await expect(page.getByTestId("history").getByRole("link").first().getByRole("paragraph", { name: chat.title, exact: true })).toBeVisible()
+        if (i <= 2) {
+            const settingsButton = page.getByText("Settings")
+            const isSettingsButtonVisible = await settingsButton.isVisible()
+            if (!isSettingsButtonVisible) {
+                await page.getByRole("banner").getByRole("button").first().click()
+            }
+            await expect(settingsButton).toBeVisible()
+
+            await expect(page.getByTestId("history").getByRole("link").first().locator("p").getByText(chat.title, { exact: true })).toBeVisible()
+
+            if (!isSettingsButtonVisible) {
+                await page.getByRole("button", { name: "Close Sidebar" }).click()
+                await expect(settingsButton).not.toBeVisible()
+            }
         }
     }
 }
@@ -555,17 +583,17 @@ const timeout = 60_000
 
 const exampleChats: { title: string, messages: string[] }[] = [
     {
-        title: "What is the issue or problem we need to solve",
+        title: "I'm excited to introduce you to the world of",
         messages: [
             "Hello!",
-            "How can I help you today?"
+            "Hello, welcome back from school! I hope you've been enjoying our discussions so far. Is there a particular topic or area where you'd like me to explain something interesting?"
         ]
     },
     {
-        title: "What are the steps to follow through on this conversation",
+        title: "That concludes our interview with the weather!",
         messages: [
-            "I have eggs and spinach. What can I make?",
-            "You can try making an omelet or a salad with some of those same ingredients, such as eggs and spinach."
+            "What's the weather like today?",
+            "The weather is warm but sunny, with some clouds rolling in occasionally."
         ]
     }
 ]

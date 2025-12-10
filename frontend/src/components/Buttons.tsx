@@ -1,6 +1,6 @@
-import { ArchiveIcon, ArrowUpIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, Cross2Icon, GearIcon, MagnifyingGlassIcon, PauseIcon, Pencil1Icon, PlusIcon, TrashIcon, UpdateIcon, UploadIcon } from "@radix-ui/react-icons"
+import { ArchiveIcon, ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, Cross2Icon, GearIcon, MagnifyingGlassIcon, PauseIcon, Pencil1Icon, PlusIcon, TrashIcon, UpdateIcon } from "@radix-ui/react-icons"
 import { t } from "i18next"
-import { Dialog, DropdownMenu, Tooltip } from "radix-ui"
+import { Dialog, DropdownMenu, Select, Tooltip } from "radix-ui"
 import { useEffect, useState, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react"
 import { useParams } from "react-router"
 
@@ -11,54 +11,73 @@ import { useNotify } from "../providers/NotificationProvider"
 import { archiveChat, deleteChat, regenerateMessage, stopPendingChats, unarchiveChat } from "../utils/api"
 import type { Chat, Model } from "../utils/types"
 
-export function PlusDropdown({ fileInputRef, model, setModel, tabIndex = 2 }: {
-    fileInputRef: RefObject<HTMLInputElement | null>
-    model: Model
-    setModel: Dispatch<SetStateAction<Model>>
-    tabIndex?: number
-}) {
+export function AddFilesButton({ fileInputRef, tabIndex = 2 }: { fileInputRef: RefObject<HTMLInputElement | null>, tabIndex?: number }) {
     return (
-        <DropdownMenu.Root>
+        <TooltipButton
+            trigger={<PlusIcon className="size-6" />}
+            tooltip={t("addFilesButton.tooltip")}
+            onClick={() => fileInputRef.current?.click()}
+            type="button"
+            className={promptBarButtonClassNames}
+            tabIndex={tabIndex}
+        />
+    )
+}
+
+export function SelectModelButton({ model, setModel, tabIndex = 2 }: { model: Model, setModel: Dispatch<SetStateAction<Model>>, tabIndex?: number }) {
+    return (
+        <Select.Root value={model} onValueChange={v => setModel(v as Model)}>
             <TooltipButton
                 trigger={
-                    <DropdownMenu.Trigger className={promptBarButtonClassNames} tabIndex={tabIndex} aria-label="Add files and more">
-                        <PlusIcon className="size-6" />
-                    </DropdownMenu.Trigger>
+                    <Select.Trigger
+                        className="
+                            flex w-27.5 px-1 items-center justify-between rounded-lg text-xs cursor-pointer outline-none
+                            hover:bg-gray-700 light:hover:bg-gray-300
+                            focus:bg-gray-700 light:focus:bg-gray-300
+                        "
+                        tabIndex={tabIndex}
+                    >
+                        <Select.Value />
+                        <Select.Icon>
+                            <ChevronDownIcon />
+                        </Select.Icon>
+                    </Select.Trigger>
                 }
-                tooltip={t("plusDropdown.tooltip")}
+                tooltip={t("selectModelButton.tooltip")}
                 type="button"
                 asChild
             />
 
-            <DropdownMenu.Portal>
-                <DropdownMenu.Content className={dropdownContentClassName + " group data-[side=top]:flex-col-reverse"}>
-                    <DropdownMenu.Item className={dropdownItemClassName} onClick={_ => fileInputRef.current?.click()}>
-                        <UploadIcon className="size-6" /> {t("plusDropdown.addFiles")}
-                    </DropdownMenu.Item>
-
-                    <div className="flex flex-col" data-testid="model-selection">
-                        <p className="ml-2 text-sm text-gray-400 light:text-gray-600">Models:</p>
-                        <div className="flex flex-col p-1 rounded-xl bg-gray-700/30 light:bg-gray-300/30">
-                            {(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
-                                <DropdownMenu.Item
-                                    key={m}
-                                    className={dropdownItemClassName + " w-45 justify-between"}
-                                    onClick={e => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        setModel(m)
-                                    }}
-                                    data-testid="model-selection-entry"
-                                >
-                                    {m}
-                                    {m === model && <CheckIcon className="size-6" />}
-                                </DropdownMenu.Item>
-                            ))}
-                        </div>
-                    </div>
-                </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-        </DropdownMenu.Root>
+            <Select.Portal>
+                <Select.Content
+                    className="
+                        flex flex-col w-40 rounded-lg text-white border border-gray-500 -translate-x-5 light:text-black bg-gray-900 light:bg-gray-100
+                    "
+                    position="popper"
+                    sideOffset={5}
+                    onCloseAutoFocus={e => e.preventDefault()}
+                >
+                    <Select.Viewport className="p-1">
+                        {(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
+                            <Select.Item
+                                key={m}
+                                value={m}
+                                className="
+                                    flex items-center px-2 py-1 rounded cursor-pointer outline-none
+                                    hover:bg-gray-700 light:hover:bg-gray-300
+                                    focus:bg-gray-700 light:focus:bg-gray-300
+                                "
+                            >
+                                <Select.ItemText>{m}</Select.ItemText>
+                                <Select.ItemIndicator className="ml-auto">
+                                    <CheckIcon className="size-5" />
+                                </Select.ItemIndicator>
+                            </Select.Item>
+                        ))}
+                    </Select.Viewport>
+                </Select.Content>
+            </Select.Portal>
+        </Select.Root>
     )
 }
 

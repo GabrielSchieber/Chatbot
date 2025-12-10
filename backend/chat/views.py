@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 from .serializers import ChatSerializer, ChatUUIDSerializer, DeleteAccountSerializer, EditMessageSerializer, GetChatsSerializer, GetMessageFileContentSerializer, LoginSerializer, MeSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, SearchChatsSerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
 from .models import Chat, Message, MessageFile, PreAuthToken, User
@@ -55,11 +56,25 @@ class Login(APIView):
             return Response({"token": str(pre_auth_token.token)}, status.HTTP_200_OK)
         else:
             refresh = RefreshToken.for_user(user)
+
+            refresh_jti = refresh.get("jti")
+            UserSession.objects.create(
+                user = user,
+                ip_address = request.ip_address,
+                user_agent = request.user_agent_raw,
+                device = request.device,
+                browser = request.browser,
+                os = request.os,
+                refresh_jti = refresh_jti
+            )
+
             response = Response(status = status.HTTP_200_OK)
             response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
             response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+
             user.last_login = timezone.now()
             user.save(update_fields = ["last_login"])
+
             return response
 
 class VerifyMFA(APIView):
@@ -87,18 +102,58 @@ class VerifyMFA(APIView):
             return Response({"detail": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
 
         refresh = RefreshToken.for_user(user)
+
+        refresh_jti = refresh.get("jti")
+        UserSession.objects.create(
+            user = user,
+            ip_address = request.ip_address,
+            user_agent = request.user_agent_raw,
+            device = request.device,
+            browser = request.browser,
+            os = request.os,
+            refresh_jti = refresh_jti
+        )
+
         response = Response(status = status.HTTP_200_OK)
         response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
         response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+
         pre_auth_token.delete()
+
         user.last_login = timezone.now()
         user.save(update_fields = ["last_login"])
+
         return response
 
 class Logout(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request):
+        refresh_token = request.COOKIES.get("refresh_token")
+        if refresh_token:
+            try:
+                refresh = RefreshToken(refresh_token)
+                jti = refresh.get("jti")
+                UserSession.objects.filter(refresh_jti = jti, logout_at__isnull = True).update(logout_at = timezone.now())
+            except:
+                pass
+
+        response = Response(status = status.HTTP_200_OK)
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
+        return response
+
+class LogoutAllSessions(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request):
+        user: User = request.user
+
+        user.sessions.filter(user = user, logout_at__isnull = True).update(logout_at = timezone.now())
+        tokens = OutstandingToken.objects.filter(user = user)
+        for token in tokens:
+            BlacklistedToken.objects.get_or_create(token = token)
+
         response = Response(status = status.HTTP_200_OK)
         response.delete_cookie("access_token")
         response.delete_cookie("refresh_token")
@@ -439,6 +494,24 @@ class GetMessageFileContent(APIView):
             return Response({"detail": "Message file was not found."}, status.HTTP_404_NOT_FOUND)
 
         return Response(message_file.content, status.HTTP_200_OK, content_type = message_file.content_type)
+
+class GetMessageFileIDs(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request):
+        chat_uuid = request.query_params.get("chat_uuid")
+
+        try:
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+        except Chat.DoesNotExist:
+            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+        except:
+            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
+
+        file_ids = []
+        for files in [m.files for m in chat.messages.order_by("created_at")]:
+            file_ids.append([f.pk for f in files.order_by("created_at")])
+        return Response(file_ids, status.HTTP_200_OK)
 
 class GetMessages(APIView):
     permission_classes = [IsAuthenticated]

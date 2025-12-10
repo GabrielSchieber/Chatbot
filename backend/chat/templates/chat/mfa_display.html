@@ -1,20 +1,24 @@
-{% load static %}
 <div class="chat-admin-mfa">
     <div><strong>Enabled:</strong> {{ is_enabled }}</div>
-    <div><strong>Secret (hex):</strong>
-        {% if secret_hex %}<code>{{ secret_hex }}</code>{% else %}<em>Not set</em>{% endif %}
-    </div>
-    <div><strong>Backup codes:</strong>
-        {% if backup_text %}
-        <pre style="white-space:pre-wrap;">{{ backup_text }}</pre>
+    <div>
+        <strong>Secret (hex):</strong>
+        {% if secret_hex %}
+        <code>{{ secret_hex }}</code>
         {% else %}
-        <em>None</em>
+        <em>Not set</em>
         {% endif %}
     </div>
-    {% if show_disable %}
-    <div style="margin-top:.5rem;">
-        <button type="button" class="button"
-            onclick="chat_admin_disable_mfa('{{ disable_url }}', this)">Disable</button>
+    <div>
+        <strong>Backup codes:</strong>
+        {% for backup_code in backup_codes %}
+        <pre>{{ backup_code }}</pre>
+        {% empty %}
+        <em>No backup codes</em>
+        {% endfor %}
     </div>
+    {% if show_disable %}
+    <button type="button" class="button" onclick="chat_admin_disable_mfa('{{ disable_url }}', this)">
+        Disable
+    </button>
     {% endif %}
 </div>

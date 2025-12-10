@@ -85,7 +85,10 @@ async def generate_title(chat: Chat):
     messages = [
         {
             "role": "user",
-            "content": f"Generate a descriptive and concise title for the following conversation between a human and their AI personal assistant that happened on chatbot web app. The title should be in plain, simple English, it should NOT contain any punctuations and it should be NO longer than ten words:\n\nUser:\n{first_message.text}\n\nAssistant:\n{last_message.text}"
+            "content": (
+                "Generate a simple and concise title for the following conversation."
+                f"\n\nUser:\n{first_message.text}\n\nAssistant:\n{last_message.text}"
+            )
         }
     ]
 
@@ -135,7 +138,11 @@ def get_message_dict(message: Message) -> dict[str, str]:
         return {"role": "assistant", "content": message.text}
 
 def get_system_prompt(user: User):
-    system_prompt = "You are a helpful and nice AI personal assistant. Your role is to provide assistance to the user. Always answer the user concisely using one small phrase with simple words."
+    system_prompt = (
+        "You are a helpful and nice AI personal assistant. "
+        "Your role is to provide assistance to the user. "
+        "Always answer the user concisely using one small phrase with simple words."
+    )
 
     custom_instructions = user.preferences.custom_instructions
     nickname = user.preferences.nickname
@@ -197,7 +204,7 @@ def get_ollama_model_and_options(model: str):
         case "SmolLM2-360M":
             return "smollm2:360m-instruct-q2_K", base_options
         case "SmolLM2-1.7B":
-            return "smollm2:1.7b-instruct-q2_K", {**base_options, "temperature": 0.35}
+            return "smollm2:1.7b-instruct-q2_K", base_options
         case "Moondream":
             return "moondream:1.8b-v2-q2_K", base_options
 

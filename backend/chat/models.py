@@ -49,6 +49,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     chats: BaseManager[Chat]
     mfa: UserMFA
     preferences: UserPreferences
+    sessions: BaseManager[UserSession]
 
     def __str__(self):
         return ""
@@ -109,6 +110,28 @@ class UserMFA(models.Model):
         self.backup_codes = []
         self.is_enabled = False
         self.save()
+
+class UserSession(models.Model):
+    class Meta:
+        verbose_name = "User Session"
+        verbose_name_plural = "User Sessions"
+
+    uuid = models.UUIDField(primary_key = True, default = uuid.uuid4, editable = False)
+    user = models.ForeignKey(User, models.CASCADE, related_name = "sessions")
+
+    login_at = models.DateTimeField(auto_now_add = True)
+    logout_at = models.DateTimeField(blank = True, null = True)
+
+    ip_address = models.GenericIPAddressField(blank = True, null = True)
+    user_agent = models.TextField(blank = True, null = True)
+    device = models.CharField(max_length = 200, blank = True, null = True)
+    browser = models.CharField(max_length = 200, blank = True, null = True)
+    os = models.CharField(max_length = 200, blank = True, null = True)
+
+    refresh_jti = models.CharField(max_length = 255, blank = True, null = True)
+
+    def __str__(self):
+        return f"{self.user.email} @ {self.login_at}"
 
 class PreAuthToken(models.Model):
     user = models.ForeignKey(User, models.CASCADE)

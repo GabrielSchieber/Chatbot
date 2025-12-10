@@ -6,6 +6,7 @@ export type User = {
     email: string
     preferences: UserPreferences
     mfa: UserMFA
+    sessions: UserSession[]
 }
 
 export type UserPreferences = {
@@ -20,6 +21,14 @@ export type UserPreferences = {
 
 export type UserMFA = {
     is_enabled: boolean
+}
+
+export type UserSession = {
+    login_at: string,
+    logout_at: string | null,
+    ip_address: string,
+    browser: string,
+    os: string
 }
 
 export type Chat = {

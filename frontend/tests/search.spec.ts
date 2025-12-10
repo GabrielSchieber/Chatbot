@@ -5,7 +5,7 @@ test("user can open search", async ({ page }) => {
     const user = await signupAndLogin(page, true)
 
     const searchButton = page.viewportSize()!.width < 750 ?
-        page.getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
+        page.getByRole("banner").getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
     await searchButton.click()
 
     await expect(page.getByPlaceholder("Search chats...", { exact: true })).toBeVisible()
@@ -73,7 +73,7 @@ test("user can search chats", async ({ page }) => {
     const weatherInquiryChat = findChatByTitle("Weather Inquiry")
 
     const searchButton = page.viewportSize()!.width < 750 ?
-        page.getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
+        page.getByRole("banner").getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
     await searchButton.click()
 
     const input = page.getByPlaceholder("Search chats...", { exact: true })
@@ -156,7 +156,7 @@ test("search filters by title", async ({ page }) => {
     const chat = user.chats[0]
 
     const searchButton = page.viewportSize()!.width < 750 ?
-        page.getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
+        page.getByRole("banner").getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
     await searchButton.click()
 
     const input = page.getByPlaceholder("Search chats...", { exact: true })
@@ -173,7 +173,7 @@ test("search shows no results message when nothing matches", async ({ page }) =>
     await signupAndLogin(page, true)
 
     const searchButton = page.viewportSize()!.width < 750 ?
-        page.getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
+        page.getByRole("banner").getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
     await searchButton.click()
 
     const input = page.getByPlaceholder("Search chats...", { exact: true })
@@ -188,7 +188,7 @@ test("infinite scroll loads more search entries", async ({ page }) => {
     await signupAndLogin(page, true)
 
     const searchButton = page.viewportSize()!.width < 750 ?
-        page.getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
+        page.getByRole("banner").getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
     await searchButton.click()
 
     const dialog = page.getByRole("dialog")
@@ -215,7 +215,7 @@ test("clicking a search entry navigates to the chat", async ({ page }) => {
     const firstChat = user.chats[0]
 
     const searchButton = page.viewportSize()!.width < 750 ?
-        page.getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
+        page.getByRole("banner").getByRole("button").nth(1) : page.getByRole("button", { name: "Search Chats", exact: true })
     await searchButton.click()
 
     const first = page.getByRole("dialog").getByRole("link").nth(0)

@@ -4,7 +4,7 @@ import { useParams } from "react-router"
 import Composer from "./Composer"
 import { MAX_FILE_SIZE, MAX_FILES } from "./Chat"
 import { useChat } from "../providers/ChatProvider"
-import { editMessage } from "../utils/api"
+import { editMessage, getMessageFileIDs } from "../utils/api"
 import { getFileSize } from "../utils/misc"
 import type { MessageFile, Model } from "../utils/types"
 
@@ -16,7 +16,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
     const message = messages[index]
 
     const [text, setText] = useState(message.text)
-    const [model, setModel] = useState<Model>(messages[index + 1].model || "SmolLM2-1.7B")
+    const [model, setModel] = useState<Model>(messages[index + 1].model || "SmolLM2-135M")
 
     const [addedFiles, setAddedFiles] = useState<File[]>([])
     const [removedFiles, setRemovedFiles] = useState<MessageFile[]>([])
@@ -67,7 +67,19 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
                     setAddedFiles([])
                     setRemovedFiles([])
 
-                    response.json().then(chat => setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c)))
+                    response.json().then(chat => {
+                        setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
+
+                        getMessageFileIDs(chat.uuid).then(response => {
+                            if (response.ok) {
+                                response.json().then((file_ids: number[][]) =>
+                                    setMessages(previous =>
+                                        previous.map((m, i) => ({ ...m, files: m.files.map((f, j) => ({ ...f, id: file_ids[i][j] })) }))
+                                    )
+                                )
+                            }
+                        })
+                    })
                 } else {
                     alert("Edition of message was not possible")
                 }

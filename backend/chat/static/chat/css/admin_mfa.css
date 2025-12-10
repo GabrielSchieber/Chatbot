@@ -9,7 +9,9 @@
 }
 
 .chat-admin-mfa {
-    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .chat-admin-mfa pre {

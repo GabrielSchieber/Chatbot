@@ -2,7 +2,7 @@ import { motion } from "motion/react"
 import { useEffect, useRef, useState, type ChangeEvent, type Dispatch, type KeyboardEvent, type SetStateAction } from "react"
 
 import Attachments from "./Attachments"
-import { CancelButton, PlusDropdown, SendButton, StopButton } from "./Buttons"
+import { AddFilesButton, CancelButton, SelectModelButton, SendButton, StopButton } from "./Buttons"
 import TextArea from "./TextArea"
 import { useChat } from "../providers/ChatProvider"
 import type { MessageFile, Model } from "../utils/types"
@@ -47,10 +47,12 @@ export default function Composer({
     const selectionEnd = useRef(0)
 
     const [isExtended, setIsExtended] = useState(false)
+    const [isWidthSmall, setIsWidthSmall] = useState(window.innerWidth < 425)
 
     const pendingChat = chats.find(c => c.pending_message_id !== null)
 
     useEffect(() => {
+        if (isWidthSmall) return
         setIsExtended(isExtended ? text !== "" : text.split("\n").length > 1 || (textAreaRef.current?.clientHeight || 0) > 48)
     }, [text])
 
@@ -58,6 +60,16 @@ export default function Composer({
         textAreaRef.current?.setSelectionRange(selectionStart.current, selectionEnd.current)
         textAreaRef.current?.focus()
     }, [isExtended])
+
+    useEffect(() => {
+        setIsExtended(isWidthSmall)
+    }, [isWidthSmall])
+
+    useEffect(() => {
+        const onResize = () => setIsWidthSmall(window.innerWidth < 425)
+        window.addEventListener("resize", onResize)
+        return () => window.removeEventListener("resize", onResize)
+    }, [])
 
     return (
         <motion.form
@@ -101,7 +113,7 @@ export default function Composer({
             </div>
 
             <div className={`flex gap-2 items-center justify-between ${isExtended && "pb-1"}`}>
-                <PlusDropdown fileInputRef={fileInputRef} model={model} setModel={setModel} tabIndex={tabIndex + 1} />
+                <AddFilesButton fileInputRef={fileInputRef} tabIndex={tabIndex + 1} />
                 {!isExtended &&
                     <TextArea
                         ref={textAreaRef}
@@ -114,6 +126,7 @@ export default function Composer({
                     />
                 }
                 <div className="flex gap-1">
+                    <SelectModelButton model={model} setModel={setModel} />
                     {setIndex && <CancelButton setIndex={setIndex} tabIndex={tabIndex + 1} />}
                     {pendingChat !== undefined && pendingChat !== null ? (
                         <StopButton tabIndex={tabIndex + 1} />
