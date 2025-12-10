@@ -481,6 +481,24 @@ class GetMessageFileContent(APIView):
         else:
             return Response({"error": "File was not found."}, status.HTTP_404_NOT_FOUND)
 
+class GetMessageFileIDs(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request):
+        chat_uuid = request.query_params.get("chat_uuid")
+
+        try:
+            chat = Chat.objects.get(user = request.user, uuid = chat_uuid)
+        except Chat.DoesNotExist:
+            return Response({"error": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
+        except:
+            return Response({"error": "Invalid chat UUID."}, status.HTTP_400_BAD_REQUEST)
+
+        file_ids = []
+        for files in [m.files for m in chat.messages.order_by("created_at")]:
+            file_ids.append([f.pk for f in files.order_by("created_at")])
+        return Response(file_ids, status.HTTP_200_OK)
+
 class GetMessages(APIView):
     permission_classes = [IsAuthenticated]
 

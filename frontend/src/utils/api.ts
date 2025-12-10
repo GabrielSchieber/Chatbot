@@ -128,6 +128,10 @@ export function stopPendingChats() {
     return apiFetch("stop-pending-chats/", { method: "PATCH" })
 }
 
+export function getMessageFileIDs(chatUUID: string) {
+    return apiFetch(`get-message-file-ids/?chat_uuid=${chatUUID}`)
+}
+
 export function getMessageFileContent(chatUUID: string, messageFileID: number) {
     return apiFetch(`get-message-file-content/?chat_uuid=${chatUUID}&message_file_id=${messageFileID}`)
 }

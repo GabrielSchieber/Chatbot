@@ -25,6 +25,7 @@ urlpatterns = [
     path("delete-chats/", views.DeleteChats.as_view()),
     path("stop-pending-chats/", views.StopPendingChats.as_view()),
     path("get-message-file-content/", views.GetMessageFileContent.as_view()),
+    path("get-message-file-ids/", views.GetMessageFileIDs.as_view()),
     path("get-messages/", views.GetMessages.as_view()),
     path("new-message/", views.NewMessage.as_view()),
     path("edit-message/", views.EditMessage.as_view()),
