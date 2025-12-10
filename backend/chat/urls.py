@@ -7,6 +7,7 @@ urlpatterns = [
     path("login/", views.Login.as_view()),
     path("verify-mfa/", views.VerifyMFA.as_view()),
     path("logout/", views.Logout.as_view()),
+    path("logout-all-sessions/", views.LogoutAllSessions.as_view()),
     path("me/", views.Me.as_view()),
     path("refresh/", views.Refresh.as_view()),
     path("setup-mfa/", views.SetupMFA.as_view()),

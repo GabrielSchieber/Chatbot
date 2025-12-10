@@ -12,9 +12,11 @@ from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import path, reverse
+from django.utils import timezone
 from django.utils.safestring import mark_safe
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
-from .models import Chat, Message, User, UserMFA, UserPreferences
+from .models import Chat, Message, User, UserMFA, UserPreferences, UserSession
 from .tasks import stop_pending_chat
 
 class AdminPasswordChangeFormWithMinLength(AdminPasswordChangeForm):
@@ -153,6 +155,7 @@ class UserAdmin(DjangoUserAdmin):
         (None, {"fields": ("email", "password")} ),
         (("Preferences"), {"fields": ("language", "theme", "has_sidebar_open", "custom_instructions", "nickname", "occupation", "about")} ),
         (("MFA"), {"fields": ("mfa_display",)} ),
+        (("Sessions"), {"fields": ("sessions_display",)} ),
         ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")} ),
         (("Important dates"), {"fields": ("last_login", "created_at_display")} )
     )
@@ -167,11 +170,11 @@ class UserAdmin(DjangoUserAdmin):
     )
 
     list_display = ("email", "is_staff", "is_superuser", "is_active", "created_at_display")
-    readonly_fields = ("email", "last_login", "created_at", "created_at_display", "mfa_display")
+    readonly_fields = ("email", "last_login", "created_at", "created_at_display", "mfa_display" ,"sessions_display")
 
     class Media:
-        css = {"all": ("chat/css/admin_mfa.css",)}
-        js = ("chat/js/admin_mfa.js", "chat/js/autoresize.js")
+        css = {"all": ("chat/css/admin_mfa.css", "chat/css/admin_sessions.css")}
+        js = ("chat/js/admin_mfa.js", "chat/js/admin_sessions.js", "chat/js/autoresize.js")
 
     list_filter = ("is_staff", "is_superuser", "is_active", "groups")
     search_fields = ("email",)
@@ -199,6 +202,48 @@ class UserAdmin(DjangoUserAdmin):
         except Exception:
             logger.exception("Error creating related UserPreferences/UserMFA")
 
+    def sessions_display(self, user: User):
+        total = user.sessions.count()
+        active = user.sessions.filter(logout_at = None).count()
+        inactive = user.sessions.exclude(logout_at = None).count()
+        sessions = user.sessions.filter(user = user).order_by("-login_at")[:10]
+
+        items = []
+        for s in sessions:
+            logout_at = s.logout_at.strftime("%Y-%m-%d %H:%M:%S") if s.logout_at else "Active"
+
+            if s.device:
+                family = s.device.partition("family=")[2].partition(",")[0].replace("'", "")
+                brand = s.device.partition("brand=")[2].partition(",")[0]
+                model = s.device.partition("model=")[2].partition(",")[0].replace(")", "")
+                device_info = f"Family: {family} Brand: {brand} Model: {model}"
+            else:
+                device_info = "N/A"
+
+            items.append({
+                "login_at": s.login_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "logout_at": logout_at,
+                "ip_address": s.ip_address,
+                "user_agent": s.user_agent,
+                "device": device_info,
+                "browser": s.browser,
+                "os": s.os,
+            })
+
+        revoke_url = reverse("admin:chat_user_revoke_sessions", args = [user.pk])
+        rendered = render_to_string(
+            "chat/sessions_display.html",
+            {
+                "total": total,
+                "active": active,
+                "inactive": inactive,
+                "sessions": [i for i in enumerate(items, 1)],
+                "revoke_url": revoke_url,
+                "show_revoke": total > 0
+            }
+        )
+        return mark_safe(rendered)
+
     def created_at_display(self, user: User):
         field = User._meta.get_field("created_at")
         return display_for_field(user.created_at, field, "-")
@@ -219,13 +264,12 @@ class UserAdmin(DjangoUserAdmin):
             secret_hex = binascii.hexlify(mfa.secret).decode() if mfa.secret else ""
         except Exception:
             secret_hex = ""
-        backup_text = "\n".join(mfa.backup_codes or []) if mfa.backup_codes else ""
 
-        disable_url = reverse("admin:chat_user_disable_mfa", args=[user.pk]) if mfa.is_enabled else ""
+        disable_url = reverse("admin:chat_user_disable_mfa", args = [user.pk]) if mfa.is_enabled else ""
         context = {
             "is_enabled": is_enabled,
             "secret_hex": secret_hex,
-            "backup_text": backup_text,
+            "backup_codes": mfa.backup_codes,
             "show_disable": bool(mfa.is_enabled),
             "disable_url": disable_url,
         }
@@ -237,7 +281,8 @@ class UserAdmin(DjangoUserAdmin):
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
-            path("<path:object_id>/disable-mfa/", self.admin_site.admin_view(self.user_disable_mfa_view), name="chat_user_disable_mfa"),
+            path("<path:object_id>/disable-mfa/", self.admin_site.admin_view(self.user_disable_mfa_view), name = "chat_user_disable_mfa"),
+            path("<path:object_id>/revoke-sessions/", self.admin_site.admin_view(self.user_revoke_sessions_view), name = "chat_user_revoke_sessions")
         ]
         return custom_urls + urls
 
@@ -264,6 +309,109 @@ class UserAdmin(DjangoUserAdmin):
             messages.error(request, "Failed to disable MFA for user.")
 
         return redirect(reverse("admin:chat_user_change", args = [user.pk]))
+
+    def user_revoke_sessions_view(self, request, object_id, *args, **kwargs):
+        user = get_object_or_404(User, pk = object_id)
+        if request.method != "POST":
+            messages.error(request, "Invalid request method.")
+            return redirect(reverse("admin:chat_user_change", args = [user.pk]))
+
+        user.sessions.filter(user = user, logout_at__isnull = True).update(logout_at = timezone.now())
+        tokens = OutstandingToken.objects.filter(user = user)
+        for token in tokens:
+            BlacklistedToken.objects.get_or_create(token = token)
+
+        return redirect(reverse("admin:chat_user_change", args = [user.pk]))
+
+class UserSessionAdmin(admin.ModelAdmin):
+    model = UserSession
+    readonly_fields = (
+        "user_display", "login_at_display", "logout_at_display", "ip_address_display",
+        "user_agent_display", "device_display", "browser", "os_display", "refresh_jti_display"
+    )
+    fields = (
+        "user_display", "login_at_display", "logout_at_display", "ip_address_display",
+        "user_agent_display", "device_display", "browser", "os_display", "refresh_jti_display"
+    )
+    list_display = (
+        "user__email", "login_at_display", "logout_at_display", "ip_address_display", "device_display", "browser", "os_display"
+    )
+    search_fields = ("user__email", "ip_address", "user_agent", "device", "browser", "os")
+    ordering = ("-login_at",)
+
+    def user_display(self, session: UserSession):
+        if not session.user:
+            return ""
+        url = f"/admin/chat/user/{session.user.pk}/change/"
+        return mark_safe(f"<a href=\"{url}\">{session.user.email}</a>")
+
+    user_display.short_description = "User"
+
+    def login_at_display(self, session: UserSession):
+        field = UserSession._meta.get_field("login_at")
+        return display_for_field(session.login_at, field, "-")
+
+    login_at_display.short_description = "Login"
+
+    def logout_at_display(self, session: UserSession):
+        field = UserSession._meta.get_field("logout_at")
+        return display_for_field(session.logout_at, field, "Active")
+
+    logout_at_display.short_description = "Logout"
+
+    def ip_address_display(self, session: UserSession):
+        return session.ip_address or "N/A"
+
+    ip_address_display.short_description = "IP Address"
+
+    def user_agent_display(self, session: UserSession):
+        return session.user_agent or "N/A"
+
+    user_agent_display.short_description = "User Agent"
+
+    def device_display(self, session: UserSession):
+        if not session.device:
+            return "N/A"
+
+        family = session.device.partition("family=")[2].partition(",")[0].replace("'", "").replace("None", "N/A")
+        brand = session.device.partition("brand=")[2].partition(",")[0].replace("None", "N/A")
+        model = session.device.partition("model=")[2].partition(",")[0].replace(")", "").replace("None", "N/A")
+
+        return mark_safe(
+            "<pre style=\"white-space:pre-wrap;word-break:break-all;\">"
+            f"Family: {family}\nBrand: {brand}\nModel: {model}"
+            "</pre>"
+        )
+
+    device_display.short_description = "Device"
+
+    def os_display(self, session: UserSession):
+        return session.os or "N/A"
+
+    os_display.short_description = "Operating System"
+
+    def refresh_jti_display(self, session: UserSession):
+        if not session.refresh_jti:
+            return "None"
+
+        blacklisted_token = BlacklistedToken.objects.filter(token__jti = session.refresh_jti).first()
+        outstanding_token = OutstandingToken.objects.filter(jti = session.refresh_jti).first()
+
+        parts = []
+        if blacklisted_token:
+            blacklisted_url = f"/admin/token_blacklist/blacklistedtoken/{blacklisted_token.pk}/change/"
+            parts.append(mark_safe(f'Blacklisted: <a href="{blacklisted_url}">{session.refresh_jti}</a>'))
+        else:
+            parts.append(f"Not blacklisted: {session.refresh_jti}")
+        if outstanding_token:
+            outstanding_url = f"/admin/token_blacklist/outstandingtoken/{outstanding_token.pk}/change/"
+            parts.append(mark_safe(f'Outstanding: <a href="{outstanding_url}">{session.refresh_jti}</a>'))
+        else:
+            parts.append(f"Not outstanding: {session.refresh_jti}")
+
+        return mark_safe("<br>".join(parts))
+
+    refresh_jti_display.short_description = "Refresh JTI"
 
 class MessageForm(forms.ModelForm):
     class Meta:
@@ -341,7 +489,9 @@ class ChatAdmin(admin.ModelAdmin):
     inlines = (MessageInline,)
 
     class Media:
+        css = {"all": ("chat/css/admin_pending_message.css",)}
         js = ("chat/js/admin_pending.js",)
+
     readonly_fields = ("user_link", "display_uuid", "pending_message_display", "created_at_display")
     fieldsets = (
         (None, {"fields": ("user_link", "display_uuid", "title", "pending_message_display", "is_archived", "created_at_display")} ),
@@ -367,13 +517,10 @@ class ChatAdmin(admin.ModelAdmin):
     def pending_message_display(self, chat: Chat):
         if not chat.pending_message:
             return ""
-
-        msg = chat.pending_message
-        msg_url = f"/admin/chat/message/{msg.pk}/change/"
-        stop_url = reverse("admin:chat_chat_stop_pending", args=[chat.pk])
-        button = f'<button type="button" class="button" onclick="chat_admin_stop_pending(\'{stop_url}\', this)">Stop</button>'
-
-        return mark_safe(f'<a href="{msg_url}">Message #{msg.pk}</a> &nbsp; {button}')
+        message_pk = chat.pending_message.pk
+        message_url = f"/admin/chat/message/{message_pk}/change/"
+        stop_url = reverse("admin:chat_chat_stop_pending", args = [chat.pk])
+        return mark_safe(render_to_string("chat/pending_message_display.html", {"message_url": message_url, "stop_url": stop_url, "message_pk": message_pk}))
 
     pending_message_display.short_description = "Pending message"
 
@@ -486,5 +633,6 @@ class MessageAdmin(admin.ModelAdmin):
 admin.site.unregister(Group)
 
 admin.site.register(User, UserAdmin)
+admin.site.register(UserSession, UserSessionAdmin)
 admin.site.register(Chat, ChatAdmin)
 admin.site.register(Message, MessageAdmin)

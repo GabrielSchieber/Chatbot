@@ -20,6 +20,10 @@ export function logout() {
     return apiFetch("logout/", { method: "POST" })
 }
 
+export function logoutAllSessions() {
+    return apiFetch("logout-all-sessions/", { method: "POST" })
+}
+
 export function me(language?: Language, theme?: Theme, hasSidebarOpen?: boolean, customInstructions?: string, nickname?: string, occupation?: string, about?: string) {
     if ([language, theme, hasSidebarOpen, customInstructions, nickname, occupation, about].every(f => f === undefined)) {
         return apiFetch("me/")
