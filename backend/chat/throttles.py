@@ -1,12 +1,10 @@
 import os
-import sys
 
-from django.conf import settings
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 class DebugBypassThrottleMixin:
     def allow_request(self, request, view):
-        if settings.DEBUG or "test" in sys.argv or os.environ.get("PLAYWRIGHT_TEST") == "True":
+        if os.getenv("DJANGO_TEST") == "True" or os.environ.get("PLAYWRIGHT_TEST") == "True":
             return True
         return super().allow_request(request, view)
 

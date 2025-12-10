@@ -68,3 +68,74 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ["id", "text", "is_from_user", "files", "model"]
+
+class ChatUUIDSerializer(serializers.Serializer):
+    chat_uuid = serializers.UUIDField()
+
+class SignupSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(min_length = 12, max_length = 1000)
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+class VerifyMFASerializer(serializers.Serializer):
+    token = serializers.UUIDField()
+    code = serializers.CharField()
+
+class MeSerializer(serializers.Serializer):
+    language = serializers.ChoiceField(UserPreferences.available_languages(), required = False)
+    theme = serializers.ChoiceField(UserPreferences.available_themes(), required = False)
+    has_sidebar_open = serializers.BooleanField(required = False)
+    custom_instructions = serializers.CharField(max_length = 1000, required = False)
+    nickname = serializers.CharField(max_length = 50, required = False)
+    occupation = serializers.CharField(max_length = 50, required = False)
+    about = serializers.CharField(max_length = 1000, required = False)
+
+class DeleteAccountSerializer(serializers.Serializer):
+    password = serializers.CharField()
+    mfa_code = serializers.CharField(required = False, allow_blank = True)
+
+class GetChatsSerializer(serializers.Serializer):
+    offset = serializers.IntegerField(min_value = 0, default = 0)
+    limit = serializers.IntegerField(min_value = 1, default = 20)
+    pending = serializers.BooleanField(default = False)
+    archived = serializers.BooleanField(default = False)
+
+class SearchChatsSerializer(serializers.Serializer):
+    search = serializers.CharField(default = "")
+    offset = serializers.IntegerField(min_value = 0, default = 0)
+    limit = serializers.IntegerField(min_value = 1, default = 20)
+
+class RenameChatSerializer(serializers.Serializer):
+    chat_uuid = serializers.UUIDField()
+    new_title = serializers.CharField()
+
+class GetMessageFileContentSerializer(serializers.Serializer):
+    chat_uuid = serializers.UUIDField()
+    message_file_id = serializers.IntegerField(min_value = 1)
+
+class NewMessageSerializer(serializers.Serializer):
+    chat_uuid = serializers.UUIDField(required = False)
+    text = serializers.CharField(default = "")
+    model = serializers.ChoiceField(Message.available_models(), default = "SmolLM2-135M")
+    files = serializers.ListField(child = serializers.FileField(max_length = MessageFile.max_content_size()), max_length = 10, default = [])
+
+    def validate_files(self, value: serializers.ListField):
+        if sum([v.size for v in value]) > MessageFile.max_content_size():
+            raise serializers.ValidationError(f"Total file size exceeds limit of {MessageFile.max_content_size_str()}.")
+        return value
+
+class EditMessageSerializer(serializers.Serializer):
+    chat_uuid = serializers.UUIDField()
+    index = serializers.IntegerField(min_value = 0)
+    text = serializers.CharField(default = "")
+    model = serializers.ChoiceField(Message.available_models(), default = "SmolLM2-135M")
+    added_files = serializers.ListField(child = serializers.FileField(max_length = MessageFile.max_content_size()), max_length = 10, default = [])
+    removed_file_ids = serializers.ListField(child = serializers.IntegerField(min_value = 1), default = [])
+
+class RegenerateMessageSerializer(serializers.Serializer):
+    chat_uuid = serializers.UUIDField()
+    index = serializers.IntegerField(min_value = 0)
+    model = serializers.ChoiceField(Message.available_models(), default = "SmolLM2-135M")

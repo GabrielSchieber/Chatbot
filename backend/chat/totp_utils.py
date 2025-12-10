@@ -14,8 +14,11 @@ def encrypt_secret(secret: str):
 def decrypt_secret(encrypted_secret: bytes) -> str:
     return get_cipher().decrypt(encrypted_secret).decode()
 
-def verify_secret(encrypted_secret: str, code: str):
+def verify_secret(encrypted_secret: bytes, code: str):
     return pyotp.TOTP(decrypt_secret(encrypted_secret)).verify(code, valid_window = 1)
+
+def generate_code(encrypted_secret: bytes):
+    return pyotp.TOTP(decrypt_secret(encrypted_secret)).now()
 
 def generate_secret():
     secret = pyotp.random_base32()

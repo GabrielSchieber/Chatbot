@@ -1,15 +1,15 @@
 import os
 
+if os.getenv("DJANGO_TEST") != "True" and os.getenv("PLAYWRIGHT_TEST") != "True":
+    raise RuntimeError("DJANGO_TEST or PLAYWRIGHT_TEST environment variable must be 'True' for using test views.")
+
 from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Chat, Message, User
 from .totp_utils import decrypt_secret
-
-if os.getenv("PLAYWRIGHT_TEST") != "True":
-    raise RuntimeError("PLAYWRIGHT_TEST environment variable must be True for using test views.")
 
 class CreateChats(APIView):
     def post(self, request: Request):
@@ -41,3 +41,9 @@ class GetMFASecret(APIView):
             return Response({"error": f"MFA for user with email {email} is not enabled."}, status.HTTP_400_BAD_REQUEST)
 
         return Response(decrypt_secret(user.mfa.secret), status.HTTP_200_OK)
+
+class EchoAuthHeaderView(APIView):
+    authentication_classes = []
+
+    def get(self, request: Request):
+        return Response({"auth": request.META.get("HTTP_AUTHORIZATION")})

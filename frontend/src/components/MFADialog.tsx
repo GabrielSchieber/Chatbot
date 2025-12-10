@@ -164,7 +164,7 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
         } else {
             const data = await response.json()
             setIsEnabling(false)
-            setError(t(data.error))
+            setError(t(data.detail))
         }
 
         setIsLocked(false)
@@ -318,7 +318,7 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
         } else {
             const data = await response.json()
             setIsDisabling(false)
-            setError(t(data.error))
+            setError(t(data.detail))
         }
 
         setIsLocked(false)
