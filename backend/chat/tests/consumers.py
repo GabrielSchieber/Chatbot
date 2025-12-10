@@ -48,6 +48,22 @@ async def test_join_chat_group(db):
     await ws.disconnect()
 
 @pytest.mark.parametrize("anyio_backend", ["asyncio"])
+async def test_receive_send_token_event(db):
+    user, ws = await connect_to_communicator_with_user()
+    chat = await user.chats.acreate(title = "Chat")
+
+    await ws.send_json_to({"chat_uuid": str(chat.uuid)})
+    await assert_in(str(chat.uuid), opened_chats)
+
+    channel_layer = get_channel_layer()
+    await channel_layer.group_send(f"chat_{chat.uuid}", {"type": "send_token", "token": "Hello", "message_index": 0})
+
+    response = await ws.receive_json_from()
+    assert response == {"token": "Hello", "message_index": 0}
+
+    await ws.disconnect()
+
+@pytest.mark.parametrize("anyio_backend", ["asyncio"])
 async def test_receive_send_message_event(db):
     user, ws = await connect_to_communicator_with_user()
     chat = await user.chats.acreate(title = "Chat")
