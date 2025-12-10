@@ -1,12 +1,14 @@
 import asyncio
 import time
 import uuid
+from datetime import datetime
 from typing import Any, Iterable
 
 import pytest
 from asgiref.sync import sync_to_async
 from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
+from freezegun import freeze_time
 from rest_framework_simplejwt.tokens import AccessToken
 
 from .utils import create_user
@@ -31,6 +33,19 @@ async def test_reject_connection_with_tampered_cookie(db):
     connected, subprotocol = await ws.connect()
     assert connected is False
     assert subprotocol == 401
+
+@pytest.mark.parametrize("anyio_backend", ["asyncio"])
+async def test_reject_connection_with_expired_cookie(db):
+    time_to_freeze = datetime(2025, 1, 1, 12)
+    with freeze_time(time_to_freeze):
+        user = await sync_to_async(create_user)()
+        cookie = AccessToken.for_user(user)
+
+    with freeze_time(time_to_freeze + cookie.lifetime):
+        ws = get_communicator([(b"cookie", f"access_token={cookie}".encode())])
+        connected, subprotocol = await ws.connect()
+        assert connected is False
+        assert subprotocol == 401
 
 @pytest.mark.parametrize("anyio_backend", ["asyncio"])
 async def test_accept_authenticated_connection(db):
