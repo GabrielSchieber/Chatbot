@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
@@ -127,13 +128,14 @@ class Logout(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request):
+        user: User = request.user
+
         refresh_token = request.COOKIES.get("refresh_token")
-        if refresh_token:
+        if refresh_token is not None:
             try:
-                refresh = RefreshToken(refresh_token)
-                jti = refresh.get("jti")
-                UserSession.objects.filter(refresh_jti = jti, logout_at__isnull = True).update(logout_at = timezone.now())
-            except:
+                refresh_jti = RefreshToken(refresh_token).get("jti")
+                user.sessions.filter(logout_at__isnull = True, refresh_jti = refresh_jti).update(logout_at = timezone.now())
+            except TokenError:
                 pass
 
         response = Response(status = status.HTTP_200_OK)
