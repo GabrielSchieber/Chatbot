@@ -100,6 +100,12 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
 
         const newFiles = Array.from(event.target.files)
 
+        if (newFiles.some(f => f.size === 0)) {
+            alert("Empty files are not allowed.")
+            event.target.value = ""
+            return
+        }
+
         const visibleTotal = getCurrentFiles().map(f => f.content_size).reduce((a, b) => a + b, 0)
         const removedTotal = removedFiles.map(r => r.content_size).reduce((a, b) => a + b, 0)
         const newTotal = newFiles.map(f => f.size).reduce((a, b) => a + b, 0)

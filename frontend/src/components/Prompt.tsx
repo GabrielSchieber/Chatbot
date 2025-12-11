@@ -99,6 +99,12 @@ export default function Prompt() {
 
         const newFiles = Array.from(e.target.files)
 
+        if (newFiles.some(f => f.size === 0)) {
+            notify(t("prompt.file.error.empty"), "error")
+            e.target.value = ""
+            return
+        }
+
         const currentTotal = files.map(f => f.size).reduce((a, b) => a + b, 0)
         const newTotal = newFiles.map(f => f.size).reduce((a, b) => a + b, 0)
 

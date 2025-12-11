@@ -128,6 +128,7 @@
     "chat.header": "Como posso te ajudar hoje?",
     "prompt.unarchive.label": "Esta conversa está arquivada. Para continuar, primeiro desarquive-a.",
     "prompt.unarchive.button": "Desarquivar",
+    "prompt.file.error.empty": "Arquivos vazios não são permitidos.",
     "prompt.file.error.tooMany": "Você só pode anexar até {{max}} arquivos por vez.",
     "prompt.file.error.tooLarge": "O tamanho total dos arquivos excede o limite de {{limit}}. Selecione arquivos menores.",
     "prompt.file.error.sendFailed": "Falha ao enviar a mensagem.",
