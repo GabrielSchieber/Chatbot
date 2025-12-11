@@ -298,7 +298,23 @@ class VerifyMFA(TestCase):
         self.assertEqual(len(session.refresh_jti), 32)
         assert all(c in "0123456789abcdefABCDEF" for c in session.refresh_jti)
 
-class Logout(TestCase):
+    def test_does_not_create_session_if_token_is_invalid(self):
+        user = create_user()
+        user.mfa.setup()
+        user.mfa.enable()
+
+        self.assertEqual(user.sessions.count(), 0)
+
+        response = self.login_user()
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(user.sessions.count(), 0)
+
+        response = self.client.post("/api/verify-mfa/", {"token": "invalid", "code": generate_code(user.mfa.secret)})
+        self.assertEqual(response.status_code, 400)
+
+        self.assertEqual(user.sessions.count(), 0)
+
     def test(self):
         create_user()
         response = self.login_user()
