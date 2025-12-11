@@ -167,7 +167,7 @@ export function editMessage(
     formData.append("index", index.toString())
     formData.append("model", model)
     added_files.forEach(added_file => formData.append("added_files", added_file))
-    formData.append("removed_file_ids", JSON.stringify(removed_file_ids))
+    removed_file_ids.forEach(removed_file_id => formData.append("removed_file_ids", removed_file_id.toString()))
     return apiFetch("edit-message/", { method: "PATCH", body: formData })
 }
 
