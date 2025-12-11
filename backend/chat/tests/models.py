@@ -146,6 +146,18 @@ class UserMFA(TestCase):
         self.assertEqual(user.mfa.backup_codes, [])
         self.assertFalse(user.mfa.is_enabled)
 
+class UserSession(TestCase):
+    def test_creation(self):
+        user = create_user()
+        self.assertHasAttr(user, "sessions")
+
+        user.sessions.create()
+        self.assertEqual(user.sessions.count(), 1)
+        self.assertEqual(user.sessions.first().user, user)
+        self.assertIsNotNone(user.sessions.first().login_at)
+        for a in ["logout_at", "ip_address", "user_agent", "device", "browser", "os", "refresh_jti"]:
+            self.assertIsNone(getattr(user.sessions.first(), a))
+
 class PreAuthToken(TestCase):
     def test_is_expired(self):
         user = create_user()
