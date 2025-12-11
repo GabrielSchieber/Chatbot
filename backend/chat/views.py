@@ -563,10 +563,12 @@ class NewMessage(APIView):
                 return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
         user_message = chat.messages.create(text = text, is_from_user = True)
-        if len(files) > 0:
-            user_message.files.bulk_create(
-                [MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type) for file in files]
-            )
+        new_files = []
+        for file in files:
+            file.seek(0)
+            new_files.append(MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type))
+        user_message.files.bulk_create(new_files)
+
         bot_message = chat.messages.create(text = "", is_from_user = False, model = model)
 
         chat.pending_message = bot_message
