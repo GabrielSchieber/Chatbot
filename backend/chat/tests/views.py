@@ -268,6 +268,36 @@ class VerifyMFA(TestCase):
             response = self.client.get("/api/me/")
             self.assertEqual(response.status_code, 401)
 
+    def test_creates_session_if_token_and_code_are_valid(self):
+        user = create_user()
+        user.mfa.setup()
+        user.mfa.enable()
+
+        self.assertEqual(user.sessions.count(), 0)
+
+        response = self.login_user()
+        self.assertEqual(response.status_code, 200)
+        token = response.json()["token"]
+
+        self.assertEqual(user.sessions.count(), 0)
+
+        response = self.client.post("/api/verify-mfa/", {"token": token, "code": generate_code(user.mfa.secret)})
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(user.sessions.count(), 1)
+
+        session = user.sessions.first()
+        self.assertIsNotNone(session)
+        self.assertIsNotNone(session.login_at)
+        self.assertIsNone(session.logout_at)
+        self.assertEqual(session.ip_address, "127.0.0.1")
+        self.assertEqual(session.user_agent, "")
+        self.assertEqual(session.device, "Device(family='Other', brand=None, model=None)")
+        self.assertEqual(session.browser, "Other")
+        self.assertEqual(session.os, "Other")
+        self.assertEqual(len(session.refresh_jti), 32)
+        assert all(c in "0123456789abcdefABCDEF" for c in session.refresh_jti)
+
 class Logout(TestCase):
     def test(self):
         create_user()
