@@ -25,6 +25,8 @@ export function AddFilesButton({ fileInputRef, tabIndex = 2 }: { fileInputRef: R
 }
 
 export function SelectModelButton({ model, setModel, tabIndex = 2 }: { model: Model, setModel: Dispatch<SetStateAction<Model>>, tabIndex?: number }) {
+    const { isMobile } = useChat()
+
     return (
         <Select.Root value={model} onValueChange={v => setModel(v as Model)}>
             <TooltipButton
@@ -50,27 +52,21 @@ export function SelectModelButton({ model, setModel, tabIndex = 2 }: { model: Mo
 
             <Select.Portal>
                 <Select.Content
-                    className="
-                        flex flex-col w-40 rounded-lg text-white border border-gray-500 -translate-x-5 light:text-black bg-gray-900 light:bg-gray-100
-                    "
+                    className={dropdownContentClassName + (!isMobile && " -translate-x-7.5")}
                     position="popper"
                     sideOffset={5}
                     onCloseAutoFocus={e => e.preventDefault()}
                 >
-                    <Select.Viewport className="p-1">
+                    <Select.Viewport>
                         {(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
                             <Select.Item
                                 key={m}
                                 value={m}
-                                className="
-                                    flex items-center px-2 py-1 rounded cursor-pointer outline-none
-                                    hover:bg-gray-700 light:hover:bg-gray-300
-                                    focus:bg-gray-700 light:focus:bg-gray-300
-                                "
+                                className={dropdownItemClassName}
                             >
                                 <Select.ItemText>{m}</Select.ItemText>
-                                <Select.ItemIndicator className="ml-auto">
-                                    <CheckIcon className="size-5" />
+                                <Select.ItemIndicator>
+                                    <CheckIcon className="size-5.5" />
                                 </Select.ItemIndicator>
                             </Select.Item>
                         ))}
@@ -213,13 +209,21 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
             <DropdownMenu.Root>
                 <Tooltip.Root>
                     <Tooltip.Trigger asChild>
-                        <DropdownMenu.Trigger className={messageButtonClassNames} disabled={currentChat?.is_archived || pendingChat !== undefined || isLoading} data-testid="regenerate">
+                        <DropdownMenu.Trigger
+                            className={messageButtonClassNames}
+                            disabled={currentChat?.is_archived || pendingChat !== undefined || isLoading}
+                            data-testid="regenerate"
+                        >
                             <UpdateIcon className={`size-4.5 ${isRotating && "animate-spin"}`} />
                         </DropdownMenu.Trigger>
                     </Tooltip.Trigger>
 
                     <Tooltip.Portal>
-                        <Tooltip.Content className="flex flex-col px-2 py-1 items-center text-sm text-white rounded-xl bg-black" side="bottom" sideOffset={3}>
+                        <Tooltip.Content
+                            className="flex flex-col px-2 py-1 items-center text-sm text-white rounded-xl bg-black"
+                            side="bottom"
+                            sideOffset={3}
+                        >
                             <p>{t("regenerateButton.tooltip")}</p>
                             {model && <p className="text-xs text-gray-400">{t("regenerateButton.tooltipUsedModel", { model })}</p>}
                         </Tooltip.Content>
@@ -231,12 +235,12 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
                         {(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
                             <DropdownMenu.Item
                                 key={m}
-                                className={dropdownItemClassName + " w-45 justify-between"}
+                                className={dropdownItemClassName}
                                 onSelect={_ => regenerate(m)}
                                 data-testid="regenerate-dropdown-entry"
                             >
                                 {m}
-                                {m === model && <CheckIcon className="size-5" />}
+                                {m === model && <CheckIcon className="size-5.5" />}
                             </DropdownMenu.Item>
                         ))}
                     </DropdownMenu.Content>
@@ -412,14 +416,14 @@ const promptBarButtonClassNames = `
 `
 
 const dropdownContentClassName = `
-    flex flex-col gap-2 mx-2 p-2 rounded-xl border
+    flex flex-col gap-2 mx-2 p-1 rounded-xl border
     text-white light:text-black
     border-gray-600 light:border-gray-400
     bg-gray-800 light:bg-gray-200
 `
 
 const dropdownItemClassName = `
-    flex gap-1 px-3 py-2 rounded-xl cursor-pointer outline-none
+    flex w-40 px-3 py-2 items-center justify-between rounded-xl cursor-pointer outline-none
     hover:bg-gray-700 light:hover:bg-gray-300
     not-hover-none:focus:bg-gray-700 not-hover-none:light:focus:bg-gray-300
 `
