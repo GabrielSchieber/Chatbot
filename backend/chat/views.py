@@ -623,12 +623,17 @@ class EditMessage(APIView):
         if total_size > 5_000_000:
             return Response({"detail": "Total file size exceeds limit of 5 MB."}, status.HTTP_400_BAD_REQUEST)
 
-        user_message.text = text
         for removed_file in removed_files:
             removed_file.delete()
-        user_message.files.bulk_create(
-            [MessageFile(name = file.name, content = file.read(), content_type = file.content_type) for file in added_files]
-        )
+
+        user_message.text = text
+
+        new_files = []
+        for file in added_files:
+            file.seek(0)
+            new_files.append(MessageFile(message = user_message, name = file.name, content = file.read(), content_type = file.content_type))
+        user_message.files.bulk_create(new_files)
+
         user_message.save()
 
         bot_message: Message = messages[index + 1]
