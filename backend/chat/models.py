@@ -10,6 +10,29 @@ from django.utils import timezone
 
 from .totp_utils import generate_auth_url, generate_backup_codes, generate_secret, verify_secret
 
+class CleanOnSaveMixin(models.Model):
+    class Meta:
+        abstract = True
+
+    def save(self, *args, validate = True, **kwargs):
+        if validate:
+            self.full_clean()
+        return super().save(*args, **kwargs)
+
+    @classmethod
+    def bulk_create(cls, objs, validate = True, **kwargs):
+        if validate:
+            for obj in objs:
+                obj.full_clean()
+        return super().bulk_create(objs, **kwargs)
+
+    @classmethod
+    def bulk_update(cls, objs, fields, validate = True, **kwargs):
+        if validate:
+            for obj in objs:
+                obj.full_clean()
+        return super().bulk_update(objs, fields, **kwargs)
+
 class UserManager(BaseUserManager):
     def create_user(self, email: str, password: str, is_staff: bool = False, is_superuser: bool = False):
         try:
@@ -35,7 +58,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email: str, password: str):
         return self.create_user(email, password, is_staff = True, is_superuser = True)
 
-class User(AbstractBaseUser, PermissionsMixin):
+class User(CleanOnSaveMixin, AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique = True)
     is_active = models.BooleanField(default = True)
     is_staff = models.BooleanField(default = False)
@@ -47,22 +70,25 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     chats: BaseManager[Chat]
-    mfa: UserMFA
     preferences: UserPreferences
+    mfa: UserMFA
     sessions: BaseManager[UserSession]
 
     def __str__(self):
-        return ""
+        return f"User with email {self.email} created at {self.created_at}."
 
-class UserPreferences(models.Model):
+class UserPreferences(CleanOnSaveMixin, models.Model):
     user = models.OneToOneField(User, models.CASCADE, related_name = "preferences")
-    language = models.CharField(choices = [[c, c] for c in ["", "English", "Português"]], default = "")
-    theme = models.CharField(choices = [[c, c] for c in ["System", "Light", "Dark"]], default = "System")
+
+    language = models.CharField(blank = True, default = "", choices = [[c, c] for c in ["", "English", "Português"]])
+    theme = models.CharField(default = "System", choices = [[c, c] for c in ["System", "Light", "Dark"]])
+
     has_sidebar_open = models.BooleanField(default = True)
-    custom_instructions = models.CharField(max_length = 1000)
-    nickname = models.CharField(max_length = 50)
-    occupation = models.CharField(max_length = 50)
-    about = models.CharField(max_length = 1000)
+
+    custom_instructions = models.CharField(max_length = 1000, blank = True)
+    nickname = models.CharField(max_length = 50, blank = True)
+    occupation = models.CharField(max_length = 50, blank = True)
+    about = models.CharField(max_length = 1000, blank = True)
 
     @staticmethod
     def available_languages() -> list[str]:
@@ -72,10 +98,13 @@ class UserPreferences(models.Model):
     def available_themes() -> list[str]:
         return [c[0] for c in UserPreferences._meta.get_field("theme").choices]
 
-class UserMFA(models.Model):
+    def __str__(self):
+        return f"Preferences for {self.user.email}."
+
+class UserMFA(CleanOnSaveMixin, models.Model):
     user = models.OneToOneField(User, models.CASCADE, related_name = "mfa")
-    secret = models.BinaryField(max_length = 32)
-    backup_codes = models.JSONField(default = list)
+    secret = models.BinaryField(max_length = 140)
+    backup_codes = models.JSONField(default = list, blank = True)
     is_enabled = models.BooleanField(default = False)
 
     def verify(self, code: str):
@@ -111,37 +140,43 @@ class UserMFA(models.Model):
         self.is_enabled = False
         self.save()
 
-class UserSession(models.Model):
+    def __str__(self):
+        return f"MFA for {self.user.email}."
+
+class UserSession(CleanOnSaveMixin, models.Model):
     class Meta:
         verbose_name = "User Session"
         verbose_name_plural = "User Sessions"
 
-    uuid = models.UUIDField(primary_key = True, default = uuid.uuid4, editable = False)
     user = models.ForeignKey(User, models.CASCADE, related_name = "sessions")
+    uuid = models.UUIDField(primary_key = True, default = uuid.uuid4, editable = False)
 
     login_at = models.DateTimeField(auto_now_add = True)
     logout_at = models.DateTimeField(blank = True, null = True)
 
     ip_address = models.GenericIPAddressField(blank = True, null = True)
-    user_agent = models.TextField(blank = True, null = True)
-    device = models.CharField(max_length = 200, blank = True, null = True)
-    browser = models.CharField(max_length = 200, blank = True, null = True)
-    os = models.CharField(max_length = 200, blank = True, null = True)
+    user_agent = models.CharField(max_length = 200, blank = True)
+    device = models.CharField(max_length = 200, blank = True)
+    browser = models.CharField(max_length = 200, blank = True)
+    os = models.CharField(max_length = 200, blank = True)
 
-    refresh_jti = models.CharField(max_length = 255, blank = True, null = True)
+    refresh_jti = models.CharField(max_length = 255, blank = True)
 
     def __str__(self):
-        return f"{self.user.email} @ {self.login_at}"
+        return f"Session created at {self.login_at} for {self.user.email}."
 
-class PreAuthToken(models.Model):
-    user = models.ForeignKey(User, models.CASCADE)
+class PreAuthToken(CleanOnSaveMixin, models.Model):
+    user = models.ForeignKey(User, models.CASCADE, related_name = "pre_auth_tokens")
     token = models.UUIDField(unique = True, default = uuid.uuid4, editable = False)
     created_at = models.DateTimeField(auto_now_add = True)
 
     def is_expired(self):
         return timezone.now() - self.created_at > timedelta(minutes = 5)
 
-class Chat(models.Model):
+    def __str__(self):
+        return f"Pre-authentication token created at {self.created_at} owned by {self.user.email}."
+
+class Chat(CleanOnSaveMixin, models.Model):
     user = models.ForeignKey(User, models.CASCADE, related_name = "chats")
     uuid = models.UUIDField(primary_key = True, default = uuid.uuid4, editable = False)
     title = models.CharField(max_length = 200)
@@ -156,13 +191,13 @@ class Chat(models.Model):
         return message.last_modified_at if message else self.created_at
 
     def __str__(self):
-        return ""
+        return f"Chat titled {self.title} created at {self.created_at} owned by {self.user.email}."
 
-class Message(models.Model):
+class Message(CleanOnSaveMixin, models.Model):
     chat = models.ForeignKey(Chat, models.CASCADE, related_name = "messages")
-    text = models.TextField()
+    text = models.TextField(blank = True)
     is_from_user = models.BooleanField()
-    model = models.CharField(choices = [[c, c] for c in ["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]], blank = True, null = True)
+    model = models.CharField(blank = True, choices = [[c, c] for c in ["", "SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]])
     last_modified_at = models.DateTimeField(auto_now = True)
     created_at = models.DateTimeField(auto_now_add = True)
 
@@ -173,9 +208,9 @@ class Message(models.Model):
         return [c[0] for c in Message._meta.get_field("model").choices]
 
     def __str__(self):
-        return ""
+        return f"Message created at {self.created_at} in {self.chat.title} owned by {self.chat.user.email}."
 
-class MessageFile(models.Model):
+class MessageFile(CleanOnSaveMixin, models.Model):
     message = models.ForeignKey(Message, models.CASCADE, related_name = "files")
     name = models.CharField(max_length = 200)
     content = models.BinaryField(max_length = 5_000_000)
@@ -189,3 +224,6 @@ class MessageFile(models.Model):
     @staticmethod
     def max_content_size_str() -> str:
         return "5 MB"
+
+    def __str__(self):
+        return f"File of message named {self.name} created at {self.created_at} in {self.message} owned by {self.message.chat.user.email}."

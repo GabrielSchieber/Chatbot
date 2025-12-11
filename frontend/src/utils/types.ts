@@ -1,6 +1,6 @@
 export type Language = "" | "English" | "Português"
 export type Theme = "System" | "Light" | "Dark"
-export type Model = "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondream"
+export type Model = "" | "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondream"
 
 export type User = {
     email: string
@@ -39,18 +39,18 @@ export type Chat = {
     index: number
 }
 
+export type Message = {
+    id: number
+    text: string
+    is_from_user: boolean
+    model: Model
+    files: MessageFile[]
+}
+
 export type MessageFile = {
     id: number
     name: string
     content: Blob | null
     content_size: number
     content_type: string
-}
-
-export type Message = {
-    id: number
-    text: string
-    is_from_user: boolean
-    files: MessageFile[]
-    model: Model | null
 }

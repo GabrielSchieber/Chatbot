@@ -43,7 +43,7 @@ export default function Prompt() {
                         content_type: f.type
                     }))
 
-                    previous.push({ id: highestID + 1, text, files: newFiles, is_from_user: true, model: null })
+                    previous.push({ id: highestID + 1, text, files: newFiles, is_from_user: true, model: "" })
                     previous.push({ id: highestID + 2, text: "", files: [], is_from_user: false, model })
 
                     return previous
