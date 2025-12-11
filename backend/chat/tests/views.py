@@ -122,6 +122,23 @@ class Login(TestCase):
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
 
+    def test_creates_session(self):
+        user = create_user()
+        self.assertEqual(user.sessions.count(), 0)
+        self.login_user()
+        self.assertEqual(user.sessions.count(), 1)
+        session = user.sessions.first()
+        self.assertIsNotNone(session)
+        self.assertIsNotNone(session.login_at)
+        self.assertIsNone(session.logout_at)
+        self.assertEqual(session.ip_address, "127.0.0.1")
+        self.assertEqual(session.user_agent, "")
+        self.assertEqual(session.device, "Device(family='Other', brand=None, model=None)")
+        self.assertEqual(session.browser, "Other")
+        self.assertEqual(session.os, "Other")
+        self.assertEqual(len(session.refresh_jti), 32)
+        assert all(c in "0123456789abcdefABCDEF" for c in session.refresh_jti)
+
 class VerifyMFA(TestCase):
     def test(self):
         def is_valid_uuid4(value: str):
