@@ -13,9 +13,14 @@ class UserMFASerializer(serializers.ModelSerializer):
         fields = ["is_enabled"]
 
 class UserSessionSerializer(serializers.ModelSerializer):
+    login_at = serializers.SerializerMethodField()
+
     class Meta:
         model = UserSession
         fields = ["login_at", "logout_at", "ip_address", "browser", "os"]
+
+    def get_login_at(self, session: UserSession):
+        return str(session.login_at)
 
 class UserSerializer(serializers.ModelSerializer):
     preferences = UserPreferencesSerializer(many = False, read_only = True)

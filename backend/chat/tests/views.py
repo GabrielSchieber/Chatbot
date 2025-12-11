@@ -418,7 +418,14 @@ class Me(TestCase):
             },
             "mfa": {
                 "is_enabled": False
-            }
+            },
+            "sessions": [{
+                "login_at": str(user.sessions.first().login_at),
+                "logout_at": None,
+                "ip_address": "127.0.0.1",
+                "browser": "Other",
+                "os": "Other"
+            }]
         }
 
         self.assertEqual(response.json(), expected_json)
@@ -441,7 +448,14 @@ class Me(TestCase):
             },
             "mfa": {
                 "is_enabled": False
-            }
+            },
+            "sessions": [{
+                "login_at": str(user.sessions.first().login_at),
+                "logout_at": None,
+                "ip_address": "127.0.0.1",
+                "browser": "Other",
+                "os": "Other"
+            }]
         }
 
         self.assertEqual(response.json(), expected_json)
