@@ -14,7 +14,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 from .serializers import ChatSerializer, ChatUUIDSerializer, DeleteAccountSerializer, EditMessageSerializer, GetChatsSerializer, GetMessageFileContentSerializer, LoginSerializer, MeSerializer, MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer, RenameChatSerializer, SearchChatsSerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
-from .models import Chat, Message, MessageFile, PreAuthToken, User
+from .models import Chat, Message, MessageFile, PreAuthToken, User, UserSession
 from .tasks import generate_pending_message_in_chat, is_any_user_chat_pending, stop_pending_chat, stop_user_pending_chats
 from .throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
 
