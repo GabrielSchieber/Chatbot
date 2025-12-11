@@ -58,8 +58,7 @@ class Login(APIView):
             refresh = RefreshToken.for_user(user)
 
             refresh_jti = refresh.get("jti")
-            UserSession.objects.create(
-                user = user,
+            user.sessions.create(
                 ip_address = request.ip_address,
                 user_agent = request.user_agent_raw,
                 device = request.device,
@@ -104,8 +103,7 @@ class VerifyMFA(APIView):
         refresh = RefreshToken.for_user(user)
 
         refresh_jti = refresh.get("jti")
-        UserSession.objects.create(
-            user = user,
+        user.sessions.create(
             ip_address = request.ip_address,
             user_agent = request.user_agent_raw,
             device = request.device,
@@ -149,7 +147,7 @@ class LogoutAllSessions(APIView):
     def post(self, request: Request):
         user: User = request.user
 
-        user.sessions.filter(user = user, logout_at__isnull = True).update(logout_at = timezone.now())
+        user.sessions.filter(logout_at__isnull = True).update(logout_at = timezone.now())
         tokens = OutstandingToken.objects.filter(user = user)
         for token in tokens:
             BlacklistedToken.objects.get_or_create(token = token)
