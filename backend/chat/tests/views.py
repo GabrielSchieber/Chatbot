@@ -315,6 +315,24 @@ class VerifyMFA(TestCase):
 
         self.assertEqual(user.sessions.count(), 0)
 
+    def test_does_not_create_session_if_code_is_invalid(self):
+        user = create_user()
+        user.mfa.setup()
+        user.mfa.enable()
+
+        self.assertEqual(user.sessions.count(), 0)
+
+        response = self.login_user()
+        self.assertEqual(response.status_code, 200)
+        token = response.json()["token"]
+
+        self.assertEqual(user.sessions.count(), 0)
+
+        response = self.client.post("/api/verify-mfa/", {"token": token, "code": "invalid"})
+        self.assertEqual(response.status_code, 401)
+
+        self.assertEqual(user.sessions.count(), 0)
+
 class Refresh(TestCase):
     def test(self):
         refresh = RefreshToken.for_user(create_user())
