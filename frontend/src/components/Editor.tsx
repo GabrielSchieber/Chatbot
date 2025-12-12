@@ -24,70 +24,64 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
     const [addedFiles, setAddedFiles] = useState<File[]>([])
     const [removedFiles, setRemovedFiles] = useState<MessageFile[]>([])
 
-    function edit(index: number) {
+    async function edit(index: number) {
         if (!chatUUID) return
 
-        editMessage(chatUUID, text, index, model, addedFiles, removedFiles.map(f => f.id)).then(response => {
-            if (response.ok) {
-                let shouldSetMessages = true
-                setMessages(previous => {
-                    if (shouldSetMessages) {
-                        const previousMessages = [...previous]
+        const response = await editMessage(chatUUID, text, index, model, addedFiles, removedFiles.map(f => f.id))
+        if (response.ok) {
+            let shouldSetMessages = true
+            setMessages(previous => {
+                if (shouldSetMessages) {
+                    const previousMessages = [...previous]
 
-                        previousMessages[index].text = text
+                    previousMessages[index].text = text
 
-                        for (const removedFileID of removedFiles.map(f => f.id)) {
-                            previousMessages[index].files = previousMessages[index].files.filter(file => file.id !== removedFileID)
-                        }
-
-                        let highestID = 1
-                        for (const file of previousMessages[index].files) {
-                            if (file.id > highestID) {
-                                highestID = file.id
-                            }
-                        }
-
-                        previousMessages[index].files = [
-                            ...previousMessages[index].files,
-                            ...addedFiles.map((file, index) => ({
-                                id: highestID + index + 1,
-                                name: file.name,
-                                content: file.slice(),
-                                content_size: file.size,
-                                content_type: file.type
-                            }))]
-
-                        previousMessages[index + 1].text = ""
-
-                        shouldSetMessages = false
-                        return previousMessages
-                    } else {
-                        return previous
+                    for (const removedFileID of removedFiles.map(f => f.id)) {
+                        previousMessages[index].files = previousMessages[index].files.filter(file => file.id !== removedFileID)
                     }
-                })
 
-                setIndex(-1)
-                setText("")
-                setAddedFiles([])
-                setRemovedFiles([])
-
-                response.json().then(chat => {
-                    setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
-
-                    getMessageFileIDs(chat.uuid).then(response => {
-                        if (response.ok) {
-                            response.json().then((file_ids: number[][]) =>
-                                setMessages(previous =>
-                                    previous.map((m, i) => ({ ...m, files: m.files.map((f, j) => ({ ...f, id: file_ids[i][j] })) }))
-                                )
-                            )
+                    let highestID = 1
+                    for (const file of previousMessages[index].files) {
+                        if (file.id > highestID) {
+                            highestID = file.id
                         }
-                    })
-                })
-            } else {
-                notify(t("editor.error.sendFailed"), "error")
+                    }
+
+                    previousMessages[index].files = [
+                        ...previousMessages[index].files,
+                        ...addedFiles.map((file, index) => ({
+                            id: highestID + index + 1,
+                            name: file.name,
+                            content: file.slice(),
+                            content_size: file.size,
+                            content_type: file.type
+                        }))]
+
+                    previousMessages[index + 1].text = ""
+
+                    shouldSetMessages = false
+                    return previousMessages
+                } else {
+                    return previous
+                }
+            })
+
+            setIndex(-1)
+            setText("")
+            setAddedFiles([])
+            setRemovedFiles([])
+
+            const chat = await response.json()
+            setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
+
+            const fileIDsResponse = await getMessageFileIDs(chat.uuid)
+            if (fileIDsResponse.ok) {
+                const file_ids: number[][] = await fileIDsResponse.json()
+                setMessages(previous => previous.map((m, i) => ({ ...m, files: m.files.map((f, j) => ({ ...f, id: file_ids[i][j] })) })))
             }
-        })
+        } else {
+            notify(t("editor.error.sendFailed"), "error")
+        }
     }
 
     function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
