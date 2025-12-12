@@ -153,10 +153,18 @@ class UserSession(TestCase):
 
         user.sessions.create()
         self.assertEqual(user.sessions.count(), 1)
-        self.assertEqual(user.sessions.first().user, user)
-        self.assertIsNotNone(user.sessions.first().login_at)
-        for a in ["logout_at", "ip_address", "user_agent", "device", "browser", "os", "refresh_jti"]:
-            self.assertIsNone(getattr(user.sessions.first(), a))
+
+        session = user.sessions.first()
+        self.assertEqual(session.user, user)
+        self.assertHasAttr(session, "uuid")
+
+        self.assertIsNotNone(session.login_at)
+        self.assertIsNone(session.logout_at)
+
+        self.assertIsNone(session.ip_address)
+
+        for a in ["user_agent", "device", "browser", "os", "refresh_jti"]:
+            self.assertEqual(getattr(session, a), "")
 
 class PreAuthToken(TestCase):
     def test_is_expired(self):
@@ -219,15 +227,15 @@ class Message(TestCase):
         user = create_user()
         chat = models.Chat.objects.create(user = user, title = "Test chat")
         user_message = models.Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
-        bot_message = models.Message.objects.create(chat = chat, text = "Hi!", is_from_user = False)
+        bot_message = models.Message.objects.create(chat = chat, text = "Hi!", is_from_user = False, model = "SmolLM2-135M")
         self.assertEqual(user_message.chat, chat)
         self.assertEqual(bot_message.chat, chat)
         self.assertEqual(user_message.text, "Hello!")
         self.assertEqual(bot_message.text, "Hi!")
         self.assertTrue(user_message.is_from_user)
         self.assertFalse(bot_message.is_from_user)
-        self.assertIsNone(user_message.model)
-        self.assertIsNone(bot_message.model)
+        self.assertEqual(user_message.model, "")
+        self.assertEqual(bot_message.model, "SmolLM2-135M")
         self.assertHasAttr(user_message, "files")
         self.assertHasAttr(bot_message, "files")
         self.assertEqual(user_message.files.count(), 0)

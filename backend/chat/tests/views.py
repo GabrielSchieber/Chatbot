@@ -1553,8 +1553,8 @@ class GetMessages(TestCase):
         self.assertEqual(response.status_code, 200)
 
         expected_messages = [
-            {"id": user_message_1.id, "text": "Hello!", "is_from_user": True, "files": [], "model": None},
-            {"id": bot_message_1.id, "text": "Hi!", "is_from_user": False, "files": [], "model": None}
+            {"id": user_message_1.id, "text": "Hello!", "is_from_user": True, "files": [], "model": ""},
+            {"id": bot_message_1.id, "text": "Hi!", "is_from_user": False, "files": [], "model": ""}
         ]
         self.assertEqual(response.json(), expected_messages)
 
@@ -1565,10 +1565,10 @@ class GetMessages(TestCase):
         self.assertEqual(response.status_code, 200)
 
         expected_messages = [
-            {"id": user_message_1.id, "text": "Hello!", "is_from_user": True, "files": [], "model": None},
-            {"id": bot_message_1.id, "text": "Hi!", "is_from_user": False, "files": [], "model": None},
-            {"id": user_message_2.id, "text": "Hello again!", "is_from_user": True, "files": [], "model": None},
-            {"id": bot_message_2.id, "text": "Hi again!", "is_from_user": False, "files": [], "model": None}
+            {"id": user_message_1.id, "text": "Hello!", "is_from_user": True, "files": [], "model": ""},
+            {"id": bot_message_1.id, "text": "Hi!", "is_from_user": False, "files": [], "model": ""},
+            {"id": user_message_2.id, "text": "Hello again!", "is_from_user": True, "files": [], "model": ""},
+            {"id": bot_message_2.id, "text": "Hi again!", "is_from_user": False, "files": [], "model": ""}
         ]
         self.assertEqual(response.json(), expected_messages)
 
