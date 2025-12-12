@@ -27,53 +27,47 @@ export default function Prompt() {
 
     const pendingChat = chats.find(c => c.pending_message_id !== null)
 
-    function sendMessage() {
-        newMessage(chatUUID || "", text, model, files).then(response => {
-            if (response.ok) {
-                setMessages(previous => {
-                    previous = [...previous]
+    async function sendMessage() {
+        const response = await newMessage(chatUUID || "", text, model, files)
+        if (response.ok) {
+            setMessages(previous => {
+                previous = [...previous]
 
-                    const highestID = previous.map(p => p.id).sort().at(-1) || 1
-                    const highestFileID = previous.flatMap(p => p.files).map(f => f.id).sort().at(-1) || 1
-                    const newFiles = files.map((f, i) => ({
-                        id: highestFileID + i + 1,
-                        name: f.name,
-                        content: f.slice(),
-                        content_size: f.size,
-                        content_type: f.type
-                    }))
+                const highestID = previous.map(p => p.id).sort().at(-1) || 1
+                const highestFileID = previous.flatMap(p => p.files).map(f => f.id).sort().at(-1) || 1
+                const newFiles = files.map((f, i) => ({
+                    id: highestFileID + i + 1,
+                    name: f.name,
+                    content: f.slice(),
+                    content_size: f.size,
+                    content_type: f.type
+                }))
 
-                    previous.push({ id: highestID + 1, text, files: newFiles, is_from_user: true, model: "" })
-                    previous.push({ id: highestID + 2, text: "", files: [], is_from_user: false, model })
+                previous.push({ id: highestID + 1, text, files: newFiles, is_from_user: true, model: "" })
+                previous.push({ id: highestID + 2, text: "", files: [], is_from_user: false, model })
 
-                    return previous
-                })
+                return previous
+            })
 
-                setText("")
-                setFiles([])
+            setText("")
+            setFiles([])
 
-                response.json().then(chat => {
-                    if (chatUUID) {
-                        setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
-                    } else {
-                        navigate(`/chat/${chat.uuid}`)
-                        setChats(previous => [...previous.map(c => ({ ...c, index: c.index + 1 })), chat])
-                    }
-
-                    getMessageFileIDs(chat.uuid).then(response => {
-                        if (response.ok) {
-                            response.json().then((file_ids: number[][]) =>
-                                setMessages(previous =>
-                                    previous.map((m, i) => ({ ...m, files: m.files.map((f, j) => ({ ...f, id: file_ids[i][j] })) }))
-                                )
-                            )
-                        }
-                    })
-                })
+            const chat = await response.json()
+            if (chatUUID) {
+                setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
             } else {
-                notify(t("prompt.file.error.sendFailed"), "error")
+                navigate(`/chat/${chat.uuid}`)
+                setChats(previous => [...previous.map(c => ({ ...c, index: c.index + 1 })), chat])
             }
-        })
+
+            const fileIDsResponse = await getMessageFileIDs(chat.uuid)
+            if (fileIDsResponse.ok) {
+                const file_ids: number[][] = await fileIDsResponse.json()
+                setMessages(previous => previous.map((m, i) => ({ ...m, files: m.files.map((f, j) => ({ ...f, id: file_ids[i][j] })) })))
+            }
+        } else {
+            notify(t("prompt.file.error.sendFailed"), "error")
+        }
     }
 
     function sendMessageWithEvent(e: React.KeyboardEvent<HTMLTextAreaElement>) {
