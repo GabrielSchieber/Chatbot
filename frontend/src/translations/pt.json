@@ -126,6 +126,7 @@
     "history.loading": "Carregando...",
     "history.empty": "Você não tem nenhuma conversa.",
     "chat.header": "Como posso te ajudar hoje?",
+    "editor.error.sendFailed": "Falha ao editar a mensagem.",
     "prompt.unarchive.label": "Esta conversa está arquivada. Para continuar, primeiro desarquive-a.",
     "prompt.unarchive.button": "Desarquivar",
     "prompt.file.error.empty": "Arquivos vazios não são permitidos.",

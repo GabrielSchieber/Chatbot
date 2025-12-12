@@ -125,6 +125,7 @@
     "history.loading": "Loading...",
     "history.empty": "You don't have any chats.",
     "chat.header": "How can I help you today?",
+    "editor.error.sendFailed": "Failed to edit message.",
     "prompt.unarchive.label": "This chat is archived. To continue, unarchive it first.",
     "prompt.unarchive.button": "Unarchive",
     "prompt.file.error.empty": "Empty files are not allowed.",

@@ -71,7 +71,7 @@ export default function Prompt() {
                     })
                 })
             } else {
-                notify("Failed to send message.", "error")
+                notify(t("prompt.file.error.sendFailed"), "error")
             }
         })
     }
