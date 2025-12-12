@@ -1938,6 +1938,41 @@ class EditMessage(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"index": ["Ensure this value is greater than or equal to 0."]})
 
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    def test_add_and_remove_files(self, _):
+        user = self.create_and_login_user()
+        chat = user.chats.create(user = user, title = "File Analysis")
+        message = chat.messages.create(chat = chat, text = "Describe the files.", is_from_user = True)
+        message.files.bulk_create([
+            MessageFile(message = message, name = f"File {i + 1}.txt", content = f"Content {i + 1}".encode(), content_type = "text/plain") 
+            for i in range(5)
+        ])
+        chat.messages.create(chat = chat, text = "The files are about...", is_from_user = False, model = "SmolLM2-135M")
+
+        added_files = [SimpleUploadedFile(f"File {i + 6}.txt", f"Document {i + 6}".encode(), "text/plain") for i in range(2)]
+        body = encode_multipart(
+            BOUNDARY,
+            {
+                "chat_uuid": str(chat.uuid),
+                "text": "Describe the files.",
+                "index": 0,
+                "added_files": added_files,
+                "removed_file_ids": [1, 3, 4]
+            }
+        )
+        content_type = f"multipart/form-data; boundary={BOUNDARY}"
+        response = self.client.patch("/api/edit-message/", body, content_type)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(MessageFile.objects.count(), 4)
+        message.refresh_from_db()
+        self.assertEqual(message.files.count(), 4)
+        for file, i in zip(message.files.order_by("created_at"), [2, 5, 6, 7]):
+            self.assertEqual(file.name, f"File {i}.txt")
+
+        self.assertEqual(Message.objects.count(), 2)
+        self.assertEqual(Message.objects.last().text, "")
+
 class RegenerateMessage(TestCase):
     @patch("chat.views.generate_pending_message_in_chat")
     def test(self, mock_generate):
