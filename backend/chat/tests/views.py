@@ -568,6 +568,31 @@ class Me(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["email"], "test@example.com")
 
+    def test_clear_preferences(self):
+        user = self.create_and_login_user()
+        user.preferences.custom_instructions = "Always talk like a pirate."
+        user.preferences.save()
+        self.assertEqual(user.preferences.custom_instructions, "Always talk like a pirate.")
+
+        response = self.client.patch("/api/me/", {"custom_instructions": ""}, "application/json")
+        self.assertEqual(response.status_code, 200)
+
+        user.preferences.refresh_from_db()
+        self.assertEqual(user.preferences.custom_instructions, "")
+
+        user.preferences.occupation = "Software Engineer"
+        user.preferences.about = "I'm a full-stack web developer."
+        user.preferences.save()
+        self.assertEqual(user.preferences.occupation, "Software Engineer")
+        self.assertEqual(user.preferences.about, "I'm a full-stack web developer.")
+
+        response = self.client.patch("/api/me/", {"occupation": "", "about": ""}, "application/json")
+        self.assertEqual(response.status_code, 200)
+
+        user.preferences.refresh_from_db()
+        self.assertEqual(user.preferences.occupation, "")
+        self.assertEqual(user.preferences.about, "")
+
 class SetupMFA(TestCase):
     def test(self):
         user = self.create_and_login_user()
