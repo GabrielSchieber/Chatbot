@@ -6,39 +6,35 @@ import { me } from "../utils/api"
 export default function Customizations() {
     const { user, setUser } = useAuth()
 
-    const [customInstructions, setCustomInstructions] = useState(user?.preferences.custom_instructions || "")
-    const [nickname, setNickname] = useState(user?.preferences.nickname || "")
-    const [occupation, setOccupation] = useState(user?.preferences.occupation || "")
-    const [about, setAbout] = useState(user?.preferences.about || "")
+    const [customInstructions, setCustomInstructions] = useState<string | undefined>(undefined)
+    const [nickname, setNickname] = useState<string | undefined>(undefined)
+    const [occupation, setOccupation] = useState<string | undefined>(undefined)
+    const [about, setAbout] = useState<string | undefined>(undefined)
 
-    const hasAnyChanged = [
-        customInstructions !== user?.preferences.custom_instructions,
-        nickname !== user?.preferences.nickname,
-        occupation !== user?.preferences.occupation,
-        about !== user?.preferences.about
-    ].some(f => f)
-
-    async function cancelCustomization() {
-        setCustomInstructions(user?.preferences.custom_instructions || "")
-        setNickname(user?.preferences.nickname || "")
-        setOccupation(user?.preferences.occupation || "")
-        setAbout(user?.preferences.about || "")
+    async function resetCustomization() {
+        setCustomInstructions(undefined)
+        setNickname(undefined)
+        setOccupation(undefined)
+        setAbout(undefined)
     }
 
     async function saveCustomization() {
         await me(undefined, undefined, undefined, customInstructions, nickname, occupation, about)
+
         setUser(previous => previous
             ? {
                 ...previous,
                 preferences: {
                     ...previous.preferences,
-                    custom_instructions: customInstructions,
-                    nickname,
-                    occupation,
-                    about
+                    custom_instructions: customInstructions !== undefined ? customInstructions : previous.preferences.custom_instructions,
+                    nickname: nickname !== undefined ? nickname : previous.preferences.nickname,
+                    occupation: occupation !== undefined ? occupation : previous.preferences.occupation,
+                    about: about !== undefined ? about : previous.preferences.about
                 }
             } : previous
         )
+
+        await resetCustomization()
     }
 
     return (
@@ -47,7 +43,7 @@ export default function Customizations() {
                 <Label text="Custom instructions" />
                 <TextArea
                     placeholder="Additional instructions that I should follow."
-                    value={customInstructions}
+                    value={customInstructions !== undefined ? customInstructions : user !== null ? user.preferences.custom_instructions : ""}
                     onChange={e => setCustomInstructions(e.currentTarget.value)}
                 />
             </Entry>
@@ -55,7 +51,7 @@ export default function Customizations() {
                 <Label text="Nickname" />
                 <Input
                     placeholder="What should I call you?"
-                    value={nickname}
+                    value={nickname !== undefined ? nickname : user !== null ? user.preferences.nickname : ""}
                     onChange={e => setNickname(e.currentTarget.value)}
                 />
             </Entry>
@@ -63,7 +59,7 @@ export default function Customizations() {
                 <Label text="Occupation" />
                 <Input
                     placeholder="Your role..."
-                    value={occupation}
+                    value={occupation !== undefined ? occupation : user !== null ? user.preferences.occupation : ""}
                     onChange={e => setOccupation(e.currentTarget.value)}
                 />
             </Entry>
@@ -71,14 +67,14 @@ export default function Customizations() {
                 <Label text="About" />
                 <TextArea
                     placeholder="Anything else that I should know about you?"
-                    value={about}
+                    value={about !== undefined ? about : user !== null ? user.preferences.about : ""}
                     onChange={e => setAbout(e.currentTarget.value)}
                 />
             </Entry>
 
-            {hasAnyChanged && (
+            {[customInstructions, nickname, occupation, about].some(f => f !== undefined) && (
                 <div className="flex gap-1 my-4 items-center justify-end">
-                    <button className="px-2 py-1 rounded-lg cursor-pointer border border-gray-500 hover:bg-gray-500/50" onClick={cancelCustomization}>
+                    <button className="px-2 py-1 rounded-lg cursor-pointer border border-gray-500 hover:bg-gray-500/50" onClick={resetCustomization}>
                         Cancel
                     </button>
                     <button
