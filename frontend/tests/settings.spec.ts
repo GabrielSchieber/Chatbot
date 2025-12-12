@@ -510,7 +510,7 @@ test("user can log out", async ({ page }) => {
     await settingsButton.click()
 
     await page.getByRole("tab", { name: "Security" }).click()
-    await page.getByRole("button", { name: "Log out" }).click()
+    await page.getByRole("button", { name: "Log out", exact: true }).click()
 
     await page.waitForURL("/login")
     await page.goto("/")
