@@ -1,3 +1,4 @@
+import { Label as RadixLabel } from "radix-ui"
 import { useState, useEffect, type ReactNode, useRef } from "react"
 
 import { useAuth } from "../providers/AuthProvider"
@@ -40,32 +41,36 @@ export default function Customizations() {
     return (
         <>
             <Entry>
-                <Label text="Custom instructions" />
+                <Label htmlFor="custom-instructions" text="Custom instructions" />
                 <TextArea
+                    id="custom-instructions"
                     placeholder="Additional instructions that I should follow."
                     value={customInstructions !== undefined ? customInstructions : user !== null ? user.preferences.custom_instructions : ""}
                     onChange={e => setCustomInstructions(e.currentTarget.value)}
                 />
             </Entry>
             <Entry>
-                <Label text="Nickname" />
+                <Label htmlFor="nickname" text="Nickname" />
                 <Input
+                    id="nickname"
                     placeholder="What should I call you?"
                     value={nickname !== undefined ? nickname : user !== null ? user.preferences.nickname : ""}
                     onChange={e => setNickname(e.currentTarget.value)}
                 />
             </Entry>
             <Entry>
-                <Label text="Occupation" />
+                <Label htmlFor="occupation" text="Occupation" />
                 <Input
+                    id="occupation"
                     placeholder="Your role..."
                     value={occupation !== undefined ? occupation : user !== null ? user.preferences.occupation : ""}
                     onChange={e => setOccupation(e.currentTarget.value)}
                 />
             </Entry>
             <Entry>
-                <Label text="About" />
+                <Label htmlFor="about" text="About" />
                 <TextArea
+                    id="about"
                     placeholder="Anything else that I should know about you?"
                     value={about !== undefined ? about : user !== null ? user.preferences.about : ""}
                     onChange={e => setAbout(e.currentTarget.value)}
@@ -100,11 +105,15 @@ function Entry({ children }: { children: ReactNode }) {
     )
 }
 
-function Label({ text }: { text: string }) {
-    return <p className="pl-1 pb-1 font-semibold">{text}</p>
+function Label({ htmlFor, text }: { htmlFor: string, text: string }) {
+    return (
+        <RadixLabel.Root htmlFor={htmlFor} className="pl-1 pb-1 font-semibold">
+            {text}
+        </RadixLabel.Root>
+    )
 }
 
-function TextArea({ placeholder, value, onChange }: { placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void }) {
+function TextArea({ id, placeholder, value, onChange }: { id: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void }) {
     const ref = useRef<HTMLTextAreaElement | null>(null)
 
     useEffect(() => {
@@ -117,6 +126,7 @@ function TextArea({ placeholder, value, onChange }: { placeholder: string, value
     return (
         <div className="flex flex-1 max-h-40 overflow-y-auto rounded-lg border border-gray-500/50 bg-gray-700/50 light:bg-gray-300/50">
             <textarea
+                id={id}
                 ref={ref}
                 className="flex-1 px-2 py-1 overflow-hidden resize-none outline-none"
                 placeholder={placeholder}
@@ -129,9 +139,10 @@ function TextArea({ placeholder, value, onChange }: { placeholder: string, value
     )
 }
 
-function Input({ placeholder, value, onChange }: { placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
+function Input({ id, placeholder, value, onChange }: { id: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
     return (
         <input
+            id={id}
             className="w-full px-2 py-1 rounded-lg outline-none border border-gray-500/50 bg-gray-700/50 light:bg-gray-300/50"
             type="text"
             placeholder={placeholder}
