@@ -1,5 +1,5 @@
 import { Page, expect, test } from "@playwright/test"
-import { signupAndLogin } from "./utils"
+import { apiFetch, signupAndLogin } from "./utils"
 
 test.beforeEach(async ({ page }) => {
     test.setTimeout(timeout)
@@ -365,6 +365,134 @@ test("user can edit their message and remove a file", async ({ page }) => {
     await expect(botMessage).toHaveText(botMessage2, { timeout })
 
     await expect(stopButton).not.toBeVisible()
+})
+
+test("user can add and remove files while editing their message", async ({ page }) => {
+    const user = await signupAndLogin(page)
+
+    const userMessageText = "Describe the files."
+
+    const userMessage1File1Name = "about-cats.txt"
+    const userMessage1File1Content = "The purpose of this file is to describe cats and their behavior."
+    const userMessage1File2Name = "about-dogs.txt"
+    const userMessage1File2Content = "The purpose of this file is to describe dogs and their behavior."
+
+    const userMessage2FileName = "about-birds.txt"
+    const userMessage2FileContent = "The purpose of this file is to describe birds and their behavior."
+
+    const botMessage1Text = "The files are about..."
+    const botMessage2Text = `You're on a personal quest, I see! A couple's "about" files? That adds another dimension to our journey together. Let's dive into these files together!
+
+
+Here's what each page means:
+== About-dogs.txt === - Contains information about dogs for their behavior and breed`
+
+    const messages = [
+        {
+            text: userMessageText,
+            is_from_user: true,
+            files: [
+                {
+                    name: userMessage1File1Name,
+                    content: userMessage1File1Content,
+                    content_type: "text/plain"
+                },
+                {
+                    name: userMessage1File2Name,
+                    content: userMessage1File2Content,
+                    content_type: "text/plain"
+                }
+            ]
+        },
+        {
+            text: botMessage1Text,
+            is_from_user: false,
+            files: []
+        }
+    ]
+
+    const response = await apiFetch("/test/create-chat/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, title: "File Analysis", messages })
+    })
+    expect(response.status).toEqual(200)
+
+    await page.reload()
+
+    if (page.viewportSize()!.width < 750) {
+        await expect(page.getByText("Close Sidebar")).not.toBeVisible()
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+    await expect(page.getByText("Close Sidebar")).toBeVisible()
+
+    await page.getByText("File Analysis").click()
+
+    if (page.viewportSize()!.width < 750) {
+        await page.getByText("Close Sidebar").click()
+    }
+    await expect(page.getByText("Close Sidebar")).not.toBeVisible()
+
+    const userMessage = page.getByTestId("message-0")
+    const botMessage = page.getByTestId("message-1")
+
+    await expect(userMessage).toHaveText(userMessageText)
+    await expect(botMessage).toHaveText(botMessage1Text)
+
+    async function checkFileVisibilityInMessage(name: string, visible: boolean) {
+        const messageDiv = userMessage.locator("..").locator("div").first()
+        await expect(messageDiv.getByText(`Name: ${name}`)).toBeVisible({ visible })
+    }
+
+    await checkFileVisibilityInMessage(userMessage1File1Name, true)
+    await checkFileVisibilityInMessage(userMessage1File2Name, true)
+    await checkFileVisibilityInMessage(userMessage2FileName, false)
+
+    await page.getByTestId("edit").click()
+
+    const editor = page.getByLabel("Edit message")
+
+    async function checkFileVisibilityInEditor(name: string, visible: boolean) {
+        await expect(editor.getByText(`Name: ${name}`)).toBeVisible({ visible })
+    }
+
+    await page.setInputFiles("input[type='file']", {
+        name: userMessage2FileName,
+        mimeType: "text/plain",
+        buffer: (globalThis as any).Buffer.from(userMessage2FileContent)
+    })
+
+    await checkFileVisibilityInEditor(userMessage1File1Name, true)
+    await checkFileVisibilityInEditor(userMessage1File2Name, true)
+    await checkFileVisibilityInEditor(userMessage2FileName, true)
+
+    await editor.getByTestId(`remove-attachment-button-${userMessage1File1Name}`).click()
+
+    await checkFileVisibilityInEditor(userMessage1File1Name, false)
+    await checkFileVisibilityInEditor(userMessage1File2Name, true)
+    await checkFileVisibilityInEditor(userMessage2FileName, true)
+
+    await expect(editor.getByRole("textbox")).toHaveText(userMessageText)
+    await expect(botMessage).toHaveText(botMessage1Text)
+
+    await editor.getByTestId("send").click()
+
+    const stopButton = page.getByTestId("stop-button")
+    await expect(stopButton).toBeVisible()
+
+    await expect(userMessage).toHaveText(userMessageText)
+    await expect(botMessage).toHaveText(botMessage2Text, { timeout })
+
+    await expect(stopButton).not.toBeVisible()
+
+    await page.reload()
+
+    await expect(userMessage).toHaveText(userMessageText)
+    await expect(botMessage).toHaveText(botMessage2Text)
+
+    await checkFileVisibilityInMessage(userMessage1File1Name, false)
+    await checkFileVisibilityInMessage(userMessage1File2Name, true)
+    await checkFileVisibilityInMessage(userMessage2FileName, true)
 })
 
 test("user can regenerate messages", async ({ page }) => {

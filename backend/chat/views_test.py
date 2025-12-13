@@ -8,8 +8,29 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Chat, Message, User
+from .models import Chat, Message, MessageFile, User
 from .totp_utils import decrypt_secret
+
+class CreateChat(APIView):
+    def post(self, request: Request):
+        email = request.data.get("email")
+        title = request.data.get("title")
+        messages = request.data.get("messages")
+
+        user = User.objects.filter(email = email).first()
+        if user is None:
+           return Response({"error": f"User with {email} email does not exist."}, status.HTTP_400_BAD_REQUEST)
+        assert type(user) == User
+
+        chat = user.chats.create(title = title)
+        chat.messages.bulk_create([Message(chat = chat, text = m["text"], is_from_user = m["is_from_user"]) for m in messages])
+        chat.refresh_from_db()
+        for c_m, m in zip(chat.messages.order_by("created_at"), messages):
+            c_m.files.bulk_create([
+                MessageFile(message = c_m, name = f["name"], content = f["content"].encode(), content_type = f["content_type"])
+                for f in m["files"]
+            ])
+        return Response(status = status.HTTP_200_OK)
 
 class CreateChats(APIView):
     def post(self, request: Request):
@@ -35,7 +56,7 @@ class GetMFASecret(APIView):
 
         user = User.objects.filter(email = email).first()
         if user is None:
-           return Response({"error": f"User with {email} email does not exist."}, status.HTTP_400_BAD_REQUEST) 
+           return Response({"error": f"User with {email} email does not exist."}, status.HTTP_400_BAD_REQUEST)
 
         if not user.mfa.is_enabled:
             return Response({"error": f"MFA for user with email {email} is not enabled."}, status.HTTP_400_BAD_REQUEST)
