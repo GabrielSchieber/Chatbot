@@ -1,14 +1,14 @@
-Django == 5.2.8
+Django == 6.0
 Twisted[http2, tls] == 25.5.0
-channels[daphne] == 4.3.1
+channels[daphne] == 4.3.2
 channels-redis == 4.3.0
 djangorestframework == 3.16.1
 djangorestframework-simplejwt == 5.5.1
 freezegun == 1.5.5
-ollama == 0.6.0
-psycopg[binary] == 3.2.12
+ollama == 0.6.1
+psycopg[binary] == 3.3.2
 pyotp == 2.9.0
-pytest == 9.0.1
+pytest == 9.0.2
 pytest-cov == 7.0.0
 pytest-django == 4.11.1
 pytest-xdist == 3.8.0
