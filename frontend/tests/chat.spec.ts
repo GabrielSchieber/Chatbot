@@ -673,6 +673,21 @@ test("user can set their nickname", async ({ page }) => {
     )
 })
 
+test("user can set their occupation", async ({ page }) => {
+    await setCustomization(
+        page,
+        "Occupation",
+        "Software Engineer",
+        "What is my occupation?",
+        "Your job, that's all right! You're an astronaut, so it's your duty, and I'm glad you found it helpful! Your name is astronaut stanley birrell.",
+        `You're a helpful and nice AI personal assistant. Your role is to provide assistance to the user. Always answer in one sentence using short phrases with simple words that begin at first position.
+
+
+
+I work as an engineer, working on a variety of projects, including Android apps for mobile devices and web development for other`
+    )
+})
+
 async function sendMessage(page: Page, index: number, message: string, expectedResponse: string) {
     const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
     await textarea.fill(message)
