@@ -652,59 +652,25 @@ test("user can change models while editing a message", async ({ page }) => {
 })
 
 test("user can set custom instructions", async ({ page }) => {
-    await signupAndLogin(page)
-
-    await sendMessage(page, 0, "Hello!", "Hello, welcome back from school! I hope you've been enjoying our discussions so far. Is there a particular topic or area where you'd like me to explain something interesting?")
-
-    await page.goto("/")
-
-    if (page.viewportSize()!.width < 750) {
-        await expect(page.getByText("Close Sidebar")).not.toBeVisible()
-        await page.getByRole("banner").getByRole("button").first().click()
-    }
-    await expect(page.getByText("Close Sidebar")).toBeVisible()
-
-    await page.getByText("Settings").click()
-    await page.getByRole("tab", { name: "Customizations" }).click()
-
-    await page.getByLabel("Custom instructions", { exact: true }).fill("Always talk like a pirate.")
-    await page.getByRole("button", { name: "Save", exact: true }).click()
-
-    await page.getByTestId("close-settings").click()
-
-    if (page.viewportSize()!.width < 750) {
-        await page.getByText("Close Sidebar").click()
-    }
-
-    await sendMessage(page, 0, "Hello!", `I'm here for you, and I'll do everything in my power to help. If you're lost or want to find me, please go ahead and say "I am the pirate."`)
+    await setCustomization(
+        page,
+        "Custom instructions",
+        "Always talk like a pirate.",
+        "Hello!",
+        "Hello, welcome back from school! I hope you've been enjoying our discussions so far. Is there a particular topic or area where you'd like me to explain something interesting?",
+        `I'm here for you, and I'll do everything in my power to help. If you're lost or want to find me, please go ahead and say "I am the pirate."`
+    )
 })
 
 test("user can set their nickname", async ({ page }) => {
-    await signupAndLogin(page)
-
-    await sendMessage(page, 0, "What is my nickame?", 'Your nickname could be something like "Mr. X" or "Ms. Y." Choose a professional name suitable for your career role, location, and job title that aligns well with your personality traits.')
-
-    await page.goto("/")
-
-    if (page.viewportSize()!.width < 750) {
-        await expect(page.getByText("Close Sidebar")).not.toBeVisible()
-        await page.getByRole("banner").getByRole("button").first().click()
-    }
-    await expect(page.getByText("Close Sidebar")).toBeVisible()
-
-    await page.getByText("Settings").click()
-    await page.getByRole("tab", { name: "Customizations" }).click()
-
-    await page.getByLabel("Nickname", { exact: true }).fill("Lizard")
-    await page.getByRole("button", { name: "Save", exact: true }).click()
-
-    await page.getByTestId("close-settings").click()
-
-    if (page.viewportSize()!.width < 750) {
-        await page.getByText("Close Sidebar").click()
-    }
-
-    await sendMessage(page, 0, "What is my nickame?", 'Your nickname: "Lizard"')
+    await setCustomization(
+        page,
+        "Nickname",
+        "Lizard",
+        "What is my nickame?",
+        'Your nickname could be something like "Mr. X" or "Ms. Y." Choose a professional name suitable for your career role, location, and job title that aligns well with your personality traits.',
+        'Your nickname: "Lizard"'
+    )
 })
 
 async function sendMessage(page: Page, index: number, message: string, expectedResponse: string) {
@@ -757,6 +723,41 @@ async function sendExampleChat(page: Page, index: number) {
             }
         }
     }
+}
+
+async function setCustomization(
+    page: Page,
+    customizationLabel: "Custom instructions" | "Nickname" | "Occupation" | "About",
+    customizationValue: string,
+    userMessage: string,
+    firstBotMessage: string,
+    secondBotMessage: string,
+) {
+    await signupAndLogin(page)
+
+    await sendMessage(page, 0, userMessage, firstBotMessage)
+
+    await page.goto("/")
+
+    if (page.viewportSize()!.width < 750) {
+        await expect(page.getByText("Close Sidebar")).not.toBeVisible()
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+    await expect(page.getByText("Close Sidebar")).toBeVisible()
+
+    await page.getByText("Settings").click()
+    await page.getByRole("tab", { name: "Customizations" }).click()
+
+    await page.getByLabel(customizationLabel, { exact: true }).fill(customizationValue)
+    await page.getByRole("button", { name: "Save", exact: true }).click()
+
+    await page.getByTestId("close-settings").click()
+
+    if (page.viewportSize()!.width < 750) {
+        await page.getByText("Close Sidebar").click()
+    }
+
+    await sendMessage(page, 0, userMessage, secondBotMessage)
 }
 
 async function expectClipboard(page: Page, expected: string) {
