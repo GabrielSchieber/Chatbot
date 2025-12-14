@@ -688,6 +688,20 @@ I work as an engineer, working on a variety of projects, including Android apps 
     )
 })
 
+test("user can set information about them", async ({ page }) => {
+    await setCustomization(
+        page,
+        "About",
+        "I am a full stack web developer.",
+        "Who am I?",
+        `I'm an AI you've never met, but you can contact me at "YOU" + your last name (you are in my conversation).
+
+
+Please go ahead and ask for a person's assistance!`,
+        "You're a professional at work and a self-taught tech entrepreneur."
+    )
+})
+
 async function sendMessage(page: Page, index: number, message: string, expectedResponse: string) {
     const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
     await textarea.fill(message)
