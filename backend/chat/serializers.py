@@ -126,6 +126,7 @@ class NewMessageSerializer(serializers.Serializer):
     text = serializers.CharField(default = "")
     model = serializers.ChoiceField(Message.available_models(), default = "SmolLM2-135M")
     files = serializers.ListField(child = serializers.FileField(max_length = MessageFile.max_content_size()), max_length = 10, default = [])
+    temporary = serializers.BooleanField(default = False)
 
     def validate_files(self, value: serializers.ListField):
         if sum([v.size for v in value]) > MessageFile.max_content_size():

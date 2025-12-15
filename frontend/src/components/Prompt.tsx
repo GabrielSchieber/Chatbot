@@ -16,7 +16,7 @@ export default function Prompt() {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
-    const { chats, setChats, setMessages, isMobile } = useChat()
+    const { chats, setChats, setMessages, isMobile, isTemporaryChat } = useChat()
     const notify = useNotify()
 
     const [text, setText] = useState("")
@@ -28,7 +28,7 @@ export default function Prompt() {
     const pendingChat = chats.find(c => c.pending_message_id !== null)
 
     async function sendMessage() {
-        const response = await newMessage(chatUUID || "", text, model, files)
+        const response = await newMessage(chatUUID || "", text, model, files, isTemporaryChat)
         if (response.ok) {
             setMessages(previous => {
                 previous = [...previous]
@@ -57,7 +57,9 @@ export default function Prompt() {
                 setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
             } else {
                 navigate(`/chat/${chat.uuid}`)
-                setChats(previous => [...previous.map(c => ({ ...c, index: c.index + 1 })), chat])
+                if (!isTemporaryChat) {
+                    setChats(previous => [...previous.map(c => ({ ...c, index: c.index + 1 })), chat])
+                }
             }
 
             const fileIDsResponse = await getMessageFileIDs(chat.uuid)

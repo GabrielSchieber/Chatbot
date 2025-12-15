@@ -144,12 +144,13 @@ export function getMessages(chatUUID: string) {
     return apiFetch(`get-messages/?chat_uuid=${chatUUID}`)
 }
 
-export function newMessage(chatUUID: string, text: string, model: Model, files: File[]) {
+export function newMessage(chatUUID: string, text: string, model: Model, files: File[], temporary: boolean) {
     const formData = new FormData()
     formData.append("chat_uuid", chatUUID)
     formData.append("text", text)
     formData.append("model", model)
     files.forEach(file => formData.append("files", file))
+    formData.append("temporary", temporary.toString())
     return apiFetch("new-message/", { method: "POST", body: formData })
 }
 

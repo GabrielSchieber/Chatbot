@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from "@radix-ui/react-icons"
+import { ChatBubbleIcon, ChevronDownIcon } from "@radix-ui/react-icons"
 import { DropdownMenu } from "radix-ui"
 import { useParams } from "react-router"
 
@@ -12,7 +12,7 @@ export default function Header() {
     const { chatUUID } = useParams()
 
     const { user, setUser } = useAuth()
-    const { chats, isMobile } = useChat()
+    const { chats, isMobile, isTemporaryChat, setIsTemporaryChat } = useChat()
 
     const isSidebarOpen = user ? user.preferences.has_sidebar_open : true
 
@@ -33,7 +33,7 @@ export default function Header() {
                 </div>
             }
 
-            {currentChat ? (
+            {!isTemporaryChat && currentChat ? (
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger
                         className={`
@@ -65,7 +65,27 @@ export default function Header() {
                     </DropdownMenu.Portal>
                 </DropdownMenu.Root>
             ) : (
-                <p className="mx-auto text-2xl font-semibold not-md:text-[16px]">Chatbot</p>
+                <>
+                    <p className="text-2xl font-semibold not-md:text-[16px]">Chatbot</p>
+                    <button
+                        className={`
+                            flex gap-1 px-3 py-1 items-center rounded-xl not-disabled:cursor-pointer
+                            not-md:text-[14px] border border-gray-500 disabled:border-blue-500
+                            ${isTemporaryChat
+                                ? "bg-blue-500/50 not-disabled:hover:bg-blue-500/30"
+                                : "hover:bg-gray-600/50 not-disabled:light:hover:bg-gray-400/50"
+                            }
+                        `}
+                        onClick={() => {
+                            if (chatUUID !== undefined && isTemporaryChat) return
+                            setIsTemporaryChat(!isTemporaryChat)
+                        }}
+                        disabled={chatUUID !== undefined && isTemporaryChat}
+                    >
+                        <ChatBubbleIcon />
+                        Temporary
+                    </button>
+                </>
             )}
         </header>
     )
