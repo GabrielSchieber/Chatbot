@@ -169,19 +169,26 @@ def get_system_prompt(user: User):
 
     return system_prompt
 
+def cancel_chat_future(chat_uuid: str):
+    if str(chat_uuid) in chat_futures:
+        chat_futures[str(chat_uuid)].cancel()
+
 def stop_pending_chat(chat: Chat):
-    if str(chat.uuid) in chat_futures:
-        chat_futures[str(chat.uuid)].cancel()
+    cancel_chat_future(chat.uuid)
     chat.pending_message = None
     chat.save(update_fields = ["pending_message"])
+
+async def astop_pending_chat(chat: Chat):
+    cancel_chat_future(chat.uuid)
+    chat.pending_message = None
+    await chat.asave(update_fields = ["pending_message"])
 
 def stop_user_pending_chats(user: User):
     pending_chats = Chat.objects.filter(user = user).exclude(pending_message = None)
 
     if pending_chats.count() > 0:
         for pending_chat in pending_chats:
-            if str(pending_chat.uuid) in chat_futures:
-                chat_futures[str(pending_chat.uuid)].cancel()
+            cancel_chat_future(pending_chat.uuid)
 
     pending_chats.update(pending_message = None)
 
