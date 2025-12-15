@@ -119,7 +119,7 @@ export default function Prompt() {
     return (
         chatUUID && chats.find(c => c.uuid === chatUUID)?.is_archived ? (
             <div className="flex flex-col gap-3 mb-10 items-center">
-                <p>{t("prompt.unarchive.label")}</p>
+                <p className="px-3 text-center font-semibold">{t("prompt.unarchive.label")}</p>
                 <button
                     className="
                         px-3 py-1 rounded-3xl cursor-pointer text-black light:text-white
