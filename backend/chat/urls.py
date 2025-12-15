@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .tasks import schedule_deletion_of_temporary_chats
 
 urlpatterns = [
     path("signup/", views.Signup.as_view()),
@@ -32,3 +33,5 @@ urlpatterns = [
     path("edit-message/", views.EditMessage.as_view()),
     path("regenerate-message/", views.RegenerateMessage.as_view())
 ]
+
+schedule_deletion_of_temporary_chats()

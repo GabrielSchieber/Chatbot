@@ -3,11 +3,14 @@ import logging
 import os
 import random
 import threading
+import time
 from concurrent.futures import CancelledError
+from datetime import timedelta
 
 import ollama
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
+from django.utils import timezone
 
 from .models import Chat, Message, User
 
@@ -228,6 +231,27 @@ async def safe_save_chat_pending_message(chat: Chat):
         return False
     await chat.asave(update_fields = ["pending_message"])
     return True
+
+def schedule_deletion_of_temporary_chats():
+    def get_thread_by_name(name):
+        for thread in threading.enumerate():
+            if thread.name == name:
+                return thread
+        return None
+
+    def delete_temporary_chats():
+        while True:
+            time_threshold = timezone.now() - timedelta(1)
+            Chat.objects.filter(is_temporary = True, created_at__lte = time_threshold).delete()
+            time.sleep(60)
+
+    THREAD_NAME = "schedule_deletion_of_temporary_chats"
+
+    previous_thread = get_thread_by_name(THREAD_NAME)
+    if previous_thread is not None:
+        previous_thread.join()
+
+    threading.Thread(target = delete_temporary_chats, name = THREAD_NAME, daemon = True).start()
 
 IS_PLAYWRIGHT_TEST = os.getenv("PLAYWRIGHT_TEST") == "True"
 
