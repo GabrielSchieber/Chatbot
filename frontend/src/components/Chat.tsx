@@ -12,7 +12,7 @@ export default function Chat() {
     const { chatUUID } = useParams()
 
     return (
-        <div className="flex flex-col size-full items-center">
+        <div className="flex flex-col size-full min-w-0 items-center">
             <Header />
             <Messages />
             <h1
