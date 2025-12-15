@@ -99,7 +99,7 @@ async def generate_title(chat: Chat):
         title = content.strip().replace("\n", " ")[:200]
         if title != "":
             chat.title = title
-            await chat.asave(update_fields = ["title"])
+            await safe_save_chat_title(chat)
             await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_title", "title": chat.title})
 
 @database_sync_to_async
@@ -213,6 +213,13 @@ async def safe_save_message_text(message: Message):
     if not exists:
         return False
     await message.asave(update_fields = ["text"])
+    return True
+
+async def safe_save_chat_title(chat: Chat):
+    exists = await database_sync_to_async(Chat.objects.filter(pk = chat.pk).exists)()
+    if not exists:
+        return False
+    await chat.asave(update_fields = ["title"])
     return True
 
 async def safe_save_chat_pending_message(chat: Chat):
