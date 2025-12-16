@@ -119,6 +119,22 @@ class UserPreferences(TestCase):
             self.assertEqual(dict(cm.exception), {"language": [f"Value '{l}' is not a valid choice."]})
             self.assertEqual(models.UserPreferences.objects.count(), 0)
 
+    def test_invalid_languages_with_bulk_update(self):
+        users = [create_user(f"test{i + 1}@example.com") for i in range(5)]
+
+        for l in ["invalid", -1, 0, 1, -5.5, 0.0, 1.23, False, True]:
+            with self.assertRaises(ValidationError) as cm:
+                preferences = [u.preferences for u in users]
+                for p in preferences:
+                    p.language = l
+                models.UserPreferences.objects.bulk_update(preferences, "language")
+
+            self.assertEqual(dict(cm.exception), {"language": [f"Value '{l}' is not a valid choice."]})
+
+        self.assertEqual(models.UserPreferences.objects.count(), 5)
+        for p in models.UserPreferences.objects.all():
+            self.assertEqual(p.language, "")
+
     def test_valid_theme(self):
         user = create_user()
         for t in ["System", "Light", "Dark"]:
