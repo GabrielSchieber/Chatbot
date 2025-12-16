@@ -10,7 +10,30 @@ from django.utils import timezone
 
 from .totp_utils import generate_auth_url, generate_backup_codes, generate_secret, verify_secret
 
+class ValidatingQuerySet(models.QuerySet):
+    def bulk_create(self, objs, **kwargs):
+        for obj in objs:
+            obj.full_clean()
+        return super().bulk_create(objs, **kwargs)
+
+    def bulk_update(self, objs, fields, **kwargs):
+        for obj in objs:
+            obj.full_clean()
+        return super().bulk_update(objs, fields, **kwargs)
+
+class ValidatingManager(models.Manager):
+    def get_queryset(self):
+        return ValidatingQuerySet(self.model, using = self._db)
+
+    def bulk_create(self, objs, **kwargs):
+        return self.get_queryset().bulk_create(objs, **kwargs)
+
+    def bulk_update(self, objs, fields, **kwargs):
+        return self.get_queryset().bulk_update(objs, fields, **kwargs)
+
 class CleanOnSaveMixin(models.Model):
+    objects = ValidatingManager()
+
     class Meta:
         abstract = True
 
@@ -18,20 +41,6 @@ class CleanOnSaveMixin(models.Model):
         if validate:
             self.full_clean()
         return super().save(*args, **kwargs)
-
-    @classmethod
-    def bulk_create(cls, objs, validate = True, **kwargs):
-        if validate:
-            for obj in objs:
-                obj.full_clean()
-        return super().bulk_create(objs, **kwargs)
-
-    @classmethod
-    def bulk_update(cls, objs, fields, validate = True, **kwargs):
-        if validate:
-            for obj in objs:
-                obj.full_clean()
-        return super().bulk_update(objs, fields, **kwargs)
 
 class UserManager(BaseUserManager):
     def create_user(self, email: str, password: str, is_staff: bool = False, is_superuser: bool = False):
