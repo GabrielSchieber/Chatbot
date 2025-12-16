@@ -108,6 +108,15 @@ class UserPreferences(TestCase):
                 models.UserPreferences.objects.create(user = user, language = l)
             self.assertEqual(models.UserPreferences.objects.count(), 0)
 
+    def test_invalid_languages_with_bulk_create(self):
+        users = [create_user(f"test{i + 1}@example.com") for i in range(5)]
+        for u in users:
+            u.preferences.delete()
+        for l in ["invalid", -1, 0, 1, -5.5, 0.0, 1.23, False, True]:
+            with self.assertRaises(ValidationError, msg = {'language': [f"Value '{l}' is not a valid choice."]}):
+                models.UserPreferences.objects.bulk_create([models.UserPreferences(user = u, language = l) for u in users])
+            self.assertEqual(models.UserPreferences.objects.count(), 0)
+
     def test_valid_theme(self):
         user = create_user()
         for t in ["System", "Light", "Dark"]:
