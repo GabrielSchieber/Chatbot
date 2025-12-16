@@ -385,6 +385,34 @@ class Logout(TestCase):
         self.assertEqual(UserSession.objects.count(), 1)
         self.assertIsNone(UserSession.objects.first().logout_at)
 
+class LogoutAllSessions(TestCase):
+    def test(self):
+        self.create_and_login_user()
+        self.login_user()
+
+        self.assertEqual(len(self.client.cookies.items()), 2)
+        self.assertNotEqual(self.client.cookies["access_token"].value, "")
+        self.assertNotEqual(self.client.cookies["refresh_token"].value, "")
+
+        self.assertEqual(UserSession.objects.count(), 2)
+        for s in UserSession.objects.all():
+            self.assertIsNone(s.logout_at)
+
+        response = self.client.post("/api/logout-all-sessions/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"")
+        self.assertEqual(len(response.cookies.items()), 2)
+        self.assertEqual(response.cookies["access_token"].value, "")
+        self.assertEqual(response.cookies["refresh_token"].value, "")
+
+        self.assertEqual(len(self.client.cookies.items()), 2)
+        self.assertEqual(self.client.cookies["access_token"].value, "")
+        self.assertEqual(self.client.cookies["refresh_token"].value, "")
+
+        self.assertEqual(UserSession.objects.count(), 2)
+        for s in UserSession.objects.all():
+            self.assertIsNotNone(s.logout_at)
+
 class Refresh(TestCase):
     def test(self):
         refresh = RefreshToken.for_user(create_user())
