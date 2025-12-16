@@ -13,7 +13,7 @@ from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .utils import create_user
-from ..models import Chat, Message, MessageFile, User
+from ..models import Chat, Message, MessageFile, User, UserSession
 from ..totp_utils import generate_code
 from ..urls import urlpatterns
 
@@ -350,6 +350,34 @@ class Logout(TestCase):
         self.assertEqual(len(self.client.cookies.items()), 2)
         self.assertEqual(self.client.cookies["access_token"].value, "")
         self.assertEqual(self.client.cookies["refresh_token"].value, "")
+
+    def test_tampered_refresh_token(self):
+        self.create_and_login_user()
+        self.assertEqual(len(self.client.cookies.items()), 2)
+        self.assertNotEqual(self.client.cookies["access_token"].value, "")
+        self.assertNotEqual(self.client.cookies["refresh_token"].value, "")
+
+        self.assertEqual(UserSession.objects.count(), 1)
+        self.assertIsNone(UserSession.objects.first().logout_at)
+
+        original = self.client.cookies["refresh_token"].value
+        tampered = original[:-1] + ("A" if original[-1] != "A" else "B")
+
+        self.client.cookies["refresh_token"] = tampered
+
+        response = self.logout_user()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"")
+        self.assertEqual(len(response.cookies.items()), 2)
+        self.assertEqual(response.cookies["access_token"].value, "")
+        self.assertEqual(response.cookies["refresh_token"].value, "")
+
+        self.assertEqual(len(self.client.cookies.items()), 2)
+        self.assertEqual(self.client.cookies["access_token"].value, "")
+        self.assertEqual(self.client.cookies["refresh_token"].value, "")
+
+        self.assertEqual(UserSession.objects.count(), 1)
+        self.assertIsNone(UserSession.objects.first().logout_at)
 
 class Refresh(TestCase):
     def test(self):
