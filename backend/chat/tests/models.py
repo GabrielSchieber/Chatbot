@@ -104,8 +104,9 @@ class UserPreferences(TestCase):
         user = create_user()
         user.preferences.delete()
         for l in ["invalid", -1, 0, 1, -5.5, 0.0, 1.23, False, True]:
-            with self.assertRaises(ValidationError, msg = {'language': [f"Value '{l}' is not a valid choice."]}):
+            with self.assertRaises(ValidationError) as cm:
                 models.UserPreferences.objects.create(user = user, language = l)
+            self.assertEqual(dict(cm.exception), {"language": [f"Value '{l}' is not a valid choice."]})
             self.assertEqual(models.UserPreferences.objects.count(), 0)
 
     def test_invalid_languages_with_bulk_create(self):
@@ -113,8 +114,9 @@ class UserPreferences(TestCase):
         for u in users:
             u.preferences.delete()
         for l in ["invalid", -1, 0, 1, -5.5, 0.0, 1.23, False, True]:
-            with self.assertRaises(ValidationError, msg = {'language': [f"Value '{l}' is not a valid choice."]}):
+            with self.assertRaises(ValidationError) as cm:
                 models.UserPreferences.objects.bulk_create([models.UserPreferences(user = u, language = l) for u in users])
+            self.assertEqual(dict(cm.exception), {"language": [f"Value '{l}' is not a valid choice."]})
             self.assertEqual(models.UserPreferences.objects.count(), 0)
 
     def test_valid_theme(self):
@@ -128,8 +130,9 @@ class UserPreferences(TestCase):
         user = create_user()
         user.preferences.delete()
         for t in ["invalid", -1, 0, 1, -5.5, 0.0, 1.23, False, True]:
-            with self.assertRaises(ValidationError, msg = {'language': [f"Value '{t}' is not a valid choice."]}):
+            with self.assertRaises(ValidationError) as cm:
                 models.UserPreferences.objects.create(user = user, theme = t)
+            self.assertEqual(dict(cm.exception), {"theme": [f"Value '{t}' is not a valid choice."]})
             self.assertEqual(models.UserPreferences.objects.count(), 0)
 
     def test_invalid_themes_with_bulk_create(self):
@@ -137,8 +140,9 @@ class UserPreferences(TestCase):
         for u in users:
             u.preferences.delete()
         for t in ["invalid", -1, 0, 1, -5.5, 0.0, 1.23, False, True]:
-            with self.assertRaises(ValidationError, msg = {'language': [f"Value '{t}' is not a valid choice."]}):
+            with self.assertRaises(ValidationError) as cm:
                 models.UserPreferences.objects.bulk_create([models.UserPreferences(user = u, theme = t) for u in users])
+            self.assertEqual(dict(cm.exception), {"theme": [f"Value '{t}' is not a valid choice."]})
             self.assertEqual(models.UserPreferences.objects.count(), 0)
 
 class UserMFA(TestCase):
@@ -303,18 +307,20 @@ class Message(TestCase):
         user = create_user()
         chat = user.chats.create(title = "Test chat")
         for m in ["invalid", -1, 0, 1, -5.5, 0.0, 1.23, False, True]:
-            with self.assertRaises(ValidationError, msg = {'model': [f"Value '{m}' is not a valid choice."]}):
+            with self.assertRaises(ValidationError) as cm:
                 chat.messages.create(text = "Hi!", is_from_user = False, model = m)
+        self.assertEqual(dict(cm.exception), {"model": [f"Value '{m}' is not a valid choice."]})
         self.assertEqual(models.Message.objects.count(), 0)
 
     def test_invalid_models_with_bulk_create(self):
         user = create_user()
         chat = user.chats.create(title = "Test chat")
-        with self.assertRaises(ValidationError, msg = {'model': [f"Value 'invalid' is not a valid choice."]}):
+        with self.assertRaises(ValidationError) as cm:
             chat.messages.bulk_create([
                 models.Message(chat = chat, text = "Hello!", is_from_user = False, model = invalid_model)
                 for invalid_model in ["invalid", -1, 0, 1, -5.5, 0.0, 1.23, False, True]
             ])
+        self.assertEqual(dict(cm.exception), {"model": [f"Value 'invalid' is not a valid choice."]})
         self.assertEqual(models.Message.objects.count(), 0)
 
 class MessageFile(TestCase):
