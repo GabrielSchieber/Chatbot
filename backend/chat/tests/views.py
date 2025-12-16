@@ -1660,6 +1660,12 @@ class GetMessageFileIDs(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]])
 
+    def test_requires_chat_uuid(self):
+        self.create_and_login_user()
+        response = self.client.get(f"/api/get-message-file-ids/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"chat_uuid": ["This field is required."]})
+
 class GetMessages(TestCase):
     def test(self):
         user = self.create_and_login_user()
