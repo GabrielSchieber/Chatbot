@@ -100,6 +100,14 @@ class UserPreferences(TestCase):
             models.UserPreferences.objects.create(user = user, language = l)
             self.assertEqual(models.UserPreferences.objects.first().language, l)
 
+    def test_invalid_languages(self):
+        user = create_user()
+        user.preferences.delete()
+        for l in ["invalid", -1, 0, 1, -5.5, 0.0, 1.23, False, True]:
+            with self.assertRaises(ValidationError, msg = {'language': [f"Value '{l}' is not a valid choice."]}):
+                models.UserPreferences.objects.create(user = user, language = l)
+            self.assertEqual(models.UserPreferences.objects.count(), 0)
+
 class UserMFA(TestCase):
     def test_creation(self):
         user = create_user()
