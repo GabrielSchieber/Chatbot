@@ -1672,6 +1672,12 @@ class GetMessageFileIDs(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"chat_uuid": ["Must be a valid UUID."]})
 
+    def test_chat_was_not_found(self):
+        self.create_and_login_user()
+        response = self.client.get(f"/api/get-message-file-ids/?chat_uuid={str(uuid.uuid4())}")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"detail": "Chat was not found."})
+
 class GetMessages(TestCase):
     def test(self):
         user = self.create_and_login_user()
