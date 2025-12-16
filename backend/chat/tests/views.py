@@ -340,6 +340,9 @@ class Logout(TestCase):
         self.assertNotEqual(self.client.cookies["access_token"].value, "")
         self.assertNotEqual(self.client.cookies["refresh_token"].value, "")
 
+        self.assertEqual(UserSession.objects.count(), 1)
+        self.assertIsNone(UserSession.objects.first().logout_at)
+
         response = self.logout_user()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, b"")
@@ -350,6 +353,9 @@ class Logout(TestCase):
         self.assertEqual(len(self.client.cookies.items()), 2)
         self.assertEqual(self.client.cookies["access_token"].value, "")
         self.assertEqual(self.client.cookies["refresh_token"].value, "")
+
+        self.assertEqual(UserSession.objects.count(), 1)
+        self.assertIsNotNone(UserSession.objects.first().logout_at)
 
     def test_tampered_refresh_token(self):
         self.create_and_login_user()
