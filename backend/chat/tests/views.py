@@ -1636,6 +1636,30 @@ class GetMessageFileContent(TestCase):
         response = self.client.get(f"/api/get-message-file-content/?chat_uuid={chat2.uuid}&message_file_id={message_file1.id}")
         self.assertEqual(response.status_code, 404)
 
+class GetMessageFileIDs(TestCase):
+    def test(self):
+        user = self.create_and_login_user()
+        chat = user.chats.create(title = "File Analysis")
+        message1 = chat.messages.create(text = "Describe the files.", is_from_user = True)
+        message1.files.bulk_create([
+            MessageFile(message = message1, name = f"File {i + 1}.txt", content = f"Document {i + 1}".encode(), content_type = "text/plain")
+            for i in range(5)
+        ])
+
+        response = self.client.get(f"/api/get-message-file-ids/?chat_uuid={chat.uuid}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [[1, 2, 3, 4, 5]])
+
+        message2 = chat.messages.create(text = "Describe these other files.", is_from_user = True)
+        message2.files.bulk_create([
+            MessageFile(message = message2, name = f"File {i + 1}.txt", content = f"Document {i + 1}".encode(), content_type = "text/plain")
+            for i in range(5, 10)
+        ])
+
+        response = self.client.get(f"/api/get-message-file-ids/?chat_uuid={chat.uuid}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]])
+
 class GetMessages(TestCase):
     def test(self):
         user = self.create_and_login_user()
