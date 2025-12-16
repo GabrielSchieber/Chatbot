@@ -702,6 +702,24 @@ Please go ahead and ask for a person's assistance!`,
     )
 })
 
+test("user can chat temporarily", async ({ page }) => {
+    await signupAndLogin(page)
+
+    await page.getByRole("button", { name: "Temporary" }).click()
+
+    await sendMessage(page, 0, exampleChats[0].messages[0], exampleChats[0].messages[1])
+
+    if (page.viewportSize()!.width < 750) {
+        await expect(page.getByText("Close Sidebar")).not.toBeVisible()
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+    await expect(page.getByText("Close Sidebar")).toBeVisible()
+
+    const history = page.getByTestId("history")
+    await expect(history.locator("p").getByText("You don't have any chats.", { exact: true })).toBeVisible()
+    await expect(history.getByRole("link")).toHaveCount(0)
+})
+
 async function sendMessage(page: Page, index: number, message: string, expectedResponse: string) {
     const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
     await textarea.fill(message)
