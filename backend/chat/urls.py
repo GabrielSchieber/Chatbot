@@ -1,7 +1,8 @@
+import os
+
 from django.urls import path
 
 from . import views
-from .tasks import schedule_deletion_of_temporary_chats
 
 urlpatterns = [
     path("signup/", views.Signup.as_view()),
@@ -34,4 +35,6 @@ urlpatterns = [
     path("regenerate-message/", views.RegenerateMessage.as_view())
 ]
 
-schedule_deletion_of_temporary_chats()
+if os.environ.get("DJANGO_TEST") != "True":
+    from .tasks import schedule_deletion_of_temporary_chats
+    schedule_deletion_of_temporary_chats()
