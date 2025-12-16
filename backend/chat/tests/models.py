@@ -259,6 +259,16 @@ class Message(TestCase):
                 chat.messages.create(text = "Hi!", is_from_user = False, model = m)
         self.assertEqual(models.Message.objects.count(), 0)
 
+    def test_invalid_models_with_bulk_create(self):
+        user = create_user()
+        chat = user.chats.create(title = "Test chat")
+        with self.assertRaises(ValidationError, msg = {'model': [f"Value 'invalid' is not a valid choice."]}):
+            chat.messages.bulk_create([
+                models.Message(chat = chat, text = "Hello!", is_from_user = False, model = invalid_model)
+                for invalid_model in ["invalid", -1, 0, 1, -5.5, 0.0, 1.23, False, True]
+            ])
+        self.assertEqual(models.Message.objects.count(), 0)
+
 class MessageFile(TestCase):
     def test_creation(self):
         user = create_user()
