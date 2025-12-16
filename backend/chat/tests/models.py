@@ -244,6 +244,13 @@ class Message(TestCase):
         self.assertEqual(user_message.files.count(), 0)
         self.assertEqual(bot_message.files.count(), 0)
 
+    def test_valid_models(self):
+        user = create_user()
+        chat = user.chats.create(title = "Test chat")
+        for m in ["", "SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]:
+            chat.messages.create(text = "Hi!", is_from_user = False, model = m)
+        self.assertEqual(models.Message.objects.count(), 5)
+
     def test_invalid_models(self):
         user = create_user()
         chat = user.chats.create(title = "Test chat")
