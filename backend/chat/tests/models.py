@@ -189,6 +189,8 @@ class Chat(TestCase):
         self.assertEqual(chat.title, "Test chat")
         self.assertIsNone(chat.pending_message)
         self.assertHasAttr(chat, "messages")
+        self.assertFalse(chat.is_archived)
+        self.assertFalse(chat.is_temporary)
         self.assertEqual(chat.messages.count(), 0)
         self.assertEqual(chat.last_modified_at(), chat.created_at)
 
