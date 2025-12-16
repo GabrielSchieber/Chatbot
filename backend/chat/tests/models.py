@@ -108,6 +108,13 @@ class UserPreferences(TestCase):
                 models.UserPreferences.objects.create(user = user, language = l)
             self.assertEqual(models.UserPreferences.objects.count(), 0)
 
+    def test_valid_theme(self):
+        user = create_user()
+        for t in ["System", "Light", "Dark"]:
+            user.preferences.delete()
+            models.UserPreferences.objects.create(user = user, theme = t)
+            self.assertEqual(models.UserPreferences.objects.first().theme, t)
+
 class UserMFA(TestCase):
     def test_creation(self):
         user = create_user()
