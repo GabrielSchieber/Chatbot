@@ -182,6 +182,7 @@ class Chat(CleanOnSaveMixin, models.Model):
     title = models.CharField(max_length = 200)
     pending_message: Message | None = models.OneToOneField("Message", models.CASCADE, related_name = "pending_message", blank = True, null = True)
     is_archived = models.BooleanField(default = False)
+    is_temporary = models.BooleanField(default = False)
     created_at = models.DateTimeField(auto_now_add = True)
 
     messages: BaseManager[Message]

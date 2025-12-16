@@ -789,19 +789,19 @@ class GetChat(TestCase):
         chat1 = Chat.objects.create(user = user1, title = "Greetings")
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat1.uuid}")
         self.assertEqual(response.status_code, 200)
-        expected_json = {"uuid": str(chat1.uuid), "title": "Greetings", "pending_message_id": None, "is_archived": False, "index": 0}
+        expected_json = {"uuid": str(chat1.uuid), "title": "Greetings", "pending_message_id": None, "is_archived": False, "is_temporary": False, "index": 0}
         self.assertEqual(response.json(), expected_json)
 
         chat2 = Chat.objects.create(user = user1, title = "Math Question")
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat2.uuid}")
         self.assertEqual(response.status_code, 200)
-        expected_json = {"uuid": str(chat2.uuid),"title": "Math Question", "pending_message_id": None, "is_archived": False, "index": 0}
+        expected_json = {"uuid": str(chat2.uuid),"title": "Math Question", "pending_message_id": None, "is_archived": False, "is_temporary": False, "index": 0}
         self.assertEqual(response.json(), expected_json)
 
         chat3 = Chat.objects.create(user = user1, title = "Weather Inquiry", is_archived = True)
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat3.uuid}")
         self.assertEqual(response.status_code, 200)
-        expected_json = {"uuid": str(chat3.uuid),"title": "Weather Inquiry", "pending_message_id": None, "is_archived": True, "index": 0}
+        expected_json = {"uuid": str(chat3.uuid),"title": "Weather Inquiry", "pending_message_id": None, "is_archived": True, "is_temporary": False, "index": 0}
         self.assertEqual(response.json(), expected_json)
 
         chat4 = Chat.objects.create(user = user1, title = "Joke Request")
@@ -809,12 +809,12 @@ class GetChat(TestCase):
         chat4.save()
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat4.uuid}")
         self.assertEqual(response.status_code, 200)
-        expected_json = {"uuid": str(chat4.uuid),"title": "Joke Request", "pending_message_id": 1, "is_archived": False, "index": 0}
+        expected_json = {"uuid": str(chat4.uuid),"title": "Joke Request", "pending_message_id": 1, "is_archived": False, "is_temporary": False, "index": 0}
         self.assertEqual(response.json(), expected_json)
 
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat1.uuid}")
         self.assertEqual(response.status_code, 200)
-        expected_json = {"uuid": str(chat1.uuid), "title": "Greetings", "pending_message_id": None, "is_archived": False, "index": 3}
+        expected_json = {"uuid": str(chat1.uuid), "title": "Greetings", "pending_message_id": None, "is_archived": False, "is_temporary": False, "index": 3}
         self.assertEqual(response.json(), expected_json)
 
         self.logout_user()
@@ -827,7 +827,7 @@ class GetChat(TestCase):
         chat5 = Chat.objects.create(user = user2, title = "Travel Advice")
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat5.uuid}")
         self.assertEqual(response.status_code, 200)
-        expected_json = {"uuid": str(chat5.uuid), "title": "Travel Advice", "pending_message_id": None, "is_archived": False, "index": 0}
+        expected_json = {"uuid": str(chat5.uuid), "title": "Travel Advice", "pending_message_id": None, "is_archived": False, "is_temporary": False, "index": 0}
         self.assertEqual(response.json(), expected_json)
 
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat1.uuid}")
@@ -843,7 +843,7 @@ class GetChats(TestCase):
         self.assertEqual(response.status_code, 200)
 
         expected_chats = [
-            {"uuid": str(chat.uuid), "title": chat.title, "pending_message_id": None, "is_archived": False, "index": i}
+            {"uuid": str(chat.uuid), "title": chat.title, "pending_message_id": None, "is_archived": False, "is_temporary": False, "index": i}
             for i, chat in enumerate(user.chats.order_by("-created_at"))
         ]
         self.assertEqual(response.json(), {"chats": expected_chats, "has_more": False})
@@ -862,7 +862,7 @@ class GetChats(TestCase):
         self.assertEqual(response.status_code, 200)
 
         expected_chats = [
-            {"uuid": str(chat.uuid), "title": chat.title, "pending_message_id": None, "is_archived": False, "index": i + 5}
+            {"uuid": str(chat.uuid), "title": chat.title, "pending_message_id": None, "is_archived": False, "is_temporary": False, "index": i + 5}
             for i, chat in enumerate(user.chats.order_by("-created_at")[5:])
         ]
         self.assertEqual(response.json(), {"chats": expected_chats, "has_more": False})
@@ -875,7 +875,7 @@ class GetChats(TestCase):
         self.assertEqual(response.status_code, 200)
 
         expected_chats = [
-            {"uuid": str(chat.uuid), "title": chat.title, "pending_message_id": None, "is_archived": False, "index": i}
+            {"uuid": str(chat.uuid), "title": chat.title, "pending_message_id": None, "is_archived": False, "is_temporary": False, "index": i}
             for i, chat in enumerate(user.chats.order_by("-created_at")[:5])
         ]
         self.assertEqual(response.json(), {"chats": expected_chats, "has_more": True})
@@ -895,8 +895,8 @@ class GetChats(TestCase):
         self.assertEqual(response.status_code, 200)
 
         expected_chats = [
-            {"uuid": str(chat3.uuid), "title": chat3.title, "pending_message_id": 2, "is_archived": False, "index": 2},
-            {"uuid": str(chat1.uuid), "title": chat1.title, "pending_message_id": 1, "is_archived": False, "index": 4}
+            {"uuid": str(chat3.uuid), "title": chat3.title, "pending_message_id": 2, "is_archived": False, "is_temporary": False, "index": 2},
+            {"uuid": str(chat1.uuid), "title": chat1.title, "pending_message_id": 1, "is_archived": False, "is_temporary": False, "index": 4}
         ]
         self.assertEqual(response.json(), {"chats": expected_chats, "has_more": False})
 
@@ -915,8 +915,8 @@ class GetChats(TestCase):
         self.assertEqual(response.status_code, 200)
 
         expected_chats = [
-            {"uuid": str(chat3.uuid), "title": chat3.title, "pending_message_id": None, "is_archived": True, "index": 2},
-            {"uuid": str(chat1.uuid), "title": chat1.title, "pending_message_id": None, "is_archived": True, "index": 4}
+            {"uuid": str(chat3.uuid), "title": chat3.title, "pending_message_id": None, "is_archived": True, "is_temporary": False, "index": 2},
+            {"uuid": str(chat1.uuid), "title": chat1.title, "pending_message_id": None, "is_archived": True, "is_temporary": False, "index": 4}
         ]
         self.assertEqual(response.json(), {"chats": expected_chats, "has_more": False})
 
@@ -1753,6 +1753,35 @@ class NewMessage(TestCase):
             for i, s in enumerate(sizes):
                 files.append(SimpleUploadedFile(f"file{i + 1}.txt", bytes([b % 255 for b in range(s)]), "text/plain"))
             post_and_assert(files)
+
+    @patch("chat.views.is_any_user_chat_pending", return_value = False)
+    @patch("chat.views.generate_pending_message_in_chat")
+    def test_temporary_chat(self, _1, _2):
+        user = self.create_and_login_user()
+        response = self.client.post("/api/new-message/", {"text": "Hello!", "temporary": True}, format = "multipart")
+        self.assertEqual(response.status_code, 200)
+
+        self.assertTrue(User.objects.count(), 1)
+        self.assertEqual(user.chats.count(), 1)
+
+        chat = user.chats.first()
+        self.assertEqual(chat.title, "Chat 1")
+        self.assertIsNotNone(chat.pending_message)
+        self.assertTrue(chat.is_temporary)
+        self.assertFalse(chat.is_archived)
+
+        self.assertTrue(Message.objects.count(), 2)
+        self.assertEqual(chat.messages.count(), 2)
+
+        user_message = chat.messages.first()
+        self.assertEqual(user_message.text, "Hello!")
+        self.assertTrue(user_message.is_from_user)
+        self.assertEqual(user_message.model, "")
+
+        bot_message = chat.messages.last()
+        self.assertEqual(bot_message.text, "")
+        self.assertFalse(bot_message.is_from_user)
+        self.assertEqual(bot_message.model, "SmolLM2-135M")
 
 class EditMessage(TestCase):
     @patch("chat.views.generate_pending_message_in_chat")

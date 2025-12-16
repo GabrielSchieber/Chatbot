@@ -5,7 +5,7 @@ from django.contrib.auth.models import AnonymousUser
 from jwt import decode as jwt_decode
 
 from .models import User
-from .tasks import opened_chats
+from .tasks import astop_pending_chat, opened_chats
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -21,6 +21,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         if self.chat_uuid != "":
             opened_chats.discard(self.chat_uuid)
             await self.channel_layer.group_discard(f"chat_{self.chat_uuid}", self.channel_name)
+
+            chat = await database_sync_to_async(self.user.chats.filter(uuid = self.chat_uuid, is_temporary = True).first)()
+            if chat is not None:
+                await astop_pending_chat(chat)
 
     async def receive_json(self, content):
         if self.chat_uuid != "": return

@@ -52,7 +52,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                         <Tabs.List
                             className={`
                                 flex gap-1 p-4 items-start bg-gray-900 light:bg-gray-100
-                                ${isMobile ? "flex-row flex-wrap" : "flex-col"}
+                                ${isMobile ? "flex-row flex-wrap" : "flex-col overflow-y-auto"}
                                 ${!isMobile && !isScreenHeightSmall && "rounded-l-xl"}
                             `}
                         >

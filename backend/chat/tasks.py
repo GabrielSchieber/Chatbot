@@ -3,11 +3,14 @@ import logging
 import os
 import random
 import threading
+import time
 from concurrent.futures import CancelledError
+from datetime import timedelta
 
 import ollama
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
+from django.utils import timezone
 
 from .models import Chat, Message, User
 
@@ -99,7 +102,7 @@ async def generate_title(chat: Chat):
         title = content.strip().replace("\n", " ")[:200]
         if title != "":
             chat.title = title
-            await chat.asave(update_fields = ["title"])
+            await safe_save_chat_title(chat)
             await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_title", "title": chat.title})
 
 @database_sync_to_async
@@ -166,19 +169,26 @@ def get_system_prompt(user: User):
 
     return system_prompt
 
+def cancel_chat_future(chat_uuid: str):
+    if str(chat_uuid) in chat_futures:
+        chat_futures[str(chat_uuid)].cancel()
+
 def stop_pending_chat(chat: Chat):
-    if str(chat.uuid) in chat_futures:
-        chat_futures[str(chat.uuid)].cancel()
+    cancel_chat_future(chat.uuid)
     chat.pending_message = None
     chat.save(update_fields = ["pending_message"])
+
+async def astop_pending_chat(chat: Chat):
+    cancel_chat_future(chat.uuid)
+    chat.pending_message = None
+    await chat.asave(update_fields = ["pending_message"])
 
 def stop_user_pending_chats(user: User):
     pending_chats = Chat.objects.filter(user = user).exclude(pending_message = None)
 
     if pending_chats.count() > 0:
         for pending_chat in pending_chats:
-            if str(pending_chat.uuid) in chat_futures:
-                chat_futures[str(pending_chat.uuid)].cancel()
+            cancel_chat_future(pending_chat.uuid)
 
     pending_chats.update(pending_message = None)
 
@@ -215,12 +225,40 @@ async def safe_save_message_text(message: Message):
     await message.asave(update_fields = ["text"])
     return True
 
+async def safe_save_chat_title(chat: Chat):
+    exists = await database_sync_to_async(Chat.objects.filter(pk = chat.pk).exists)()
+    if not exists:
+        return False
+    await chat.asave(update_fields = ["title"])
+    return True
+
 async def safe_save_chat_pending_message(chat: Chat):
     exists = await database_sync_to_async(Chat.objects.filter(pk = chat.pk).exists)()
     if not exists:
         return False
     await chat.asave(update_fields = ["pending_message"])
     return True
+
+def schedule_deletion_of_temporary_chats():
+    def get_thread_by_name(name):
+        for thread in threading.enumerate():
+            if thread.name == name:
+                return thread
+        return None
+
+    def delete_temporary_chats():
+        while True:
+            time_threshold = timezone.now() - timedelta(1)
+            Chat.objects.filter(is_temporary = True, created_at__lte = time_threshold).delete()
+            time.sleep(60)
+
+    THREAD_NAME = "schedule_deletion_of_temporary_chats"
+
+    previous_thread = get_thread_by_name(THREAD_NAME)
+    if previous_thread is not None:
+        previous_thread.join()
+
+    threading.Thread(target = delete_temporary_chats, name = THREAD_NAME, daemon = True).start()
 
 IS_PLAYWRIGHT_TEST = os.getenv("PLAYWRIGHT_TEST") == "True"
 

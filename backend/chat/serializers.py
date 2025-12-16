@@ -42,7 +42,7 @@ class ChatSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Chat
-        fields = ["uuid", "title", "pending_message_id", "is_archived", "index"]
+        fields = ["uuid", "title", "pending_message_id", "is_archived", "is_temporary", "index"]
 
     def get_pending_message_id(self, chat: Chat):
         return chat.pending_message.id if chat.pending_message is not None else None
@@ -126,6 +126,7 @@ class NewMessageSerializer(serializers.Serializer):
     text = serializers.CharField(default = "")
     model = serializers.ChoiceField(Message.available_models(), default = "SmolLM2-135M")
     files = serializers.ListField(child = serializers.FileField(max_length = MessageFile.max_content_size()), max_length = 10, default = [])
+    temporary = serializers.BooleanField(default = False)
 
     def validate_files(self, value: serializers.ListField):
         if sum([v.size for v in value]) > MessageFile.max_content_size():

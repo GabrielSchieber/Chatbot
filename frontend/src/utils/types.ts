@@ -36,6 +36,7 @@ export type Chat = {
     title: string
     pending_message_id: number | null
     is_archived: boolean
+    is_temporary: boolean
     index: number
 }
 

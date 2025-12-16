@@ -1,3 +1,5 @@
+import os
+
 from django.urls import path
 
 from . import views
@@ -32,3 +34,7 @@ urlpatterns = [
     path("edit-message/", views.EditMessage.as_view()),
     path("regenerate-message/", views.RegenerateMessage.as_view())
 ]
+
+if os.environ.get("DJANGO_TEST") != "True":
+    from .tasks import schedule_deletion_of_temporary_chats
+    schedule_deletion_of_temporary_chats()

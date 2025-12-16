@@ -99,7 +99,7 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
 
     return (
         <div className={`flex flex-col grow gap-1 px-2 py-4 items-center justify-items-center ${!isSidebarOpen && "hidden"}`} data-testid="history">
-            {chats.filter(c => !c.is_archived).sort((a, b) => a.index - b.index).map(c => (
+            {chats.filter(c => !c.is_archived && !c.is_temporary).sort((a, b) => a.index - b.index).map(c => (
                 renameUUID === c.uuid ? (
                     <input
                         key={`input-${c.uuid}`}
@@ -182,7 +182,7 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
 
             {isLoading && isLoadingRef.current ? (
                 <p className="text-center text-gray-400 light:text-gray-600">{t("history.loading")}</p>
-            ) : chats.filter(c => !c.is_archived).length === 0 ? (
+            ) : chats.filter(c => !c.is_archived && !c.is_temporary).length === 0 ? (
                 <p className="text-center text-gray-400 light:text-gray-600">{t("history.empty")}</p>
             ) : hasMore && (
                 <div ref={sentinelRef} className="h-1"></div>

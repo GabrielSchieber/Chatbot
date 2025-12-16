@@ -16,7 +16,7 @@ export default function Prompt() {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
-    const { chats, setChats, setMessages, isMobile } = useChat()
+    const { chats, setChats, setMessages, isMobile, isTemporaryChat } = useChat()
     const notify = useNotify()
 
     const [text, setText] = useState("")
@@ -28,7 +28,7 @@ export default function Prompt() {
     const pendingChat = chats.find(c => c.pending_message_id !== null)
 
     async function sendMessage() {
-        const response = await newMessage(chatUUID || "", text, model, files)
+        const response = await newMessage(chatUUID || "", text, model, files, isTemporaryChat)
         if (response.ok) {
             setMessages(previous => {
                 previous = [...previous]
@@ -119,7 +119,7 @@ export default function Prompt() {
     return (
         chatUUID && chats.find(c => c.uuid === chatUUID)?.is_archived ? (
             <div className="flex flex-col gap-3 mb-10 items-center">
-                <p>{t("prompt.unarchive.label")}</p>
+                <p className="px-3 text-center font-semibold">{t("prompt.unarchive.label")}</p>
                 <button
                     className="
                         px-3 py-1 rounded-3xl cursor-pointer text-black light:text-white

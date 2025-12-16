@@ -14,6 +14,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const [messages, setMessages] = useState<Message[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isMobile, setIsMobile] = useState(window.innerWidth < 750)
+    const [isTemporaryChat, setIsTemporaryChat] = useState(false)
 
     useEffect(() => {
         if (!shouldSet.current) return
@@ -72,7 +73,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     return (
-        <ChatContext.Provider value={{ chats, setChats, messages, setMessages, isLoading, isMobile }}>
+        <ChatContext.Provider value={{ chats, setChats, messages, setMessages, isLoading, isMobile, isTemporaryChat, setIsTemporaryChat }}>
             {children}
         </ChatContext.Provider>
     )
@@ -91,6 +92,8 @@ interface ChatContextValue {
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>
     isLoading: boolean
     isMobile: boolean
+    isTemporaryChat: boolean
+    setIsTemporaryChat: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined)

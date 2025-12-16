@@ -287,7 +287,7 @@ class GetChat(APIView):
         chat_uuid = qs.validated_data["chat_uuid"]
 
         try:
-            chat = user.chats.get(uuid = chat_uuid)
+            chat = user.chats.get(uuid = chat_uuid, is_temporary = False)
         except Chat.DoesNotExist:
             return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
@@ -308,7 +308,7 @@ class GetChats(APIView):
         pending = qs.validated_data["pending"]
         archived = qs.validated_data["archived"]
 
-        chats = user.chats.filter(is_archived = archived)
+        chats = user.chats.filter(is_archived = archived, is_temporary = False)
         if pending:
             chats = chats.exclude(pending_message = None)
         chats = chats.order_by("-created_at")
@@ -360,7 +360,7 @@ class RenameChat(APIView):
         new_title = qs.validated_data["new_title"]
 
         try:
-            chat = user.chats.get(uuid = chat_uuid)
+            chat = user.chats.get(uuid = chat_uuid, is_temporary = False)
         except Chat.DoesNotExist:
             return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
@@ -380,7 +380,7 @@ class ArchiveChat(APIView):
         chat_uuid = qs.validated_data["chat_uuid"]
 
         try:
-            chat = user.chats.get(uuid = chat_uuid)
+            chat = user.chats.get(uuid = chat_uuid, is_temporary = False)
         except Chat.DoesNotExist:
             return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
@@ -401,7 +401,7 @@ class UnarchiveChat(APIView):
         chat_uuid = qs.validated_data["chat_uuid"]
 
         try:
-            chat = user.chats.get(uuid = chat_uuid)
+            chat = user.chats.get(uuid = chat_uuid, is_temporary = False)
         except Chat.DoesNotExist:
             return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
@@ -422,7 +422,7 @@ class DeleteChat(APIView):
         chat_uuid = qs.validated_data["chat_uuid"]
 
         try:
-            chat = user.chats.get(uuid = chat_uuid)
+            chat = user.chats.get(uuid = chat_uuid, is_temporary = False)
         except Chat.DoesNotExist:
             return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
@@ -484,7 +484,7 @@ class GetMessageFileContent(APIView):
         message_file_id = qs.validated_data["message_file_id"]
 
         try:
-            chat = user.chats.get(uuid = chat_uuid)
+            chat = user.chats.get(uuid = chat_uuid, is_temporary = False)
         except Chat.DoesNotExist:
             return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
@@ -528,7 +528,7 @@ class GetMessages(APIView):
         chat_uuid = qs.validated_data["chat_uuid"]
 
         try:
-            chat = user.chats.get(uuid = chat_uuid)
+            chat = user.chats.get(uuid = chat_uuid, is_temporary = False)
         except Chat.DoesNotExist:
             return Response({"detail": "Chat was not found."}, status.HTTP_404_NOT_FOUND)
 
@@ -553,9 +553,10 @@ class NewMessage(APIView):
         text = qs.validated_data["text"]
         model = qs.validated_data["model"]
         files = qs.validated_data["files"]
+        temporary = qs.validated_data["temporary"]
 
         if chat_uuid is None:
-            chat = user.chats.create(title = f"Chat {user.chats.count() + 1}")
+            chat = user.chats.create(title = f"Chat {user.chats.filter(is_temporary = False).count() + 1}", is_temporary = temporary)
         else:
             try:
                 chat = user.chats.get(uuid = chat_uuid)
@@ -574,7 +575,7 @@ class NewMessage(APIView):
         chat.pending_message = bot_message
         chat.save()
 
-        generate_pending_message_in_chat(chat, chat_uuid == None)
+        generate_pending_message_in_chat(chat, chat_uuid == None and not temporary)
 
         serializer = ChatSerializer(chat, many = False)
         return Response(serializer.data, status.HTTP_200_OK)
