@@ -93,6 +93,13 @@ class UserPreferences(TestCase):
         for a in ["language", "custom_instructions", "nickname", "occupation", "about"]:
             self.assertEqual(getattr(user.preferences, a), "")
 
+    def test_valid_languages(self):
+        user = create_user()
+        for l in ["", "English", "Português"]:
+            user.preferences.delete()
+            models.UserPreferences.objects.create(user = user, language = l)
+            self.assertEqual(models.UserPreferences.objects.first().language, l)
+
 class UserMFA(TestCase):
     def test_creation(self):
         user = create_user()
