@@ -115,6 +115,14 @@ class UserPreferences(TestCase):
             models.UserPreferences.objects.create(user = user, theme = t)
             self.assertEqual(models.UserPreferences.objects.first().theme, t)
 
+    def test_invalid_theme(self):
+        user = create_user()
+        user.preferences.delete()
+        for t in ["invalid", -1, 0, 1, -5.5, 0.0, 1.23, False, True]:
+            with self.assertRaises(ValidationError, msg = {'language': [f"Value '{t}' is not a valid choice."]}):
+                models.UserPreferences.objects.create(user = user, theme = t)
+            self.assertEqual(models.UserPreferences.objects.count(), 0)
+
 class UserMFA(TestCase):
     def test_creation(self):
         user = create_user()
