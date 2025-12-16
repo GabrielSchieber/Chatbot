@@ -161,6 +161,22 @@ class UserPreferences(TestCase):
             self.assertEqual(dict(cm.exception), {"theme": [f"Value '{t}' is not a valid choice."]})
             self.assertEqual(models.UserPreferences.objects.count(), 0)
 
+    def test_invalid_themes_with_bulk_update(self):
+        users = [create_user(f"test{i + 1}@example.com") for i in range(5)]
+
+        for t in ["invalid", -1, 0, 1, -5.5, 0.0, 1.23, False, True]:
+            with self.assertRaises(ValidationError) as cm:
+                preferences = [u.preferences for u in users]
+                for p in preferences:
+                    p.theme = t
+                models.UserPreferences.objects.bulk_update(preferences, "theme")
+
+            self.assertEqual(dict(cm.exception), {"theme": [f"Value '{t}' is not a valid choice."]})
+
+        self.assertEqual(models.UserPreferences.objects.count(), 5)
+        for p in models.UserPreferences.objects.all():
+            self.assertEqual(p.theme, "System")
+
 class UserMFA(TestCase):
     def test_creation(self):
         user = create_user()
