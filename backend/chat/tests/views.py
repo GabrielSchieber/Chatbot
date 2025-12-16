@@ -333,6 +333,24 @@ class VerifyMFA(TestCase):
 
         self.assertEqual(user.sessions.count(), 0)
 
+class Logout(TestCase):
+    def test(self):
+        self.create_and_login_user()
+        self.assertEqual(len(self.client.cookies.items()), 2)
+        self.assertNotEqual(self.client.cookies["access_token"].value, "")
+        self.assertNotEqual(self.client.cookies["refresh_token"].value, "")
+
+        response = self.logout_user()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"")
+        self.assertEqual(len(response.cookies.items()), 2)
+        self.assertEqual(response.cookies["access_token"].value, "")
+        self.assertEqual(response.cookies["refresh_token"].value, "")
+
+        self.assertEqual(len(self.client.cookies.items()), 2)
+        self.assertEqual(self.client.cookies["access_token"].value, "")
+        self.assertEqual(self.client.cookies["refresh_token"].value, "")
+
 class Refresh(TestCase):
     def test(self):
         refresh = RefreshToken.for_user(create_user())
