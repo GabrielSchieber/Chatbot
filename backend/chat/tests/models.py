@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 from freezegun import freeze_time
@@ -242,6 +243,14 @@ class Message(TestCase):
         self.assertHasAttr(bot_message, "files")
         self.assertEqual(user_message.files.count(), 0)
         self.assertEqual(bot_message.files.count(), 0)
+
+    def test_invalid_models(self):
+        user = create_user()
+        chat = user.chats.create(title = "Test chat")
+        for m in ["invalid", -1, 0, 1, -5.5, 0.0, 1.23, False, True]:
+            with self.assertRaises(ValidationError, msg = {'model': [f"Value '{m}' is not a valid choice."]}):
+                chat.messages.create(text = "Hi!", is_from_user = False, model = m)
+        self.assertEqual(models.Message.objects.count(), 0)
 
 class MessageFile(TestCase):
     def test_creation(self):
