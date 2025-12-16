@@ -57,9 +57,7 @@ export default function Prompt() {
                 setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
             } else {
                 navigate(`/chat/${chat.uuid}`)
-                if (!isTemporaryChat) {
-                    setChats(previous => [...previous.map(c => ({ ...c, index: c.index + 1 })), chat])
-                }
+                setChats(previous => [...previous.map(c => ({ ...c, index: c.index + 1 })), chat])
             }
 
             const fileIDsResponse = await getMessageFileIDs(chat.uuid)
