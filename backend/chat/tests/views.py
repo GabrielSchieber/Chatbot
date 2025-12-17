@@ -385,6 +385,33 @@ class Logout(TestCase):
         self.assertEqual(UserSession.objects.count(), 1)
         self.assertIsNone(UserSession.objects.first().logout_at)
 
+    def test_without_refresh_token(self):
+        self.create_and_login_user()
+        self.assertEqual(len(self.client.cookies.items()), 2)
+        self.assertNotEqual(self.client.cookies["access_token"].value, "")
+        self.assertNotEqual(self.client.cookies["refresh_token"].value, "")
+
+        self.assertEqual(UserSession.objects.count(), 1)
+        self.assertIsNone(UserSession.objects.first().logout_at)
+
+        self.client.cookies.pop("refresh_token")
+        self.assertEqual(len(self.client.cookies), 1)
+        self.assertIn("access_token", self.client.cookies)
+
+        response = self.logout_user()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"")
+        self.assertEqual(len(response.cookies.items()), 2)
+        self.assertEqual(response.cookies["access_token"].value, "")
+        self.assertEqual(response.cookies["refresh_token"].value, "")
+
+        self.assertEqual(len(self.client.cookies.items()), 2)
+        self.assertEqual(self.client.cookies["access_token"].value, "")
+        self.assertEqual(self.client.cookies["refresh_token"].value, "")
+
+        self.assertEqual(UserSession.objects.count(), 1)
+        self.assertIsNone(UserSession.objects.first().logout_at)
+
 class LogoutAllSessions(TestCase):
     def test(self):
         self.create_and_login_user()
