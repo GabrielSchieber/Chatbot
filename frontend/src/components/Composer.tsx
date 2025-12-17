@@ -1,3 +1,4 @@
+import { motion } from "motion/react"
 import { useEffect, useRef, useState, type ChangeEvent, type Dispatch, type KeyboardEvent, type SetStateAction } from "react"
 
 import Attachments from "./Attachments"
@@ -72,7 +73,9 @@ export default function Composer({
     }, [])
 
     return (
-        <form
+        <motion.form
+            layout={!window.matchMedia("(prefers-reduced-motion)").matches}
+            transition={{ type: "tween", duration: 0.15 }}
             className={`
                 flex flex-col max-h-[50vh] overflow-hidden rounded-4xl bg-gray-800 light:bg-gray-200
                 ${files.length > 0 ? "gap-2 px-4" : "px-3"}
@@ -147,7 +150,7 @@ export default function Composer({
                     </div>
                 </>
             )}
-        </form>
+        </motion.form>
     )
 }
 
