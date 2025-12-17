@@ -11,29 +11,32 @@ export default function TextArea({ ref, text, setText, sendMessageWithEvent, sel
     tabIndex?: number
 }) {
     useEffect(() => {
-        if (ref.current) {
-            ref.current.style.height = "auto"
-            ref.current.style.height = ref.current.scrollHeight + "px"
-        }
+        if (!ref.current) return
+
+        ref.current.style.height = "auto"
+        ref.current.style.minHeight = "auto"
+        ref.current.style.maxHeight = "auto"
+
+        ref.current.style.height = ref.current.scrollHeight + "px"
+        ref.current.style.minHeight = ref.current.scrollHeight + "px"
+        ref.current.style.maxHeight = ref.current.scrollHeight + "px"
     }, [text])
 
     return (
-        <div className="flex flex-1 min-w-10">
-            <textarea
-                ref={ref}
-                className="flex-1 p-2 overflow-hidden resize-none outline-none"
-                value={text}
-                placeholder={t("textarea.placeholder")}
-                onChange={e => {
-                    setText(e.target.value)
-                    if (selectionStart) selectionStart.current = e.target.selectionStart
-                    if (selectionEnd) selectionEnd.current = e.target.selectionEnd
-                }}
-                onKeyDown={sendMessageWithEvent}
-                tabIndex={tabIndex}
-                rows={1}
-                autoFocus
-            />
-        </div>
+        <textarea
+            ref={ref}
+            className="flex-1 p-2 overflow-hidden resize-none outline-none"
+            value={text}
+            placeholder={t("textarea.placeholder")}
+            onChange={e => {
+                setText(e.target.value)
+                if (selectionStart) selectionStart.current = e.target.selectionStart
+                if (selectionEnd) selectionEnd.current = e.target.selectionEnd
+            }}
+            onKeyDown={sendMessageWithEvent}
+            tabIndex={tabIndex}
+            rows={1}
+            autoFocus
+        />
     )
 }

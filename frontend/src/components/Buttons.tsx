@@ -33,7 +33,7 @@ export function SelectModelButton({ model, setModel, tabIndex = 2 }: { model: Mo
                 trigger={
                     <Select.Trigger
                         className="
-                            flex w-27.5 px-1 items-center justify-between rounded-lg text-xs cursor-pointer outline-none
+                            flex p-2 items-center justify-between rounded-lg text-xs cursor-pointer outline-none
                             hover:bg-gray-700 light:hover:bg-gray-300
                             focus:bg-gray-700 light:focus:bg-gray-300
                         "
