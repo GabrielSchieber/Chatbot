@@ -1,7 +1,7 @@
 import { Cross2Icon } from "@radix-ui/react-icons"
 import { t } from "i18next"
 import { motion, AnimatePresence } from "motion/react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 
 import { MAX_FILE_SIZE, MAX_FILES } from "./Chat"
@@ -16,8 +16,10 @@ export default function Prompt() {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
-    const { chats, setChats, setMessages, isMobile, isTemporaryChat } = useChat()
+    const { chats, setChats, setMessages, isMobile, isTemporaryChat, setPromptHeight } = useChat()
     const notify = useNotify()
+
+    const ref = useRef<HTMLDivElement | null>(null)
 
     const [text, setText] = useState("")
     const [files, setFiles] = useState<File[]>([])
@@ -116,6 +118,18 @@ export default function Prompt() {
         e.target.value = ""
     }
 
+    useEffect(() => {
+        if (!ref.current) return
+
+        const observer = new ResizeObserver(entries => {
+            const height = entries[0].contentRect.height
+            setPromptHeight(height)
+        })
+
+        observer.observe(ref.current)
+        return () => observer.disconnect()
+    }, [])
+
     return (
         chatUUID && chats.find(c => c.uuid === chatUUID)?.is_archived ? (
             <div className="flex flex-col gap-3 mb-10 items-center">
@@ -134,7 +148,7 @@ export default function Prompt() {
                 </button>
             </div>
         ) : (
-            <div className={`flex flex-col w-full items-center ${isMobile && "px-2 mt-auto"}`}>
+            <div ref={ref} className={`flex flex-col w-full items-center ${isMobile && "px-2 mt-auto"}`}>
                 <AnimatePresence>
                     {shouldShowPendingNotification && pendingChat && (
                         <motion.div

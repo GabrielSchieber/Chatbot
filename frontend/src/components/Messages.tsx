@@ -1,4 +1,4 @@
-import { CheckIcon, CopyIcon } from "@radix-ui/react-icons"
+import { ArrowDownIcon, CheckIcon, CopyIcon } from "@radix-ui/react-icons"
 import { t } from "i18next"
 import React, { useEffect, useRef, useState, type ReactElement } from "react"
 import ReactMarkdown from "react-markdown"
@@ -15,19 +15,26 @@ import type { MessageFile, Model } from "../utils/types"
 export default function Messages() {
     const { chatUUID } = useParams()
 
-    const { setChats, messages, setMessages, isMobile } = useChat()
+    const { setChats, messages, setMessages, isMobile, promptHeight } = useChat()
 
     const webSocket = useRef<WebSocket | null>(null)
     const ref = useRef<HTMLDivElement | null>(null)
+    const bottomRef = useRef<HTMLDivElement | null>(null)
 
     const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
 
     const [editingMessageIndex, setEditingMessageIndex] = useState(-1)
 
+    const [isBottomVisible, setIsBottomVisible] = useState(true)
+
     function handleScroll() {
         if (!ref.current) return
         const atBottom = ref.current.scrollHeight - ref.current.clientHeight - ref.current.scrollTop <= 20
         if (!atBottom) setShouldScrollToBottom(false)
+    }
+
+    function scrollToBottom() {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" })
     }
 
     useEffect(() => {
@@ -86,8 +93,35 @@ export default function Messages() {
         }
     }, [shouldScrollToBottom, messages.at(-1)?.text])
 
+    useEffect(() => {
+        if (!ref.current || !bottomRef.current) return
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsBottomVisible(entry.isIntersecting)
+            },
+            {
+                root: ref.current,
+                threshold: 0.9
+            }
+        )
+
+        observer.observe(bottomRef.current)
+        return () => observer.disconnect()
+    }, [])
+
+    useEffect(() => {
+        if (isBottomVisible) {
+            bottomRef.current?.scrollIntoView({ behavior: "auto" })
+        }
+    }, [messages.length, isBottomVisible])
+
     return (
-        <div ref={ref} className={`flex flex-col w-full px-2 py-10 items-center overflow-y-auto ${!chatUUID ? "h-[35%]" : "h-full"}`} onScroll={handleScroll}>
+        <div
+            ref={ref}
+            className={`flex flex-col w-full px-2 py-10 items-center overflow-y-auto ${!chatUUID ? "h-[35%]" : "h-full"}`}
+            onScroll={handleScroll}
+        >
             <div className={`flex flex-col gap-3 ${isMobile ? "w-full" : "w-[60vw]"}`}>
                 {messages.map((m, i) =>
                     <React.Fragment key={i}>
@@ -100,7 +134,24 @@ export default function Messages() {
                         )}
                     </React.Fragment>
                 )}
+
+                <div ref={bottomRef} />
             </div>
+
+            {!isBottomVisible &&
+                <button
+                    className="
+                        fixed p-1 rounded-full cursor-pointer border border-gray-500
+                        bg-gray-900 hover:bg-gray-800
+                        light:bg-gray-100 light:hover:bg-gray-200
+                    "
+                    style={{ bottom: promptHeight + 16 }}
+                    onClick={scrollToBottom}
+                    aria-label="Scroll to bottom"
+                >
+                    <ArrowDownIcon className="size-5" />
+                </button>
+            }
         </div>
     )
 }
