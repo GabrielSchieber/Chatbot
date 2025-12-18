@@ -1,5 +1,6 @@
 import { ArrowDownIcon, CheckIcon, CopyIcon } from "@radix-ui/react-icons"
 import { t } from "i18next"
+import { AnimatePresence, motion } from "motion/react"
 import React, { useEffect, useRef, useState, type ReactElement } from "react"
 import ReactMarkdown from "react-markdown"
 import { useParams } from "react-router"
@@ -138,20 +139,32 @@ export default function Messages() {
                 <div ref={bottomRef} />
             </div>
 
-            {!isBottomVisible &&
-                <button
-                    className="
-                        fixed p-1 rounded-full cursor-pointer border border-gray-500
-                        bg-gray-900 hover:bg-gray-800
-                        light:bg-gray-100 light:hover:bg-gray-200
-                    "
-                    style={{ bottom: promptHeight + 16 }}
-                    onClick={scrollToBottom}
-                    aria-label="Scroll to bottom"
-                >
-                    <ArrowDownIcon className="size-5" />
-                </button>
-            }
+            <AnimatePresence>
+                {!isBottomVisible && (
+                    <motion.button
+                        key="scroll-to-bottom"
+
+                        initial={{ opacity: 0, y: 6, bottom: promptHeight + 16 }}
+                        animate={{ opacity: 1, y: 0, bottom: promptHeight + 16 }}
+                        exit={{ opacity: 0, y: 6, bottom: promptHeight + 16 }}
+                        transition={{
+                            opacity: { duration: 0.15 },
+                            y: { duration: 0.15, ease: "easeOut" },
+                            bottom: { type: "tween", duration: 0.2, ease: "easeOut" }
+                        }}
+
+                        className="
+                            fixed p-1 rounded-full cursor-pointer border border-gray-500
+                            bg-gray-900 hover:bg-gray-800
+                            light:bg-gray-100 light:hover:bg-gray-200
+                        "
+                        onClick={scrollToBottom}
+                        aria-label="Scroll to bottom"
+                    >
+                        <ArrowDownIcon className="size-5" />
+                    </motion.button>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
