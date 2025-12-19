@@ -24,14 +24,14 @@ export default function Sidebar() {
     return (
         <>
             <div
-                className={`fixed inset-0 duration-500 ${isMobile && isOpen ? "bg-black/50" : "pointer-events-none"}`}
+                className={`z-10 fixed inset-0 duration-500 ${isMobile && isOpen ? "bg-black/50" : "pointer-events-none"}`}
                 onClick={_ => setIsOpen(false)}
             />
 
             <div
                 ref={ref}
                 className={`
-                    flex flex-col justify-between overflow-x-hidden overflow-y-auto duration-300 ease-in-out bg-gray-800 light:bg-gray-200
+                    z-10 flex flex-col justify-between overflow-x-hidden overflow-y-auto duration-300 ease-in-out bg-gray-800 light:bg-gray-200
                     ${isOpen ? "min-w-[250px] max-w-[250px]" : isMobile ? "min-w-0 max-w-0" : "min-w-[50px] max-w-[50px]"}
                     ${isMobile && "fixed inset-0"}
                 `}

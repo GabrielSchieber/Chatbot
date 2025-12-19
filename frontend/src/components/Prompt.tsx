@@ -148,7 +148,7 @@ export default function Prompt() {
                 </button>
             </div>
         ) : (
-            <div ref={ref} className={`flex flex-col w-full items-center ${isMobile && "px-2 mt-auto"}`}>
+            <div ref={ref} className={`sticky bottom-0 flex flex-col items-center ${isMobile ? "w-full px-2" : "w-[60vw]"} ${isMobile && !chatUUID && "mt-auto"}`}>
                 <AnimatePresence>
                     {shouldShowPendingNotification && pendingChat && (
                         <motion.div

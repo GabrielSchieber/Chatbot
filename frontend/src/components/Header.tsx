@@ -24,7 +24,7 @@ export default function Header() {
     const currentChat = chats.find(c => c.uuid === chatUUID)
 
     return (
-        <header className="flex w-full p-2 items-center justify-between">
+        <header className="sticky top-0 flex w-full p-2 items-center justify-between">
             {isMobile &&
                 <div className={`flex gap-1 ${isSidebarOpen && "invisible"}`}>
                     <ToggleSidebar withLabel={false} onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
@@ -37,8 +37,8 @@ export default function Header() {
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger
                         className={`
-                            flex max-w-full gap-1 px-2 py-1 items-center cursor-pointer rounded-lg
-                            outline-none overflow-hidden hover:bg-gray-600/50 light:hover:bg-gray-400/50
+                            flex max-w-full gap-1 px-2 py-1 items-center cursor-pointer rounded-lg outline-none overflow-hidden
+                            bg-gray-900 hover:bg-gray-800 light:bg-gray-100 light:hover:bg-gray-200
                             ${!isMobile && "mx-auto"}
                         `}
                     >

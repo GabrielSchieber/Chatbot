@@ -35,7 +35,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
             <OpenSettings withLabel={isSidebarOpen} />
 
             <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+                <Dialog.Overlay className="z-10 fixed inset-0 bg-black/50" />
 
                 <Dialog.Title hidden>{t("sidebar.settings")}</Dialog.Title>
                 <Dialog.Description hidden>{t("sidebar.settings")}</Dialog.Description>
@@ -43,7 +43,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                 <Dialog.Content>
                     <Tabs.Root
                         className={`
-                            fixed flex top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 text-white light:text-black
+                            z-10 fixed flex top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 text-white light:text-black
                             ${isMobile ? "flex-col inset-0 size-full" : isScreenHeightSmall ? "inset-0 w-150 h-full" : "w-150 min-h-105"}
                         `}
                         value={currentTab}
@@ -172,7 +172,7 @@ function ThemeEntryItem() {
             </Select.Trigger>
 
             <Select.Portal>
-                <Select.Content className="rounded-lg text-white light:text-black bg-gray-900 light:bg-gray-100">
+                <Select.Content className="z-10 rounded-lg text-white light:text-black bg-gray-900 light:bg-gray-100">
                     <Select.Viewport className="p-1">
                         {["System", "Light", "Dark"].map(s => (
                             <Select.Item key={s} value={s} className={itemClasses}>
@@ -218,7 +218,7 @@ function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetState
             </Select.Trigger>
 
             <Select.Portal>
-                <Select.Content className="rounded-lg text-white light:text-black bg-gray-900 light:bg-gray-100">
+                <Select.Content className="z-10 rounded-lg text-white light:text-black bg-gray-900 light:bg-gray-100">
                     <Select.Viewport className="p-1">
                         {languages.map((l, i) => (
                             <Select.Item key={`${l}-${i}`} value={getValue(l)} className={itemClasses}>

@@ -34,11 +34,11 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
             </Dialog.Trigger>
 
             <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+                <Dialog.Overlay className="z-10 fixed inset-0 bg-black/50" />
 
                 <Dialog.Content
                     className={`
-                        fixed flex flex-col gap-5 p-6 top-1/2 -translate-y-1/2
+                        z-10 fixed flex flex-col gap-5 p-6 top-1/2 -translate-y-1/2
                         rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
                         ${isMobile ? "inset-0 mx-2 h-fit" : "right-1/2 translate-x-1/2"}
                     `}

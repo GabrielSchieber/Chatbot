@@ -38,7 +38,7 @@ export default function Composer({
     sendMessageWithEvent: (e: KeyboardEvent<HTMLTextAreaElement>) => void | (() => void)
     setIndex?: Dispatch<SetStateAction<number>>
 }) {
-    const { chats, isLoading, isMobile } = useChat()
+    const { chats, isLoading } = useChat()
 
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -77,11 +77,10 @@ export default function Composer({
             layout={!window.matchMedia("(prefers-reduced-motion)").matches}
             transition={{ type: "tween", duration: 0.15 }}
             className={`
-                flex flex-col max-h-[50vh] overflow-hidden rounded-4xl bg-gray-800 light:bg-gray-200
+                flex flex-col w-full max-h-[50vh] overflow-hidden rounded-4xl bg-gray-800 light:bg-gray-200
                 ${files.length > 0 ? "gap-2 px-4" : "px-3"}
                 ${files.length > 0 || isExtended ? "pt-3 pb-2" : "py-1"}
                 ${withBorderAndShadow ? "mb-5 border-t-4 border-gray-600 light:border-gray-400 shadow-xl/50" : "mt-10 mb-5"}
-                ${isMobile ? "w-full" : "w-[60vw]"}
             `}
             onClick={e => {
                 if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {

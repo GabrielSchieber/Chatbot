@@ -13,26 +13,18 @@ import Editor from "./Editor"
 import { useChat } from "../providers/ChatProvider"
 import type { MessageFile, Model } from "../utils/types"
 
-export default function Messages() {
+export default function Messages({ chatRef }: { chatRef: React.RefObject<HTMLDivElement | null> }) {
     const { chatUUID } = useParams()
 
     const { setChats, messages, setMessages, isMobile, promptHeight } = useChat()
 
     const webSocket = useRef<WebSocket | null>(null)
-    const ref = useRef<HTMLDivElement | null>(null)
     const bottomRef = useRef<HTMLDivElement | null>(null)
-
-    const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
-
-    const [editingMessageIndex, setEditingMessageIndex] = useState(-1)
+    const previousMessagesLength = useRef(0)
+    const lastTimeScrolled = useRef(0)
 
     const [isBottomVisible, setIsBottomVisible] = useState(true)
-
-    function handleScroll() {
-        if (!ref.current) return
-        const atBottom = ref.current.scrollHeight - ref.current.clientHeight - ref.current.scrollTop <= 20
-        if (!atBottom) setShouldScrollToBottom(false)
-    }
+    const [editingMessageIndex, setEditingMessageIndex] = useState(-1)
 
     function scrollToBottom() {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -86,23 +78,29 @@ export default function Messages() {
         }
     }, [chatUUID])
 
-    useEffect(() => setShouldScrollToBottom(true), [messages.length])
-
     useEffect(() => {
-        if (shouldScrollToBottom) {
-            requestAnimationFrame(_ => ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: "auto" }))
+        if (previousMessagesLength.current === 0) {
+            previousMessagesLength.current === messages.length
+            scrollToBottom()
         }
-    }, [shouldScrollToBottom, messages.at(-1)?.text])
+    }, [chatUUID, messages.length])
 
     useEffect(() => {
-        if (!ref.current || !bottomRef.current) return
+        if (isBottomVisible && (Date.now() - lastTimeScrolled.current) > 100) {
+            lastTimeScrolled.current = Date.now()
+            scrollToBottom()
+        }
+    }, [messages.at(-1)?.text])
+
+    useEffect(() => {
+        if (!chatRef.current || !bottomRef.current) return
 
         const observer = new IntersectionObserver(
             ([entry]) => {
                 setIsBottomVisible(entry.isIntersecting)
             },
             {
-                root: ref.current,
+                root: chatRef.current,
                 threshold: 0.9
             }
         )
@@ -111,33 +109,21 @@ export default function Messages() {
         return () => observer.disconnect()
     }, [])
 
-    useEffect(() => {
-        if (isBottomVisible) {
-            bottomRef.current?.scrollIntoView({ behavior: "auto" })
-        }
-    }, [messages.length, isBottomVisible])
-
     return (
-        <div
-            ref={ref}
-            className={`flex flex-col w-full px-2 py-10 items-center overflow-y-auto ${!chatUUID ? "h-[35%]" : "h-full"}`}
-            onScroll={handleScroll}
-        >
-            <div className={`flex flex-col gap-3 ${isMobile ? "w-full" : "w-[60vw]"}`}>
-                {messages.map((m, i) =>
-                    <React.Fragment key={i}>
-                        {editingMessageIndex === i ? (
-                            <Editor index={i} setIndex={setEditingMessageIndex} />
-                        ) : m.is_from_user ? (
-                            <UserMessage index={i} text={m.text} files={m.files} onEditClick={() => setEditingMessageIndex(i)} />
-                        ) : (
-                            <BotMessage index={i} text={m.text} model={m.model} />
-                        )}
-                    </React.Fragment>
-                )}
+        <div className={`flex flex-col ${isMobile ? "w-full px-5" : "w-[60vw]"} ${chatUUID ? "mb-auto py-15" : "mb-[25%]"}`}>
+            {messages.map((m, i) =>
+                <React.Fragment key={i}>
+                    {editingMessageIndex === i ? (
+                        <Editor index={i} setIndex={setEditingMessageIndex} />
+                    ) : m.is_from_user ? (
+                        <UserMessage index={i} text={m.text} files={m.files} onEditClick={() => setEditingMessageIndex(i)} />
+                    ) : (
+                        <BotMessage index={i} text={m.text} model={m.model} />
+                    )}
+                </React.Fragment>
+            )}
 
-                <div ref={bottomRef} />
-            </div>
+            <div ref={bottomRef} />
 
             <AnimatePresence>
                 {!isBottomVisible && (
@@ -154,7 +140,7 @@ export default function Messages() {
                         }}
 
                         className="
-                            fixed p-1 rounded-full cursor-pointer border border-gray-500
+                            fixed place-self-center p-1 rounded-full cursor-pointer border border-gray-500
                             bg-gray-900 hover:bg-gray-800
                             light:bg-gray-100 light:hover:bg-gray-200
                         "

@@ -106,11 +106,11 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
             </Dialog.Trigger>
 
             <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+                <Dialog.Overlay className="z-10 fixed inset-0 bg-black/50" />
 
                 <Dialog.Content
                     className={`
-                        fixed flex flex-col left-1/2 -translate-x-1/2 text-white light:text-black bg-gray-800 light:bg-gray-200
+                        z-10 fixed flex flex-col left-1/2 -translate-x-1/2 text-white light:text-black bg-gray-800 light:bg-gray-200
                         ${isMobile ? "inset-0 size-full" : "w-[75%] max-w-200 max-h-[80vh] top-[10vh] rounded-xl"}
                     `}
                 >
