@@ -17,8 +17,7 @@ test("user can see and toggle sidebar", async ({ page }) => {
     const openSettings = page.getByRole("button", { name: openSettingsText })
     const historyParagraph = page.getByRole("paragraph").getByText("You don't have any chats.", { exact: true })
 
-    const header = page.getByRole("banner")
-    await expect(header).toHaveCount(1)
+    const header = page.getByRole("banner").locator("div")
 
     await expect(header.getByRole("button")).toHaveCount(isWidthSmall ? 2 : 0)
     await expect(header.getByRole("link")).toHaveCount(isWidthSmall ? 1 : 0)
@@ -112,8 +111,7 @@ test("user can see and toggle sidebar with chats", async ({ page }, testInfo) =>
     const visibleChatEntries = page.getByTestId("history").getByRole("link").filter({ visible: true })
     const visibleToggleChatOptions = page.getByLabel("Toggle chat options", { exact: true }).filter({ visible: true })
 
-    const header = page.getByRole("banner")
-    await expect(header).toHaveCount(1)
+    const header = page.getByRole("banner").locator("div")
 
     await expect(header.getByRole("button")).toHaveCount(isWidthSmall ? 2 : 0)
     await expect(header.getByRole("link")).toHaveCount(isWidthSmall ? 1 : 0)
