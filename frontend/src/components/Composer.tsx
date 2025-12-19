@@ -73,7 +73,7 @@ export default function Composer({
     }, [])
 
     return (
-        <motion.form
+        <motion.div
             layout={!window.matchMedia("(prefers-reduced-motion)").matches}
             transition={{ type: "tween", duration: 0.15 }}
             className={`
@@ -83,7 +83,6 @@ export default function Composer({
                 ${withBorderAndShadow ? "mb-5 border-t-4 border-gray-600 light:border-gray-400 shadow-xl/50" : "mt-10 mb-5"}
                 ${isMobile ? "w-full" : "w-[60vw]"}
             `}
-            onSubmit={e => e.preventDefault()}
             onClick={e => {
                 if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
                     return
@@ -91,7 +90,6 @@ export default function Composer({
                 textAreaRef.current?.focus()
             }}
             aria-label={ariaLabel}
-            role="form"
         >
             <input ref={fileInputRef} className="hidden" type="file" onChange={onChangeFile} tabIndex={-1} aria-hidden multiple />
 
@@ -150,7 +148,7 @@ export default function Composer({
                     </div>
                 </>
             )}
-        </motion.form>
+        </motion.div>
     )
 }
 
