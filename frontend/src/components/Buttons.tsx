@@ -504,8 +504,8 @@ const chatDropdownItemClassName = "flex gap-2 px-3 py-2 items-center text-center
 const nonDestructiveChatDropdownItemClassName = `
     ${chatDropdownItemClassName}
     text-white light:text-black
-    hover:bg-gray-600 light:hover:bg-gray-400/50
-    focus:bg-gray-600 light:focus:bg-gray-400/50
+    hover:bg-gray-700/50 light:hover:bg-gray-400/25
+    focus:bg-gray-700/50 light:focus:bg-gray-400/25
 `
 
 const destructiveChatDropdownItemClassName = `

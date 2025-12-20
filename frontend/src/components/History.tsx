@@ -165,7 +165,7 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
 
                             <DropdownMenu.Portal>
                                 <DropdownMenu.Content
-                                    className="z-10 flex flex-col p-2 rounded-xl shadow-xl/50 border border-gray-500/50 bg-gray-700 light:bg-gray-300"
+                                    className="z-10 flex flex-col p-2 rounded-xl shadow-xl/50 border border-gray-500 bg-gray-800 light:bg-gray-200"
                                     sideOffset={4}
                                     align="start"
                                     alignOffset={-10}
