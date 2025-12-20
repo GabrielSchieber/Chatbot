@@ -1,5 +1,6 @@
-import { ChatBubbleIcon, ChevronDownIcon } from "@radix-ui/react-icons"
+import { ChatBubbleIcon, ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons"
 import { DropdownMenu } from "radix-ui"
+import { useState } from "react"
 import { useParams } from "react-router"
 
 import { ArchiveButton, DeleteButton, NewChat, RenameDialog, ToggleSidebar, UnarchiveButton } from "./Buttons"
@@ -14,6 +15,8 @@ export default function Header() {
     const { user, setUser } = useAuth()
     const { chats, isMobile, isTemporaryChat, setIsTemporaryChat } = useChat()
 
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+
     const isSidebarOpen = user ? user.preferences.has_sidebar_open : true
 
     function setIsSidebarOpen(value: boolean) {
@@ -24,9 +27,9 @@ export default function Header() {
     const currentChat = chats.find(c => c.uuid === chatUUID)
 
     return (
-        <header className="sticky top-0 flex w-full p-2 items-center justify-between">
+        <header className="sticky top-0 flex w-full gap-1 p-2 items-center justify-between">
             {isMobile &&
-                <div className={`flex gap-1 ${isSidebarOpen && "invisible"}`}>
+                <div className={`flex gap-1 px-1.5 py-0.5 rounded-lg bg-gray-800 light:bg-gray-200 ${isSidebarOpen && "invisible"}`}>
                     <ToggleSidebar withLabel={false} onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
                     <NewChat withLabel={false} />
                     <Search openButtonWithLabel={false} />
@@ -34,11 +37,11 @@ export default function Header() {
             }
 
             {!isTemporaryChat && currentChat ? (
-                <DropdownMenu.Root>
+                <DropdownMenu.Root onOpenChange={o => setIsDropdownOpen(o)}>
                     <DropdownMenu.Trigger
                         className={`
-                            flex max-w-full gap-1 px-2 py-1 items-center cursor-pointer rounded-lg outline-none overflow-hidden
-                            bg-gray-900 hover:bg-gray-800 light:bg-gray-100 light:hover:bg-gray-200
+                            flex max-w-full gap-1 px-2 py-2 items-center cursor-pointer rounded-lg outline-none overflow-hidden
+                            bg-gray-800 hover:bg-gray-700 light:bg-gray-100 light:hover:bg-gray-200
                             ${!isMobile && "mx-auto"}
                         `}
                     >
@@ -46,7 +49,10 @@ export default function Header() {
                             {currentChat.title}
                         </p>
 
-                        <ChevronDownIcon className="size-5 flex-shrink-0" />
+                        {isDropdownOpen ?
+                            <ChevronUpIcon className="size-5 flex-shrink-0" /> :
+                            <ChevronDownIcon className="size-5 flex-shrink-0" />
+                        }
                     </DropdownMenu.Trigger>
 
                     <DropdownMenu.Portal>
@@ -69,11 +75,11 @@ export default function Header() {
                     <p className="text-2xl font-semibold not-md:text-[16px]">Chatbot</p>
                     <button
                         className={`
-                            flex gap-1 px-3 py-1 items-center rounded-xl not-disabled:cursor-pointer
-                            not-md:text-[14px] border border-gray-500 disabled:border-blue-500
+                            flex gap-1 p-2 items-center rounded not-disabled:cursor-pointer
+                            not-md:text-[14px] border border-transparent disabled:border-blue-500
                             ${isTemporaryChat
                                 ? "bg-blue-500/50 not-disabled:hover:bg-blue-500/30"
-                                : "hover:bg-gray-600/50 not-disabled:light:hover:bg-gray-400/50"
+                                : "bg-gray-800 hover:bg-gray-700 light:bg-gray-200 light:hover:bg-gray-300"
                             }
                         `}
                         onClick={() => {
