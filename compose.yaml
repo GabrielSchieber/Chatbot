@@ -23,7 +23,7 @@ services:
             - postgres:/var/lib/postgresql/data
 
     redis:
-        image: redis:8.2-alpine
+        image: redis:8.4-alpine
 
     ollama:
         image: chatbot-ollama
@@ -32,7 +32,7 @@ services:
             dockerfile: dockerfile
 
     nginx:
-        image: nginx:1.29.3-alpine-slim
+        image: nginx:1.29.4-alpine-slim
         ports:
             - 80:80
             - 443:443

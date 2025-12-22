@@ -16,11 +16,11 @@ RUN apt-get update && \
     apt-get install -y wget xz-utils && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /app_deps && \
-    wget -O /app_deps/node-v24.11.0-linux-x64.tar.xz https://nodejs.org/dist/v24.11.0/node-v24.11.0-linux-x64.tar.xz && \
-    tar -xf /app_deps/node-v24.11.0-linux-x64.tar.xz -C /app_deps && \
-    rm /app_deps/node-v24.11.0-linux-x64.tar.xz
+    wget -O /app_deps/node-v24.12.0-linux-x64.tar.xz https://nodejs.org/dist/v24.12.0/node-v24.12.0-linux-x64.tar.xz && \
+    tar -xf /app_deps/node-v24.12.0-linux-x64.tar.xz -C /app_deps && \
+    rm /app_deps/node-v24.12.0-linux-x64.tar.xz
 
-ENV PATH="/app_deps/node-v24.11.0-linux-x64/bin:$PATH"
+ENV PATH="/app_deps/node-v24.12.0-linux-x64/bin:$PATH"
 
 COPY /frontend/package.json /frontend/package-lock.json ./
 
