@@ -1,16 +1,22 @@
 import asyncio
+import logging
+import os
+import time
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from jwt import decode as jwt_decode
+from redis import asyncio as aioredis
 
 from .models import User
 from .tasks import IS_PLAYWRIGHT_TEST, astop_pending_chat, get_ollama_model_and_options, get_system_prompt, ollama_client, opened_chats
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
+        self.redis_limiter = RedisTokenBucket("rate:user", 20, 60.0)
+
         self.user: User = await self.get_user_from_cookie()
         self.chat_uuid = ""
 
@@ -29,6 +35,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 await astop_pending_chat(chat)
 
     async def receive_json(self, content):
+        allowed, retry_after = await self.redis_limiter.allow(str(getattr(self.user, "id", "anon")))
+        if not allowed:
+            await self.send_json({"error": "rate_limited", "retry_after": retry_after})
+            return
+
         if self.chat_uuid != "": return
 
         if type(content) != dict:
@@ -81,9 +92,15 @@ class GuestChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.messages = [{"role": "system", "content": get_system_prompt()}]
         self.task = None
+        self.redis_limiter = RedisTokenBucket("rate:guest_ip", 6, 60.0)
         await self.accept()
 
     async def receive_json(self, content):
+        allowed, retry_after = await self.redis_limiter.allow(self.get_ip())
+        if not allowed:
+            await self.send_json({"error": "rate_limited", "retry_after": retry_after})
+            return
+
         if self.task is None:
             if type(content) != dict:
                 return await self.close()
@@ -118,7 +135,89 @@ class GuestChatConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({"message": self.messages[-1]["content"], "message_index": message_index})
         await self.send_json("end")
 
+    def get_ip(self):
+        headers = dict((k.decode().lower(), v.decode()) for k, v in self.scope.get("headers", []))
+        ip = headers.get("x-forwarded-for", None)
+        if not ip:
+            client = self.scope.get("client")
+            ip = client[0] if client else "unknown"
+        return ip
+
 guest_model, guest_options = get_ollama_model_and_options("SmolLM2-135M")
 if IS_PLAYWRIGHT_TEST:
     guest_options["num_predict"] = 64
     guest_options["seed"] = 0
+
+_TOKEN_BUCKET_LUA = """
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local capacity = tonumber(ARGV[2])
+local refill_per_sec = tonumber(ARGV[3])
+local requested = tonumber(ARGV[4])
+
+local data = redis.call("HMGET", key, "tokens", "ts")
+local tokens = tonumber(data[1])
+local ts = tonumber(data[2])
+
+if tokens == nil then
+  tokens = capacity
+  ts = now
+end
+
+local delta = math.max(0, now - ts)
+local filled = delta * refill_per_sec
+tokens = math.min(capacity, tokens + filled)
+
+if tokens >= requested then
+  tokens = tokens - requested
+  redis.call("HMSET", key, "tokens", tostring(tokens), "ts", tostring(now))
+  redis.call("EXPIRE", key, math.ceil(math.max(60, capacity / refill_per_sec * 2)))
+  return {1, tostring(tokens)}
+else
+  local need = (requested - tokens) / refill_per_sec
+  return {0, tostring(need)}
+end
+"""
+
+_redis = None
+async def get_redis():
+    global _redis
+    if _redis is None:
+        url = getattr(settings, "REDIS_URL", None)
+        if not url:
+            url = os.environ.get("REDIS_URL")
+        if not url and getattr(settings, "CACHES", None):
+            loc = settings.CACHES.get("default", {}).get("LOCATION")
+            if isinstance(loc, str) and loc.startswith("redis"):
+                url = loc
+        if not url:
+            url = "redis://redis:6379/0"
+
+        try:
+            _redis = aioredis.from_url(url, encoding = "utf-8", decode_responses = True)
+            await _redis.ping()
+        except Exception as e:
+            logging.warning("Redis not available (%s). Rate limiter disabled (fail-open).", e)
+            class _DummyRedis:
+                async def eval(self, *args, **kwargs):
+                    return ["1", "0"]
+            _redis = _DummyRedis()
+    return _redis
+
+class RedisTokenBucket:
+    def __init__(self, key_prefix: str, capacity: int, period: float):
+        self.key_prefix = key_prefix
+        self.capacity = float(capacity)
+        self.refill_per_sec = float(capacity) / float(period)
+
+    async def allow(self, key_id: str, requested: int = 1):
+        redis = await get_redis()
+        key = f"{self.key_prefix}:{key_id}"
+        now = time.time()
+        res = await redis.eval(_TOKEN_BUCKET_LUA, 1, key, str(now), str(self.capacity), str(self.refill_per_sec), str(requested))
+        allowed = str(res[0]) == "1"
+        val = float(res[1])
+        if allowed:
+            return True, 0.0
+        else:
+            return False, val
