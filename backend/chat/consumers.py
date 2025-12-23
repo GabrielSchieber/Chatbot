@@ -7,7 +7,7 @@ from django.contrib.auth.models import AnonymousUser
 from jwt import decode as jwt_decode
 
 from .models import User
-from .tasks import astop_pending_chat, get_ollama_model_and_options, get_system_prompt, ollama_client, opened_chats
+from .tasks import IS_PLAYWRIGHT_TEST, astop_pending_chat, get_ollama_model_and_options, get_system_prompt, ollama_client, opened_chats
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -119,3 +119,6 @@ class GuestChatConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json("end")
 
 guest_model, guest_options = get_ollama_model_and_options("SmolLM2-135M")
+if IS_PLAYWRIGHT_TEST:
+    guest_options["num_predict"] = 64
+    guest_options["seed"] = 0

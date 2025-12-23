@@ -720,6 +720,29 @@ test("user can chat temporarily", async ({ page }) => {
     await expect(history.getByRole("link")).toHaveCount(0)
 })
 
+test("user can chat as a guest", async ({ page }) => {
+    await sendExampleChat(page, 0, false)
+    await sendExampleChat(page, 1, false)
+})
+
+test("user can copy their own message as a guest", async ({ page }) => {
+    await sendExampleChat(page, 0, false)
+
+    const copyButtons = page.getByTestId("copy")
+    await expect(copyButtons).toHaveCount(2)
+    await copyButtons.first().click()
+    await expectClipboard(page, exampleChats[0].messages[0])
+})
+
+test("user can copy bot messages as a guest", async ({ page }) => {
+    await sendExampleChat(page, 0, false)
+
+    const copyButtons = page.getByTestId("copy")
+    await expect(copyButtons).toHaveCount(2)
+    await copyButtons.last().click()
+    await expectClipboard(page, exampleChats[0].messages[1])
+})
+
 async function sendMessage(page: Page, index: number, message: string, expectedResponse: string) {
     const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
     await textarea.fill(message)
@@ -744,7 +767,7 @@ async function sendMessage(page: Page, index: number, message: string, expectedR
     await expect(botMessage).toContainText(expectedResponse, { timeout })
 }
 
-async function sendExampleChat(page: Page, index: number) {
+async function sendExampleChat(page: Page, index: number, checkTitle: boolean = true) {
     await page.goto("/")
 
     await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
@@ -754,7 +777,7 @@ async function sendExampleChat(page: Page, index: number) {
     const messages = chat.messages
     for (let i = 0; i < messages.length; i += 2) {
         await sendMessage(page, i, messages[i], messages[i + 1])
-        if (i <= 2) {
+        if (checkTitle && i <= 2) {
             const settingsButton = page.getByText("Settings")
             const isSettingsButtonVisible = await settingsButton.isVisible()
             if (!isSettingsButtonVisible) {
