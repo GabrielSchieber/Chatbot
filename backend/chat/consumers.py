@@ -1,3 +1,5 @@
+import asyncio
+
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.conf import settings
@@ -5,7 +7,7 @@ from django.contrib.auth.models import AnonymousUser
 from jwt import decode as jwt_decode
 
 from .models import User
-from .tasks import astop_pending_chat, opened_chats
+from .tasks import astop_pending_chat, get_ollama_model_and_options, get_system_prompt, ollama_client, opened_chats
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -74,3 +76,46 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             return await User.objects.aget(id = user_id)
         except Exception:
             return AnonymousUser()
+
+class GuestChatConsumer(AsyncJsonWebsocketConsumer):
+    async def connect(self):
+        self.messages = [{"role": "system", "content": get_system_prompt()}]
+        self.task = None
+        await self.accept()
+
+    async def receive_json(self, content):
+        if self.task is None:
+            if type(content) != dict:
+                return await self.close()
+
+            user_message = content.get("message")
+            if type(user_message) != str:
+                return await self.close()
+
+            def done_callback(_):
+                self.task = None
+
+            self.task = asyncio.create_task(self.generate_message(user_message))
+            self.task.add_done_callback(done_callback)
+        else:
+            if content == "stop":
+                self.task.cancel()
+                self.task = None
+
+    async def generate_message(self, user_message: str):      
+        self.messages.extend([{"role": "user", "content": user_message}, {"role": "assistant", "content": ""}])
+        message_index = len(self.messages) - 2
+
+        async for part in await ollama_client.chat(guest_model, self.messages[:-1], stream = True, options = guest_options):
+            await asyncio.sleep(0.05)
+
+            token = part.message.content
+
+            if type(token) == str:
+                self.messages[-1]["content"] += token
+                await self.send_json({"token": token, "message_index": message_index})
+
+        await self.send_json({"message": self.messages[-1]["content"], "message_index": message_index})
+        await self.send_json("end")
+
+guest_model, guest_options = get_ollama_model_and_options("SmolLM2-135M")

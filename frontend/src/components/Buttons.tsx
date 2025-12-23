@@ -8,7 +8,7 @@ import ConfirmDialog from "./ConfirmDialog"
 import { UnarchiveIcon } from "./Icons"
 import { useChat } from "../providers/ChatProvider"
 import { useNotify } from "../providers/NotificationProvider"
-import { archiveChat, deleteChat, regenerateMessage, renameChat, stopPendingChats, unarchiveChat } from "../utils/api"
+import { archiveChat, deleteChat, regenerateMessage, renameChat, unarchiveChat } from "../utils/api"
 import type { Chat, Model } from "../utils/types"
 
 export function AddFilesButton({ fileInputRef, tabIndex = 2 }: { fileInputRef: RefObject<HTMLInputElement | null>, tabIndex?: number }) {
@@ -92,17 +92,12 @@ export function SendButton({ sendMessage, isDisabled, tabIndex = 2 }: { sendMess
     )
 }
 
-export function StopButton({ tabIndex = 2 }: { tabIndex?: number }) {
-    const { setChats } = useChat()
-
+export function StopButton({ onClick, tabIndex = 2 }: { onClick: VoidFunction, tabIndex?: number }) {
     return (
         <TooltipButton
             trigger={<PauseIcon className="size-6" />}
             tooltip={t("stopButton.tooltip")}
-            onClick={() => {
-                stopPendingChats()
-                setChats(previous => previous.map(c => ({ ...c, pending_message_id: null })))
-            }}
+            onClick={onClick}
             type="button"
             className={promptBarButtonClassNames}
             tabIndex={tabIndex}

@@ -140,12 +140,15 @@ def get_message_dict(message: Message) -> dict[str, str]:
     else:
         return {"role": "assistant", "content": message.text}
 
-def get_system_prompt(user: User):
+def get_system_prompt(user: User | None = None):
     system_prompt = (
         "You are a helpful and nice AI personal assistant. "
         "Your role is to provide assistance to the user. "
         "Always answer the user concisely using one small phrase with simple words."
     )
+
+    if user is None:
+        return system_prompt
 
     custom_instructions = user.preferences.custom_instructions
     nickname = user.preferences.nickname

@@ -155,11 +155,11 @@ export default function Messages({ chatRef }: { chatRef: React.RefObject<HTMLDiv
     )
 }
 
-function UserMessage({ index, text, files, onEditClick }: { index: number, text: string, files: MessageFile[], onEditClick: VoidFunction }) {
+export function UserMessage({ index, text, files, onEditClick }: { index: number, text: string, files?: MessageFile[], onEditClick?: VoidFunction }) {
     return (
         <div className="flex flex-col gap-1 self-end">
             <div className="flex flex-col gap-3 px-4 py-3 wrap-anywhere whitespace-pre-wrap rounded-2xl bg-gray-800 light:bg-gray-200">
-                {files.length > 0 &&
+                {files && files.length > 0 &&
                     <div className="flex flex-wrap gap-2 p-2 rounded-xl border bg-gray-700 light:bg-gray-300 border-gray-200 light:border-gray-800">
                         <Attachments files={files} />
                     </div>
@@ -171,14 +171,14 @@ function UserMessage({ index, text, files, onEditClick }: { index: number, text:
             </div>
 
             <div className="flex self-end gap-2 px-2">
-                <EditButton onClick={onEditClick} />
+                {onEditClick && <EditButton onClick={onEditClick} />}
                 <CopyButton text={text} data-testid="copy" />
             </div>
         </div>
     )
 }
 
-function BotMessage({ index, text, model }: { index: number, text: string, model: Model | null }) {
+export function BotMessage({ index, text, model }: { index: number, text: string, model?: Model | null }) {
     return (
         <div className="flex flex-col gap-1">
             <div className="wrap-anywhere whitespace-pre-wrap" data-testid={`message-${index}`}>
@@ -243,7 +243,7 @@ function BotMessage({ index, text, model }: { index: number, text: string, model
 
             <div className="flex gap-2">
                 <CopyButton text={text} />
-                <RegenerateButton index={index} model={model} />
+                {model !== undefined && <RegenerateButton index={index} model={model} />}
             </div>
         </div>
     )

@@ -6,6 +6,7 @@ import { AddFilesButton, CancelButton, SelectModelButton, SendButton, StopButton
 import TextArea from "./TextArea"
 import { useChat } from "../providers/ChatProvider"
 import type { MessageFile, Model } from "../utils/types"
+import { stopPendingChats } from "../utils/api"
 
 export default function Composer({
     text,
@@ -38,7 +39,7 @@ export default function Composer({
     sendMessageWithEvent: (e: KeyboardEvent<HTMLTextAreaElement>) => void | (() => void)
     setIndex?: Dispatch<SetStateAction<number>>
 }) {
-    const { chats, isLoading } = useChat()
+    const { chats, setChats, isLoading } = useChat()
 
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -51,6 +52,11 @@ export default function Composer({
 
     const pendingChat = chats.find(c => c.pending_message_id !== null)
     const isSendButtonDisabled = (text.trim() === "" && files.length === 0) || pendingChat !== undefined || isLoading
+
+    function onStopClick() {
+        stopPendingChats()
+        setChats(previous => previous.map(c => ({ ...c, pending_message_id: null })))
+    }
 
     useEffect(() => {
         if (isWidthSmall) return
@@ -114,7 +120,7 @@ export default function Composer({
                             <SelectModelButton model={model} setModel={setModel} />
                             {setIndex && <CancelButton setIndex={setIndex!} tabIndex={tabIndex + 1} />}
                             {pendingChat !== undefined && pendingChat !== null ? (
-                                <StopButton tabIndex={tabIndex + 1} />
+                                <StopButton onClick={onStopClick} tabIndex={tabIndex + 1} />
                             ) : (
                                 <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} tabIndex={tabIndex + 1} />
                             )}
@@ -140,7 +146,7 @@ export default function Composer({
                         <SelectModelButton model={model} setModel={setModel} />
                         {setIndex && <CancelButton setIndex={setIndex} tabIndex={tabIndex + 1} />}
                         {pendingChat !== undefined && pendingChat !== null ? (
-                            <StopButton tabIndex={tabIndex + 1} />
+                            <StopButton onClick={onStopClick} tabIndex={tabIndex + 1} />
                         ) : (
                             <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} tabIndex={tabIndex + 1} />
                         )}

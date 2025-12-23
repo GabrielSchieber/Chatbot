@@ -38,7 +38,7 @@ export default function App() {
         <NotificationProvider>
             <Router>
                 <Routes>
-                    <Route path="/" element={isLoggedIn ? <Index /> : <Navigate to="/login" replace />} />
+                    <Route path="/" element={<Index />} />
                     <Route path="/chat/:chatUUID" element={isLoggedIn ? <Index /> : <Navigate to="/login" replace />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
