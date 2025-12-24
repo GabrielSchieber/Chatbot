@@ -166,6 +166,9 @@ def get_access_cookie_for_user(user: User):
 def get_communicator(headers = None):
     return WebsocketCommunicator(ChatConsumer.as_asgi(), "/ws/chat/", headers)
 
+def get_guest_communicator():
+    return WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest-chat/")
+
 def get_communicator_with_cookie(user: User):
     return get_communicator([(b"cookie", get_access_cookie_for_user(user).encode())])
 
@@ -176,6 +179,13 @@ async def connect_to_communicator_with_user():
     assert connected is True
     assert subprotocol is None
     return user, ws
+
+async def connect_to_communicator_as_guest():
+    ws = get_guest_communicator()
+    connected, subprotocol = await ws.connect()
+    assert connected is True
+    assert subprotocol is None
+    return ws
 
 async def assert_in(value: Any, container: Iterable[Any], timeout: float = 1, interval: float = 0.05):
     start = time.time()
@@ -195,16 +205,12 @@ async def assert_not_in(value: Any, container: Iterable[Any], timeout: float = 1
 
 @pytest.mark.asyncio
 async def test_guest_accept_connection():
-    ws = WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest/")
-    connected, subprotocol = await ws.connect()
-    assert connected is True
-    assert subprotocol is None
+    ws = await connect_to_communicator_as_guest()
     await ws.disconnect()
 
 @pytest.mark.asyncio
-async def test_guest_reject_non_dict_closes_connection():
-    ws = WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest/")
-    await ws.connect()
+async def test_guest_sending_str_closes_connection():
+    ws = await connect_to_communicator_as_guest()
     await ws.send_json_to("not a dict")
     output = await ws.receive_output()
     assert output["type"] == "websocket.close"
