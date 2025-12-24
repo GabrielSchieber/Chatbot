@@ -12,9 +12,9 @@ from freezegun import freeze_time
 from rest_framework_simplejwt.tokens import AccessToken
 
 from .utils import create_user
-from ..consumers import ChatConsumer
+from ..consumers import ChatConsumer, GuestChatConsumer, RedisTokenBucket
 from ..models import User
-from ..tasks import opened_chats
+from ..tasks import ollama_client, opened_chats
 
 @pytest.mark.asyncio
 async def test_reject_unauthenticated_connection():
@@ -192,3 +192,98 @@ async def assert_not_in(value: Any, container: Iterable[Any], timeout: float = 1
             return
         await asyncio.sleep(interval)
     raise AssertionError(f"The value '{value}' was found in the container '{container}'")
+
+@pytest.mark.asyncio
+async def test_guest_accept_connection():
+    ws = WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest/")
+    connected, subprotocol = await ws.connect()
+    assert connected is True
+    assert subprotocol is None
+    await ws.disconnect()
+
+@pytest.mark.asyncio
+async def test_guest_reject_non_dict_closes_connection():
+    ws = WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest/")
+    await ws.connect()
+    await ws.send_json_to("not a dict")
+    output = await ws.receive_output()
+    assert output["type"] == "websocket.close"
+    await ws.disconnect()
+
+@pytest.mark.asyncio
+async def test_guest_rate_limited(monkeypatch):
+    async def fake_allow(self, key, requested=1):
+        return False, 3.5
+
+    monkeypatch.setattr(RedisTokenBucket, "allow", fake_allow)
+
+    ws = WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest/")
+    await ws.connect()
+    await ws.send_json_to({"message": "Hi"})
+    response = await ws.receive_json_from()
+    assert response == {"error": "rate_limited", "retry_after": 3.5}
+    await ws.disconnect()
+
+@pytest.mark.asyncio
+async def test_guest_generate_message_streaming(monkeypatch):
+    async def fake_chat(model, messages, stream=True, options=None):
+        async def gen():
+            class Part:
+                def __init__(self, text):
+                    self.message = type("M", (), {"content": text})
+
+            for t in ["Hello", " world"]:
+                await asyncio.sleep(0.01)
+                yield Part(t)
+
+        return gen()
+
+    monkeypatch.setattr(ollama_client, "chat", fake_chat)
+
+    ws = WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest/")
+    await ws.connect()
+    await ws.send_json_to({"message": "Hi"})
+
+    resp1 = await ws.receive_json_from()
+    assert resp1 == {"token": "Hello", "message_index": 1}
+
+    resp2 = await ws.receive_json_from()
+    assert resp2 == {"token": " world", "message_index": 1}
+
+    resp3 = await ws.receive_json_from()
+    assert resp3 == {"message": "Hello world", "message_index": 1}
+
+    resp4 = await ws.receive_json_from()
+    assert resp4 == "end"
+
+    await ws.disconnect()
+
+@pytest.mark.asyncio
+async def test_guest_stop_cancels_task_and_allows_new_one(monkeypatch):
+    async def fake_chat(model, messages, stream=True, options=None):
+        async def gen():
+            class Part:
+                def __init__(self, text):
+                    self.message = type("M", (), {"content": text})
+
+            for t in ["a", "b", "c"]:
+                await asyncio.sleep(0.1)
+                yield Part(t)
+
+        return gen()
+
+    monkeypatch.setattr(ollama_client, "chat", fake_chat)
+
+    ws = WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest/")
+    await ws.connect()
+
+    await ws.send_json_to({"message": "first"})
+    await asyncio.sleep(0.02)
+
+    await ws.send_json_to("stop")
+
+    await ws.send_json_to({"message": "second"})
+    resp = await ws.receive_json_from()
+    assert resp.get("token") in ("a", "b", "c")
+
+    await ws.disconnect()
