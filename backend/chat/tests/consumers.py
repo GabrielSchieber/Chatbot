@@ -14,7 +14,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from .utils import create_user
 from ..consumers import ChatConsumer, GuestChatConsumer, RedisTokenBucket
 from ..models import User
-from ..tasks import ollama_client, opened_chats
+from ..tasks import ollama_client, opened_chats, generate_message
 
 @pytest.mark.asyncio
 async def test_reject_unauthenticated_connection():
@@ -123,6 +123,52 @@ async def test_receive_send_end_event(transactional_db):
 
     response = await ws.receive_json_from()
     assert response == "end"
+
+    await ws.disconnect()
+
+@pytest.mark.asyncio
+async def test_generate_message_streaming(transactional_db, monkeypatch):
+    user, ws = await connect_to_communicator_with_user()
+    chat = await user.chats.acreate(title = "Chat", is_temporary = True)
+
+    pending = await chat.messages.acreate(text = "", is_from_user = False, model = "SmolLM2-135M")
+    chat.pending_message = pending
+    await chat.asave(update_fields = ["pending_message"])
+
+    async def fake_chat(model, messages, stream = True, options = None):
+        async def gen():
+            class Part:
+                def __init__(self, text):
+                    self.message = type("M", (), {"content": text})
+
+            for t in ["Hello", " world"]:
+                await asyncio.sleep(0.01)
+                yield Part(t)
+
+        return gen()
+
+    monkeypatch.setattr(ollama_client, "chat", fake_chat)
+
+    await ws.send_json_to({"chat_uuid": str(chat.uuid)})
+    await assert_in(str(chat.uuid), opened_chats)
+
+    await generate_message(chat, False, False)
+
+    received_tokens = []
+    final_message = None
+
+    while True:
+        response = await ws.receive_json_from()
+        if response == "end":
+            break
+        if isinstance(response, dict) and response.get("token"):
+            received_tokens.append(response.get("token"))
+        if isinstance(response, dict) and response.get("message"):
+            final_message = response.get("message")
+
+    assembled = "".join(received_tokens)
+    result_text = final_message if final_message is not None else assembled
+    assert result_text == "Hello world"
 
     await ws.disconnect()
 
