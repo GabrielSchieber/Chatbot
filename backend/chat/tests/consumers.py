@@ -206,6 +206,19 @@ async def test_sending_invalid_chat_uuid_keeps_connection(transactional_db):
     assert await ws.receive_nothing(1, 0.05)
     await ws.disconnect()
 
+@pytest.mark.asyncio
+async def test_rate_limited(transactional_db, monkeypatch):
+    async def fake_allow(self, key, requested = 1):
+        return False, 3.5
+
+    monkeypatch.setattr(RedisTokenBucket, "allow", fake_allow)
+
+    user, ws = await connect_to_communicator_with_user()
+    await ws.send_json_to({"chat_uuid": str(uuid.uuid4())})
+    response = await ws.receive_json_from()
+    assert response == {"error": "rate_limited", "retry_after": 3.5}
+    await ws.disconnect()
+
 def get_access_cookie_for_user(user: User):
     return f"access_token={AccessToken.for_user(user)}"
 
