@@ -284,7 +284,7 @@ async def test_guest_rate_limited(monkeypatch):
 
     ws = WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest/")
     await ws.connect()
-    await ws.send_json_to({"message": "Hi"})
+    await ws.send_json_to({"text": "Hi"})
     response = await ws.receive_json_from()
     assert response == {"error": "rate_limited", "retry_after": 3.5}
     await ws.disconnect()
@@ -307,7 +307,7 @@ async def test_guest_generate_message_streaming(monkeypatch):
 
     ws = WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest/")
     await ws.connect()
-    await ws.send_json_to({"message": "Hi"})
+    await ws.send_json_to({"text": "Hi"})
 
     resp1 = await ws.receive_json_from()
     assert resp1 == {"token": "Hello", "message_index": 1}
@@ -342,12 +342,12 @@ async def test_guest_stop_cancels_task_and_allows_new_one(monkeypatch):
     ws = WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest/")
     await ws.connect()
 
-    await ws.send_json_to({"message": "first"})
+    await ws.send_json_to({"text": "first"})
     await asyncio.sleep(0.02)
 
     await ws.send_json_to("stop")
 
-    await ws.send_json_to({"message": "second"})
+    await ws.send_json_to({"text": "second"})
     resp = await ws.receive_json_from()
     assert resp.get("token") in ("a", "b", "c")
 
@@ -358,7 +358,7 @@ async def test_guest_sending_invalid_model_closes_connection():
     ws = await connect_to_communicator_as_guest()
 
     for model in ["invalid", None, False, True, -123, 0, 123, -1.23, 0.0, 1.23, [], {}]:
-        await ws.send_json_to({"message": "Hi", "model": model})
+        await ws.send_json_to({"text": "Hi", "model": model})
         output = await ws.receive_output()
         assert output["type"] == "websocket.close"
 
