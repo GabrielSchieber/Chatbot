@@ -10,6 +10,8 @@ from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
 from freezegun import freeze_time
 from rest_framework_simplejwt.tokens import AccessToken
+import base64
+import os
 
 from .utils import create_user
 from ..consumers import ChatConsumer, GuestChatConsumer, RedisTokenBucket
@@ -372,5 +374,75 @@ async def test_guest_sending_invalid_model_closes_connection():
         await ws.send_json_to({"text": "Hi", "model": model})
         output = await ws.receive_output()
         assert output["type"] == "websocket.close"
+
+    await ws.disconnect()
+
+@pytest.mark.asyncio
+async def test_guest_generate_message_with_files(monkeypatch):
+    async def fake_chat(model, messages, stream=True, options=None):
+        captured_messages.append(messages)
+        async def gen():
+            class Part:
+                def __init__(self, text):
+                    self.message = type("M", (), {"content": text})
+
+            for t in ["Hello", " world"]:
+                await asyncio.sleep(0.01)
+                yield Part(t)
+
+        return gen()
+
+    text_content = "This is a text file"
+    image_bytes = b"\x89PNG\r\n\x1a\nPNGDATA"
+    text_b64 = "data:application/octet-stream;base64," + base64.b64encode(text_content.encode()).decode()
+    image_b64 = "data:image/png;base64," + base64.b64encode(image_bytes).decode()
+
+    captured_messages = []
+    monkeypatch.setattr(ollama_client, "chat", fake_chat)
+
+    ws = WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest/")
+    await ws.connect()
+
+    files = [
+        {"name": "notes.txt", "content": text_b64, "content_type": "text/plain", "content_size": len(text_content)},
+        {"name": "pic.png", "content": image_b64, "content_type": "image/png", "content_size": len(image_bytes)},
+    ]
+
+    await ws.send_json_to({"text": "Hi", "files": files, "model": "SmolLM2-135M"})
+
+    received_tokens = []
+    final_message = None
+
+    while True:
+        response = await ws.receive_json_from()
+        if response == "end":
+            break
+        if isinstance(response, dict) and response.get("token"):
+            received_tokens.append(response.get("token"))
+        if isinstance(response, dict) and response.get("message"):
+            final_message = response.get("message")
+
+    assembled = "".join(received_tokens)
+    result_text = final_message if final_message is not None else assembled
+    assert result_text == "Hello world"
+
+    assert len(captured_messages) == 1
+    user_message = captured_messages[0][-1]
+    assert "Files:" in user_message["content"]
+    assert "notes.txt" in user_message["content"]
+    assert text_content in user_message["content"]
+
+    images = user_message.get("images", [])
+    assert len(images) == 1
+    image_path = images[0]
+    assert os.path.exists(image_path)
+    with open(image_path, "rb") as f:
+        assert f.read() == image_bytes
+
+    try:
+        os.remove(image_path)
+        os.rmdir(os.path.dirname(image_path))
+    except Exception:
+        pass
 
     await ws.disconnect()
