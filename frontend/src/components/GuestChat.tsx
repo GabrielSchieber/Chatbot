@@ -2,14 +2,14 @@ import { t } from "i18next"
 import { motion } from "motion/react"
 import React, { useEffect, useRef, useState } from "react"
 
-import { AddFilesButton, SendButton, StopButton } from "./Buttons"
+import { AddFilesButton, SelectModelButton, SendButton, StopButton } from "./Buttons"
 import { MAX_FILE_SIZE, MAX_FILES } from "./Chat"
 import { Files } from "./Composer"
 import { BotMessage, UserMessage } from "./Messages"
 import TextArea from "./TextArea"
 import { useNotify } from "../providers/NotificationProvider"
 import { getFileSize } from "../utils/misc"
-import type { Message, MessageFile } from "../utils/types"
+import type { Model, Message, MessageFile } from "../utils/types"
 
 export default function GuestChat() {
     const notify = useNotify()
@@ -24,6 +24,7 @@ export default function GuestChat() {
 
     const [text, setText] = useState("")
     const [files, setFiles] = useState<File[]>([])
+    const [model, setModel] = useState<Model>("SmolLM2-135M")
 
     const [messages, setMessages] = useState<Message[]>([])
 
@@ -87,7 +88,7 @@ export default function GuestChat() {
             content_type: f.type
         })))
 
-        webSocket.current.send(JSON.stringify({ "message": text, "files": filesToSend }))
+        webSocket.current.send(JSON.stringify({ "message": text, "files": filesToSend, "model": model }))
 
         setMessages(previous => {
             previous = [...previous]
@@ -320,6 +321,7 @@ export default function GuestChat() {
                             <div className="flex gap-1 items-center justify-between">
                                 <AddFilesButton fileInputRef={fileInputRef} />
 
+                                <SelectModelButton model={model} setModel={setModel} isMobile={isMobile} />
                                 {isPending ? (
                                     <StopButton onClick={onStopClick} tabIndex={2} />
                                 ) : (
@@ -343,6 +345,7 @@ export default function GuestChat() {
                                     tabIndex={1}
                                 />
 
+                                <SelectModelButton model={model} setModel={setModel} isMobile={isMobile} />
                                 {isPending ? (
                                     <StopButton onClick={onStopClick} tabIndex={2} />
                                 ) : (

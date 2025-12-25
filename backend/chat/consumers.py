@@ -11,7 +11,7 @@ from django.contrib.auth.models import AnonymousUser
 from jwt import decode as jwt_decode
 from redis import asyncio as aioredis
 
-from .models import User
+from .models import Message, User
 from .tasks import IS_PLAYWRIGHT_TEST, astop_pending_chat, get_ollama_model_and_options, get_system_prompt, ollama_client, opened_chats
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -119,43 +119,53 @@ class GuestChatConsumer(AsyncJsonWebsocketConsumer):
                 if type(file.get("name")) != str or type(file.get("content")) != str or type(file.get("content_type")) != str or type(file.get("content_size")) != int:
                     return await self.close()
 
+            model = content.get("model")
+            if type(model) != str:
+                return await self.close()
+            if model not in Message.available_models():
+                return await self.close()
+
             def done_callback(_):
                 self.task = None
 
-            self.task = asyncio.create_task(self.generate_message(user_message, user_files))
+            self.task = asyncio.create_task(self.generate_message(user_message, user_files, model))
             self.task.add_done_callback(done_callback)
         else:
             if content == "stop":
                 self.task.cancel()
                 self.task = None
 
-    async def generate_message(self, user_message: str, user_files: list[dict[str, str | int]]):
-        if len(user_files) > 0:
-            def base_64_to_bytes(data: str) -> bytes:
-                _, encoded = data.split(",", 1)
-                return base64.b64decode(encoded)
+    async def generate_message(self, user_message: str, user_files: list[dict[str, str | int]], model_name: str):
+        def get_user_message(text: str, files: list[dict[str, str | int]]):
+            if len(files) > 0:
+                def base_64_to_bytes(data: str) -> bytes:
+                    _, encoded = data.split(",", 1)
+                    return base64.b64decode(encoded)
 
-            images = []
-            file_contents = []
-            for file in user_files:
-                file_content = base_64_to_bytes(file["content"])
+                images = []
+                file_contents = []
+                for file in files:
+                    file_content = base_64_to_bytes(file["content"])
 
-                if "image" in file["content_type"]:
-                    os.makedirs("chat_temp", exist_ok = True)
-                    with open(f"chat_temp/{file["name"]}", "wb+") as writer:
-                        writer.write(file_content)
-                    images.append(f"chat_temp/{file["name"]}")
-                else:
-                    file_contents.append(f"=== File: {file["name"]} ===\n{file_content.decode()}")
+                    if "image" in file["content_type"]:
+                        os.makedirs("chat_temp", exist_ok = True)
+                        with open(f"chat_temp/{file["name"]}", "wb+") as writer:
+                            writer.write(file_content)
+                        images.append(f"chat_temp/{file["name"]}")
+                    else:
+                        file_contents.append(f"=== File: {file["name"]} ===\n{file_content.decode()}")
 
-            content = f"{user_message}\n\nFiles:\n\n{"\n\n".join(file_contents)}" if len(file_contents) > 0 else user_message
-            self.messages.extend([{"role": "user", "content": content, "images": images}, {"role": "assistant", "content": ""}])
-        else:
-            self.messages.extend([{"role": "user", "content": user_message}, {"role": "assistant", "content": ""}])
+                content = f"{text}\n\nFiles:\n\n{"\n\n".join(file_contents)}" if len(file_contents) > 0 else text
+                return {"role": "user", "content": content, "images": images}
+            else:
+                return {"role": "user", "content": text}
 
+        self.messages.extend([get_user_message(user_message, user_files), {"role": "assistant", "content": ""}])
         message_index = len(self.messages) - 2
 
-        async for part in await ollama_client.chat(guest_model, self.messages[:-1], stream = True, options = guest_options):
+        model, options = get_ollama_model_and_options(model_name)
+
+        async for part in await ollama_client.chat(model, self.messages[:-1], stream = True, options = options):
             await asyncio.sleep(0.05)
 
             token = part.message.content
@@ -174,11 +184,6 @@ class GuestChatConsumer(AsyncJsonWebsocketConsumer):
             client = self.scope.get("client")
             ip = client[0] if client else "unknown"
         return ip
-
-guest_model, guest_options = get_ollama_model_and_options("SmolLM2-135M")
-if IS_PLAYWRIGHT_TEST:
-    guest_options["num_predict"] = 64
-    guest_options["seed"] = 0
 
 _TOKEN_BUCKET_LUA = """
 local key = KEYS[1]

@@ -39,7 +39,7 @@ export default function Composer({
     sendMessageWithEvent: (e: KeyboardEvent<HTMLTextAreaElement>) => void | (() => void)
     setIndex?: Dispatch<SetStateAction<number>>
 }) {
-    const { chats, setChats, isLoading } = useChat()
+    const { chats, setChats, isLoading, isMobile } = useChat()
 
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -117,7 +117,7 @@ export default function Composer({
                         <AddFilesButton fileInputRef={fileInputRef} />
 
                         <div className="flex gap-1">
-                            <SelectModelButton model={model} setModel={setModel} />
+                            <SelectModelButton model={model} setModel={setModel} isMobile={isMobile} />
                             {setIndex && <CancelButton setIndex={setIndex!} tabIndex={tabIndex + 1} />}
                             {pendingChat !== undefined && pendingChat !== null ? (
                                 <StopButton onClick={onStopClick} tabIndex={tabIndex + 1} />
@@ -143,7 +143,7 @@ export default function Composer({
                             tabIndex={tabIndex}
                         />
 
-                        <SelectModelButton model={model} setModel={setModel} />
+                        <SelectModelButton model={model} setModel={setModel} isMobile={isMobile} />
                         {setIndex && <CancelButton setIndex={setIndex} tabIndex={tabIndex + 1} />}
                         {pendingChat !== undefined && pendingChat !== null ? (
                             <StopButton onClick={onStopClick} tabIndex={tabIndex + 1} />

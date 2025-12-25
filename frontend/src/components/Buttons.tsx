@@ -24,9 +24,9 @@ export function AddFilesButton({ fileInputRef, tabIndex = 2 }: { fileInputRef: R
     )
 }
 
-export function SelectModelButton({ model, setModel, tabIndex = 2 }: { model: Model, setModel: Dispatch<SetStateAction<Model>>, tabIndex?: number }) {
-    const { isMobile } = useChat()
-
+export function SelectModelButton(
+    { model, setModel, isMobile, tabIndex = 2 }: { model: Model, setModel: Dispatch<SetStateAction<Model>>, isMobile: boolean, tabIndex?: number }
+) {
     return (
         <Select.Root value={model} onValueChange={v => setModel(v as Model)}>
             <TooltipButton
