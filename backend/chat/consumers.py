@@ -106,20 +106,20 @@ class GuestChatConsumer(AsyncJsonWebsocketConsumer):
             if type(content) != dict:
                 return await self.close()
 
-            user_message = content.get("message")
-            if type(user_message) != str:
+            text = content.get("text", "")
+            if type(text) != str:
                 return await self.close()
 
-            user_files = content.get("files", [])
-            if type(user_files) != list:
+            files = content.get("files", [])
+            if type(files) != list:
                 return await self.close()
-            for file in user_files:
+            for file in files:
                 if type(file) != dict:
                     return await self.close()
                 if type(file.get("name")) != str or type(file.get("content")) != str or type(file.get("content_type")) != str or type(file.get("content_size")) != int:
                     return await self.close()
 
-            model = content.get("model")
+            model = content.get("model", "SmolLM2-135M")
             if type(model) != str:
                 return await self.close()
             if model not in Message.available_models():
@@ -128,16 +128,18 @@ class GuestChatConsumer(AsyncJsonWebsocketConsumer):
             def done_callback(_):
                 self.task = None
 
-            self.task = asyncio.create_task(self.generate_message(user_message, user_files, model))
+            self.task = asyncio.create_task(self.generate_message(text, files, model))
             self.task.add_done_callback(done_callback)
         else:
             if content == "stop":
                 self.task.cancel()
                 self.task = None
 
-    async def generate_message(self, user_message: str, user_files: list[dict[str, str | int]], model_name: str):
+    async def generate_message(self, text: str, files: list[dict[str, str | int]], model: str):
         def get_user_message(text: str, files: list[dict[str, str | int]]):
-            if len(files) > 0:
+            if len(files) == 0:
+                return {"role": "user", "content": text}
+            else:
                 def base_64_to_bytes(data: str) -> bytes:
                     _, encoded = data.split(",", 1)
                     return base64.b64decode(encoded)
@@ -157,13 +159,11 @@ class GuestChatConsumer(AsyncJsonWebsocketConsumer):
 
                 content = f"{text}\n\nFiles:\n\n{"\n\n".join(file_contents)}" if len(file_contents) > 0 else text
                 return {"role": "user", "content": content, "images": images}
-            else:
-                return {"role": "user", "content": text}
 
-        self.messages.extend([get_user_message(user_message, user_files), {"role": "assistant", "content": ""}])
+        self.messages.extend([get_user_message(text, files), {"role": "assistant", "content": ""}])
         message_index = len(self.messages) - 2
 
-        model, options = get_ollama_model_and_options(model_name)
+        model, options = get_ollama_model_and_options(model)
 
         async for part in await ollama_client.chat(model, self.messages[:-1], stream = True, options = options):
             await asyncio.sleep(0.05)
