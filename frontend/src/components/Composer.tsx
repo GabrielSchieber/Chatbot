@@ -130,7 +130,7 @@ export default function Composer({
             ) : (
                 <>
                     <Files files={files} onRemoveFile={onRemoveFile} onRemoveAllFiles={onRemoveAllFiles} overflowYAuto={true} />
-                    <div className="flex gap-1 items-center overflow-x-hidden overflow-y-auto">
+                    <div className="flex min-h-fit gap-1 items-center overflow-x-hidden overflow-y-auto">
                         <AddFilesButton fileInputRef={fileInputRef} />
 
                         <TextArea
