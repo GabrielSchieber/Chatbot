@@ -2,19 +2,36 @@ import { t } from "i18next"
 import { motion } from "motion/react"
 import React, { useEffect, useRef, useState } from "react"
 
-import { SendButton, StopButton } from "./Buttons"
+import { AddFilesButton, SendButton, StopButton } from "./Buttons"
+import { MAX_FILE_SIZE, MAX_FILES } from "./Chat"
+import { Files } from "./Composer"
 import { BotMessage, UserMessage } from "./Messages"
 import TextArea from "./TextArea"
+import { useNotify } from "../providers/NotificationProvider"
+import { getFileSize } from "../utils/misc"
+import type { Message, MessageFile } from "../utils/types"
 
 export default function GuestChat() {
+    const notify = useNotify()
+
     const webSocket = useRef<WebSocket | null>(null)
+
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
+    const fileInputRef = useRef<HTMLInputElement | null>(null)
+
     const selectionStart = useRef(0)
     const selectionEnd = useRef(0)
 
     const [text, setText] = useState("")
-    const [messages, setMessages] = useState<string[]>([])
+    const [files, setFiles] = useState<File[]>([])
+
+    const [messages, setMessages] = useState<Message[]>([])
+
     const [isPending, setIsPending] = useState(false)
+
+    const [isComposerExtended, setIsComposerExtended] = useState(false)
+
+    const [isWidthSmall, setIsWidthSmall] = useState(window.innerWidth < 425)
     const [isMobile, setIsMobile] = useState(window.innerWidth < 750)
 
     function receiveMessage(e: MessageEvent<any>) {
@@ -28,10 +45,13 @@ export default function GuestChat() {
 
                     previous = [...previous]
 
-                    if (data.token) {
-                        previous[data.message_index] += data.token
-                    } else {
-                        previous[data.message_index] = data.message
+                    const message = previous[data.message_index]
+                    if (message) {
+                        if (data.token) {
+                            message.text += data.token
+                        } else {
+                            message.text = data.message
+                        }
                     }
                 }
 
@@ -42,23 +62,129 @@ export default function GuestChat() {
         }
     }
 
-    function sendMessage() {
+    async function sendMessage() {
         if (!webSocket.current || webSocket.current.readyState !== WebSocket.OPEN) return
 
-        webSocket.current.send(JSON.stringify({ "message": text }))
+        function blobToBase64(blob: Blob): Promise<string> {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader()
+                reader.onloadend = () => {
+                    if (typeof reader.result === "string") {
+                        resolve(reader.result)
+                    } else {
+                        reject("Failed to convert blob to base64")
+                    }
+                }
+                reader.onerror = reject
+                reader.readAsDataURL(blob)
+            })
+        }
 
-        setMessages(previous => [...previous, text, ""])
+        const filesToSend = await Promise.all(files.map(async f => ({
+            name: f.name,
+            content: await blobToBase64(f),
+            content_size: f.size,
+            content_type: f.type
+        })))
+
+        webSocket.current.send(JSON.stringify({ "message": text, "files": filesToSend }))
+
+        setMessages(previous => {
+            previous = [...previous]
+
+            let highestID = 1
+            for (const message of previous) {
+                if (message.id >= highestID) {
+                    highestID = message.id + 1
+                }
+            }
+
+            previous.push(
+                {
+                    id: highestID,
+                    text: text,
+                    is_from_user: true,
+                    model: "",
+                    files: files.map((f, i) => ({ id: i, name: f.name, content: f.slice(), content_size: f.size, content_type: f.type })),
+                },
+                {
+                    id: highestID + 1,
+                    text: "",
+                    is_from_user: false,
+                    model: "",
+                    files: []
+                }
+            )
+
+            return previous
+        })
+
         setText("")
+        setFiles([])
+
         setIsPending(true)
     }
 
-    function sendMessageWithEvent(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    async function sendMessageWithEvent(e: React.KeyboardEvent<HTMLTextAreaElement>) {
         if (e.key === "Enter" && !e.shiftKey && text.trim() !== "") {
             e.preventDefault()
             if (!isPending) {
-                sendMessage()
+                await sendMessage()
             }
         }
+    }
+
+    function getMessageFiles() {
+        return files.map((f, i) => ({ id: i, name: f.name, content: f.slice(), content_size: f.size, content_type: f.type }))
+    }
+
+    function onRemoveFile(file: MessageFile) {
+        setFiles(previous => previous.filter(p => p.name + "|" + p.size !== file.name + "|" + file.content_size))
+    }
+
+    function onRemoveAllFiles() {
+        setFiles([])
+    }
+
+    function onStopClick() {
+        if (!webSocket.current || webSocket.current.readyState !== WebSocket.OPEN) return
+
+        webSocket.current.send(JSON.stringify("end"))
+        setIsPending(false)
+    }
+
+    function onChangeFile(e: React.ChangeEvent<HTMLInputElement>) {
+        if (!e.target.files) return
+
+        if (files.length + e.target.files.length > MAX_FILES) {
+            notify(t("prompt.file.error.tooMany", { max: MAX_FILES }), "error")
+            e.target.value = ""
+            return
+        }
+
+        const newFiles = Array.from(e.target.files)
+
+        if (newFiles.some(f => f.size === 0)) {
+            notify(t("prompt.file.error.empty"), "error")
+            e.target.value = ""
+            return
+        }
+
+        const currentTotal = files.map(f => f.size).reduce((a, b) => a + b, 0)
+        const newTotal = newFiles.map(f => f.size).reduce((a, b) => a + b, 0)
+
+        if (currentTotal + newTotal > MAX_FILE_SIZE) {
+            notify(t("prompt.file.error.tooLarge", { limit: getFileSize(MAX_FILE_SIZE) }), "error")
+            e.target.value = ""
+            return
+        }
+
+        const currentKeys = new Set(files.map(f => f.name + "|" + f.size))
+        const newUniqueFiles = newFiles.filter(f => !currentKeys.has(f.name + "|" + f.size))
+
+        setFiles(previous => [...previous, ...newUniqueFiles])
+
+        e.target.value = ""
     }
 
     useEffect(() => {
@@ -74,9 +200,28 @@ export default function GuestChat() {
         }
     }, [])
 
+    useEffect(() => {
+        if (isWidthSmall) return
+        setIsComposerExtended(isComposerExtended ? text !== "" : text.split("\n").length > 1 || (textAreaRef.current?.clientHeight || 0) > 48)
+    }, [text, textAreaRef.current?.clientHeight])
+
+    useEffect(() => {
+        textAreaRef.current?.setSelectionRange(selectionStart.current, selectionEnd.current)
+        textAreaRef.current?.focus()
+    }, [isComposerExtended, textAreaRef.current, selectionStart.current, selectionEnd.current])
+
+    useEffect(() => {
+        setIsComposerExtended(isWidthSmall)
+    }, [isWidthSmall])
 
     useEffect(() => {
         const onResize = () => setIsMobile(window.innerWidth < 750)
+        window.addEventListener("resize", onResize)
+        return () => window.removeEventListener("resize", onResize)
+    }, [])
+
+    useEffect(() => {
+        const onResize = () => setIsWidthSmall(window.innerWidth < 425)
         window.addEventListener("resize", onResize)
         return () => window.removeEventListener("resize", onResize)
     }, [])
@@ -115,10 +260,10 @@ export default function GuestChat() {
             <div className={`flex flex-col ${isMobile ? "w-full px-5" : "w-[60vw]"} ${messages.length > 0 ? "mb-auto py-15" : "mb-[25%]"}`}>
                 {messages.map((m, i) =>
                     <React.Fragment key={i}>
-                        {i % 2 === 0 ? (
-                            <UserMessage index={i} text={m} />
+                        {m.is_from_user ? (
+                            <UserMessage index={i} text={m.text} files={m.files} />
                         ) : (
-                            <BotMessage index={i} text={m} />
+                            <BotMessage index={i} text={m.text} />
                         )}
                     </React.Fragment>
                 )}
@@ -141,9 +286,10 @@ export default function GuestChat() {
                     layout={!window.matchMedia("(prefers-reduced-motion)").matches}
                     transition={{ type: "tween", duration: 0.15 }}
                     className={`
-                        flex w-full max-h-[50vh] mb-5 px-4 py-1 overflow-hidden rounded-4xl
-                        shadow-xl/50 border-t-4 border-gray-600 light:border-gray-400 bg-gray-800 light:bg-gray-200
-                        ${text.split("\n").length > 1 || (textAreaRef.current?.clientHeight || 0) > 48 ? "items-end" : "items-center"}
+                        flex flex-col w-full max-h-[50vh] overflow-hidden rounded-4xl bg-gray-800 light:bg-gray-200
+                        ${files.length > 0 ? "gap-2 px-4" : "px-3"}
+                        ${files.length > 0 || isComposerExtended ? "pt-3 pb-2" : "py-1"}
+                        mb-5 border-t-4 border-gray-600 light:border-gray-400 shadow-xl/50
                     `}
                     onClick={e => {
                         if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
@@ -153,26 +299,57 @@ export default function GuestChat() {
                     }}
                     aria-label="Message composer"
                 >
-                    <TextArea
-                        ref={textAreaRef}
-                        text={text}
-                        setText={setText}
-                        sendMessageWithEvent={sendMessageWithEvent}
-                        selectionStart={selectionStart}
-                        selectionEnd={selectionEnd}
-                        tabIndex={1}
-                    />
+                    <input ref={fileInputRef} className="hidden" type="file" onChange={onChangeFile} tabIndex={-1} aria-hidden multiple />
 
-                    {isPending ? (
-                        <StopButton
-                            onClick={() => {
-                                setIsPending(false)
-                                webSocket.current?.send(JSON.stringify("end"))
-                            }}
-                            tabIndex={2}
-                        />
+                    {isComposerExtended ? (
+                        <>
+                            <div className="flex flex-col gap-1 overflow-x-hidden overflow-y-auto">
+                                <Files files={getMessageFiles()} onRemoveFile={onRemoveFile} onRemoveAllFiles={onRemoveAllFiles} overflowYAuto={false} />
+
+                                <TextArea
+                                    ref={textAreaRef}
+                                    text={text}
+                                    setText={setText}
+                                    sendMessageWithEvent={sendMessageWithEvent}
+                                    selectionStart={selectionStart}
+                                    selectionEnd={selectionEnd}
+                                    tabIndex={1}
+                                />
+                            </div>
+
+                            <div className="flex gap-1 items-center justify-between">
+                                <AddFilesButton fileInputRef={fileInputRef} />
+
+                                {isPending ? (
+                                    <StopButton onClick={onStopClick} tabIndex={2} />
+                                ) : (
+                                    <SendButton sendMessage={sendMessage} isDisabled={isPending || text.trim() === ""} tabIndex={2} />
+                                )}
+                            </div>
+                        </>
                     ) : (
-                        <SendButton sendMessage={sendMessage} isDisabled={isPending} tabIndex={2} />
+                        <>
+                            <Files files={getMessageFiles()} onRemoveFile={onRemoveFile} onRemoveAllFiles={onRemoveAllFiles} overflowYAuto={true} />
+                            <div className="flex gap-1 items-center overflow-x-hidden overflow-y-auto">
+                                <AddFilesButton fileInputRef={fileInputRef} />
+
+                                <TextArea
+                                    ref={textAreaRef}
+                                    text={text}
+                                    setText={setText}
+                                    sendMessageWithEvent={sendMessageWithEvent}
+                                    selectionStart={selectionStart}
+                                    selectionEnd={selectionEnd}
+                                    tabIndex={1}
+                                />
+
+                                {isPending ? (
+                                    <StopButton onClick={onStopClick} tabIndex={2} />
+                                ) : (
+                                    <SendButton sendMessage={sendMessage} isDisabled={isPending || text.trim() === ""} tabIndex={2} />
+                                )}
+                            </div>
+                        </>
                     )}
                 </motion.div>
             </div>

@@ -157,7 +157,7 @@ export default function Composer({
     )
 }
 
-function Files({
+export function Files({
     files,
     onRemoveFile,
     onRemoveAllFiles,

@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import logging
 import os
 import time
@@ -109,18 +110,49 @@ class GuestChatConsumer(AsyncJsonWebsocketConsumer):
             if type(user_message) != str:
                 return await self.close()
 
+            user_files = content.get("files", [])
+            if type(user_files) != list:
+                return await self.close()
+            for file in user_files:
+                if type(file) != dict:
+                    return await self.close()
+                if type(file.get("name")) != str or type(file.get("content")) != str or type(file.get("content_type")) != str or type(file.get("content_size")) != int:
+                    return await self.close()
+
             def done_callback(_):
                 self.task = None
 
-            self.task = asyncio.create_task(self.generate_message(user_message))
+            self.task = asyncio.create_task(self.generate_message(user_message, user_files))
             self.task.add_done_callback(done_callback)
         else:
             if content == "stop":
                 self.task.cancel()
                 self.task = None
 
-    async def generate_message(self, user_message: str):      
-        self.messages.extend([{"role": "user", "content": user_message}, {"role": "assistant", "content": ""}])
+    async def generate_message(self, user_message: str, user_files: list[dict[str, str | int]]):
+        if len(user_files) > 0:
+            def base_64_to_bytes(data: str) -> bytes:
+                _, encoded = data.split(",", 1)
+                return base64.b64decode(encoded)
+
+            images = []
+            file_contents = []
+            for file in user_files:
+                file_content = base_64_to_bytes(file["content"])
+
+                if "image" in file["content_type"]:
+                    os.makedirs("chat_temp", exist_ok = True)
+                    with open(f"chat_temp/{file["name"]}", "wb+") as writer:
+                        writer.write(file_content)
+                    images.append(f"chat_temp/{file["name"]}")
+                else:
+                    file_contents.append(f"=== File: {file["name"]} ===\n{file_content.decode()}")
+
+            content = f"{user_message}\n\nFiles:\n\n{"\n\n".join(file_contents)}" if len(file_contents) > 0 else user_message
+            self.messages.extend([{"role": "user", "content": content, "images": images}, {"role": "assistant", "content": ""}])
+        else:
+            self.messages.extend([{"role": "user", "content": user_message}, {"role": "assistant", "content": ""}])
+
         message_index = len(self.messages) - 2
 
         async for part in await ollama_client.chat(guest_model, self.messages[:-1], stream = True, options = guest_options):
