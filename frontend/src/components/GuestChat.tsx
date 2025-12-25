@@ -3,12 +3,11 @@ import { motion } from "motion/react"
 import React, { useEffect, useRef, useState } from "react"
 
 import { AddFilesButton, SelectModelButton, SendButton, StopButton } from "./Buttons"
-import { MAX_FILE_SIZE, MAX_FILES } from "./Chat"
 import { Files } from "./Composer"
 import { BotMessage, UserMessage } from "./Messages"
+import { handleFileChange } from "./Prompt"
 import TextArea from "./TextArea"
 import { useNotify } from "../providers/NotificationProvider"
-import { getFileSize } from "../utils/misc"
 import type { Model, Message, MessageFile } from "../utils/types"
 
 export default function GuestChat() {
@@ -154,40 +153,6 @@ export default function GuestChat() {
         setIsPending(false)
     }
 
-    function onChangeFile(e: React.ChangeEvent<HTMLInputElement>) {
-        if (!e.target.files) return
-
-        if (files.length + e.target.files.length > MAX_FILES) {
-            notify(t("prompt.file.error.tooMany", { max: MAX_FILES }), "error")
-            e.target.value = ""
-            return
-        }
-
-        const newFiles = Array.from(e.target.files)
-
-        if (newFiles.some(f => f.size === 0)) {
-            notify(t("prompt.file.error.empty"), "error")
-            e.target.value = ""
-            return
-        }
-
-        const currentTotal = files.map(f => f.size).reduce((a, b) => a + b, 0)
-        const newTotal = newFiles.map(f => f.size).reduce((a, b) => a + b, 0)
-
-        if (currentTotal + newTotal > MAX_FILE_SIZE) {
-            notify(t("prompt.file.error.tooLarge", { limit: getFileSize(MAX_FILE_SIZE) }), "error")
-            e.target.value = ""
-            return
-        }
-
-        const currentKeys = new Set(files.map(f => f.name + "|" + f.size))
-        const newUniqueFiles = newFiles.filter(f => !currentKeys.has(f.name + "|" + f.size))
-
-        setFiles(previous => [...previous, ...newUniqueFiles])
-
-        e.target.value = ""
-    }
-
     useEffect(() => {
         if (webSocket.current) return
 
@@ -300,7 +265,15 @@ export default function GuestChat() {
                     }}
                     aria-label="Message composer"
                 >
-                    <input ref={fileInputRef} className="hidden" type="file" onChange={onChangeFile} tabIndex={-1} aria-hidden multiple />
+                    <input
+                        ref={fileInputRef}
+                        className="hidden"
+                        type="file"
+                        onChange={e => handleFileChange(e, files, setFiles, notify)}
+                        tabIndex={-1}
+                        aria-hidden
+                        multiple
+                    />
 
                     {isComposerExtended ? (
                         <>
@@ -321,12 +294,14 @@ export default function GuestChat() {
                             <div className="flex gap-1 items-center justify-between">
                                 <AddFilesButton fileInputRef={fileInputRef} />
 
-                                <SelectModelButton model={model} setModel={setModel} isMobile={isMobile} />
-                                {isPending ? (
-                                    <StopButton onClick={onStopClick} tabIndex={2} />
-                                ) : (
-                                    <SendButton sendMessage={sendMessage} isDisabled={isPending || text.trim() === ""} tabIndex={2} />
-                                )}
+                                <div className="flex gap-1">
+                                    <SelectModelButton model={model} setModel={setModel} isMobile={isMobile} />
+                                    {isPending ? (
+                                        <StopButton onClick={onStopClick} tabIndex={2} />
+                                    ) : (
+                                        <SendButton sendMessage={sendMessage} isDisabled={isPending || text.trim() === ""} tabIndex={2} />
+                                    )}
+                                </div>
                             </div>
                         </>
                     ) : (

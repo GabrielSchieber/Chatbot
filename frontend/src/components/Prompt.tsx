@@ -84,40 +84,6 @@ export default function Prompt() {
         }
     }
 
-    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-        if (!e.target.files) return
-
-        if (files.length + e.target.files.length > MAX_FILES) {
-            notify(t("prompt.file.error.tooMany", { max: MAX_FILES }), "error")
-            e.target.value = ""
-            return
-        }
-
-        const newFiles = Array.from(e.target.files)
-
-        if (newFiles.some(f => f.size === 0)) {
-            notify(t("prompt.file.error.empty"), "error")
-            e.target.value = ""
-            return
-        }
-
-        const currentTotal = files.map(f => f.size).reduce((a, b) => a + b, 0)
-        const newTotal = newFiles.map(f => f.size).reduce((a, b) => a + b, 0)
-
-        if (currentTotal + newTotal > MAX_FILE_SIZE) {
-            notify(t("prompt.file.error.tooLarge", { limit: getFileSize(MAX_FILE_SIZE) }), "error")
-            e.target.value = ""
-            return
-        }
-
-        const currentKeys = new Set(files.map(f => f.name + "|" + f.size))
-        const newUniqueFiles = newFiles.filter(f => !currentKeys.has(f.name + "|" + f.size))
-
-        setFiles(previous => [...previous, ...newUniqueFiles])
-
-        e.target.value = ""
-    }
-
     useEffect(() => {
         if (!ref.current) return
 
@@ -183,7 +149,7 @@ export default function Prompt() {
                     withBorderAndShadow={true}
                     tabIndex={1}
                     ariaLabel="Message composer"
-                    onChangeFile={handleFileChange}
+                    onChangeFile={e => handleFileChange(e, files, setFiles, notify)}
                     onRemoveFile={f => setFiles(previous => previous.filter(p => p.name + "|" + p.size !== f.name + "|" + f.content_size))}
                     onRemoveAllFiles={() => setFiles([])}
                     sendMessage={sendMessage}
@@ -192,4 +158,43 @@ export default function Prompt() {
             </div>
         )
     )
+}
+
+export function handleFileChange(
+    e: React.ChangeEvent<HTMLInputElement>,
+    files: File[],
+    setFiles: React.Dispatch<React.SetStateAction<File[]>>,
+    notify: (message: string, type: "info" | "success" | "error") => void
+) {
+    if (!e.target.files) return
+
+    if (files.length + e.target.files.length > MAX_FILES) {
+        notify(t("prompt.file.error.tooMany", { max: MAX_FILES }), "error")
+        e.target.value = ""
+        return
+    }
+
+    const newFiles = Array.from(e.target.files)
+
+    if (newFiles.some(f => f.size === 0)) {
+        notify(t("prompt.file.error.empty"), "error")
+        e.target.value = ""
+        return
+    }
+
+    const currentTotal = files.map(f => f.size).reduce((a, b) => a + b, 0)
+    const newTotal = newFiles.map(f => f.size).reduce((a, b) => a + b, 0)
+
+    if (currentTotal + newTotal > MAX_FILE_SIZE) {
+        notify(t("prompt.file.error.tooLarge", { limit: getFileSize(MAX_FILE_SIZE) }), "error")
+        e.target.value = ""
+        return
+    }
+
+    const currentKeys = new Set(files.map(f => f.name + "|" + f.size))
+    const newUniqueFiles = newFiles.filter(f => !currentKeys.has(f.name + "|" + f.size))
+
+    setFiles(previous => [...previous, ...newUniqueFiles])
+
+    e.target.value = ""
 }
