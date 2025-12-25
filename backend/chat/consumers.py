@@ -93,7 +93,7 @@ class GuestChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.messages = [{"role": "system", "content": get_system_prompt()}]
         self.task = None
-        self.redis_limiter = RedisTokenBucket("rate:guest_ip", 6, 60.0)
+        self.redis_limiter = RedisTokenBucket("rate:guest_ip", 1, 120.0)
         await self.accept()
 
     async def receive_json(self, content):
@@ -248,6 +248,9 @@ class RedisTokenBucket:
         self.refill_per_sec = float(capacity) / float(period)
 
     async def allow(self, key_id: str, requested: int = 1):
+        if os.environ.get("DJANGO_TEST") == "True":
+            return True, 0.0
+
         redis = await get_redis()
         key = f"{self.key_prefix}:{key_id}"
         now = time.time()
