@@ -482,3 +482,21 @@ async def test_guest_generate_message_with_incorrect_data_type_for_individual_fi
         assert output["type"] == "websocket.close"
 
     await ws.disconnect()
+
+@pytest.mark.asyncio
+async def test_guest_generate_message_with_correct_data_type_for_individual_files():
+    ws = WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest/")
+    await ws.connect()
+
+    file = {
+        "name": "notes.txt",
+        "content": "data:application/octet-stream;base64," + base64.b64encode(b"This is a text file").decode(),
+        "content_type": "text/plain",
+        "content_size": 19,
+    }
+
+    await ws.send_json_to({"files": [file]})
+    output = await ws.receive_output()
+    assert output["type"] == "websocket.send"
+
+    await ws.disconnect()
