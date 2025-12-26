@@ -124,6 +124,8 @@ class GuestChatConsumer(AsyncJsonWebsocketConsumer):
                 return await self.close()
             if model not in Message.available_models():
                 return await self.close()
+            if model == "":
+                model = "SmolLM2-135M"
 
             def done_callback(_):
                 self.task = None

@@ -359,7 +359,7 @@ async def test_guest_stop_cancels_task_and_allows_new_one(monkeypatch):
 async def test_guest_sending_valid_model_allows_connection():
     ws = await connect_to_communicator_as_guest()
 
-    for model in ["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]:
+    for model in ["", "SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]:
         await ws.send_json_to({"text": "Hi", "model": model})
         output = await ws.receive_output()
         assert output["type"] == "websocket.send"
