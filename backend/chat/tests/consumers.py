@@ -470,3 +470,15 @@ async def test_guest_generate_message_with_incorrect_data_type_for_files():
         assert output["type"] == "websocket.close"
 
     await ws.disconnect()
+
+@pytest.mark.asyncio
+async def test_guest_generate_message_with_incorrect_data_type_for_individual_files():
+    ws = WebsocketCommunicator(GuestChatConsumer.as_asgi(), "/ws/guest/")
+    await ws.connect()
+
+    for file in [None, False, True, -123, 0, 123, -1.23, 0.0, 1.23, "", [], {}]:
+        await ws.send_json_to({"files": [file]})
+        output = await ws.receive_output()
+        assert output["type"] == "websocket.close"
+
+    await ws.disconnect()

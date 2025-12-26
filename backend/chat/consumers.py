@@ -118,6 +118,8 @@ class GuestChatConsumer(AsyncJsonWebsocketConsumer):
                     return await self.close()
                 if type(file.get("name")) != str or type(file.get("content")) != str or type(file.get("content_type")) != str or type(file.get("content_size")) != int:
                     return await self.close()
+                if file["name"] == "" or file["content"] == "" or file["content_type"] == "" or file["content_size"] < 0:
+                    return await self.close()
 
             model = content.get("model", "SmolLM2-135M")
             if type(model) != str:
