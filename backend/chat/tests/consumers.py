@@ -1,4 +1,6 @@
 import asyncio
+import base64
+import os
 import time
 import uuid
 from datetime import datetime
@@ -10,8 +12,6 @@ from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
 from freezegun import freeze_time
 from rest_framework_simplejwt.tokens import AccessToken
-import base64
-import os
 
 from .utils import create_user
 from ..consumers import ChatConsumer, GuestChatConsumer, RedisTokenBucket

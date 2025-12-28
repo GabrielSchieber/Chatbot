@@ -9,7 +9,6 @@ from freezegun import freeze_time
 
 from .utils import create_user
 from .. import models
-from ..totp_utils import generate_code, generate_secret
 
 class User(TestCase):
     def test_creation(self):
@@ -192,8 +191,8 @@ class UserMFA(TestCase):
         user.mfa.setup()
         backup_codes = user.mfa.enable()
     
-        self.assertFalse(user.mfa.verify(generate_code(generate_secret()[1])))
-        self.assertTrue(user.mfa.verify(generate_code(user.mfa.secret)))
+        self.assertFalse(user.mfa.verify(models.UserMFA.generate_code(models.UserMFA.generate_secret()[1])))
+        self.assertTrue(user.mfa.verify(models.UserMFA.generate_code(user.mfa.secret)))
 
         for backup_code in backup_codes:
             self.assertTrue(user.mfa.verify(backup_code))

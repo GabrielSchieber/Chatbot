@@ -1,0 +1,272 @@
+from django.contrib.auth import authenticate
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.request import Request
+from rest_framework.views import APIView
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+
+from ..models import PreAuthToken, User
+from ..serializers.user import DeleteAccountSerializer, LoginSerializer, MeSerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
+from ..throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
+
+class Signup(APIView):
+    authentication_classes = []
+    throttle_classes = [SignupRateThrottle]
+
+    def post(self, request: Request):
+        qs = SignupSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        email = qs.validated_data["email"]
+        password = qs.validated_data["password"]
+
+        if User.objects.filter(email = email).exists():
+            return Response({"detail": "signup.emailError"}, status.HTTP_400_BAD_REQUEST)
+
+        User.objects.create_user(email = email, password = password)
+
+        return Response(status = status.HTTP_201_CREATED)
+
+class Login(APIView):
+    authentication_classes = []
+    throttle_classes = [IPEmailRateThrottle]
+
+    def post(self, request: Request):
+        qs = LoginSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        email = qs.validated_data["email"]
+        password = qs.validated_data["password"]
+
+        user: User | None = authenticate(request, email = email, password = password)
+        if user is None:
+            return Response({"detail": "login.error"}, status.HTTP_401_UNAUTHORIZED)
+
+        if user.mfa.is_enabled:
+            pre_auth_token = PreAuthToken.objects.create(user = user)
+            return Response({"token": str(pre_auth_token.token)}, status.HTTP_200_OK)
+        else:
+            refresh = RefreshToken.for_user(user)
+
+            refresh_jti = refresh.get("jti")
+            user.sessions.create(
+                ip_address = request.ip_address,
+                user_agent = request.user_agent_raw,
+                device = request.device,
+                browser = request.browser,
+                os = request.os,
+                refresh_jti = refresh_jti
+            )
+
+            response = Response(status = status.HTTP_200_OK)
+            response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
+            response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+
+            user.last_login = timezone.now()
+            user.save(update_fields = ["last_login"])
+
+            return response
+
+class Logout(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request):
+        user: User = request.user
+
+        refresh_token = request.COOKIES.get("refresh_token")
+        if refresh_token is not None:
+            try:
+                refresh_jti = RefreshToken(refresh_token).get("jti")
+                user.sessions.filter(logout_at__isnull = True, refresh_jti = refresh_jti).update(logout_at = timezone.now())
+            except TokenError:
+                pass
+
+        response = Response(status = status.HTTP_200_OK)
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
+        return response
+
+class LogoutAllSessions(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request):
+        user: User = request.user
+
+        user.sessions.filter(logout_at__isnull = True).update(logout_at = timezone.now())
+        tokens = OutstandingToken.objects.filter(user = user)
+        for token in tokens:
+            BlacklistedToken.objects.get_or_create(token = token)
+
+        response = Response(status = status.HTTP_200_OK)
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
+        return response
+
+class Refresh(TokenRefreshView):
+    authentication_classes = []
+    throttle_classes = [RefreshRateThrottle]
+
+    def post(self, request: Request):
+        refresh_token = request.COOKIES.get("refresh_token")
+        if refresh_token is None:
+            return Response({"detail": "Refresh token is required to be present in cookies."}, status.HTTP_400_BAD_REQUEST)
+
+        qs = TokenRefreshSerializer(data = {"refresh": refresh_token})
+        try:
+            qs.is_valid(raise_exception = True)
+        except Exception:
+            return Response({"detail": "Invalid refresh token."}, status.HTTP_401_UNAUTHORIZED)
+
+        access_token = qs.validated_data["access"]
+        refresh_token = qs.validated_data["refresh"]
+
+        response = Response(status = status.HTTP_200_OK)
+        response.set_cookie("access_token", access_token, httponly = True, samesite = "Lax")
+        response.set_cookie("refresh_token", refresh_token, httponly = True, samesite = "Lax")
+        return response
+
+class SetupMFA(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request):
+        user: User = request.user
+
+        if user.mfa.is_enabled:
+            return Response({"detail": "MFA is already enabled for the current user. First disable MFA before setting it up again."}, status.HTTP_400_BAD_REQUEST)
+
+        secret, auth_url = user.mfa.setup()
+        return Response({"auth_url": auth_url, "secret": secret}, status.HTTP_200_OK)
+
+class EnableMFA(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request):
+        user: User = request.user
+
+        if user.mfa.is_enabled:
+            return Response({"detail": "MFA is already enabled for the current user."}, status.HTTP_400_BAD_REQUEST)
+
+        code = request.data.get("code")
+
+        if not user.mfa.verify(code):
+            return Response({"detail": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
+
+        backup_codes = user.mfa.enable()
+        return Response({"backup_codes": backup_codes}, status.HTTP_200_OK)
+
+class DisableMFA(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request):
+        user: User = request.user
+
+        if not user.mfa.is_enabled:
+            return Response({"detail": "MFA is already disabled for the current user."}, status.HTTP_400_BAD_REQUEST)
+
+        code = request.data.get("code")
+
+        if not user.mfa.verify(code):
+            return Response({"detail": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
+
+        user.mfa.disable()
+        return Response(status = status.HTTP_200_OK)
+
+class VerifyMFA(APIView):
+    authentication_classes = []
+    throttle_classes = [IPEmailRateThrottle]
+
+    def post(self, request: Request):
+        qs = VerifyMFASerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        token = qs.validated_data["token"]
+        code = qs.validated_data["code"]
+
+        try:
+            pre_auth_token = PreAuthToken.objects.get(token = token)
+        except PreAuthToken.DoesNotExist:
+            return Response({"detail": "mfa.messages.errorInvalidOrExpiredCode"}, status.HTTP_401_UNAUTHORIZED)
+
+        if pre_auth_token.is_expired():
+            pre_auth_token.delete()
+            return Response({"detail": "mfa.messages.errorInvalidOrExpiredCode"}, status.HTTP_401_UNAUTHORIZED)
+
+        user = pre_auth_token.user
+        if not user.mfa.verify(code):
+            return Response({"detail": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
+
+        refresh = RefreshToken.for_user(user)
+
+        refresh_jti = refresh.get("jti")
+        user.sessions.create(
+            ip_address = request.ip_address,
+            user_agent = request.user_agent_raw,
+            device = request.device,
+            browser = request.browser,
+            os = request.os,
+            refresh_jti = refresh_jti
+        )
+
+        response = Response(status = status.HTTP_200_OK)
+        response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
+        response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+
+        pre_auth_token.delete()
+
+        user.last_login = timezone.now()
+        user.save(update_fields = ["last_login"])
+
+        return response
+
+class Me(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request):
+        return Response(UserSerializer(request.user, many = False).data, status.HTTP_200_OK)
+
+    def patch(self, request: Request):
+        user: User = request.user
+
+        qs = MeSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        for key in ["language", "theme", "has_sidebar_open", "custom_instructions", "nickname", "occupation", "about"]:
+            value = qs.validated_data.get(key)
+            if value is not None:
+                setattr(user.preferences, key, value)
+
+        user.preferences.save()
+        return Response(status = status.HTTP_200_OK)
+
+class DeleteAccount(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request: Request):
+        user: User = request.user
+
+        qs = DeleteAccountSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        password = qs.validated_data["password"]
+        mfa_code = qs.validated_data.get("mfa_code")
+
+        if not user.check_password(password):
+            return Response({"detail": "mfa.messages.errorInvalidPassword"}, status.HTTP_403_FORBIDDEN)
+
+        if user.mfa.is_enabled:
+            if mfa_code is None:
+                return Response({"detail": "MFA code is required."}, status.HTTP_400_BAD_REQUEST)
+            if not user.mfa.verify(mfa_code):
+                return Response({"detail": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
+
+        user.delete()
+        response = Response(status = status.HTTP_204_NO_CONTENT)
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
+        return response

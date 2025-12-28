@@ -1,14 +1,16 @@
+import secrets
 import uuid
 from datetime import timedelta
 
-from django.contrib.auth.hashers import check_password
+import pyotp
+from cryptography.fernet import Fernet
+from django.conf import settings
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.core.validators import validate_email
 from django.db import models
 from django.db.models.manager import BaseManager
 from django.utils import timezone
-
-from .totp_utils import generate_auth_url, generate_backup_codes, generate_secret, verify_secret
 
 class ValidatingQuerySet(models.QuerySet):
     def bulk_create(self, objs, **kwargs):
@@ -120,7 +122,7 @@ class UserMFA(CleanOnSaveMixin, models.Model):
         if type(code) != str:
             return False
         elif len(code) == 6:
-            return verify_secret(self.secret, code)
+            return UserMFA.verify_secret(self.secret, code)
         elif len(code) == 12:
             for hashed_backup_code in self.backup_codes:
                 if check_password(code, hashed_backup_code):
@@ -130,14 +132,14 @@ class UserMFA(CleanOnSaveMixin, models.Model):
         return False
 
     def setup(self):
-        secret, encrypted_secret = generate_secret()
+        secret, encrypted_secret = UserMFA.generate_secret()
         self.secret = encrypted_secret
         self.save()
-        auth_url = generate_auth_url(secret, self.user.email)
+        auth_url = UserMFA.generate_auth_url(secret, self.user.email)
         return secret, auth_url
 
     def enable(self):
-        backup_codes, hashed_backup_codes = generate_backup_codes()
+        backup_codes, hashed_backup_codes = UserMFA.generate_backup_codes()
         self.backup_codes = hashed_backup_codes
         self.is_enabled = True
         self.save()
@@ -148,6 +150,42 @@ class UserMFA(CleanOnSaveMixin, models.Model):
         self.backup_codes = []
         self.is_enabled = False
         self.save()
+
+    @staticmethod
+    def get_cipher():
+        return Fernet(settings.TOTP_ENCRYPTION_KEY.encode())
+
+    @staticmethod
+    def encrypt_secret(secret: str):
+        return UserMFA.get_cipher().encrypt(secret.encode())
+
+    @staticmethod
+    def decrypt_secret(encrypted_secret: bytes) -> str:
+        return UserMFA.get_cipher().decrypt(encrypted_secret).decode()
+
+    @staticmethod
+    def verify_secret(encrypted_secret: bytes, code: str):
+        return pyotp.TOTP(UserMFA.decrypt_secret(encrypted_secret)).verify(code, valid_window = 1)
+
+    @staticmethod
+    def generate_code(encrypted_secret: bytes):
+        return pyotp.TOTP(UserMFA.decrypt_secret(encrypted_secret)).now()
+
+    @staticmethod
+    def generate_secret():
+        secret = pyotp.random_base32()
+        encrypted_secret = UserMFA.encrypt_secret(secret)
+        return secret, encrypted_secret
+
+    @staticmethod
+    def generate_auth_url(secret: str, email: str):
+        return pyotp.totp.TOTP(secret).provisioning_uri(email, "Chatbot")
+
+    @staticmethod
+    def generate_backup_codes():
+        backup_codes = [secrets.token_hex(6).upper() for _ in range(10)]
+        hashed_backup_codes = [make_password(code) for code in backup_codes]
+        return backup_codes, hashed_backup_codes
 
     def __str__(self):
         return f"MFA for {self.user.email}."

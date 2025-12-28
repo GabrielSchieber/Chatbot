@@ -8,8 +8,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Chat, Message, MessageFile, User
-from .totp_utils import decrypt_secret
+from ..models import Chat, Message, MessageFile, User, UserMFA
 
 class CreateChat(APIView):
     def post(self, request: Request):
@@ -61,7 +60,7 @@ class GetMFASecret(APIView):
         if not user.mfa.is_enabled:
             return Response({"error": f"MFA for user with email {email} is not enabled."}, status.HTTP_400_BAD_REQUEST)
 
-        return Response(decrypt_secret(user.mfa.secret), status.HTTP_200_OK)
+        return Response(UserMFA.decrypt_secret(user.mfa.secret), status.HTTP_200_OK)
 
 class EchoAuthHeaderView(APIView):
     authentication_classes = []
