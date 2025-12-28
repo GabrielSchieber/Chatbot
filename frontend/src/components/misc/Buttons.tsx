@@ -6,10 +6,10 @@ import { useParams } from "react-router"
 
 import ConfirmDialog from "./ConfirmDialog"
 import { UnarchiveIcon } from "./Icons"
-import { useChat } from "../providers/ChatProvider"
-import { useNotify } from "../providers/NotificationProvider"
-import { archiveChat, deleteChat, regenerateMessage, renameChat, unarchiveChat } from "../utils/api"
-import type { Chat, Model } from "../utils/types"
+import { useChat } from "../../providers/ChatProvider"
+import { useNotify } from "../../providers/NotificationProvider"
+import { archiveChat, deleteChat, regenerateMessage, renameChat, unarchiveChat } from "../../utils/api"
+import type { Chat, Model } from "../../utils/types"
 
 export function AddFilesButton({ fileInputRef, tabIndex = 2 }: { fileInputRef: RefObject<HTMLInputElement | null>, tabIndex?: number }) {
     return (

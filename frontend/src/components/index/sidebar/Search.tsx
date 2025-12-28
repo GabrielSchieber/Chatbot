@@ -3,9 +3,9 @@ import i18next, { t } from "i18next"
 import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
 
-import { SearchChats } from "./Buttons"
-import { useChat } from "../providers/ChatProvider"
-import { searchChats } from "../utils/api"
+import { SearchChats } from "../../misc/Buttons"
+import { useChat } from "../../../providers/ChatProvider"
+import { searchChats } from "../../../utils/api"
 
 export default function Search({ openButtonWithLabel }: { openButtonWithLabel: boolean }) {
     const { chats, isMobile } = useChat()

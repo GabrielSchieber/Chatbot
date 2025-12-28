@@ -3,11 +3,11 @@ import { DropdownMenu } from "radix-ui"
 import { useState } from "react"
 import { useParams } from "react-router"
 
-import { ArchiveButton, DeleteButton, NewChat, RenameDialog, ToggleSidebar, UnarchiveButton } from "./Buttons"
-import Search from "./Search"
-import { useAuth } from "../providers/AuthProvider"
-import { useChat } from "../providers/ChatProvider"
-import { me } from "../utils/api"
+import { ArchiveButton, DeleteButton, NewChat, RenameDialog, ToggleSidebar, UnarchiveButton } from "../../misc/Buttons"
+import Search from "../sidebar/Search"
+import { useAuth } from "../../../providers/AuthProvider"
+import { useChat } from "../../../providers/ChatProvider"
+import { me } from "../../../utils/api"
 
 export default function Header() {
     const { chatUUID } = useParams()

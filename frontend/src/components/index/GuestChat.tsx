@@ -2,13 +2,13 @@ import { t } from "i18next"
 import { motion } from "motion/react"
 import React, { useEffect, useRef, useState } from "react"
 
-import { AddFilesButton, SelectModelButton, SendButton, StopButton } from "./Buttons"
-import { Files } from "./Composer"
-import { BotMessage, UserMessage } from "./Messages"
-import { handleFileChange } from "./Prompt"
-import TextArea from "./TextArea"
-import { useNotify } from "../providers/NotificationProvider"
-import type { Model, Message, MessageFile } from "../utils/types"
+import { Files } from "./chat/prompt/Composer"
+import { BotMessage, UserMessage } from "./chat/Messages"
+import { handleFileChange } from "./chat/Prompt"
+import TextArea from "./chat/prompt/TextArea"
+import { AddFilesButton, SelectModelButton, SendButton, StopButton } from "../misc/Buttons"
+import { useNotify } from "../../providers/NotificationProvider"
+import type { Model, Message, MessageFile } from "../../utils/types"
 
 export default function GuestChat() {
     const notify = useNotify()

@@ -1,6 +1,6 @@
-import Chat from "../components/Chat"
-import GuestChat from "../components/GuestChat"
-import Sidebar from "../components/Sidebar"
+import Chat from "../components/index/Chat"
+import GuestChat from "../components/index/GuestChat"
+import Sidebar from "../components/index/Sidebar"
 import { useAuth } from "../providers/AuthProvider"
 import { ChatProvider } from "../providers/ChatProvider"
 

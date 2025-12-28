@@ -3,8 +3,8 @@ import { Dialog, Label, Tabs } from "radix-ui"
 import React, { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { useAuth } from "../providers/AuthProvider"
-import { deleteAccount } from "../utils/api"
+import { useAuth } from "../../../../providers/AuthProvider"
+import { deleteAccount } from "../../../../utils/api"
 
 export default function DeleteAccountDialog({ entryClasses, destructiveEntryClasses }: { entryClasses: string, destructiveEntryClasses: string }) {
     type MFAMethod = "authenticator" | "recovery"

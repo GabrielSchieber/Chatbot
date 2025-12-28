@@ -4,10 +4,10 @@ import { QRCodeCanvas } from "qrcode.react"
 import { Dialog } from "radix-ui"
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react"
 
-import { useAuth } from "../providers/AuthProvider"
-import { useNotify } from "../providers/NotificationProvider"
-import { disableMFA, enableMFA, setupMFA } from "../utils/api"
-import { useChat } from "../providers/ChatProvider"
+import { useAuth } from "../../../../providers/AuthProvider"
+import { useNotify } from "../../../../providers/NotificationProvider"
+import { disableMFA, enableMFA, setupMFA } from "../../../../utils/api"
+import { useChat } from "../../../../providers/ChatProvider"
 
 export default function MFADialog({ triggerClassName }: { triggerClassName: string }) {
     const { user, setUser } = useAuth()

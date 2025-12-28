@@ -1,8 +1,8 @@
 import { Label as RadixLabel } from "radix-ui"
 import { useState, useEffect, type ReactNode, useRef } from "react"
 
-import { useAuth } from "../providers/AuthProvider"
-import { me } from "../utils/api"
+import { useAuth } from "../../../../providers/AuthProvider"
+import { me } from "../../../../utils/api"
 
 export default function Customizations() {
     const { user, setUser } = useAuth()

@@ -4,13 +4,13 @@ import { motion, AnimatePresence } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 
-import { MAX_FILE_SIZE, MAX_FILES } from "./Chat"
-import Composer from "./Composer"
-import { useChat } from "../providers/ChatProvider"
-import { useNotify } from "../providers/NotificationProvider"
-import { getMessageFileIDs, newMessage, unarchiveChat } from "../utils/api"
-import { getFileSize } from "../utils/misc"
-import type { Model } from "../utils/types"
+import Composer from "./prompt/Composer"
+import { MAX_FILE_SIZE, MAX_FILES } from "../Chat"
+import { useChat } from "../../../providers/ChatProvider"
+import { useNotify } from "../../../providers/NotificationProvider"
+import { getMessageFileIDs, newMessage, unarchiveChat } from "../../../utils/api"
+import { getFileSize } from "../../../utils/misc"
+import type { Model } from "../../../utils/types"
 
 export default function Prompt() {
     const { chatUUID } = useParams()

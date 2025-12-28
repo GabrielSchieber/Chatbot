@@ -4,11 +4,11 @@ import { DropdownMenu } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
-import { ArchiveButton, DeleteButton, RenameButton } from "./Buttons"
-import { useChat } from "../providers/ChatProvider"
-import { useNotify } from "../providers/NotificationProvider"
-import { getChats, renameChat } from "../utils/api"
-import type { Chat } from "../utils/types"
+import { ArchiveButton, DeleteButton, RenameButton } from "../../misc/Buttons"
+import { useChat } from "../../../providers/ChatProvider"
+import { useNotify } from "../../../providers/NotificationProvider"
+import { getChats, renameChat } from "../../../utils/api"
+import type { Chat } from "../../../utils/types"
 
 export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: boolean, sidebarRef: React.RefObject<HTMLDivElement | null> }) {
     const { chatUUID } = useParams()

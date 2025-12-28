@@ -3,13 +3,13 @@ import { t } from "i18next"
 import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
 
-import { TooltipButton } from "./Buttons"
-import ConfirmDialog from "./ConfirmDialog"
-import { UnarchiveIcon } from "./Icons"
-import { useChat } from "../providers/ChatProvider"
-import { useNotify } from "../providers/NotificationProvider"
-import { archiveChats, deleteChat, getChats, unarchiveChat, unarchiveChats } from "../utils/api"
-import type { Chat } from "../utils/types"
+import { TooltipButton } from "../../../misc/Buttons"
+import ConfirmDialog from "../../../misc/ConfirmDialog"
+import { UnarchiveIcon } from "../../../misc/Icons"
+import { useChat } from "../../../../providers/ChatProvider"
+import { useNotify } from "../../../../providers/NotificationProvider"
+import { archiveChats, deleteChat, getChats, unarchiveChat, unarchiveChats } from "../../../../utils/api"
+import type { Chat } from "../../../../utils/types"
 
 export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: string }) {
     const { chats, setChats, isMobile } = useChat()

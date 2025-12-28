@@ -2,13 +2,13 @@ import { t } from "i18next"
 import { useState } from "react"
 import { useParams } from "react-router"
 
-import Composer from "./Composer"
-import { MAX_FILE_SIZE, MAX_FILES } from "./Chat"
-import { useChat } from "../providers/ChatProvider"
-import { useNotify } from "../providers/NotificationProvider"
-import { editMessage, getMessageFileIDs } from "../utils/api"
-import { getFileSize } from "../utils/misc"
-import type { MessageFile, Model } from "../utils/types"
+import Composer from "../prompt/Composer"
+import { MAX_FILE_SIZE, MAX_FILES } from "../../Chat"
+import { useChat } from "../../../../providers/ChatProvider"
+import { useNotify } from "../../../../providers/NotificationProvider"
+import { editMessage, getMessageFileIDs } from "../../../../utils/api"
+import { getFileSize } from "../../../../utils/misc"
+import type { MessageFile, Model } from "../../../../utils/types"
 
 export default function Editor({ index, setIndex }: { index: number, setIndex: React.Dispatch<React.SetStateAction<number>> }) {
     const { chatUUID } = useParams()

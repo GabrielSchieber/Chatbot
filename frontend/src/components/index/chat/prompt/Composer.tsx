@@ -1,12 +1,12 @@
 import { motion } from "motion/react"
 import { useEffect, useRef, useState, type ChangeEvent, type Dispatch, type KeyboardEvent, type SetStateAction } from "react"
 
-import Attachments from "./Attachments"
-import { AddFilesButton, CancelButton, SelectModelButton, SendButton, StopButton } from "./Buttons"
 import TextArea from "./TextArea"
-import { useChat } from "../providers/ChatProvider"
-import type { MessageFile, Model } from "../utils/types"
-import { stopPendingChats } from "../utils/api"
+import Attachments from "../messages/Attachments"
+import { AddFilesButton, CancelButton, SelectModelButton, SendButton, StopButton } from "../../../misc/Buttons"
+import { useChat } from "../../../../providers/ChatProvider"
+import type { MessageFile, Model } from "../../../../utils/types"
+import { stopPendingChats } from "../../../../utils/api"
 
 export default function Composer({
     text,

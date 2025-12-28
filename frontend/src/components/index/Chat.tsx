@@ -2,10 +2,10 @@ import { t } from "i18next"
 import { useRef } from "react"
 import { useParams } from "react-router"
 
-import Header from "./Header"
-import Messages from "./Messages"
-import Prompt from "./Prompt"
-import { useChat } from "../providers/ChatProvider"
+import Header from "./chat/Header"
+import Messages from "./chat/Messages"
+import Prompt from "./chat/Prompt"
+import { useChat } from "../../providers/ChatProvider"
 
 export const MAX_FILES = 10
 export const MAX_FILE_SIZE = 5_000_000

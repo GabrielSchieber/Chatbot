@@ -1,12 +1,12 @@
 import { useRef } from "react"
 
-import { NewChat, ToggleSidebar } from "./Buttons"
-import History from "./History"
-import Search from "./Search"
-import Settings from "./Settings"
-import { useAuth } from "../providers/AuthProvider"
-import { useChat } from "../providers/ChatProvider"
-import { me } from "../utils/api"
+import History from "./sidebar/History"
+import Search from "./sidebar/Search"
+import Settings from "./sidebar/Settings"
+import { NewChat, ToggleSidebar } from "../misc/Buttons"
+import { useAuth } from "../../providers/AuthProvider"
+import { useChat } from "../../providers/ChatProvider"
+import { me } from "../../utils/api"
 
 export default function Sidebar() {
     const { user, setUser } = useAuth()

@@ -7,11 +7,11 @@ import { useParams } from "react-router"
 import rehypeHighlight from "rehype-highlight"
 import remarkGfm from "remark-gfm"
 
-import Attachments from "./Attachments"
-import { CopyButton, EditButton, RegenerateButton } from "./Buttons"
-import Editor from "./Editor"
-import { useChat } from "../providers/ChatProvider"
-import type { MessageFile, Model } from "../utils/types"
+import Attachments from "./messages/Attachments"
+import Editor from "./messages/Editor"
+import { CopyButton, EditButton, RegenerateButton } from "../../misc/Buttons"
+import { useChat } from "../../../providers/ChatProvider"
+import type { MessageFile, Model } from "../../../utils/types"
 
 export default function Messages({ chatRef }: { chatRef: React.RefObject<HTMLDivElement | null> }) {
     const { chatUUID } = useParams()

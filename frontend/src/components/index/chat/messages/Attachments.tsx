@@ -1,9 +1,9 @@
 import { Cross1Icon, FileIcon } from "@radix-ui/react-icons"
 import { useEffect, useState } from "react"
 
-import { MAX_FILE_SIZE, MAX_FILES } from "./Chat"
-import { getFileSize, getFileType } from "../utils/misc"
-import type { MessageFile } from "../utils/types"
+import { MAX_FILE_SIZE, MAX_FILES } from "../../Chat"
+import { getFileSize, getFileType } from "../../../../utils/misc"
+import type { MessageFile } from "../../../../utils/types"
 
 export default function Attachments({ files, onRemove, onRemoveAll }: { files: MessageFile[], onRemove?: (file: MessageFile) => void, onRemoveAll?: () => void }) {
     return (
