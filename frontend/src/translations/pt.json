@@ -8,6 +8,7 @@
     "settings.data": "Dados",
     "settings.security": "Segurança",
     "settings.account": "Conta",
+    "settings.accountAsGuest": "Conta (como convidado)",
     "settings.theme": "Tema",
     "settings.language": "Idioma",
     "settings.archivedChats": "Conversas arquivadas",

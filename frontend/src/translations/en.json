@@ -8,6 +8,7 @@
     "settings.data": "Data",
     "settings.security": "Security",
     "settings.account": "Account",
+    "settings.accountAsGuest": "Account (as guest)",
     "settings.theme": "Theme",
     "settings.language": "Language",
     "settings.archivedChats": "Archived chats",

@@ -66,7 +66,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                             {user?.mfa &&
                                 <Trigger icon={<LockClosedIcon className="size-4.5" />} title={t("settings.security")} />
                             }
-                            <Trigger icon={<PersonIcon className="size-4.5" />} title={t("settings.account")} />
+                            <Trigger icon={<PersonIcon className="size-4.5" />} title={t(user?.mfa ? "settings.account" : "settings.accountAsGuest")} />
                         </Tabs.List>
 
                         <Content title={t("settings.general")} isScreenHeightSmall={isScreenHeightSmall}>
@@ -89,7 +89,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                             <SessionsEntryItem />
                         </Content>
 
-                        <Content title={t("settings.account")} isScreenHeightSmall={isScreenHeightSmall}>
+                        <Content title={t(user?.mfa ? "settings.account" : "settings.accountAsGuest")} isScreenHeightSmall={isScreenHeightSmall}>
                             {user?.mfa && (
                                 <div className="flex gap-2 py-3 items-center">
                                     <EnvelopeClosedIcon className="size-4.5" />
