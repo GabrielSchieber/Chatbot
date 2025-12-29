@@ -95,6 +95,9 @@ class UserChangeForm(forms.ModelForm):
                 self.fields["occupation"].initial = preferences.occupation
                 self.fields["about"].initial = preferences.about
 
+            if not hasattr(user, "mfa"):
+                return
+
             mfa = user.mfa
             if type(mfa) == UserMFA:
                 try:
@@ -111,7 +114,10 @@ class UserChangeForm(forms.ModelForm):
         user = super().save(commit = commit)
 
         preferences, _ = UserPreferences.objects.get_or_create(user = user)
-        mfa, _ = UserMFA.objects.get_or_create(user = user)
+        if not user.is_guest:
+            mfa, _ = UserMFA.objects.get_or_create(user = user)
+        else:
+            mfa = None
 
         preferences.language = self.cleaned_data.get("language", preferences.language)
         preferences.theme = self.cleaned_data.get("theme", preferences.theme)
@@ -122,18 +128,19 @@ class UserChangeForm(forms.ModelForm):
         preferences.about = self.cleaned_data.get("about", preferences.about)
         preferences.save()
 
-        mfa.is_enabled = bool(self.cleaned_data.get("is_enabled", mfa.is_enabled))
-        secret_val = self.cleaned_data.get("secret", "")
-        if secret_val:
-            try:
-                mfa.secret = binascii.unhexlify(secret_val)
-            except Exception:
-                pass
-        backup_text = self.cleaned_data.get("backup_codes", "")
-        if type(backup_text) == str:
-            lines = [l.strip() for l in backup_text.splitlines() if l.strip()]
-            mfa.backup_codes = lines
-        mfa.save()
+        if mfa:
+            mfa.is_enabled = bool(self.cleaned_data.get("is_enabled", mfa.is_enabled))
+            secret_val = self.cleaned_data.get("secret", "")
+            if secret_val:
+                try:
+                    mfa.secret = binascii.unhexlify(secret_val)
+                except Exception:
+                    pass
+            backup_text = self.cleaned_data.get("backup_codes", "")
+            if type(backup_text) == str:
+                lines = [l.strip() for l in backup_text.splitlines() if l.strip()]
+                mfa.backup_codes = lines
+            mfa.save()
 
         return user
 
