@@ -276,7 +276,7 @@ function LogoutEntryItem() {
 
     async function handleLogout() {
         await logout()
-        location.reload()
+        location.href = "/login"
     }
 
     return (
