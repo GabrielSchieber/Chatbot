@@ -63,7 +63,9 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                             <Trigger icon={<GearIcon className="size-4.5" />} title={t("settings.general")} />
                             <Trigger icon={<MixerVerticalIcon className="size-4.5" />} title={t("settings.customizations")} />
                             <Trigger icon={<MixerHorizontalIcon className="size-4.5" />} title={t("settings.data")} />
-                            <Trigger icon={<LockClosedIcon className="size-4.5" />} title={t("settings.security")} />
+                            {user?.mfa &&
+                                <Trigger icon={<LockClosedIcon className="size-4.5" />} title={t("settings.security")} />
+                            }
                             <Trigger icon={<PersonIcon className="size-4.5" />} title={t("settings.account")} />
                         </Tabs.List>
 
@@ -82,9 +84,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                         </Content>
 
                         <Content title={t("settings.security")} isScreenHeightSmall={isScreenHeightSmall}>
-                            {user?.mfa &&
-                                <Entry name={t("settings.mfa")} item={<MFADialog triggerClassName={entryClasses} />} />
-                            }
+                            <Entry name={t("settings.mfa")} item={<MFADialog triggerClassName={entryClasses} />} />
                             <Entry name={t("settings.logout")} item={<LogoutEntryItem />} />
                             <SessionsEntryItem />
                         </Content>
