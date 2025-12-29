@@ -1,9 +1,9 @@
-import { ChatBubbleIcon, ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons"
+import { ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons"
 import { DropdownMenu } from "radix-ui"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useParams } from "react-router"
 
-import { ArchiveButton, DeleteButton, NewChat, RenameDialog, ToggleSidebar, UnarchiveButton } from "../../misc/Buttons"
+import { ArchiveButton, DeleteButton, NewChat, RenameDialog, TemporaryChat, ToggleSidebar, UnarchiveButton } from "../../misc/Buttons"
 import Search from "../sidebar/Search"
 import { useAuth } from "../../../providers/AuthProvider"
 import { useChat } from "../../../providers/ChatProvider"
@@ -13,18 +13,24 @@ export default function Header() {
     const { chatUUID } = useParams()
 
     const { user, setUser } = useAuth()
-    const { chats, isMobile, isTemporaryChat, setIsTemporaryChat } = useChat()
+    const { chats, isMobile, isTemporaryChat } = useChat()
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+    const [screenWidth, setScreenWidth] = useState(window.innerWidth)
 
     const isSidebarOpen = user ? user.preferences.has_sidebar_open : true
+    const currentChat = chats.find(c => c.uuid === chatUUID)
 
     function setIsSidebarOpen(value: boolean) {
         me(undefined, undefined, value)
         setUser(previous => previous ? { ...previous, preferences: { ...previous.preferences, has_sidebar_open: value } } : previous)
     }
 
-    const currentChat = chats.find(c => c.uuid === chatUUID)
+    useEffect(() => {
+        const onResize = () => setScreenWidth(window.innerWidth)
+        window.addEventListener("resize", onResize)
+        return () => window.removeEventListener("resize", onResize)
+    }, [])
 
     return (
         <header className="sticky top-0 flex w-full gap-1 p-2 items-center justify-between">
@@ -33,6 +39,7 @@ export default function Header() {
                     <ToggleSidebar withLabel={false} onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
                     <NewChat withLabel={false} />
                     <Search openButtonWithLabel={false} />
+                    <TemporaryChat withLabel={false} />
                 </div>
             }
 
@@ -72,25 +79,46 @@ export default function Header() {
                 </DropdownMenu.Root>
             ) : (
                 <>
-                    <p className="text-2xl font-semibold not-md:text-[16px]">Chatbot</p>
-                    <button
+                    <p
                         className={`
-                            flex gap-1 p-2 items-center rounded not-disabled:cursor-pointer
-                            not-md:text-[14px] border border-transparent disabled:border-blue-500
-                            ${isTemporaryChat
-                                ? "bg-blue-500/50 not-disabled:hover:bg-blue-500/30"
-                                : "bg-gray-800 hover:bg-gray-700 light:bg-gray-200 light:hover:bg-gray-300"
+                            text-2xl font-semibold not-md:mx-auto
+                            ${((user?.mfa && screenWidth < 300) || (!user?.mfa && screenWidth < 500)) ? "hidden" : ""}
+                        `}>
+                        Chatbot
+                    </p>
+
+                    {!user?.mfa ? (
+                        <div className="flex gap-2 items-center">
+                            {!isMobile && <TemporaryChat withLabel={true} />}
+
+                            <a
+                                className="
+                                    px-3 py-2 rounded-full cursor-pointer
+                                    text-black light:text-white
+                                    bg-gray-100 light:bg-gray-800
+                                    hover:bg-gray-200 light:hover:bg-gray-700
+                                "
+                                href="/login"
+                            >
+                                Log in
+                            </a>
+
+                            {screenWidth > 375 &&
+                                <a
+                                    className="
+                                        px-3 py-1.5 rounded-full cursor-pointer
+                                        hover:bg-gray-700 light:hover:bg-gray-300
+                                        border border-gray-500
+                                    "
+                                    href="/signup"
+                                >
+                                    Sign up
+                                </a>
                             }
-                        `}
-                        onClick={() => {
-                            if (chatUUID !== undefined && isTemporaryChat) return
-                            setIsTemporaryChat(!isTemporaryChat)
-                        }}
-                        disabled={chatUUID !== undefined && isTemporaryChat}
-                    >
-                        <ChatBubbleIcon />
-                        Temporary
-                    </button>
+                        </div>
+                    ) : screenWidth > 525 && (
+                        <TemporaryChat withLabel={true} />
+                    )}
                 </>
             )}
         </header>

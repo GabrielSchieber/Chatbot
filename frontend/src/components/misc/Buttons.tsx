@@ -1,4 +1,4 @@
-import { ArchiveIcon, ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, Cross2Icon, GearIcon, MagnifyingGlassIcon, PauseIcon, Pencil1Icon, PlusIcon, TrashIcon, UpdateIcon } from "@radix-ui/react-icons"
+import { ArchiveIcon, ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ClockIcon, CopyIcon, Cross2Icon, GearIcon, MagnifyingGlassIcon, PauseIcon, Pencil1Icon, PlusIcon, TrashIcon, UpdateIcon } from "@radix-ui/react-icons"
 import { t } from "i18next"
 import { Dialog, DropdownMenu, Select, Tooltip } from "radix-ui"
 import { useEffect, useState, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react"
@@ -377,6 +377,29 @@ export function NewChat({ withLabel }: { withLabel: boolean }) {
         <a className={sidebarButtonClasses} href="/">
             <PlusIcon className="size-5" /> {withLabel && t("sidebar.newChat")}
         </a>
+    )
+}
+
+export function TemporaryChat({ withLabel }: { withLabel: boolean }) {
+    const { chatUUID } = useParams()
+
+    const { isTemporaryChat, setIsTemporaryChat } = useChat()
+
+    return (
+        <button
+            className={`
+                flex gap-1 p-2 items-center rounded text-sm cursor-pointer disabled:cursor-not-allowed
+                ${isTemporaryChat ? "bg-blue-500/30 hover:bg-blue-500/25" : "bg-gray-800 hover:bg-gray-700/50 light:bg-gray-200 light:hover:bg-gray-300/50"}
+                ${chatUUID && isTemporaryChat ? "font-semibold border border-blue-500" : ""} 
+            `}
+            onClick={() => {
+                if (chatUUID && isTemporaryChat) return
+                setIsTemporaryChat(!isTemporaryChat)
+            }}
+            disabled={chatUUID !== undefined && isTemporaryChat}
+        >
+            <ClockIcon className="size-5" /> {withLabel && t("sidebar.temporaryChat")}
+        </button>
     )
 }
 
