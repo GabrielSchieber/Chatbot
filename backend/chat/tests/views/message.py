@@ -678,7 +678,7 @@ class RegenerateMessage(ViewsTestCase):
 class TestRequireAuthentication(ViewsTestCase):
     def test(self):
         urls = [f"/api/{p.pattern}" for p in urlpatterns]
-        for url in ["/api/signup/", "/api/login/", "/api/verify-mfa/", "/api/refresh/"]:
+        for url in ["/api/signup/", "/api/login/", "/api/verify-mfa/", "/api/refresh/", "/api/authenticate-as-guest/"]:
             urls.remove(url)
 
         for url in urls:

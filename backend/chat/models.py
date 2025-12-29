@@ -69,9 +69,17 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email: str, password: str):
         return self.create_user(email, password, is_staff = True, is_superuser = True)
 
+    def create_guest_user(self):
+        token = str(uuid.uuid4())
+        user: User = self.model(email = token + "@example.com", password = token, is_guest = True)
+        user.save(using = self._db)
+        UserPreferences.objects.create(user = user)
+        return user
+
 class User(CleanOnSaveMixin, AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique = True)
     is_active = models.BooleanField(default = True)
+    is_guest = models.BooleanField(default = False)
     is_staff = models.BooleanField(default = False)
     created_at = models.DateTimeField(auto_now_add = True)
 

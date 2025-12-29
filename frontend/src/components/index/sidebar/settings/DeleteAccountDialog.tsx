@@ -26,7 +26,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
 
         const response = await deleteAccount(password, mfaCode)
         if (response.ok) {
-            location.href = "/"
+            location.href = "/login"
         } else {
             const data = await response.json()
             setError(t(data.detail))
@@ -54,9 +54,14 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                             <Dialog.Title className="text-xl font-semibold">{t("dialogs.deleteAccount.title")}</Dialog.Title>
                             <Dialog.Description className="flex flex-col gap-1">
                                 <span className="text-lg">{t("dialogs.deleteAccount.descriptionAlert")}</span>
-                                <span>
-                                    {user?.mfa?.is_enabled ? t("dialogs.deleteAccount.descriptionInformationWithMFA") : t("dialogs.deleteAccount.descriptionInformation")}
-                                </span>
+                                {user?.mfa &&
+                                    <span>
+                                        {user.mfa.is_enabled ?
+                                            t("dialogs.deleteAccount.descriptionInformationWithMFA") :
+                                            t("dialogs.deleteAccount.descriptionInformation")
+                                        }
+                                    </span>
+                                }
                             </Dialog.Description>
                         </div>
                         <Dialog.Close className="p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
@@ -65,24 +70,26 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                     </div>
 
                     <form className="flex flex-col gap-3 px-3 py-1" onSubmit={handleConfirmDelete}>
-                        <div className="flex flex-col gap-1">
-                            <Label.Root htmlFor="password" className="font-medium text-gray-200 light:text-gray-700">
-                                {t("auth.password.label")}
-                            </Label.Root>
-                            <input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={e => {
-                                    setPassword(e.target.value)
-                                    setError("")
-                                }}
-                                placeholder="••••••••"
-                                className="px-2 py-1 rounded border bg-gray-900 light:bg-white light:text-black"
-                                disabled={isDeleting}
-                                required
-                            />
-                        </div>
+                        {user?.mfa &&
+                            <div className="flex flex-col gap-1">
+                                <Label.Root htmlFor="password" className="font-medium text-gray-200 light:text-gray-700">
+                                    {t("auth.password.label")}
+                                </Label.Root>
+                                <input
+                                    id="password"
+                                    type="password"
+                                    value={password}
+                                    onChange={e => {
+                                        setPassword(e.target.value)
+                                        setError("")
+                                    }}
+                                    placeholder="••••••••"
+                                    className="px-2 py-1 rounded border bg-gray-900 light:bg-white light:text-black"
+                                    disabled={isDeleting}
+                                    required
+                                />
+                            </div>
+                        }
 
                         {user?.mfa?.is_enabled && (
                             <Tabs.Root

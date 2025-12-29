@@ -11,7 +11,7 @@ import { applyTheme, getLanguageAbbreviation } from "./utils/misc"
 import "./App.css"
 
 export default function App() {
-    const { user, loading, isLoggedIn } = useAuth()
+    const { user, loading } = useAuth()
 
     const [hasSetTheme, setHasSetTheme] = useState(false)
     const [hasSetLanguage, setHasSetLanguage] = useState(false)
@@ -39,7 +39,7 @@ export default function App() {
             <Router>
                 <Routes>
                     <Route path="/" element={<Index />} />
-                    <Route path="/chat/:chatUUID" element={isLoggedIn ? <Index /> : <Navigate to="/login" replace />} />
+                    <Route path="/chat/:chatUUID" element={<Index />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="*" element={<Navigate to="/" />} />

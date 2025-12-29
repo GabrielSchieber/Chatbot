@@ -13,7 +13,7 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
     const { user, setUser } = useAuth()
     const { isMobile } = useChat()
 
-    const [step, setStep] = useState<Step>(user?.mfa.is_enabled ? "disable" : "setup")
+    const [step, setStep] = useState<Step>(user?.mfa?.is_enabled ? "disable" : "setup")
     const [authURL, setAuthURL] = useState("")
     const [secret, setSecret] = useState("")
     const [backupCodes, setBackupCodes] = useState<string[]>([])
@@ -28,9 +28,9 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
     }, [step])
 
     return (
-        <Dialog.Root onOpenChange={_ => setStep(user?.mfa.is_enabled ? "disable" : "setup")}>
+        <Dialog.Root onOpenChange={_ => setStep(user?.mfa?.is_enabled ? "disable" : "setup")}>
             <Dialog.Trigger className={triggerClassName}>
-                {user?.mfa.is_enabled ? t("mfa.buttons.disable") : t("mfa.buttons.enable")}
+                {user?.mfa?.is_enabled ? t("mfa.buttons.disable") : t("mfa.buttons.enable")}
             </Dialog.Trigger>
 
             <Dialog.Portal>

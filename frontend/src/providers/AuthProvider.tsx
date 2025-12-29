@@ -1,27 +1,59 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useRef, useState } from "react"
 
-import { me } from "../utils/api"
+import { authenticateAsGuest, me } from "../utils/api"
 import type { User } from "../utils/types"
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+    const hasTriedToAuthenticate = useRef(false)
+
     const [user, setUser] = useState<User | null>(null)
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        me().then(async response => {
+    async function tryToAuthenticateAsGuest() {
+        const response = await authenticateAsGuest()
+        if (response.ok) {
+            const response = await me()
             if (response.ok) {
-                const data = await response.json()
-                setUser(data)
+                setUser(await response.json())
                 setLoading(false)
-            } else {
-                setUser(null)
-                setLoading(false)
+                return
             }
-        })
+        }
+
+        setUser(null)
+        setLoading(false)
+
+        throw Error("Authentication as guest failed.")
+    }
+
+    async function tryToAuthenticate() {
+        const response = await me()
+        if (response.ok) {
+            setUser(await response.json())
+            setLoading(false)
+            return
+        } else if (location.pathname === "/") {
+            try {
+                await tryToAuthenticateAsGuest()
+                return
+            } catch {
+                location.href = "/login"
+            }
+        }
+
+        setUser(null)
+        setLoading(false)
+    }
+
+    useEffect(() => {
+        if (!hasTriedToAuthenticate.current) {
+            tryToAuthenticate()
+            hasTriedToAuthenticate.current = true
+        }
     }, [])
 
     return (
-        <AuthContext.Provider value={{ user, setUser, loading, isLoggedIn: user !== null }}>
+        <AuthContext.Provider value={{ user, setUser, loading }}>
             {children}
         </AuthContext.Provider>
     )
@@ -37,7 +69,6 @@ interface AuthContextValue {
     user: User | null
     setUser: React.Dispatch<React.SetStateAction<User | null>>
     loading: boolean
-    isLoggedIn: boolean
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)

@@ -82,13 +82,15 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                         </Content>
 
                         <Content title={t("settings.security")} isScreenHeightSmall={isScreenHeightSmall}>
-                            <Entry name={t("settings.mfa")} item={<MFADialog triggerClassName={entryClasses} />} />
+                            {user?.mfa &&
+                                <Entry name={t("settings.mfa")} item={<MFADialog triggerClassName={entryClasses} />} />
+                            }
                             <Entry name={t("settings.logout")} item={<LogoutEntryItem />} />
                             <SessionsEntryItem />
                         </Content>
 
                         <Content title={t("settings.account")} isScreenHeightSmall={isScreenHeightSmall}>
-                            {user && (
+                            {user?.mfa && (
                                 <div className="flex gap-2 py-3 items-center">
                                     <EnvelopeClosedIcon className="size-4.5" />
                                     <p>{user.email}</p>

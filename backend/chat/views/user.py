@@ -12,7 +12,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 from ..models import PreAuthToken, User
-from ..serializers.user import DeleteAccountSerializer, LoginSerializer, MeSerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
+from ..serializers.user import AuthenticateAsGuestSerializer, DeleteAccountSerializer, LoginSerializer, MeSerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
 from ..throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
 
 class Signup(APIView):
@@ -44,7 +44,7 @@ class Login(APIView):
         email = qs.validated_data["email"]
         password = qs.validated_data["password"]
 
-        user: User | None = authenticate(request, email = email, password = password)
+        user: User | None = authenticate(request, email = email, password = password, is_guest = False)
         if user is None:
             return Response({"detail": "login.error"}, status.HTTP_401_UNAUTHORIZED)
 
@@ -137,6 +137,9 @@ class SetupMFA(APIView):
     def post(self, request: Request):
         user: User = request.user
 
+        if user.is_guest:
+            return Response({"detail": "Guest users cannot set up MFA."}, status.HTTP_400_BAD_REQUEST)
+
         if user.mfa.is_enabled:
             return Response({"detail": "MFA is already enabled for the current user. First disable MFA before setting it up again."}, status.HTTP_400_BAD_REQUEST)
 
@@ -148,6 +151,9 @@ class EnableMFA(APIView):
 
     def post(self, request: Request):
         user: User = request.user
+
+        if user.is_guest:
+            return Response({"detail": "Guest users cannot enable MFA."}, status.HTTP_400_BAD_REQUEST)
 
         if user.mfa.is_enabled:
             return Response({"detail": "MFA is already enabled for the current user."}, status.HTTP_400_BAD_REQUEST)
@@ -165,6 +171,9 @@ class DisableMFA(APIView):
 
     def post(self, request: Request):
         user: User = request.user
+
+        if user.is_guest:
+            return Response({"detail": "Guest users cannot have MFA."}, status.HTTP_400_BAD_REQUEST)
 
         if not user.mfa.is_enabled:
             return Response({"detail": "MFA is already disabled for the current user."}, status.HTTP_400_BAD_REQUEST)
@@ -250,23 +259,67 @@ class DeleteAccount(APIView):
     def delete(self, request: Request):
         user: User = request.user
 
-        qs = DeleteAccountSerializer(data = request.data)
-        qs.is_valid(raise_exception = True)
+        if not user.is_guest:
+            qs = DeleteAccountSerializer(data = request.data)
+            qs.is_valid(raise_exception = True)
 
-        password = qs.validated_data["password"]
-        mfa_code = qs.validated_data.get("mfa_code")
+            password = qs.validated_data["password"]
+            mfa_code = qs.validated_data.get("mfa_code")
 
-        if not user.check_password(password):
-            return Response({"detail": "mfa.messages.errorInvalidPassword"}, status.HTTP_403_FORBIDDEN)
+            if not user.check_password(password):
+                return Response({"detail": "mfa.messages.errorInvalidPassword"}, status.HTTP_403_FORBIDDEN)
 
-        if user.mfa.is_enabled:
-            if mfa_code is None:
-                return Response({"detail": "MFA code is required."}, status.HTTP_400_BAD_REQUEST)
-            if not user.mfa.verify(mfa_code):
-                return Response({"detail": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
+            if user.mfa.is_enabled:
+                if mfa_code is None:
+                    return Response({"detail": "MFA code is required."}, status.HTTP_400_BAD_REQUEST)
+                if not user.mfa.verify(mfa_code):
+                    return Response({"detail": "mfa.messages.errorInvalidCode"}, status.HTTP_403_FORBIDDEN)
 
         user.delete()
         response = Response(status = status.HTTP_204_NO_CONTENT)
         response.delete_cookie("access_token")
         response.delete_cookie("refresh_token")
+        response.delete_cookie("guest_token")
+        return response
+
+class AuthenticateAsGuest(APIView):
+    authentication_classes = []
+    throttle_classes = [IPEmailRateThrottle]
+
+    def post(self, request: Request):
+        qs = AuthenticateAsGuestSerializer(data = request.COOKIES)
+        qs.is_valid(raise_exception = True)
+
+        guest_token = qs.validated_data.get("guest_token")
+        should_create = True
+        if guest_token:
+            try:
+                user = User.objects.get(is_guest = True, password = guest_token)
+                response = Response(status = status.HTTP_200_OK)
+                should_create = False
+            except User.DoesNotExist:
+                pass
+
+        if should_create:
+            user = User.objects.create_guest_user()
+            response = Response(status = status.HTTP_201_CREATED)
+
+        refresh = RefreshToken.for_user(user)
+
+        response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
+        response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+        response.set_cookie("guest_token", str(guest_token), httponly = True, samesite = "Lax")
+
+        user.sessions.create(
+            ip_address = request.ip_address,
+            user_agent = request.user_agent_raw,
+            device = request.device,
+            browser = request.browser,
+            os = request.os,
+            refresh_jti = refresh.get("jti")
+        )
+
+        user.last_login = timezone.now()
+        user.save(update_fields = ["last_login"])
+
         return response

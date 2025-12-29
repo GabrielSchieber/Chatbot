@@ -60,3 +60,6 @@ class MeSerializer(serializers.Serializer):
 class DeleteAccountSerializer(serializers.Serializer):
     password = serializers.CharField()
     mfa_code = serializers.CharField(required = False, allow_blank = True)
+
+class AuthenticateAsGuestSerializer(serializers.Serializer):
+    guest_token = serializers.UUIDField(required = False)

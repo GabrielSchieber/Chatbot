@@ -5,7 +5,7 @@ export type Model = "" | "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moo
 export type User = {
     email: string
     preferences: UserPreferences
-    mfa: UserMFA
+    mfa: UserMFA | null
     sessions: UserSession[]
 }
 

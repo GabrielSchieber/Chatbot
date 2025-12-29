@@ -1,5 +1,3 @@
-import asyncio
-import base64
 import logging
 import os
 import time
@@ -11,8 +9,8 @@ from django.contrib.auth.models import AnonymousUser
 from jwt import decode as jwt_decode
 from redis import asyncio as aioredis
 
-from .models import Message, User
-from .tasks import IS_PLAYWRIGHT_TEST, astop_pending_chat, get_ollama_model_and_options, get_system_prompt, ollama_client, opened_chats
+from .models import User
+from .tasks import astop_pending_chat, opened_chats
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -88,106 +86,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             return await User.objects.aget(id = user_id)
         except Exception:
             return AnonymousUser()
-
-class GuestChatConsumer(AsyncJsonWebsocketConsumer):
-    async def connect(self):
-        self.messages = [{"role": "system", "content": get_system_prompt()}]
-        self.task = None
-        self.redis_limiter = RedisTokenBucket("rate:guest_ip", 1, 120.0)
-        await self.accept()
-
-    async def receive_json(self, content):
-        allowed, retry_after = await self.redis_limiter.allow(self.get_ip())
-        if not allowed:
-            await self.send_json({"error": "rate_limited", "retry_after": retry_after})
-            return
-
-        if self.task is None:
-            if type(content) != dict:
-                return await self.close()
-
-            text = content.get("text", "")
-            if type(text) != str:
-                return await self.close()
-
-            files = content.get("files", [])
-            if type(files) != list:
-                return await self.close()
-            for file in files:
-                if type(file) != dict:
-                    return await self.close()
-                if type(file.get("name")) != str or type(file.get("content")) != str or type(file.get("content_type")) != str or type(file.get("content_size")) != int:
-                    return await self.close()
-                if file["name"] == "" or file["content"] == "" or file["content_type"] == "" or file["content_size"] < 0:
-                    return await self.close()
-
-            model = content.get("model", "SmolLM2-135M")
-            if type(model) != str:
-                return await self.close()
-            if model not in Message.available_models():
-                return await self.close()
-            if model == "":
-                model = "SmolLM2-135M"
-
-            def done_callback(_):
-                self.task = None
-
-            self.task = asyncio.create_task(self.generate_message(text, files, model))
-            self.task.add_done_callback(done_callback)
-        else:
-            if content == "stop":
-                self.task.cancel()
-                self.task = None
-
-    async def generate_message(self, text: str, files: list[dict[str, str | int]], model: str):
-        def get_user_message(text: str, files: list[dict[str, str | int]]):
-            if len(files) == 0:
-                return {"role": "user", "content": text}
-            else:
-                def base_64_to_bytes(data: str) -> bytes:
-                    _, encoded = data.split(",", 1)
-                    return base64.b64decode(encoded)
-
-                images = []
-                file_contents = []
-                for file in files:
-                    file_content = base_64_to_bytes(file["content"])
-
-                    if "image" in file["content_type"]:
-                        os.makedirs("chat_temp", exist_ok = True)
-                        with open(f"chat_temp/{file["name"]}", "wb+") as writer:
-                            writer.write(file_content)
-                        images.append(f"chat_temp/{file["name"]}")
-                    else:
-                        file_contents.append(f"=== File: {file["name"]} ===\n{file_content.decode()}")
-
-                content = f"{text}\n\nFiles:\n\n{"\n\n".join(file_contents)}" if len(file_contents) > 0 else text
-                return {"role": "user", "content": content, "images": images}
-
-        self.messages.extend([get_user_message(text, files), {"role": "assistant", "content": ""}])
-        message_index = len(self.messages) - 2
-
-        model, options = get_ollama_model_and_options(model)
-
-        async for part in await ollama_client.chat(model, self.messages[:-1], stream = True, options = options):
-            await asyncio.sleep(0.05)
-
-            token = part.message.content
-
-            if type(token) == str:
-                self.messages[-1]["content"] += token
-                await self.send_json({"token": token, "message_index": message_index})
-
-        await self.send_json({"message": self.messages[-1]["content"], "message_index": message_index})
-        await self.send_json("end")
-
-    def get_ip(self):
-        headers = dict((k.decode().lower(), v.decode()) for k, v in self.scope.get("headers", []))
-        ip = headers.get("x-forwarded-for", None)
-        if not ip:
-            client = self.scope.get("client")
-            ip = client[0] if client else "unknown"
-        return ip
 
 _TOKEN_BUCKET_LUA = """
 local key = KEYS[1]

@@ -72,6 +72,10 @@ export function deleteAccount(password: string, mfaCode?: string) {
     })
 }
 
+export function authenticateAsGuest() {
+    return apiFetch("authenticate-as-guest/", { method: "POST" })
+}
+
 export function getChat(chatUUID: string) {
     return apiFetch(`get-chat/?chat_uuid=${chatUUID}`)
 }

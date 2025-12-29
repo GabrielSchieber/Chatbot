@@ -16,6 +16,7 @@ urlpatterns = [
     path("refresh/", user.Refresh.as_view()),
     path("me/", user.Me.as_view()),
     path("delete-account/", user.DeleteAccount.as_view()),
+    path("authenticate-as-guest/", user.AuthenticateAsGuest.as_view()),
 
     path("get-chat/", chat.GetChat.as_view()),
     path("get-chats/", chat.GetChats.as_view()),
