@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.request import Request
@@ -12,7 +13,10 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 from ..models import PreAuthToken, User
-from ..serializers.user import AuthenticateAsGuestSerializer, DeleteAccountSerializer, LoginSerializer, MeSerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
+from ..serializers.user import (
+    AuthenticateAsGuestSerializer, DeleteAccountSerializer, LoginSerializer,
+    MeSerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
+)
 from ..throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
 
 class Signup(APIView):
@@ -288,9 +292,12 @@ class AuthenticateAsGuest(APIView):
 
     def post(self, request: Request):
         qs = AuthenticateAsGuestSerializer(data = request.COOKIES)
-        qs.is_valid(raise_exception = True)
+        try:
+            qs.is_valid(raise_exception = True)
+            guest_token = qs.validated_data.get("guest_token")
+        except ValidationError:
+            guest_token = None
 
-        guest_token = qs.validated_data.get("guest_token")
         should_create = True
         if guest_token:
             try:
@@ -308,7 +315,7 @@ class AuthenticateAsGuest(APIView):
 
         response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
         response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
-        response.set_cookie("guest_token", str(guest_token), httponly = True, samesite = "Lax")
+        response.set_cookie("guest_token", user.password, httponly = True, samesite = "Lax")
 
         user.sessions.create(
             ip_address = request.ip_address,
