@@ -5,6 +5,7 @@ logger = logging.getLogger(__name__)
 
 from django import forms
 from django.contrib import admin, messages
+from django.contrib.admin.filters import BooleanFieldListFilter
 from django.contrib.admin.utils import display_for_field
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.forms import AdminUserCreationForm, ReadOnlyPasswordHashField, AdminPasswordChangeForm
@@ -163,7 +164,7 @@ class UserAdmin(DjangoUserAdmin):
         (("Preferences"), {"fields": ("language", "theme", "has_sidebar_open", "custom_instructions", "nickname", "occupation", "about")} ),
         (("MFA"), {"fields": ("mfa_display",)} ),
         (("Sessions"), {"fields": ("sessions_display",)} ),
-        ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")} ),
+        ("Permissions", {"fields": ("is_active", "is_guest", "is_staff", "is_superuser", "groups", "user_permissions")} ),
         (("Important dates"), {"fields": ("last_login", "created_at_display")} )
     )
     add_fieldsets = (
@@ -176,14 +177,17 @@ class UserAdmin(DjangoUserAdmin):
         ),
     )
 
-    list_display = ("email", "is_staff", "is_superuser", "is_active", "created_at_display")
+    class ActiveBooleanFieldListFilter(BooleanFieldListFilter):
+        title = "Active"
+
+    list_display = ("email", "is_active_display", "is_guest_display", "is_staff_display", "is_superuser_display", "created_at_display")
     readonly_fields = ("email", "last_login", "created_at", "created_at_display", "mfa_display" ,"sessions_display")
 
     class Media:
         css = {"all": ("chat/css/admin_mfa.css", "chat/css/admin_sessions.css")}
         js = ("chat/js/admin_mfa.js", "chat/js/admin_sessions.js", "chat/js/autoresize.js")
 
-    list_filter = ("is_staff", "is_superuser", "is_active", "groups")
+    list_filter = ("is_active", "is_guest", "is_staff", "is_superuser", "groups")
     search_fields = ("email",)
     ordering = ("email",)
     filter_horizontal = ("groups", "user_permissions")
@@ -250,6 +254,30 @@ class UserAdmin(DjangoUserAdmin):
             }
         )
         return mark_safe(rendered)
+
+    def is_active_display(self, user: User):
+        return user.is_active
+
+    is_active_display.short_description = "Active"
+    is_active_display.boolean = True
+
+    def is_guest_display(self, user: User):
+        return user.is_active
+
+    is_guest_display.short_description = "Guest"
+    is_guest_display.boolean = True
+
+    def is_staff_display(self, user: User):
+        return user.is_staff
+
+    is_staff_display.short_description = "Staff"
+    is_staff_display.boolean = True
+
+    def is_superuser_display(self, user: User):
+        return user.is_superuser
+
+    is_superuser_display.short_description = "Super User"
+    is_superuser_display.boolean = True
 
     def created_at_display(self, user: User):
         field = User._meta.get_field("created_at")
