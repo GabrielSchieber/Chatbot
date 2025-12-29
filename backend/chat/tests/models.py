@@ -23,6 +23,7 @@ class User(TestCase):
             self.assertNotEqual(user.password, "testpassword")
             self.assertTrue(check_password("testpassword", user.password))
             self.assertTrue(user.is_active)
+            self.assertFalse(user.is_guest)
             self.assertEqual(user.is_staff, is_staff)
             self.assertEqual(user.is_superuser, is_superuser)
 
@@ -83,6 +84,22 @@ class User(TestCase):
         self.assertEqual(str(cm.exception), "Email is already registered.")
 
         self.assertEqual(models.User.objects.count(), 1)
+
+    def test_guest_user(self):
+        user = models.User.objects.create_guest_user()
+
+        self.assertEqual(len(user.email), 36 + len("@example.com"))
+        self.assertEqual(len(user.password), 36)
+        self.assertEqual(user.email, user.password + "@example.com")
+        self.assertEqual(user.password, user.email[:-len("@example.com")])
+        self.assertTrue(user.is_active)
+        self.assertTrue(user.is_guest)
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.is_superuser)
+
+        self.assertHasAttr(user, "chats")
+        self.assertNotHasAttr(user, "mfa")
+        self.assertHasAttr(user, "preferences")
 
 class UserPreferences(TestCase):
     def test_creation(self):
