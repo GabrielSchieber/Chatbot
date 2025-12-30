@@ -129,17 +129,20 @@ export default function Messages({ chatRef }: { chatRef: React.RefObject<HTMLDiv
             initial={{
                 width: isMobile ? "100%" : "60vw",
                 height: shouldExpand ? "100%" : "50%",
-                padding: isMobile ? "0 5px" : "0"
+                padding: isMobile ? "0 5px" : "0 0",
+                opacity: shouldExpand ? 100 : 0
             }}
             animate={{
                 width: isMobile ? "100%" : "60vw",
                 height: shouldExpand ? "100%" : "50%",
-                padding: isMobile ? "0 5px" : "0"
+                padding: isMobile ? "0 5px" : "0 0",
+                opacity: shouldExpand ? 100 : 0
             }}
             transition={{
                 type: "tween",
                 ease: "easeInOut",
-                duration: 0.25
+                duration: 0.25,
+                opacity: { duration: 1 }
             }}
             className="flex flex-col"
         >
