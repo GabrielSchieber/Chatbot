@@ -121,19 +121,23 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
                 initial={isMobile ? {
                     width: "100%",
                     minWidth: "0",
+                    marginTop: "auto",
                     padding: "0 5px"
                 } : {
                     width: "60vw",
                     minWidth: "600px",
+                    marginTop: "0",
                     padding: "0 5px"
                 }}
                 animate={isMobile ? {
                     width: "100%",
                     minWidth: "0",
+                    marginTop: "auto",
                     padding: "0 5px"
                 } : {
                     width: "60vw",
                     minWidth: "600px",
+                    marginTop: "0",
                     padding: "0 5px"
                 }}
                 transition={{ type: "tween", duration: 0.15 }}
