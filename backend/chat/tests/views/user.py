@@ -478,6 +478,14 @@ class DisableMFA(ViewsTestCase):
         self.assertEqual(user.mfa.backup_codes, [])
         self.assertFalse(user.mfa.is_enabled)
 
+    def test_requires_non_guest_user(self):
+        response = self.client.post("/api/authenticate-as-guest/")
+        self.assertEqual(response.status_code, 201)
+
+        response = self.client.post("/api/disable-mfa/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"detail": "Guest users cannot have MFA."})
+
     def test_requires_to_be_enabled(self):
         self.create_and_login_user()
         response = self.client.post("/api/disable-mfa/")
@@ -493,7 +501,6 @@ class DisableMFA(ViewsTestCase):
             response = self.client.post("/api/disable-mfa/", {"code": code})
             self.assertEqual(response.status_code, 403)
             self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidCode"})
-
 
 class VerifyMFA(ViewsTestCase):
     def test(self):
