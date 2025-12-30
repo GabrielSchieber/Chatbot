@@ -375,6 +375,14 @@ class SetupMFA(ViewsTestCase):
         self.assertEqual(user.mfa.backup_codes, [])
         self.assertFalse(user.mfa.is_enabled)
 
+    def test_requires_non_guest_user(self):
+        response = self.client.post("/api/authenticate-as-guest/")
+        self.assertEqual(response.status_code, 201)
+
+        response = self.client.post("/api/setup-mfa/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"detail": "Guest users cannot set up MFA."})
+
     def test_requires_to_be_disabled(self):
         user = self.create_and_login_user()
         user.mfa.setup()
