@@ -13,7 +13,7 @@ import { CopyButton, EditButton, RegenerateButton } from "../../misc/Buttons"
 import { useChat } from "../../../providers/ChatProvider"
 import type { MessageFile, Model } from "../../../utils/types"
 
-export default function Messages({ chatRef }: { chatRef: React.RefObject<HTMLDivElement | null> }) {
+export default function Messages({ chatRef, hasSentMessage }: { chatRef: React.RefObject<HTMLDivElement | null>, hasSentMessage: React.RefObject<boolean> }) {
     const { chatUUID } = useParams()
 
     const { setChats, messages, setMessages, isMobile, promptHeight } = useChat()
@@ -22,8 +22,6 @@ export default function Messages({ chatRef }: { chatRef: React.RefObject<HTMLDiv
     const bottomRef = useRef<HTMLDivElement | null>(null)
     const previousMessagesLength = useRef(0)
     const lastTimeScrolled = useRef(0)
-
-    const [shouldExpand, setShouldExpand] = useState(chatUUID !== undefined || isMobile)
 
     const [isBottomVisible, setIsBottomVisible] = useState(true)
     const [editingMessageIndex, setEditingMessageIndex] = useState(-1)
@@ -111,43 +109,32 @@ export default function Messages({ chatRef }: { chatRef: React.RefObject<HTMLDiv
         return () => observer.disconnect()
     }, [])
 
-    useEffect(() => {
-        if (chatUUID) {
-            setShouldExpand(true)
-        }
-    }, [chatUUID])
-
-    useEffect(() => {
-        if (!chatUUID) {
-            setShouldExpand(isMobile)
-        }
-    }, [isMobile])
-
     return (
         <motion.div
-            layout
-            initial={{
-                width: isMobile ? "100%" : "60vw",
-                height: shouldExpand ? "100%" : "50%",
-                padding: isMobile ? "0 5px" : "0 0",
-                opacity: shouldExpand ? 100 : 0
+            layout={hasSentMessage.current}
+            initial={chatUUID ? {
+                flex: 1,
+                padding: "15px 0",
+                opacity: 100
+            } : {
+                flex: 0.4,
+                padding: "0 0",
+                opacity: 0
             }}
-            animate={{
-                width: isMobile ? "100%" : "60vw",
-                height: shouldExpand ? "100%" : "50%",
-                padding: isMobile ? "0 5px" : "0 0",
-                opacity: shouldExpand ? 100 : 0
+            animate={chatUUID ? {
+                flex: 1,
+                padding: "15px 0",
+                opacity: 100
+            } : {
+                flex: 0.4,
+                padding: "0 0",
+                opacity: 0
             }}
-            transition={{
-                type: "tween",
-                ease: "easeInOut",
-                duration: 0.25,
-                opacity: { duration: 1 }
-            }}
-            className="flex flex-col"
+            transition={{ type: "tween", duration: 0.5 }}
+            className="flex flex-col w-full items-center"
         >
             {messages.map((m, i) =>
-                <React.Fragment key={i}>
+                <div key={i} className={`flex flex-col transition-all duration-500 ${isMobile ? "w-full px-3" : "w-[60vw]"}`}>
                     {editingMessageIndex === i ? (
                         <Editor index={i} setIndex={setEditingMessageIndex} />
                     ) : m.is_from_user ? (
@@ -155,7 +142,7 @@ export default function Messages({ chatRef }: { chatRef: React.RefObject<HTMLDiv
                     ) : (
                         <BotMessage index={i} text={m.text} model={m.model} />
                     )}
-                </React.Fragment>
+                </div>
             )}
 
             <div ref={bottomRef} />

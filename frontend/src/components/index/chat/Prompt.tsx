@@ -1,7 +1,7 @@
 import { Cross2Icon } from "@radix-ui/react-icons"
+import { AnimatePresence, motion } from "motion/react"
 import { t } from "i18next"
-import { motion, AnimatePresence } from "motion/react"
-import { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 
 import Composer from "./prompt/Composer"
@@ -12,7 +12,7 @@ import { getMessageFileIDs, newMessage, unarchiveChat } from "../../../utils/api
 import { getFileSize } from "../../../utils/misc"
 import type { Model } from "../../../utils/types"
 
-export default function Prompt() {
+export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefObject<boolean> }) {
     const { chatUUID } = useParams()
     const navigate = useNavigate()
 
@@ -30,6 +30,8 @@ export default function Prompt() {
     const pendingChat = chats.find(c => c.pending_message_id !== null)
 
     async function sendMessage() {
+        hasSentMessage.current = true
+
         const response = await newMessage(chatUUID || "", text, model, files, isTemporaryChat)
         if (response.ok) {
             setMessages(previous => {
@@ -116,22 +118,25 @@ export default function Prompt() {
         ) : (
             <motion.div
                 layout
-                initial={{
-                    width: isMobile ? "100%" : "60vw",
-                    minWidth: isMobile ? "0" : "600px",
-                    padding: isMobile ? "0 5px" : "0 0",
+                initial={isMobile ? {
+                    width: "100%",
+                    minWidth: "0",
+                    padding: "0 5px"
+                } : {
+                    width: "60vw",
+                    minWidth: "600px",
+                    padding: "0 5px"
                 }}
-                animate={{
-                    width: isMobile ? "100%" : "60vw",
-                    minWidth: isMobile ? "0" : "600px",
-                    padding: isMobile ? "0 5px" : "0 0",
+                animate={isMobile ? {
+                    width: "100%",
+                    minWidth: "0",
+                    padding: "0 5px"
+                } : {
+                    width: "60vw",
+                    minWidth: "600px",
+                    padding: "0 5px"
                 }}
-                transition={{
-                    type: "tween",
-                    ease: "easeInOut",
-                    duration: 0.25
-                }}
-                ref={ref}
+                transition={{ type: "tween", duration: 0.15 }}
                 className="sticky bottom-0 flex flex-col items-center"
             >
                 <AnimatePresence>

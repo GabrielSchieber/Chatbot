@@ -1,4 +1,3 @@
-import { motion } from "motion/react"
 import { useRef } from "react"
 
 import Header from "./chat/Header"
@@ -11,15 +10,14 @@ export const MAX_FILE_SIZE = 5_000_000
 
 export default function Chat() {
     const ref = useRef<HTMLDivElement | null>(null)
+    const hasSentMessage = useRef(false)
 
     return (
-        <div ref={ref} className="flex flex-col size-full min-w-0 items-center overflow-y-auto">
+        <div className="relative flex flex-col size-full items-center overflow-y-auto">
             <Header />
-            <motion.div className="relative flex flex-col size-full items-center">
-                <Messages chatRef={ref} />
-                <Introduction />
-                <Prompt />
-            </motion.div>
+            <Messages chatRef={ref} hasSentMessage={hasSentMessage} />
+            <Introduction />
+            <Prompt hasSentMessage={hasSentMessage} />
         </div>
     )
 }
