@@ -137,6 +137,7 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
                     padding: "0 5px"
                 }}
                 transition={{ type: "tween", duration: 0.15 }}
+                ref={ref}
                 className="sticky bottom-0 flex flex-col items-center"
             >
                 <AnimatePresence>

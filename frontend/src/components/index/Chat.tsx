@@ -13,7 +13,7 @@ export default function Chat() {
     const hasSentMessage = useRef(false)
 
     return (
-        <div className="relative flex flex-col size-full items-center overflow-y-auto">
+        <div ref={ref} className="relative flex flex-col size-full items-center overflow-y-auto">
             <Header />
             <Messages chatRef={ref} hasSentMessage={hasSentMessage} />
             <Introduction />
