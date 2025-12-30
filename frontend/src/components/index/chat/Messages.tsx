@@ -152,7 +152,7 @@ export default function Messages({
                 padding: "15px 0",
                 opacity: 100
             } : {
-                flex: isMobile ? 0.5 : 0.4,
+                flex: isMobile ? 0.5 : 0.8,
                 padding: "0 0",
                 opacity: 0
             }}
@@ -161,7 +161,7 @@ export default function Messages({
                 padding: "15px 0",
                 opacity: 100
             } : {
-                flex: isMobile ? 0.5 : 0.4,
+                flex: isMobile ? 0.5 : 0.8,
                 padding: "0 0",
                 opacity: 0
             }}
