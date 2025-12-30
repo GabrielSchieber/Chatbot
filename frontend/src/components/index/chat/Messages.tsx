@@ -80,8 +80,9 @@ export default function Messages({ chatRef, hasSentMessage }: { chatRef: React.R
 
     useEffect(() => {
         if (previousMessagesLength.current === 0) {
-            previousMessagesLength.current === messages.length
-            scrollToBottom()
+            previousMessagesLength.current = messages.length
+            const id = setInterval(() => { scrollToBottom() }, 100)
+            setTimeout(() => { clearInterval(id) }, 500)
         }
     }, [chatUUID, messages.length])
 
