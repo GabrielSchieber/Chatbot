@@ -47,7 +47,7 @@ export default function Composer({
     const selectionStart = useRef(0)
     const selectionEnd = useRef(0)
 
-    const [isExtended, setIsExtended] = useState(false)
+    const [isExtended, setIsExtended] = useState(isTextWrapping())
     const [isWidthSmall, setIsWidthSmall] = useState(window.innerWidth < 425)
 
     const pendingChat = chats.find(c => c.pending_message_id !== null)
@@ -58,9 +58,13 @@ export default function Composer({
         setChats(previous => previous.map(c => ({ ...c, pending_message_id: null })))
     }
 
+    function isTextWrapping() {
+        return text.split("\n").length > 1 || (textAreaRef.current?.clientHeight || 0) > 48
+    }
+
     useEffect(() => {
         if (isWidthSmall) return
-        setIsExtended(isExtended ? text !== "" : text.split("\n").length > 1 || (textAreaRef.current?.clientHeight || 0) > 48)
+        setIsExtended(isExtended ? text !== "" : isTextWrapping())
     }, [text, textAreaRef.current?.clientHeight])
 
     useEffect(() => {
