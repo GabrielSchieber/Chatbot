@@ -23,6 +23,8 @@ export default function Messages({ chatRef }: { chatRef: React.RefObject<HTMLDiv
     const previousMessagesLength = useRef(0)
     const lastTimeScrolled = useRef(0)
 
+    const [shouldExpand, setShouldExpand] = useState(chatUUID !== undefined || isMobile)
+
     const [isBottomVisible, setIsBottomVisible] = useState(true)
     const [editingMessageIndex, setEditingMessageIndex] = useState(-1)
 
@@ -109,8 +111,38 @@ export default function Messages({ chatRef }: { chatRef: React.RefObject<HTMLDiv
         return () => observer.disconnect()
     }, [])
 
+    useEffect(() => {
+        if (chatUUID) {
+            setShouldExpand(true)
+        }
+    }, [chatUUID])
+
+    useEffect(() => {
+        if (!chatUUID) {
+            setShouldExpand(isMobile)
+        }
+    }, [isMobile])
+
     return (
-        <div className={`flex flex-col ${isMobile ? "w-full px-5" : "w-[60vw]"} ${chatUUID ? "mb-auto py-15" : "mb-[25%]"}`}>
+        <motion.div
+            layout
+            initial={{
+                width: isMobile ? "100%" : "60vw",
+                height: shouldExpand ? "100%" : "50%",
+                padding: isMobile ? "0 5px" : "0"
+            }}
+            animate={{
+                width: isMobile ? "100%" : "60vw",
+                height: shouldExpand ? "100%" : "50%",
+                padding: isMobile ? "0 5px" : "0"
+            }}
+            transition={{
+                type: "tween",
+                ease: "easeInOut",
+                duration: 0.25
+            }}
+            className="flex flex-col"
+        >
             {messages.map((m, i) =>
                 <React.Fragment key={i}>
                     {editingMessageIndex === i ? (
@@ -151,7 +183,7 @@ export default function Messages({ chatRef }: { chatRef: React.RefObject<HTMLDiv
                     </motion.button>
                 )}
             </AnimatePresence>
-        </div>
+        </motion.div>
     )
 }
 

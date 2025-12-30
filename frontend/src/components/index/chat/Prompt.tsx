@@ -114,7 +114,26 @@ export default function Prompt() {
                 </button>
             </div>
         ) : (
-            <div ref={ref} className={`sticky bottom-0 flex flex-col items-center ${isMobile ? "w-full px-2" : "w-[60vw]"} ${isMobile && !chatUUID && "mt-auto"}`}>
+            <motion.div
+                layout
+                initial={{
+                    width: isMobile ? "100%" : "60vw",
+                    minWidth: isMobile ? "0" : "600px",
+                    padding: isMobile ? "0 5px" : "0 0",
+                }}
+                animate={{
+                    width: isMobile ? "100%" : "60vw",
+                    minWidth: isMobile ? "0" : "600px",
+                    padding: isMobile ? "0 5px" : "0 0",
+                }}
+                transition={{
+                    type: "tween",
+                    ease: "easeInOut",
+                    duration: 0.25
+                }}
+                ref={ref}
+                className="sticky bottom-0 flex flex-col items-center"
+            >
                 <AnimatePresence>
                     {shouldShowPendingNotification && pendingChat && (
                         <motion.div
@@ -155,7 +174,7 @@ export default function Prompt() {
                     sendMessage={sendMessage}
                     sendMessageWithEvent={sendMessageWithEvent}
                 />
-            </div>
+            </motion.div>
         )
     )
 }
