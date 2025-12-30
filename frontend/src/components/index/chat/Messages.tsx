@@ -13,13 +13,23 @@ import { CopyButton, EditButton, RegenerateButton } from "../../misc/Buttons"
 import { useChat } from "../../../providers/ChatProvider"
 import type { MessageFile, Model } from "../../../utils/types"
 
-export default function Messages({ chatRef, hasSentMessage }: { chatRef: React.RefObject<HTMLDivElement | null>, hasSentMessage: React.RefObject<boolean> }) {
+export default function Messages({
+    chatRef,
+    hasSentMessage,
+    introductionRef
+}: {
+    chatRef: React.RefObject<HTMLDivElement | null>
+    hasSentMessage: React.RefObject<boolean>
+    introductionRef: React.RefObject<HTMLHeadingElement | null>
+}) {
     const { chatUUID } = useParams()
 
     const { setChats, messages, setMessages, isMobile, promptHeight } = useChat()
 
     const webSocket = useRef<WebSocket | null>(null)
+    const ref = useRef<HTMLDivElement | null>(null)
     const bottomRef = useRef<HTMLDivElement | null>(null)
+    const resizeObserverRef = useRef<ResizeObserver | null>(null)
     const previousMessagesLength = useRef(0)
     const lastTimeScrolled = useRef(0)
 
@@ -110,6 +120,30 @@ export default function Messages({ chatRef, hasSentMessage }: { chatRef: React.R
         return () => observer.disconnect()
     }, [])
 
+    useEffect(() => {
+        if (!ref.current) return
+
+        const handleResize = (entries: ResizeObserverEntry[]) => {
+            if (!introductionRef.current) return
+
+            for (const entry of entries) {
+                if (entry.target === ref.current) {
+                    introductionRef.current.style.transform = `translateY(${entry.target.clientHeight}px)`
+                }
+            }
+        }
+
+        resizeObserverRef.current = new ResizeObserver(handleResize)
+        resizeObserverRef.current.observe(ref.current)
+        return () => resizeObserverRef.current?.disconnect()
+    }, [])
+
+    useEffect(() => {
+        if (hasSentMessage.current) {
+            resizeObserverRef.current?.disconnect()
+        }
+    }, [hasSentMessage.current])
+
     return (
         <motion.div
             layout={hasSentMessage.current}
@@ -132,6 +166,7 @@ export default function Messages({ chatRef, hasSentMessage }: { chatRef: React.R
                 opacity: 0
             }}
             transition={{ type: "tween", duration: 0.5 }}
+            ref={ref}
             className="flex flex-col w-full items-center"
         >
             {messages.map((m, i) =>
