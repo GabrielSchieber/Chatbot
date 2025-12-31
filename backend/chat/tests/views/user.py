@@ -970,37 +970,38 @@ class AuthenticateAsGuest(ViewsTestCase):
         self.assertEqual(User.objects.count(), 0)
         self.assertAlmostEqual(len(self.client.cookies.items()), 0)
 
-        self.client.cookies["guest_token"] = str(uuid.uuid4())
+        for i, token in enumerate([str(uuid.uuid4()), "invalid"]):
+            self.client.cookies["guest_token"] = token
 
-        response = self.client.post("/api/authenticate-as-guest/")
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.content, b"")
-        self.assertEqual(len(response.cookies.items()), 3)
-        self.assertEqual(len(self.client.cookies.items()), 3)
+            response = self.client.post("/api/authenticate-as-guest/")
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.content, b"")
+            self.assertEqual(len(response.cookies.items()), 3)
+            self.assertEqual(len(self.client.cookies.items()), 3)
 
-        for cookie_name in ["access_token", "refresh_token", "guest_token"]:
-            self.assertIn(cookie_name, response.cookies)
-            self.assertIn(cookie_name, self.client.cookies)
-            self.assertTrue(response.cookies[cookie_name]["httponly"])
-            self.assertTrue(self.client.cookies[cookie_name]["httponly"])
-            self.assertEqual(response.cookies[cookie_name]["samesite"], "Lax")
-            self.assertEqual(self.client.cookies[cookie_name]["samesite"], "Lax")
+            for cookie_name in ["access_token", "refresh_token", "guest_token"]:
+                self.assertIn(cookie_name, response.cookies)
+                self.assertIn(cookie_name, self.client.cookies)
+                self.assertTrue(response.cookies[cookie_name]["httponly"])
+                self.assertTrue(self.client.cookies[cookie_name]["httponly"])
+                self.assertEqual(response.cookies[cookie_name]["samesite"], "Lax")
+                self.assertEqual(self.client.cookies[cookie_name]["samesite"], "Lax")
 
-        self.assertEqual(User.objects.count(), 1)
-        user: User = User.objects.first()
+            self.assertEqual(User.objects.count(), i + 1)
+            user: User = User.objects.order_by("created_at").last()
 
-        for cookies in [response.cookies, self.client.cookies]:
-            self.assertEqual(len(cookies["guest_token"].value), 36)
-            self.assertEqual(cookies["guest_token"].value, user.password)
+            for cookies in [response.cookies, self.client.cookies]:
+                self.assertEqual(len(cookies["guest_token"].value), 36)
+                self.assertEqual(cookies["guest_token"].value, user.password)
 
-        self.assertEqual(len(user.email), 36 + len("@example.com"))
-        self.assertEqual(len(user.password), 36)
-        self.assertEqual(user.email, user.password + "@example.com")
-        self.assertEqual(user.password, user.email[:-len("@example.com")])
-        self.assertTrue(user.is_active)
-        self.assertTrue(user.is_guest)
-        self.assertFalse(user.is_staff)
-        self.assertFalse(user.is_superuser)
+            self.assertEqual(len(user.email), 36 + len("@example.com"))
+            self.assertEqual(len(user.password), 36)
+            self.assertEqual(user.email, user.password + "@example.com")
+            self.assertEqual(user.password, user.email[:-len("@example.com")])
+            self.assertTrue(user.is_active)
+            self.assertTrue(user.is_guest)
+            self.assertFalse(user.is_staff)
+            self.assertFalse(user.is_superuser)
 
     def test_tampered_guest_token(self):
         self.assertEqual(User.objects.count(), 0)
