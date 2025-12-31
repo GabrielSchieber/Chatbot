@@ -3,8 +3,7 @@ import { authenticator } from "otplib"
 import { apiFetch, getRandomEmail, signupAndLogin, signupWithMFAEnabled, signupWithMFAEnabledAndLogin } from "./utils"
 
 test("user can sign up", async ({ page }) => {
-    await page.goto("/")
-    await page.waitForURL("/login")
+    await page.goto("/login")
 
     await page.click("text=Sign up!")
 
@@ -19,8 +18,7 @@ test("user can sign up", async ({ page }) => {
 test("user cannot sign up with existing email", async ({ page }) => {
     const [email, password] = await signup()
 
-    await page.goto("/")
-    await page.waitForURL("/login")
+    await page.goto("/login")
 
     await page.click("text=Sign up!")
 
@@ -35,8 +33,7 @@ test("user cannot sign up with existing email", async ({ page }) => {
 test("user can login", async ({ page }) => {
     const [email, password] = await signup()
 
-    await page.goto("/")
-    await page.waitForURL("/login")
+    await page.goto("/login")
 
     await page.getByRole("textbox", { name: "Email", exact: true }).fill(email)
     await page.getByRole("textbox", { name: "Password", exact: true }).fill(password)
@@ -46,8 +43,7 @@ test("user can login", async ({ page }) => {
 })
 
 test("user cannot login with invalid email", async ({ page }) => {
-    await page.goto("/")
-    await page.waitForURL("/login")
+    await page.goto("/login")
 
     await page.getByRole("textbox", { name: "Email", exact: true }).fill("invalid@example.com")
     await page.getByRole("textbox", { name: "Password", exact: true }).fill("testpassword")
@@ -59,8 +55,7 @@ test("user cannot login with invalid email", async ({ page }) => {
 test("user cannot login with invalid password", async ({ page }) => {
     const [email] = await signup()
 
-    await page.goto("/")
-    await page.waitForURL("/login")
+    await page.goto("/login")
 
     await page.getByRole("textbox", { name: "Email", exact: true }).fill(email)
     await page.getByRole("textbox", { name: "Password", exact: true }).fill("invalidpassword")
@@ -102,8 +97,7 @@ test("user can enable multi-factor authentication", async ({ page }) => {
 test("user can log in with multi-factor authentication", async ({ page }) => {
     const { user } = await signupWithMFAEnabled(page)
 
-    await page.goto("/")
-    await page.waitForURL("/login")
+    await page.goto("/login")
 
     await page.fill("input[type='email']", user.email)
     await page.fill("input[type='password']", user.password)
@@ -156,8 +150,7 @@ test("user can disable multi-factor authentication", async ({ page }) => {
 test("user can login with multi-factor authentication backup codes", async ({ page }) => {
     const { user, backupCodes } = await signupWithMFAEnabled(page)
 
-    await page.goto("/")
-    await page.waitForURL("/login")
+    await page.goto("/login")
 
     await page.fill("input[type='email']", user.email)
     await page.fill("input[type='password']", user.password)
@@ -185,8 +178,7 @@ test("user cannot login with an already used multi-factor authentication backup 
     const { user, backupCodes } = await signupWithMFAEnabled(page)
 
     async function tryToLoginWithCode(code: string, shouldSucceed: boolean) {
-        await page.goto("/")
-        await page.waitForURL("/login")
+        await page.goto("/login")
 
         await page.fill("input[type='email']", user.email)
         await page.fill("input[type='password']", user.password)
@@ -218,7 +210,7 @@ test("user cannot login with an already used multi-factor authentication backup 
     await page.getByText("Settings").click()
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByRole("button", { name: "Log out", exact: true }).click()
-    await page.waitForURL("/login")
+    await page.goto("/login")
 
     await tryToLoginWithCode(backupCodes[0], false)
 })
@@ -249,8 +241,7 @@ test("user cannot disable multi-factor authentication with an already used backu
 
     const { user, backupCodes } = await signupWithMFAEnabled(page)
 
-    await page.goto("/")
-    await page.waitForURL("/login")
+    await page.goto("/login")
 
     await page.fill("input[type='email']", user.email)
     await page.fill("input[type='password']", user.password)
