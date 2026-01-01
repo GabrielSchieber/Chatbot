@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test"
+import { Browser, Page, expect } from "@playwright/test"
 import { authenticator } from "otplib"
 
 export function apiFetch(url: string, init: RequestInit) {
@@ -128,6 +128,36 @@ export async function signupWithMFAEnabled(page: Page) {
     await page.waitForURL("/login")
 
     return user
+}
+
+export async function createExampleChats(email: string) {
+    let chats: Chat[] = []
+    const response = await apiFetch("/test/create-chats/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, chats: exampleChats })
+    })
+    expect(response.status).toEqual(200)
+    const uuids = await response.json()
+    chats = exampleChats.map((c, i) => ({ ...c, uuid: uuids[i] }))
+    chats.reverse()
+    return chats
+}
+
+export async function getGuestTokenCookie(browser: Browser) {
+    let guestToken
+    for (const context of browser.contexts()) {
+        guestToken = (await context.cookies()).find(c => c.name === "guest_token")?.value
+        if (guestToken) {
+            break
+        }
+    }
+    expect(guestToken).toBeDefined()
+    expect(guestToken).toHaveLength(36)
+    if (typeof (guestToken) !== "string") {
+        throw Error("typeof(guestToken) !== string")
+    }
+    return guestToken
 }
 
 export type User = {

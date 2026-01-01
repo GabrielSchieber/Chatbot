@@ -1,6 +1,6 @@
 import { Page, expect, test } from "@playwright/test"
 import { authenticator } from "otplib"
-import { Chat, User, signupAndLogin, signupWithMFAEnabledAndLogin, apiFetch } from "./utils"
+import { Chat, User, signupAndLogin, signupWithMFAEnabledAndLogin, apiFetch, createExampleChats, getGuestTokenCookie } from "./utils"
 
 test("user can open settings", async ({ page }) => {
     const user = await signupAndLogin(page)
@@ -513,8 +513,72 @@ test("user can log out", async ({ page }) => {
     await page.getByRole("button", { name: "Log out", exact: true }).click()
 
     await page.waitForURL("/login")
-    await page.goto("/")
+    await page.reload()
     await page.waitForURL("/login")
+})
+
+test("guest user can delete chats", async ({ page, browser }) => {
+    const response = page.waitForResponse(response =>
+        response.url().endsWith("/authenticate-as-guest/") &&
+        response.status() === 201 &&
+        response.request().method() === "POST"
+    )
+    await page.goto("/")
+    await response
+
+    const guestToken = await getGuestTokenCookie(browser)
+    const chats = await createExampleChats(guestToken + "@example.com")
+
+    await page.reload()
+
+    await expect(page.getByTestId("history").locator("a")).toHaveCount(chats.length)
+
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+    await settingsButton.click()
+
+    await page.getByRole("tab", { name: "Data" }).click()
+    await page.getByRole("button", { name: "Delete all", exact: true }).click()
+
+    await expect(page.getByRole("heading", { name: "Delete Chats", exact: true })).toBeVisible()
+    await expect(page.getByText("Are you sure you want to delete all of your chats? This action cannot be undone.", { exact: true })).toBeVisible()
+    await page.getByRole("button", { name: "Delete all", exact: true }).click()
+
+    await expect(page.getByTestId("history").locator("a")).toHaveCount(0)
+    await expect(page.getByTestId("history").getByText("You don't have any chats.")).toBeVisible()
+})
+
+test("guest user cannot see security tab", async ({ page }) => {
+    await page.goto("/")
+
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+    await settingsButton.click()
+
+    await expect(page.getByText("Security")).not.toBeVisible()
+})
+
+test("guest user can delete account", async ({ page }) => {
+    await page.goto("/")
+
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+    await settingsButton.click()
+
+    await page.getByRole("tab", { name: "Account (as guest)" }).click()
+    await page.getByRole("button", { name: "Delete", exact: true }).click()
+
+    const heading = page.getByRole("heading", { name: "Delete Account", exact: true })
+    await expect(heading).toBeVisible()
+    await expect(page.getByText("This action cannot be undone.", { exact: true })).toBeVisible()
+
+    await expect(heading.locator("..").locator("..").locator("..").locator("p")).toHaveCount(1)
 })
 
 async function archiveOrUnarchiveAllChats(page: Page, user: User, action: "archive" | "unarchive", shouldHaveChats: boolean) {

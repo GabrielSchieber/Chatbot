@@ -1,5 +1,5 @@
-import { Page, expect, test } from "@playwright/test"
-import { apiFetch, signupAndLogin } from "./utils"
+import { Browser, Page, expect, test } from "@playwright/test"
+import { User, apiFetch, getGuestTokenCookie, signupAndLogin as utilsSignupAndLogin } from "./utils"
 
 test.beforeEach(async ({ page }) => {
     test.setTimeout(timeout)
@@ -17,262 +17,281 @@ test.beforeEach(async ({ page }) => {
     })
 })
 
-test("user can chat with bot", async ({ page }) => {
-    await signupAndLogin(page)
-    await sendExampleChat(page, 0)
-    await sendExampleChat(page, 1)
-})
+for (const asGuest of [false]) {
+    async function guestSignupAndLogin(page: Page, browser: Browser): Promise<User> {
+        const response = page.waitForResponse(response =>
+            response.url().endsWith("/authenticate-as-guest/") &&
+            response.status() === 201 &&
+            response.request().method() === "POST"
+        )
+        await page.goto("/")
+        await response
+        const guestToken = await getGuestTokenCookie(browser)
+        return { email: guestToken + "@example.com", password: guestToken, chats: [] }
+    }
 
-test("user can chat with bot with a file", async ({ page }) => {
-    await signupAndLogin(page)
+    async function loggedInSignupAndLogin(page: Page, browser: Browser) {
+        return await utilsSignupAndLogin(page, false)
+    }
 
-    const message = "Describe the following file in a concise way."
-    const fileName = "about-cats.txt"
-    const fileContent = "The purpose of this file is to describe cats and their behavior."
-    const expectedResponse = 'This file defines "about" for cats, explains how they behave (e.g., how quiet or aggressive), identifies different breeds by size and color, lists the colors of their coats, and includes some information about what kinds are allowed in certain areas of the home based on a code ("Code 120'
+    const signupAndLogin = asGuest ? guestSignupAndLogin : loggedInSignupAndLogin
 
-    await page.setInputFiles("input[type='file']", {
-        name: fileName,
-        mimeType: "text/plain",
-        buffer: (globalThis as any).Buffer.from(fileContent)
+    test(`user can chat with bot${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+        await sendExampleChat(page, 0)
+        await sendExampleChat(page, 1)
     })
 
-    await expect(page.getByText(fileName)).toBeVisible()
+    test(`user can chat with bot with a file${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
 
-    const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
-    await textarea.fill(message)
-    await textarea.press("Enter", { delay: 20, timeout: 1000 })
-    await expect(textarea).not.toContainText(message)
+        const message = "Describe the following file in a concise way."
+        const fileName = "about-cats.txt"
+        const fileContent = "The purpose of this file is to describe cats and their behavior."
+        const expectedResponse = 'This file defines "about" for cats, explains how they behave (e.g., how quiet or aggressive), identifies different breeds by size and color, lists the colors of their coats, and includes some information about what kinds are allowed in certain areas of the home based on a code ("Code 120'
 
-    const stopButton = page.getByTestId("stop-button")
-    await expect(stopButton).toBeVisible()
+        await page.setInputFiles("input[type='file']", {
+            name: fileName,
+            mimeType: "text/plain",
+            buffer: (globalThis as any).Buffer.from(fileContent)
+        })
 
-    const userMessage = page.getByTestId("message-0")
-    const botMessage = page.getByTestId("message-1")
+        await expect(page.getByText(fileName)).toBeVisible()
 
-    await expect(userMessage).toBeVisible({ timeout })
-    await expect(botMessage).toBeVisible({ timeout })
+        const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
+        await textarea.fill(message)
+        await textarea.press("Enter", { delay: 20, timeout: 1000 })
+        await expect(textarea).not.toContainText(message)
 
-    await expect(userMessage).toContainText(message, { timeout })
-    await expect(botMessage).toContainText(expectedResponse, { timeout })
+        const stopButton = page.getByTestId("stop-button")
+        await expect(stopButton).toBeVisible()
 
-    await expect(stopButton).not.toBeVisible({ timeout })
+        const userMessage = page.getByTestId("message-0")
+        const botMessage = page.getByTestId("message-1")
 
-    if (page.viewportSize()!.width < 750) {
-        await page.getByRole("banner").getByRole("button").first().click()
-    }
-    await expect(page.getByText("Close Sidebar")).toBeVisible()
-    await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
-})
+        await expect(userMessage).toBeVisible({ timeout })
+        await expect(botMessage).toBeVisible({ timeout })
 
-test("user can chat with bot with multiple files", async ({ page }) => {
-    await signupAndLogin(page)
+        await expect(userMessage).toContainText(message, { timeout })
+        await expect(botMessage).toContainText(expectedResponse, { timeout })
 
-    const message = "Describe the files."
-    const file1Name = "about-cats.txt"
-    const file1Content = "The purpose of this file is to describe cats and their behavior."
-    const file2Name = "about-dogs.txt"
-    const file2Content = "The purpose of this file is to describe dogs and their behavior."
-    const expectedResponse = `You've found a list of files that match the provided criteria, containing information on cats, including description fields.
+        await expect(stopButton).not.toBeVisible({ timeout })
+
+        if (page.viewportSize()!.width < 750) {
+            await page.getByRole("banner").getByRole("button").first().click()
+        }
+        await expect(page.getByText("Close Sidebar")).toBeVisible()
+        await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
+    })
+
+    test(`user can chat with bot with multiple files${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+
+        const message = "Describe the files."
+        const file1Name = "about-cats.txt"
+        const file1Content = "The purpose of this file is to describe cats and their behavior."
+        const file2Name = "about-dogs.txt"
+        const file2Content = "The purpose of this file is to describe dogs and their behavior."
+        const expectedResponse = `You've found a list of files that match the provided criteria, containing information on cats, including description fields.
 pythonCopy# cat_list.pyx
 def create_cat_object():
     cat1 = Cat("purriform")
     cat2 = Cat(squeeful)
     cat3`
 
-    for (const [fileName, fileContent] of [[file1Name, file1Content], [file2Name, file2Content]]) {
+        for (const [fileName, fileContent] of [[file1Name, file1Content], [file2Name, file2Content]]) {
+            await page.setInputFiles("input[type='file']", {
+                name: fileName,
+                mimeType: "text/plain",
+                buffer: (globalThis as any).Buffer.from(fileContent)
+            })
+            await expect(page.getByText(fileName)).toBeVisible()
+        }
+
+        const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
+        await textarea.fill(message)
+        await textarea.press("Enter", { delay: 20, timeout: 1000 })
+        await expect(textarea).not.toContainText(message)
+
+        const stopButton = page.getByTestId("stop-button")
+        await expect(stopButton).toBeVisible()
+
+        const userMessage = page.getByTestId("message-0")
+        const botMessage = page.getByTestId("message-1")
+
+        await expect(userMessage).toBeVisible({ timeout })
+        await expect(botMessage).toBeVisible({ timeout })
+
+        await expect(userMessage).toContainText(message, { timeout })
+        await expect(botMessage).toContainText(expectedResponse, { timeout })
+
+        await expect(stopButton).not.toBeVisible({ timeout })
+
+        if (page.viewportSize()!.width < 750) {
+            await page.getByRole("banner").getByRole("button").first().click()
+        }
+        await expect(page.getByText("Close Sidebar")).toBeVisible()
+        await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
+    })
+
+    test(`user can remove attached file before sending message${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+
+        const message = "Hello!"
+        const fileName = "about-cats.txt"
+        const fileContent = "The purpose of this file is to describe cats and their behavior."
+        const expectedResponse = "Hello, welcome back from school! I hope you've been enjoying our discussions so far. Is there a particular topic or area where you'd like me to explain something interesting?"
+
         await page.setInputFiles("input[type='file']", {
             name: fileName,
             mimeType: "text/plain",
             buffer: (globalThis as any).Buffer.from(fileContent)
         })
+
         await expect(page.getByText(fileName)).toBeVisible()
-    }
+        await page.getByTestId("remove-attachment-button-about-cats.txt").click()
+        await expect(page.getByText(fileName)).not.toBeVisible()
 
-    const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
-    await textarea.fill(message)
-    await textarea.press("Enter", { delay: 20, timeout: 1000 })
-    await expect(textarea).not.toContainText(message)
+        const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
+        await textarea.fill("Hello!")
+        await textarea.press("Enter", { delay: 20, timeout: 1000 })
+        await expect(textarea).not.toContainText("Hello!")
 
-    const stopButton = page.getByTestId("stop-button")
-    await expect(stopButton).toBeVisible()
+        const stopButton = page.getByTestId("stop-button")
+        await expect(stopButton).toBeVisible()
 
-    const userMessage = page.getByTestId("message-0")
-    const botMessage = page.getByTestId("message-1")
+        const userMessage = page.getByTestId("message-0")
+        const botMessage = page.getByTestId("message-1")
 
-    await expect(userMessage).toBeVisible({ timeout })
-    await expect(botMessage).toBeVisible({ timeout })
+        await expect(userMessage).toBeVisible({ timeout })
+        await expect(botMessage).toBeVisible({ timeout })
 
-    await expect(userMessage).toContainText(message, { timeout })
-    await expect(botMessage).toContainText(expectedResponse, { timeout })
+        await expect(userMessage).toContainText(message, { timeout })
+        await expect(botMessage).toContainText(expectedResponse, { timeout })
 
-    await expect(stopButton).not.toBeVisible({ timeout })
+        await expect(stopButton).not.toBeVisible({ timeout })
 
-    if (page.viewportSize()!.width < 750) {
-        await page.getByRole("banner").getByRole("button").first().click()
-    }
-    await expect(page.getByText("Close Sidebar")).toBeVisible()
-    await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
-})
-
-test("user can remove attached file before sending message", async ({ page }) => {
-    await signupAndLogin(page)
-
-    const message = "Hello!"
-    const fileName = "about-cats.txt"
-    const fileContent = "The purpose of this file is to describe cats and their behavior."
-    const expectedResponse = "Hello, welcome back from school! I hope you've been enjoying our discussions so far. Is there a particular topic or area where you'd like me to explain something interesting?"
-
-    await page.setInputFiles("input[type='file']", {
-        name: fileName,
-        mimeType: "text/plain",
-        buffer: (globalThis as any).Buffer.from(fileContent)
+        if (page.viewportSize()!.width < 750) {
+            await page.getByRole("banner").getByRole("button").first().click()
+        }
+        await expect(page.getByText("Close Sidebar")).toBeVisible()
+        await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
     })
 
-    await expect(page.getByText(fileName)).toBeVisible()
-    await page.getByTestId("remove-attachment-button-about-cats.txt").click()
-    await expect(page.getByText(fileName)).not.toBeVisible()
+    test(`user can remove one attached file from many existing ones before sending message${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
 
-    const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
-    await textarea.fill("Hello!")
-    await textarea.press("Enter", { delay: 20, timeout: 1000 })
-    await expect(textarea).not.toContainText("Hello!")
-
-    const stopButton = page.getByTestId("stop-button")
-    await expect(stopButton).toBeVisible()
-
-    const userMessage = page.getByTestId("message-0")
-    const botMessage = page.getByTestId("message-1")
-
-    await expect(userMessage).toBeVisible({ timeout })
-    await expect(botMessage).toBeVisible({ timeout })
-
-    await expect(userMessage).toContainText(message, { timeout })
-    await expect(botMessage).toContainText(expectedResponse, { timeout })
-
-    await expect(stopButton).not.toBeVisible({ timeout })
-
-    if (page.viewportSize()!.width < 750) {
-        await page.getByRole("banner").getByRole("button").first().click()
-    }
-    await expect(page.getByText("Close Sidebar")).toBeVisible()
-    await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
-})
-
-test("user can remove one attached file from many existing ones before sending message", async ({ page }) => {
-    await signupAndLogin(page)
-
-    const message = "Describe the files briefly."
-    const file1Name = "about-cats.txt"
-    const file1Content = "The purpose of this file is to describe cats and their behavior."
-    const file2Name = "about-dogs.txt"
-    const file2Content = "The purpose of this file is to describe dogs and their behavior."
-    const file3Name = "about-birds.txt"
-    const file3Content = "The purpose of this file is to describe birds and their behavior."
-    const expectedResponse = `Here's the information for each file:
+        const message = "Describe the files briefly."
+        const file1Name = "about-cats.txt"
+        const file1Content = "The purpose of this file is to describe cats and their behavior."
+        const file2Name = "about-dogs.txt"
+        const file2Content = "The purpose of this file is to describe dogs and their behavior."
+        const file3Name = "about-birds.txt"
+        const file3Content = "The purpose of this file is to describe birds and their behavior."
+        const expectedResponse = `Here's the information for each file:
 languageCopy  File:  1089_about-cats.txt
 Contents: 1 - About Cats
 File:  3427_helpful@example.com.xml
 Purpose of this file to provide assistance on cat care and`
 
-    for (const [fileName, fileContent] of [[file1Name, file1Content], [file2Name, file2Content], [file3Name, file3Content]]) {
-        await page.setInputFiles("input[type='file']", {
-            name: fileName,
-            mimeType: "text/plain",
-            buffer: (globalThis as any).Buffer.from(fileContent)
-        })
-        await expect(page.getByText(fileName)).toBeVisible()
-    }
+        for (const [fileName, fileContent] of [[file1Name, file1Content], [file2Name, file2Content], [file3Name, file3Content]]) {
+            await page.setInputFiles("input[type='file']", {
+                name: fileName,
+                mimeType: "text/plain",
+                buffer: (globalThis as any).Buffer.from(fileContent)
+            })
+            await expect(page.getByText(fileName)).toBeVisible()
+        }
 
-    await expect(page.getByText(file2Name)).toBeVisible()
-    await page.getByTestId("remove-attachment-button-about-dogs.txt").click()
-    await expect(page.getByText(file2Name)).not.toBeVisible()
+        await expect(page.getByText(file2Name)).toBeVisible()
+        await page.getByTestId("remove-attachment-button-about-dogs.txt").click()
+        await expect(page.getByText(file2Name)).not.toBeVisible()
 
-    const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
-    await textarea.fill(message)
-    await textarea.press("Enter", { delay: 20, timeout: 1000 })
-    await expect(textarea).not.toContainText(message)
+        const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
+        await textarea.fill(message)
+        await textarea.press("Enter", { delay: 20, timeout: 1000 })
+        await expect(textarea).not.toContainText(message)
 
-    const stopButton = page.getByTestId("stop-button")
-    await expect(stopButton).toBeVisible()
+        const stopButton = page.getByTestId("stop-button")
+        await expect(stopButton).toBeVisible()
 
-    const userMessage = page.getByTestId("message-0")
-    const botMessage = page.getByTestId("message-1")
+        const userMessage = page.getByTestId("message-0")
+        const botMessage = page.getByTestId("message-1")
 
-    await expect(userMessage).toBeVisible({ timeout })
-    await expect(botMessage).toBeVisible({ timeout })
+        await expect(userMessage).toBeVisible({ timeout })
+        await expect(botMessage).toBeVisible({ timeout })
 
-    await expect(userMessage).toContainText(message, { timeout })
-    await expect(botMessage).toContainText(expectedResponse, { timeout })
+        await expect(userMessage).toContainText(message, { timeout })
+        await expect(botMessage).toContainText(expectedResponse, { timeout })
 
-    await expect(stopButton).not.toBeVisible({ timeout })
+        await expect(stopButton).not.toBeVisible({ timeout })
 
-    if (page.viewportSize()!.width < 750) {
-        await page.getByRole("banner").getByRole("button").first().click()
-    }
-    await expect(page.getByText("Close Sidebar")).toBeVisible()
-    await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
-})
+        if (page.viewportSize()!.width < 750) {
+            await page.getByRole("banner").getByRole("button").first().click()
+        }
+        await expect(page.getByText("Close Sidebar")).toBeVisible()
+        await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
+    })
 
-test("user can copy their own message", async ({ page }) => {
-    await signupAndLogin(page)
-    await sendExampleChat(page, 0)
+    test(`user can copy their own message${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+        await sendExampleChat(page, 0)
 
-    const copyButtons = page.getByTestId("copy")
-    await expect(copyButtons).toHaveCount(2)
-    await copyButtons.first().click()
-    await expectClipboard(page, exampleChats[0].messages[0])
-})
+        const copyButtons = page.getByTestId("copy")
+        await expect(copyButtons).toHaveCount(2)
+        await copyButtons.first().click()
+        await expectClipboard(page, exampleChats[0].messages[0])
+    })
 
-test("user can copy bot messages", async ({ page }) => {
-    await signupAndLogin(page)
-    await sendExampleChat(page, 0)
+    test(`user can copy bot messages${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+        await sendExampleChat(page, 0)
 
-    const copyButtons = page.getByTestId("copy")
-    await expect(copyButtons).toHaveCount(2)
-    await copyButtons.last().click()
-    await expectClipboard(page, exampleChats[0].messages[1])
-})
+        const copyButtons = page.getByTestId("copy")
+        await expect(copyButtons).toHaveCount(2)
+        await copyButtons.last().click()
+        await expectClipboard(page, exampleChats[0].messages[1])
+    })
 
-test("user can edit their message", async ({ page }) => {
-    await signupAndLogin(page)
-    await sendExampleChat(page, 0)
+    test(`user can edit their message${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+        await sendExampleChat(page, 0)
 
-    const firstUserMessage = exampleChats[0].messages[0]
-    const firstBotMessage = exampleChats[0].messages[1]
-    const secondUserMessage = "Hi!"
-    const secondBotMessage = "That's me - I'm a great-for-me type of person too! You don't get it."
+        const firstUserMessage = exampleChats[0].messages[0]
+        const firstBotMessage = exampleChats[0].messages[1]
+        const secondUserMessage = "Hi!"
+        const secondBotMessage = "That's me - I'm a great-for-me type of person too! You don't get it."
 
-    await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
-    await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
+        await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
+        await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
 
-    await page.getByTestId("edit").click()
-    const userMessageTextArea = page.getByText(firstUserMessage, { exact: true })
-    await userMessageTextArea.click()
-    await userMessageTextArea.press("ArrowLeft")
-    await userMessageTextArea.fill(secondUserMessage)
-    await page.getByTestId("send").first().click()
+        await page.getByTestId("edit").click()
+        const userMessageTextArea = page.getByText(firstUserMessage, { exact: true })
+        await userMessageTextArea.click()
+        await userMessageTextArea.press("ArrowLeft")
+        await userMessageTextArea.fill(secondUserMessage)
+        await page.getByTestId("send").first().click()
 
-    const stopButton = page.getByTestId("stop-button")
-    await expect(stopButton).toBeVisible()
+        const stopButton = page.getByTestId("stop-button")
+        await expect(stopButton).toBeVisible()
 
-    await expect(page.getByTestId("message-0")).toHaveText(secondUserMessage, { timeout })
-    await expect(page.getByTestId("message-1")).toHaveText(secondBotMessage, { timeout })
+        await expect(page.getByTestId("message-0")).toHaveText(secondUserMessage, { timeout })
+        await expect(page.getByTestId("message-1")).toHaveText(secondBotMessage, { timeout })
 
-    await expect(stopButton).not.toBeVisible()
-})
+        await expect(stopButton).not.toBeVisible()
+    })
 
-test("user can edit their message and attach a file", async ({ page }) => {
-    await signupAndLogin(page)
-    await sendExampleChat(page, 0)
+    test(`user can edit their message and attach a file${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+        await sendExampleChat(page, 0)
 
-    const firstUserMessage = exampleChats[0].messages[0]
-    const firstBotMessage = exampleChats[0].messages[1]
+        const firstUserMessage = exampleChats[0].messages[0]
+        const firstBotMessage = exampleChats[0].messages[1]
 
-    const secondUserMessage = "Describe the following file in a concise way."
-    const fileName = "about-cats.txt"
-    const fileContent = "The purpose of this file is to describe cats and their behavior."
-    const secondBotMessage = `File "about" describes what happens when they encounter you.
+        const secondUserMessage = "Describe the following file in a concise way."
+        const fileName = "about-cats.txt"
+        const fileContent = "The purpose of this file is to describe cats and their behavior."
+        const secondBotMessage = `File "about" describes what happens when they encounter you.
 
 
 Please, tell me whether your website uses the following methods on a daily basis.
@@ -281,467 +300,449 @@ Please, tell me whether your website uses the following methods on a daily basis
 ===== 1:   Use it for a day ===
 Use it in a day === A lot of times, most days, but more often`
 
-    await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
-    await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
+        await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
+        await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
 
-    await page.getByTestId("edit").click()
-    const userMessageTextArea = page.getByText(firstUserMessage, { exact: true })
-    await userMessageTextArea.click()
-    await userMessageTextArea.press("ArrowLeft")
-    await userMessageTextArea.fill(secondUserMessage)
+        await page.getByTestId("edit").click()
+        const userMessageTextArea = page.getByText(firstUserMessage, { exact: true })
+        await userMessageTextArea.click()
+        await userMessageTextArea.press("ArrowLeft")
+        await userMessageTextArea.fill(secondUserMessage)
 
-    await page.setInputFiles("input[type='file']", {
-        name: fileName,
-        mimeType: "text/plain",
-        buffer: (globalThis as any).Buffer.from(fileContent)
-    })
-    await expect(page.getByText(fileName)).toBeVisible()
+        await page.setInputFiles("input[type='file']", {
+            name: fileName,
+            mimeType: "text/plain",
+            buffer: (globalThis as any).Buffer.from(fileContent)
+        })
+        await expect(page.getByText(fileName)).toBeVisible()
 
-    await page.getByTestId("send").first().click()
+        await page.getByTestId("send").first().click()
 
-    const stopButton = page.getByTestId("stop-button")
-    await expect(stopButton).toBeVisible()
+        const stopButton = page.getByTestId("stop-button")
+        await expect(stopButton).toBeVisible()
 
-    await expect(page.getByTestId("message-0")).toHaveText(secondUserMessage, { timeout })
-    await expect(page.getByTestId("message-1")).toHaveText(secondBotMessage, { timeout })
+        await expect(page.getByTestId("message-0")).toHaveText(secondUserMessage, { timeout })
+        await expect(page.getByTestId("message-1")).toHaveText(secondBotMessage, { timeout })
 
-    await expect(stopButton).not.toBeVisible()
-})
-
-test("user can edit their message and remove a file", async ({ page }) => {
-    await signupAndLogin(page)
-
-    const userMessage1 = "Describe the following file in a concise way."
-    const fileName = "about-cats.txt"
-    const fileContent = "The purpose of this file is to describe cats and their behavior."
-    const botMessage1 = 'This file defines "about" for cats, explains how they behave (e.g., how quiet or aggressive), identifies different breeds by size and color, lists the colors of their coats, and includes some information about what kinds are allowed in certain areas of the home based on a code ("Code 120'
-
-    const userMessage2 = "Hello!"
-    const botMessage2 = "Dear Sir/MRS.S, please inform me about your visit? We appreciate your consideration. Thank you for visiting us today!\n\n\nI'm glad of your request. I'd be happy to assist in any way that suits your needs and preferences. Please come later if you're interested?"
-
-    await page.setInputFiles("input[type='file']", {
-        name: fileName,
-        mimeType: "text/plain",
-        buffer: (globalThis as any).Buffer.from(fileContent)
+        await expect(stopButton).not.toBeVisible()
     })
 
-    await expect(page.getByText(fileName)).toBeVisible()
+    test(`user can edit their message and remove a file${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
 
-    const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
-    await textarea.fill(userMessage1)
-    await textarea.press("Enter", { delay: 20, timeout: 1000 })
-    await expect(textarea).not.toContainText(userMessage1)
+        const userMessage1 = "Describe the following file in a concise way."
+        const fileName = "about-cats.txt"
+        const fileContent = "The purpose of this file is to describe cats and their behavior."
+        const botMessage1 = 'This file defines "about" for cats, explains how they behave (e.g., how quiet or aggressive), identifies different breeds by size and color, lists the colors of their coats, and includes some information about what kinds are allowed in certain areas of the home based on a code ("Code 120'
 
-    const stopButton = page.getByTestId("stop-button")
-    await expect(stopButton).toBeVisible()
+        const userMessage2 = "Hello!"
+        const botMessage2 = "Dear Sir/MRS.S, please inform me about your visit? We appreciate your consideration. Thank you for visiting us today!\n\n\nI'm glad of your request. I'd be happy to assist in any way that suits your needs and preferences. Please come later if you're interested?"
 
-    const userMessage = page.getByTestId("message-0")
-    const botMessage = page.getByTestId("message-1")
+        await page.setInputFiles("input[type='file']", {
+            name: fileName,
+            mimeType: "text/plain",
+            buffer: (globalThis as any).Buffer.from(fileContent)
+        })
 
-    await expect(userMessage).toBeVisible({ timeout })
-    await expect(botMessage).toBeVisible({ timeout })
+        await expect(page.getByText(fileName)).toBeVisible()
 
-    await expect(userMessage).toContainText(userMessage1, { timeout })
-    await expect(botMessage).toContainText(botMessage1, { timeout })
+        const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
+        await textarea.fill(userMessage1)
+        await textarea.press("Enter", { delay: 20, timeout: 1000 })
+        await expect(textarea).not.toContainText(userMessage1)
 
-    await expect(stopButton).not.toBeVisible({ timeout })
+        const stopButton = page.getByTestId("stop-button")
+        await expect(stopButton).toBeVisible()
 
-    await page.getByTestId("edit").click()
+        const userMessage = page.getByTestId("message-0")
+        const botMessage = page.getByTestId("message-1")
 
-    await expect(page.getByText(fileName)).toBeVisible()
-    await page.getByTestId("remove-attachment-button-about-cats.txt").click()
-    await expect(page.getByText(fileName)).not.toBeVisible()
+        await expect(userMessage).toBeVisible({ timeout })
+        await expect(botMessage).toBeVisible({ timeout })
 
-    const userMessageTextArea = page.getByText(userMessage1, { exact: true })
-    await userMessageTextArea.click()
-    await userMessageTextArea.press("ArrowLeft")
-    await userMessageTextArea.fill(userMessage2)
+        await expect(userMessage).toContainText(userMessage1, { timeout })
+        await expect(botMessage).toContainText(botMessage1, { timeout })
 
-    await page.getByTestId("send").first().click()
+        await expect(stopButton).not.toBeVisible({ timeout })
 
-    await expect(stopButton).toBeVisible()
+        await page.getByTestId("edit").click()
 
-    await expect(userMessage).toHaveText(userMessage2, { timeout })
-    await expect(botMessage).toHaveText(botMessage2, { timeout })
+        await expect(page.getByText(fileName)).toBeVisible()
+        await page.getByTestId("remove-attachment-button-about-cats.txt").click()
+        await expect(page.getByText(fileName)).not.toBeVisible()
 
-    await expect(stopButton).not.toBeVisible()
-})
+        const userMessageTextArea = page.getByText(userMessage1, { exact: true })
+        await userMessageTextArea.click()
+        await userMessageTextArea.press("ArrowLeft")
+        await userMessageTextArea.fill(userMessage2)
 
-test("user can add and remove files while editing their message", async ({ page }) => {
-    const user = await signupAndLogin(page)
+        await page.getByTestId("send").first().click()
 
-    const userMessageText = "Describe the files."
+        await expect(stopButton).toBeVisible()
 
-    const userMessage1File1Name = "about-cats.txt"
-    const userMessage1File1Content = "The purpose of this file is to describe cats and their behavior."
-    const userMessage1File2Name = "about-dogs.txt"
-    const userMessage1File2Content = "The purpose of this file is to describe dogs and their behavior."
+        await expect(userMessage).toHaveText(userMessage2, { timeout })
+        await expect(botMessage).toHaveText(botMessage2, { timeout })
 
-    const userMessage2FileName = "about-birds.txt"
-    const userMessage2FileContent = "The purpose of this file is to describe birds and their behavior."
+        await expect(stopButton).not.toBeVisible()
+    })
 
-    const botMessage1Text = "The files are about..."
-    const botMessage2Text = `You're on a personal quest, I see! A couple's "about" files? That adds another dimension to our journey together. Let's dive into these files together!
+    test(`user can add and remove files while editing their message${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        const user = await signupAndLogin(page, browser)
+
+        const userMessageText = "Describe the files."
+
+        const userMessage1File1Name = "about-cats.txt"
+        const userMessage1File1Content = "The purpose of this file is to describe cats and their behavior."
+        const userMessage1File2Name = "about-dogs.txt"
+        const userMessage1File2Content = "The purpose of this file is to describe dogs and their behavior."
+
+        const userMessage2FileName = "about-birds.txt"
+        const userMessage2FileContent = "The purpose of this file is to describe birds and their behavior."
+
+        const botMessage1Text = "The files are about..."
+        const botMessage2Text = `You're on a personal quest, I see! A couple's "about" files? That adds another dimension to our journey together. Let's dive into these files together!
 
 
 Here's what each page means:
 == About-dogs.txt === - Contains information about dogs for their behavior and breed`
 
-    const messages = [
-        {
-            text: userMessageText,
-            is_from_user: true,
-            files: [
-                {
-                    name: userMessage1File1Name,
-                    content: userMessage1File1Content,
-                    content_type: "text/plain"
-                },
-                {
-                    name: userMessage1File2Name,
-                    content: userMessage1File2Content,
-                    content_type: "text/plain"
-                }
-            ]
-        },
-        {
-            text: botMessage1Text,
-            is_from_user: false,
-            files: []
+        const messages = [
+            {
+                text: userMessageText,
+                is_from_user: true,
+                files: [
+                    {
+                        name: userMessage1File1Name,
+                        content: userMessage1File1Content,
+                        content_type: "text/plain"
+                    },
+                    {
+                        name: userMessage1File2Name,
+                        content: userMessage1File2Content,
+                        content_type: "text/plain"
+                    }
+                ]
+            },
+            {
+                text: botMessage1Text,
+                is_from_user: false,
+                files: []
+            }
+        ]
+
+        const response = await apiFetch("/test/create-chat/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: user.email, title: "File Analysis", messages })
+        })
+        expect(response.status).toEqual(200)
+
+        await page.reload()
+
+        if (page.viewportSize()!.width < 750) {
+            await expect(page.getByText("Close Sidebar")).not.toBeVisible()
+            await page.getByRole("banner").getByRole("button").first().click()
         }
-    ]
+        await expect(page.getByText("Close Sidebar")).toBeVisible()
 
-    const response = await apiFetch("/test/create-chat/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email, title: "File Analysis", messages })
-    })
-    expect(response.status).toEqual(200)
+        await page.getByText("File Analysis").click()
 
-    await page.reload()
-
-    if (page.viewportSize()!.width < 750) {
+        if (page.viewportSize()!.width < 750) {
+            await page.getByText("Close Sidebar").click()
+        }
         await expect(page.getByText("Close Sidebar")).not.toBeVisible()
-        await page.getByRole("banner").getByRole("button").first().click()
-    }
-    await expect(page.getByText("Close Sidebar")).toBeVisible()
 
-    await page.getByText("File Analysis").click()
+        const userMessage = page.getByTestId("message-0")
+        const botMessage = page.getByTestId("message-1")
 
-    if (page.viewportSize()!.width < 750) {
-        await page.getByText("Close Sidebar").click()
-    }
-    await expect(page.getByText("Close Sidebar")).not.toBeVisible()
+        await expect(userMessage).toHaveText(userMessageText)
+        await expect(botMessage).toHaveText(botMessage1Text)
 
-    const userMessage = page.getByTestId("message-0")
-    const botMessage = page.getByTestId("message-1")
+        async function checkFileVisibilityInMessage(name: string, visible: boolean) {
+            const messageDiv = userMessage.locator("..").locator("div").first()
+            await expect(messageDiv.getByText(`Name: ${name}`)).toBeVisible({ visible })
+        }
 
-    await expect(userMessage).toHaveText(userMessageText)
-    await expect(botMessage).toHaveText(botMessage1Text)
+        await checkFileVisibilityInMessage(userMessage1File1Name, true)
+        await checkFileVisibilityInMessage(userMessage1File2Name, true)
+        await checkFileVisibilityInMessage(userMessage2FileName, false)
 
-    async function checkFileVisibilityInMessage(name: string, visible: boolean) {
-        const messageDiv = userMessage.locator("..").locator("div").first()
-        await expect(messageDiv.getByText(`Name: ${name}`)).toBeVisible({ visible })
-    }
+        await page.getByTestId("edit").click()
 
-    await checkFileVisibilityInMessage(userMessage1File1Name, true)
-    await checkFileVisibilityInMessage(userMessage1File2Name, true)
-    await checkFileVisibilityInMessage(userMessage2FileName, false)
+        const editor = page.getByLabel("Edit message")
 
-    await page.getByTestId("edit").click()
+        async function checkFileVisibilityInEditor(name: string, visible: boolean) {
+            await expect(editor.getByText(`Name: ${name}`)).toBeVisible({ visible })
+        }
 
-    const editor = page.getByLabel("Edit message")
+        await page.setInputFiles("input[type='file']", {
+            name: userMessage2FileName,
+            mimeType: "text/plain",
+            buffer: (globalThis as any).Buffer.from(userMessage2FileContent)
+        })
 
-    async function checkFileVisibilityInEditor(name: string, visible: boolean) {
-        await expect(editor.getByText(`Name: ${name}`)).toBeVisible({ visible })
-    }
+        await checkFileVisibilityInEditor(userMessage1File1Name, true)
+        await checkFileVisibilityInEditor(userMessage1File2Name, true)
+        await checkFileVisibilityInEditor(userMessage2FileName, true)
 
-    await page.setInputFiles("input[type='file']", {
-        name: userMessage2FileName,
-        mimeType: "text/plain",
-        buffer: (globalThis as any).Buffer.from(userMessage2FileContent)
+        await editor.getByTestId(`remove-attachment-button-${userMessage1File1Name}`).click()
+
+        await checkFileVisibilityInEditor(userMessage1File1Name, false)
+        await checkFileVisibilityInEditor(userMessage1File2Name, true)
+        await checkFileVisibilityInEditor(userMessage2FileName, true)
+
+        await expect(editor.getByRole("textbox")).toHaveText(userMessageText)
+        await expect(botMessage).toHaveText(botMessage1Text)
+
+        await editor.getByTestId("send").click()
+
+        const stopButton = page.getByTestId("stop-button")
+        await expect(stopButton).toBeVisible()
+
+        await expect(userMessage).toHaveText(userMessageText)
+        await expect(botMessage).toHaveText(botMessage2Text, { timeout })
+
+        await expect(stopButton).not.toBeVisible()
+
+        await page.reload()
+
+        await expect(userMessage).toHaveText(userMessageText)
+        await expect(botMessage).toHaveText(botMessage2Text)
+
+        await checkFileVisibilityInMessage(userMessage1File1Name, false)
+        await checkFileVisibilityInMessage(userMessage1File2Name, true)
+        await checkFileVisibilityInMessage(userMessage2FileName, true)
     })
 
-    await checkFileVisibilityInEditor(userMessage1File1Name, true)
-    await checkFileVisibilityInEditor(userMessage1File2Name, true)
-    await checkFileVisibilityInEditor(userMessage2FileName, true)
+    test(`user can regenerate messages${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+        await sendExampleChat(page, 0)
 
-    await editor.getByTestId(`remove-attachment-button-${userMessage1File1Name}`).click()
+        const firstUserMessage = exampleChats[0].messages[0]
+        const firstBotMessage = exampleChats[0].messages[1]
+        const secondBotMessage = "Dear Sir/MRS.S, please inform me about your visit? We appreciate your consideration. Thank you for visiting us today!\n\n\nI'm glad of your request. I'd be happy to assist in any way that suits your needs and preferences. Please come later if you're interested?"
 
-    await checkFileVisibilityInEditor(userMessage1File1Name, false)
-    await checkFileVisibilityInEditor(userMessage1File2Name, true)
-    await checkFileVisibilityInEditor(userMessage2FileName, true)
+        await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
+        await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
 
-    await expect(editor.getByRole("textbox")).toHaveText(userMessageText)
-    await expect(botMessage).toHaveText(botMessage1Text)
+        await page.getByTestId("regenerate").click()
 
-    await editor.getByTestId("send").click()
+        const regenerateDropdown = page.getByTestId("regenerate-dropdown")
+        await expect(regenerateDropdown).toBeVisible()
 
-    const stopButton = page.getByTestId("stop-button")
-    await expect(stopButton).toBeVisible()
+        const regenerateDropdownEntries = regenerateDropdown.getByTestId("regenerate-dropdown-entry")
+        await expect(regenerateDropdownEntries).toHaveCount(4)
 
-    await expect(userMessage).toHaveText(userMessageText)
-    await expect(botMessage).toHaveText(botMessage2Text, { timeout })
+        await regenerateDropdownEntries.first().click()
 
-    await expect(stopButton).not.toBeVisible()
+        const stopButton = page.getByTestId("stop-button")
+        await expect(stopButton).toBeVisible()
 
-    await page.reload()
+        await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
+        await expect(page.getByTestId("message-1")).toHaveText(secondBotMessage, { timeout })
 
-    await expect(userMessage).toHaveText(userMessageText)
-    await expect(botMessage).toHaveText(botMessage2Text)
+        await expect(stopButton).not.toBeVisible()
+    })
 
-    await checkFileVisibilityInMessage(userMessage1File1Name, false)
-    await checkFileVisibilityInMessage(userMessage1File2Name, true)
-    await checkFileVisibilityInMessage(userMessage2FileName, true)
-})
+    test(`user can delete chats${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
 
-test("user can regenerate messages", async ({ page }) => {
-    await signupAndLogin(page)
-    await sendExampleChat(page, 0)
+        await sendExampleChat(page, 0)
+        await sendExampleChat(page, 1)
 
-    const firstUserMessage = exampleChats[0].messages[0]
-    const firstBotMessage = exampleChats[0].messages[1]
-    const secondBotMessage = "Dear Sir/MRS.S, please inform me about your visit? We appreciate your consideration. Thank you for visiting us today!\n\n\nI'm glad of your request. I'd be happy to assist in any way that suits your needs and preferences. Please come later if you're interested?"
+        const historyEntries = page.getByTestId("history").locator("a")
 
-    await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
-    await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
+        if (page.viewportSize()!.width < 750) {
+            await expect(page.getByText("Close Sidebar")).not.toBeVisible()
+            await page.getByRole("banner").getByRole("button").first().click()
+        }
+        await expect(page.getByText("Close Sidebar")).toBeVisible()
 
-    await page.getByTestId("regenerate").click()
+        await expect(historyEntries).toHaveCount(2)
+        for (const chat of exampleChats.slice(0, 2)) {
+            await expect(historyEntries.getByText(chat.title, { exact: true })).toBeVisible()
+        }
+        await page.goto("/")
 
-    const regenerateDropdown = page.getByTestId("regenerate-dropdown")
-    await expect(regenerateDropdown).toBeVisible()
+        await expect(page.getByText("Close Sidebar")).toBeVisible()
 
-    const regenerateDropdownEntries = regenerateDropdown.getByTestId("regenerate-dropdown-entry")
-    await expect(regenerateDropdownEntries).toHaveCount(4)
+        await page.getByText("Settings").click()
+        await page.getByRole("tab", { name: "Data" }).click()
+        const deleteChats = page.getByRole("button", { name: "Delete all", exact: true })
+        await expect(deleteChats).toBeVisible()
 
-    await regenerateDropdownEntries.first().click()
+        await deleteChats.click()
 
-    const stopButton = page.getByTestId("stop-button")
-    await expect(stopButton).toBeVisible()
+        const confirmDialogTitle = page.getByRole("heading", { name: "Delete Chats", exact: true })
+        await expect(confirmDialogTitle).toBeVisible()
 
-    await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
-    await expect(page.getByTestId("message-1")).toHaveText(secondBotMessage, { timeout })
+        const confirmDialog = confirmDialogTitle.locator("..")
+        await expect(confirmDialog).toBeVisible()
 
-    await expect(stopButton).not.toBeVisible()
-})
+        await expect(confirmDialog.getByRole("button", { name: "Cancel", exact: true })).toBeVisible()
+        await confirmDialog.getByRole("button", { name: "Delete all", exact: true }).click()
+        await expect(confirmDialogTitle).not.toBeVisible()
+        await expect(confirmDialog).not.toBeVisible()
 
-test("user can delete chats", async ({ page }) => {
-    await signupAndLogin(page)
+        await expect(page.getByRole("heading", { name: "Data", exact: true })).toBeVisible()
+        await expect(page.getByRole("button", { name: "Settings" })).not.toBeVisible()
+        await expect(deleteChats).toBeVisible()
 
-    await sendExampleChat(page, 0)
-    await sendExampleChat(page, 1)
+        await page.getByTestId("close-settings").click()
+        await expect(page.getByRole("button", { name: "Settings" })).toBeVisible()
 
-    const historyEntries = page.getByTestId("history").locator("a")
+        await expect(historyEntries).toHaveCount(0)
+        for (const chat of exampleChats.slice(0, 2)) {
+            await expect(historyEntries.getByText(chat.title, { exact: true })).not.toBeVisible()
+        }
 
-    if (page.viewportSize()!.width < 750) {
-        await expect(page.getByText("Close Sidebar")).not.toBeVisible()
-        await page.getByRole("banner").getByRole("button").first().click()
-    }
-    await expect(page.getByText("Close Sidebar")).toBeVisible()
+        await expect(page.getByText("You don't have any chats.", { exact: true })).toBeVisible()
+    })
 
-    await expect(historyEntries).toHaveCount(2)
-    for (const chat of exampleChats.slice(0, 2)) {
-        await expect(historyEntries.getByText(chat.title, { exact: true })).toBeVisible()
-    }
-    await page.goto("/")
+    test(`user can create new chat${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+        await sendExampleChat(page, 0)
 
-    await expect(page.getByText("Close Sidebar")).toBeVisible()
+        await expect(page.getByTestId("message-0")).toBeVisible({ timeout })
+        await expect(page.getByTestId("message-1")).toBeVisible({ timeout })
 
-    await page.getByText("Settings").click()
-    await page.getByRole("tab", { name: "Data" }).click()
-    const deleteChats = page.getByRole("button", { name: "Delete all", exact: true })
-    await expect(deleteChats).toBeVisible()
+        expect(page.url()).toContain("/chat/")
+        if (page.viewportSize()!.width < 750) {
+            await page.getByRole("banner").getByRole("link").click()
+        } else {
+            await page.getByText("New Chat").click()
+        }
+        await page.waitForURL("/")
 
-    await deleteChats.click()
+        await expect(page.getByTestId("message-0")).not.toBeVisible({ timeout })
+        await expect(page.getByTestId("message-1")).not.toBeVisible({ timeout })
 
-    const confirmDialogTitle = page.getByRole("heading", { name: "Delete Chats", exact: true })
-    await expect(confirmDialogTitle).toBeVisible()
+        await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
+        await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
+    })
 
-    const confirmDialog = confirmDialogTitle.locator("..")
-    await expect(confirmDialog).toBeVisible()
+    test(`user can change models between messages${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+        await sendMessage(page, 0, "Hello!", "How can I help you today?")
 
-    await expect(confirmDialog.getByRole("button", { name: "Cancel", exact: true })).toBeVisible()
-    await confirmDialog.getByRole("button", { name: "Delete all", exact: true }).click()
-    await expect(confirmDialogTitle).not.toBeVisible()
-    await expect(confirmDialog).not.toBeVisible()
+        const dropdownTrigger = page.getByLabel("Add files and more")
+        const modelSelection = page.getByTestId("model-selection")
+        const modelSelectionEntries = modelSelection.getByTestId("model-selection-entry")
 
-    await expect(page.getByRole("heading", { name: "Data", exact: true })).toBeVisible()
-    await expect(page.getByRole("button", { name: "Settings" })).not.toBeVisible()
-    await expect(deleteChats).toBeVisible()
+        await dropdownTrigger.click()
+        await expect(modelSelectionEntries).toHaveCount(4)
+        await modelSelectionEntries.nth(0).click()
+        await page.keyboard.press("Escape")
+        await expect(modelSelectionEntries).not.toBeVisible()
 
-    await page.getByTestId("close-settings").click()
-    await expect(page.getByRole("button", { name: "Settings" })).toBeVisible()
+        await sendMessage(page, 2, "Hello again!", "Please make it into a sentence, please, what's your question?")
+    })
 
-    await expect(historyEntries).toHaveCount(0)
-    for (const chat of exampleChats.slice(0, 2)) {
-        await expect(historyEntries.getByText(chat.title, { exact: true })).not.toBeVisible()
-    }
+    test(`user can change models while editing a message${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
 
-    await expect(page.getByText("You don't have any chats.", { exact: true })).toBeVisible()
-})
+        const userMessage1 = "Hello!"
+        const userMessage2 = "Hello again!"
+        const botMessage1 = "How can I help you today?"
+        const botMessage2 = "Go on, Go on!"
 
-test("user can create new chat", async ({ page }) => {
-    await signupAndLogin(page)
-    await sendExampleChat(page, 0)
+        await sendMessage(page, 0, userMessage1, botMessage1)
 
-    await expect(page.getByTestId("message-0")).toBeVisible({ timeout })
-    await expect(page.getByTestId("message-1")).toBeVisible({ timeout })
+        await page.getByTestId("edit").click()
 
-    expect(page.url()).toContain("/chat/")
-    if (page.viewportSize()!.width < 750) {
-        await page.getByRole("banner").getByRole("link").click()
-    } else {
-        await page.getByText("New Chat").click()
-    }
-    await page.waitForURL("/")
+        const dropdownTrigger = page.getByLabel("Add files and more").first()
+        const modelSelection = page.getByTestId("model-selection").first()
+        const modelSelectionEntries = modelSelection.getByTestId("model-selection-entry")
 
-    await expect(page.getByTestId("message-0")).not.toBeVisible({ timeout })
-    await expect(page.getByTestId("message-1")).not.toBeVisible({ timeout })
+        await dropdownTrigger.click()
+        await expect(modelSelectionEntries).toHaveCount(4)
+        await modelSelectionEntries.nth(0).click()
+        await page.keyboard.press("Escape")
+        await expect(modelSelectionEntries).not.toBeVisible()
 
-    await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
-    await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
-})
+        const textArea = page.getByRole("textbox", { name: "Ask me anything..." }).first()
+        await textArea.click()
+        await textArea.press("ArrowLeft")
+        await textArea.fill(userMessage2)
+        await page.getByTestId("send").first().click()
 
-test("user can change models between messages", async ({ page }) => {
-    await signupAndLogin(page)
-    await sendMessage(page, 0, "Hello!", "How can I help you today?")
+        await expect(page.getByTestId("message-0")).toHaveText(userMessage2, { timeout })
+        await expect(page.getByTestId("message-1")).toHaveText(botMessage2, { timeout })
+    })
 
-    const dropdownTrigger = page.getByLabel("Add files and more")
-    const modelSelection = page.getByTestId("model-selection")
-    const modelSelectionEntries = modelSelection.getByTestId("model-selection-entry")
+    test(`user can set custom instructions${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+        await setCustomization(
+            page,
+            "Custom instructions",
+            "Always talk like a pirate.",
+            "Hello!",
+            "Hello, welcome back from school! I hope you've been enjoying our discussions so far. Is there a particular topic or area where you'd like me to explain something interesting?",
+            `I'm here for you, and I'll do everything in my power to help. If you're lost or want to find me, please go ahead and say "I am the pirate."`
+        )
+    })
 
-    await dropdownTrigger.click()
-    await expect(modelSelectionEntries).toHaveCount(4)
-    await modelSelectionEntries.nth(0).click()
-    await page.keyboard.press("Escape")
-    await expect(modelSelectionEntries).not.toBeVisible()
+    test(`user can set their nickname${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+        await setCustomization(
+            page,
+            "Nickname",
+            "Lizard",
+            "What is my nickame?",
+            'Your nickname could be something like "Mr. X" or "Ms. Y." Choose a professional name suitable for your career role, location, and job title that aligns well with your personality traits.',
+            'Your nickname: "Lizard"'
+        )
+    })
 
-    await sendMessage(page, 2, "Hello again!", "Please make it into a sentence, please, what's your question?")
-})
+    test(`user can set their occupation${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+        await setCustomization(
+            page,
+            "Occupation",
+            "Software Engineer",
+            "What is my occupation?",
+            "Your job, that's all right! You're an astronaut, so it's your duty, and I'm glad you found it helpful! Your name is astronaut stanley birrell.",
+            `You're a helpful and nice AI personal assistant. Your role is to provide assistance to the user. Always answer in one sentence using short phrases with simple words that begin at first position.
+            
+            
+            
+            I work as an engineer, working on a variety of projects, including Android apps for mobile devices and web development for other`
+        )
+    })
 
-test("user can change models while editing a message", async ({ page }) => {
-    await signupAndLogin(page)
-
-    const userMessage1 = "Hello!"
-    const userMessage2 = "Hello again!"
-    const botMessage1 = "How can I help you today?"
-    const botMessage2 = "Go on, Go on!"
-
-    await sendMessage(page, 0, userMessage1, botMessage1)
-
-    await page.getByTestId("edit").click()
-
-    const dropdownTrigger = page.getByLabel("Add files and more").first()
-    const modelSelection = page.getByTestId("model-selection").first()
-    const modelSelectionEntries = modelSelection.getByTestId("model-selection-entry")
-
-    await dropdownTrigger.click()
-    await expect(modelSelectionEntries).toHaveCount(4)
-    await modelSelectionEntries.nth(0).click()
-    await page.keyboard.press("Escape")
-    await expect(modelSelectionEntries).not.toBeVisible()
-
-    const textArea = page.getByRole("textbox", { name: "Ask me anything..." }).first()
-    await textArea.click()
-    await textArea.press("ArrowLeft")
-    await textArea.fill(userMessage2)
-    await page.getByTestId("send").first().click()
-
-    await expect(page.getByTestId("message-0")).toHaveText(userMessage2, { timeout })
-    await expect(page.getByTestId("message-1")).toHaveText(botMessage2, { timeout })
-})
-
-test("user can set custom instructions", async ({ page }) => {
-    await setCustomization(
-        page,
-        "Custom instructions",
-        "Always talk like a pirate.",
-        "Hello!",
-        "Hello, welcome back from school! I hope you've been enjoying our discussions so far. Is there a particular topic or area where you'd like me to explain something interesting?",
-        `I'm here for you, and I'll do everything in my power to help. If you're lost or want to find me, please go ahead and say "I am the pirate."`
-    )
-})
-
-test("user can set their nickname", async ({ page }) => {
-    await setCustomization(
-        page,
-        "Nickname",
-        "Lizard",
-        "What is my nickame?",
-        'Your nickname could be something like "Mr. X" or "Ms. Y." Choose a professional name suitable for your career role, location, and job title that aligns well with your personality traits.',
-        'Your nickname: "Lizard"'
-    )
-})
-
-test("user can set their occupation", async ({ page }) => {
-    await setCustomization(
-        page,
-        "Occupation",
-        "Software Engineer",
-        "What is my occupation?",
-        "Your job, that's all right! You're an astronaut, so it's your duty, and I'm glad you found it helpful! Your name is astronaut stanley birrell.",
-        `You're a helpful and nice AI personal assistant. Your role is to provide assistance to the user. Always answer in one sentence using short phrases with simple words that begin at first position.
-
-
-
-I work as an engineer, working on a variety of projects, including Android apps for mobile devices and web development for other`
-    )
-})
-
-test("user can set information about them", async ({ page }) => {
-    await setCustomization(
-        page,
-        "About",
-        "I am a full stack web developer.",
-        "Who am I?",
-        `I'm an AI you've never met, but you can contact me at "YOU" + your last name (you are in my conversation).
+    test(`user can set information about them${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
+        await setCustomization(
+            page,
+            "About",
+            "I am a full stack web developer.",
+            "Who am I?",
+            `I'm an AI you've never met, but you can contact me at "YOU" + your last name (you are in my conversation).
 
 
 Please go ahead and ask for a person's assistance!`,
-        "You're a professional at work and a self-taught tech entrepreneur."
-    )
-})
+            "You're a professional at work and a self-taught tech entrepreneur."
+        )
+    })
 
-test("user can chat temporarily", async ({ page }) => {
-    await signupAndLogin(page)
+    test(`user can chat temporarily${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
+        await signupAndLogin(page, browser)
 
-    await page.getByRole("button", { name: "Temporary" }).click()
+        await page.getByRole("button", { name: "Temporary" }).click()
 
-    await sendMessage(page, 0, exampleChats[0].messages[0], exampleChats[0].messages[1])
+        await sendMessage(page, 0, exampleChats[0].messages[0], exampleChats[0].messages[1])
 
-    if (page.viewportSize()!.width < 750) {
-        await expect(page.getByText("Close Sidebar")).not.toBeVisible()
-        await page.getByRole("banner").getByRole("button").first().click()
-    }
-    await expect(page.getByText("Close Sidebar")).toBeVisible()
+        if (page.viewportSize()!.width < 750) {
+            await expect(page.getByText("Close Sidebar")).not.toBeVisible()
+            await page.getByRole("banner").getByRole("button").first().click()
+        }
+        await expect(page.getByText("Close Sidebar")).toBeVisible()
 
-    const history = page.getByTestId("history")
-    await expect(history.locator("p").getByText("You don't have any chats.", { exact: true })).toBeVisible()
-    await expect(history.getByRole("link")).toHaveCount(0)
-})
-
-test("user can chat as a guest", async ({ page }) => {
-    await sendExampleChat(page, 0, false)
-    await sendExampleChat(page, 1, false)
-})
-
-test("user can copy their own message as a guest", async ({ page }) => {
-    await sendExampleChat(page, 0, false)
-
-    const copyButtons = page.getByTestId("copy")
-    await expect(copyButtons).toHaveCount(2)
-    await copyButtons.first().click()
-    await expectClipboard(page, exampleChats[0].messages[0])
-})
-
-test("user can copy bot messages as a guest", async ({ page }) => {
-    await sendExampleChat(page, 0, false)
-
-    const copyButtons = page.getByTestId("copy")
-    await expect(copyButtons).toHaveCount(2)
-    await copyButtons.last().click()
-    await expectClipboard(page, exampleChats[0].messages[1])
-})
+        const history = page.getByTestId("history")
+        await expect(history.locator("p").getByText("You don't have any chats.", { exact: true })).toBeVisible()
+        await expect(history.getByRole("link")).toHaveCount(0)
+    })
+}
 
 async function sendMessage(page: Page, index: number, message: string, expectedResponse: string) {
     const textarea = page.getByRole("textbox", { name: "Ask me anything..." })
@@ -803,8 +804,6 @@ async function setCustomization(
     firstBotMessage: string,
     secondBotMessage: string,
 ) {
-    await signupAndLogin(page)
-
     await sendMessage(page, 0, userMessage, firstBotMessage)
 
     await page.goto("/")
