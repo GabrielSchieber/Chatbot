@@ -9,7 +9,7 @@ from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from ..utils import ViewsTestCase, create_user
-from ...models import User, UserMFA, UserSession
+from ...models import GuestIdentity, User, UserMFA, UserSession
 
 class Signup(ViewsTestCase):
     def test(self):
@@ -890,6 +890,7 @@ class DeleteAccount(ViewsTestCase):
 class AuthenticateAsGuest(ViewsTestCase):
     def test(self):
         self.assertEqual(User.objects.count(), 0)
+        self.assertEqual(GuestIdentity.objects.count(), 0)
         self.assertEqual(len(self.client.cookies.items()), 0)
 
         response = self.client.post("/api/authenticate-as-guest/")
@@ -906,21 +907,33 @@ class AuthenticateAsGuest(ViewsTestCase):
             self.assertEqual(response.cookies[cookie_name]["samesite"], "Strict")
             self.assertEqual(self.client.cookies[cookie_name]["samesite"], "Strict")
 
+        self.assertEqual(GuestIdentity.objects.count(), 1)
         self.assertEqual(User.objects.count(), 1)
+
+        identity = GuestIdentity.objects.first()
         user: User = User.objects.first()
 
-        for cookies in [response.cookies, self.client.cookies]:
-            self.assertEqual(len(cookies["guest_token"].value), 36)
-            self.assertEqual(cookies["guest_token"].value, user.password)
+        self.assertEqual(identity.user, user)
+        self.assertHasAttr(identity, "expires_at")
+        self.assertHasAttr(identity, "last_used_at")
+        self.assertHasAttr(identity, "created_at")
 
-        self.assertEqual(len(user.email), 36 + len("@example.com"))
-        self.assertEqual(len(user.password), 36)
+        for cookies in [response.cookies, self.client.cookies]:
+            self.assertEqual(len(cookies["guest_token"].value), 43)
+
+        self.assertEqual(len(user.email), 89 + len("@example.com"))
+        self.assertEqual(len(user.password), 89)
         self.assertEqual(user.email, user.password + "@example.com")
         self.assertEqual(user.password, user.email[:-len("@example.com")])
         self.assertTrue(user.is_active)
         self.assertTrue(user.is_guest)
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
+
+        self.assertHasAttr(user, "chats")
+        self.assertHasAttr(user, "preferences")
+        self.assertHasAttr(user, "sessions")
+        self.assertNotHasAttr(user, "mfa")
 
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
