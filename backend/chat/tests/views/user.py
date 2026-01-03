@@ -94,7 +94,7 @@ class Login(ViewsTestCase):
 
             for _, cookie in cookies.items():
                 self.assertTrue(cookie["httponly"])
-                self.assertEqual(cookie["samesite"], "Lax")
+                self.assertEqual(cookie["samesite"], "Strict")
 
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
@@ -539,7 +539,7 @@ class VerifyMFA(ViewsTestCase):
 
             for _, cookie in cookies.items():
                 self.assertTrue(cookie["httponly"])
-                self.assertEqual(cookie["samesite"], "Lax")
+                self.assertEqual(cookie["samesite"], "Strict")
 
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
@@ -603,11 +603,11 @@ class VerifyMFA(ViewsTestCase):
 
             access_token = dict(response.cookies["access_token"].items())
             self.assertTrue(access_token["httponly"])
-            self.assertEqual(access_token["samesite"], "Lax")
+            self.assertEqual(access_token["samesite"], "Strict")
 
             refresh_token = dict(response.cookies["refresh_token"].items())
             self.assertTrue(refresh_token["httponly"])
-            self.assertEqual(refresh_token["samesite"], "Lax")
+            self.assertEqual(refresh_token["samesite"], "Strict")
 
             response = self.client.get("/api/me/")
             self.assertEqual(response.status_code, 200)
@@ -903,8 +903,8 @@ class AuthenticateAsGuest(ViewsTestCase):
             self.assertIn(cookie_name, self.client.cookies)
             self.assertTrue(response.cookies[cookie_name]["httponly"])
             self.assertTrue(self.client.cookies[cookie_name]["httponly"])
-            self.assertEqual(response.cookies[cookie_name]["samesite"], "Lax")
-            self.assertEqual(self.client.cookies[cookie_name]["samesite"], "Lax")
+            self.assertEqual(response.cookies[cookie_name]["samesite"], "Strict")
+            self.assertEqual(self.client.cookies[cookie_name]["samesite"], "Strict")
 
         self.assertEqual(User.objects.count(), 1)
         user: User = User.objects.first()
@@ -944,8 +944,8 @@ class AuthenticateAsGuest(ViewsTestCase):
             self.assertIn(cookie_name, self.client.cookies)
             self.assertTrue(response.cookies[cookie_name]["httponly"])
             self.assertTrue(self.client.cookies[cookie_name]["httponly"])
-            self.assertEqual(response.cookies[cookie_name]["samesite"], "Lax")
-            self.assertEqual(self.client.cookies[cookie_name]["samesite"], "Lax")
+            self.assertEqual(response.cookies[cookie_name]["samesite"], "Strict")
+            self.assertEqual(self.client.cookies[cookie_name]["samesite"], "Strict")
 
         for cookies in [response.cookies, self.client.cookies]:
             self.assertEqual(len(cookies["guest_token"].value), 36)
@@ -984,8 +984,8 @@ class AuthenticateAsGuest(ViewsTestCase):
                 self.assertIn(cookie_name, self.client.cookies)
                 self.assertTrue(response.cookies[cookie_name]["httponly"])
                 self.assertTrue(self.client.cookies[cookie_name]["httponly"])
-                self.assertEqual(response.cookies[cookie_name]["samesite"], "Lax")
-                self.assertEqual(self.client.cookies[cookie_name]["samesite"], "Lax")
+                self.assertEqual(response.cookies[cookie_name]["samesite"], "Strict")
+                self.assertEqual(self.client.cookies[cookie_name]["samesite"], "Strict")
 
             self.assertEqual(User.objects.count(), i + 1)
             user: User = User.objects.order_by("created_at").last()
@@ -1021,8 +1021,8 @@ class AuthenticateAsGuest(ViewsTestCase):
             self.assertIn(cookie_name, self.client.cookies)
             self.assertTrue(response.cookies[cookie_name]["httponly"])
             self.assertTrue(self.client.cookies[cookie_name]["httponly"])
-            self.assertEqual(response.cookies[cookie_name]["samesite"], "Lax")
-            self.assertEqual(self.client.cookies[cookie_name]["samesite"], "Lax")
+            self.assertEqual(response.cookies[cookie_name]["samesite"], "Strict")
+            self.assertEqual(self.client.cookies[cookie_name]["samesite"], "Strict")
 
         self.assertEqual(User.objects.count(), 2)
         user2: User = User.objects.last()
