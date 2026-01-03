@@ -1043,10 +1043,14 @@ class AuthenticateAsGuest(ViewsTestCase):
 
     def test_tampered_guest_token(self):
         self.assertEqual(User.objects.count(), 0)
+        self.assertEqual(GuestIdentity.objects.count(), 0)
         self.assertAlmostEqual(len(self.client.cookies.items()), 0)
 
-        user1 = User.objects.create_guest_user()
-        self.client.cookies["guest_token"] = user1.password[:-1] + ("A" if user1.password[-1] != "A" else "B")
+        identity, token = GuestIdentity.create("", "")
+        self.assertEqual(User.objects.count(), 1)
+        self.assertEqual(GuestIdentity.objects.count(), 1)
+
+        self.client.cookies["guest_token"] = token[:-1] + ("A" if token[-1] != "A" else "B")
 
         response = self.client.post("/api/authenticate-as-guest/")
         self.assertEqual(response.status_code, 201)
@@ -1063,6 +1067,9 @@ class AuthenticateAsGuest(ViewsTestCase):
             self.assertEqual(self.client.cookies[cookie_name]["samesite"], "Strict")
 
         self.assertEqual(User.objects.count(), 2)
+        self.assertEqual(GuestIdentity.objects.count(), 2)
+
+        user1 = identity.user
         user2: User = User.objects.last()
 
         self.assertNotEqual(user1, user2)
@@ -1070,14 +1077,19 @@ class AuthenticateAsGuest(ViewsTestCase):
         self.assertNotEqual(user1.password, user2.password)
 
         for cookies in [response.cookies, self.client.cookies]:
-            self.assertEqual(len(cookies["guest_token"].value), 36)
-            self.assertEqual(cookies["guest_token"].value, user2.password)
+            self.assertEqual(len(cookies["guest_token"].value), 43)
+            self.assertNotEqual(cookies["guest_token"].value, token)
 
-        self.assertEqual(len(user2.email), 36 + len("@example.com"))
-        self.assertEqual(len(user2.password), 36)
+        self.assertEqual(len(user2.email), 89 + len("@example.com"))
+        self.assertEqual(len(user2.password), 89)
         self.assertEqual(user2.email, user2.password + "@example.com")
         self.assertEqual(user2.password, user2.email[:-len("@example.com")])
         self.assertTrue(user2.is_active)
         self.assertTrue(user2.is_guest)
         self.assertFalse(user2.is_staff)
         self.assertFalse(user2.is_superuser)
+
+        self.assertHasAttr(user2, "chats")
+        self.assertHasAttr(user2, "preferences")
+        self.assertHasAttr(user2, "sessions")
+        self.assertNotHasAttr(user2, "mfa")
