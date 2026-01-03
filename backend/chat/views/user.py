@@ -16,7 +16,7 @@ from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, Bl
 from ..models import GuestIdentity, PreAuthToken, User
 from ..serializers.user import (
     AuthenticateAsGuestSerializer, DeleteAccountSerializer, LoginSerializer,
-    MeSerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
+    MeSerializer, SetupMFASerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
 )
 from ..throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
 
@@ -147,6 +147,14 @@ class SetupMFA(APIView):
 
         if user.mfa.is_enabled:
             return Response({"detail": "MFA is already enabled for the current user. First disable MFA before setting it up again."}, status.HTTP_400_BAD_REQUEST)
+
+        qs = SetupMFASerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        password = qs.validated_data["password"]
+
+        if not user.check_password(password):
+            return Response({"detail": "mfa.messages.errorInvalidPassword"}, status.HTTP_403_FORBIDDEN)
 
         secret, auth_url = user.mfa.setup()
         return Response({"auth_url": auth_url, "secret": secret}, status.HTTP_200_OK)

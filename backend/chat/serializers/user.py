@@ -44,6 +44,9 @@ class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
 
+class SetupMFASerializer(serializers.Serializer):
+    password = serializers.CharField()
+
 class VerifyMFASerializer(serializers.Serializer):
     token = serializers.UUIDField()
     code = serializers.CharField()

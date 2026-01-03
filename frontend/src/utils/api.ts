@@ -44,8 +44,12 @@ export async function verifyMFA(token: string, code: string) {
     })
 }
 
-export async function setupMFA() {
-    return apiFetch("setup-mfa/", { method: "POST" })
+export async function setupMFA(password: string) {
+    return apiFetch("setup-mfa/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password })
+    })
 }
 
 export async function enableMFA(code: string) {

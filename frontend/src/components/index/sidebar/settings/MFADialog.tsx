@@ -1,7 +1,7 @@
 import { CheckIcon, CopyIcon, Cross1Icon, DownloadIcon } from "@radix-ui/react-icons"
 import { t } from "i18next"
 import { QRCodeCanvas } from "qrcode.react"
-import { Dialog } from "radix-ui"
+import { Dialog, Label } from "radix-ui"
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react"
 
 import { useAuth } from "../../../../providers/AuthProvider"
@@ -102,14 +102,18 @@ function SetupDialog({ setAuthURL, setSecret, setStep, setIsLocked }: {
     setStep: Dispatch<SetStateAction<Step>>
     setIsLocked: Dispatch<SetStateAction<boolean>>
 }) {
+    const [password, setPassword] = useState("")
     const [error, setError] = useState("")
     const [isSettingUp, setIsSettingUp] = useState(false)
 
-    async function handleSetup() {
+    async function handleSetup(e: React.FormEvent) {
+        e.preventDefault()
+
         setIsLocked(true)
         setIsSettingUp(true)
+        setError("")
 
-        const response = await setupMFA()
+        const response = await setupMFA(password)
         if (response.ok) {
             const data = await response.json()
             setAuthURL(data.auth_url)
@@ -117,19 +121,38 @@ function SetupDialog({ setAuthURL, setSecret, setStep, setIsLocked }: {
             setStep("enable")
         } else {
             setIsSettingUp(false)
-            setError(t("mfa.messages.errorGenerate"))
+            setError(t((await response.json()).detail))
         }
 
         setIsLocked(false)
     }
 
+    function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setError("")
+        setPassword(e.target.value)
+    }
+
     return (
-        <div className="flex flex-col gap-1 items-center">
-            <button className={buttonClassNames} onClick={handleSetup} disabled={isSettingUp}>
+        <form className="flex flex-col gap-3 items-center" onSubmit={handleSetup}>
+            <p className={paragraphClassName}>{t("mfa.messages.setup")}</p>
+            <div className="flex flex-col w-full gap-1">
+                <Label.Root htmlFor="password" className="font-medium text-gray-200 light:text-gray-700">
+                    {t("auth.password.label")}
+                </Label.Root>
+                <input
+                    className={inputClassNames}
+                    value={password}
+                    type="password"
+                    onChange={handleInputChange}
+                    placeholder={t("auth.password.placeholder")}
+                    required
+                />
+            </div>
+            <button className={buttonClassNames} disabled={isSettingUp || !password}>
                 {isSettingUp ? t("mfa.buttons.generating") : t("mfa.buttons.generate")}
             </button>
             {error && <p className={errorParagraphClassName}>{error}</p>}
-        </div>
+        </form>
     )
 }
 
