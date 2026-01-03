@@ -85,22 +85,6 @@ class User(TestCase):
 
         self.assertEqual(models.User.objects.count(), 1)
 
-    def test_guest_user(self):
-        user = models.User.objects.create_guest_user()
-
-        self.assertEqual(len(user.email), 36 + len("@example.com"))
-        self.assertEqual(len(user.password), 36)
-        self.assertEqual(user.email, user.password + "@example.com")
-        self.assertEqual(user.password, user.email[:-len("@example.com")])
-        self.assertTrue(user.is_active)
-        self.assertTrue(user.is_guest)
-        self.assertFalse(user.is_staff)
-        self.assertFalse(user.is_superuser)
-
-        self.assertHasAttr(user, "chats")
-        self.assertNotHasAttr(user, "mfa")
-        self.assertHasAttr(user, "preferences")
-
 class UserPreferences(TestCase):
     def test_creation(self):
         user = create_user()
@@ -386,3 +370,38 @@ class MessageFile(TestCase):
         self.assertEqual(message_file.name, "document.txt")
         self.assertEqual(message_file.content, "This is a document about...".encode())
         self.assertEqual(message_file.content_type, "text/plain")
+
+class GuestIdentity(TestCase):
+    def test_creation(self):
+        with freeze_time(timezone.datetime(2025, 1, 1, 12)):
+            identity, token = models.GuestIdentity.create("", "")
+
+            self.assertEqual(models.GuestIdentity.objects.count(), 1)
+            self.assertEqual(models.User.objects.count(), 1)
+
+            self.assertEqual(type(identity), models.GuestIdentity)
+            self.assertEqual(identity.expires_at, timezone.now() + timedelta(days = 30))
+            self.assertEqual(identity.last_used_at, timezone.now())
+            self.assertEqual(identity.created_at, timezone.now())
+            self.assertEqual(identity.ip_address, "")
+            self.assertEqual(identity.user_agent_hash, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+
+            self.assertEqual(type(token), str)
+            self.assertEqual(len(token), 43)
+
+            user = identity.user
+            self.assertEqual(type(user), models.User)
+
+            self.assertEqual(len(user.email), 89 + len("@example.com"))
+            self.assertEqual(len(user.password), 89)
+            self.assertEqual(user.email, user.password + "@example.com")
+            self.assertEqual(user.password, user.email[:-len("@example.com")])
+            self.assertTrue(user.is_active)
+            self.assertTrue(user.is_guest)
+            self.assertFalse(user.is_staff)
+            self.assertFalse(user.is_superuser)
+
+            self.assertHasAttr(user, "chats")
+            self.assertHasAttr(user, "preferences")
+            self.assertHasAttr(user, "sessions")
+            self.assertNotHasAttr(user, "mfa")
