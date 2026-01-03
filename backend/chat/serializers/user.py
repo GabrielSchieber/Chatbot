@@ -62,4 +62,4 @@ class DeleteAccountSerializer(serializers.Serializer):
     mfa_code = serializers.CharField(required = False, allow_blank = True)
 
 class AuthenticateAsGuestSerializer(serializers.Serializer):
-    guest_token = serializers.UUIDField(required = False)
+    guest_token = serializers.CharField(required = False)
