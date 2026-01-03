@@ -393,6 +393,20 @@ class SetupMFA(ViewsTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"detail": "MFA is already enabled for the current user. First disable MFA before setting it up again."})
 
+    def test_requires_password(self):
+        user = self.create_and_login_user()
+        self.assertEqual(user.mfa.secret, b"")
+        self.assertEqual(user.mfa.backup_codes, [])
+        self.assertFalse(user.mfa.is_enabled)
+
+        response = self.client.post("/api/setup-mfa/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"password": ["This field is required."]})
+
+        self.assertEqual(user.mfa.secret, b"")
+        self.assertEqual(user.mfa.backup_codes, [])
+        self.assertFalse(user.mfa.is_enabled)
+
     def test_overwrites_secret(self):
         user = self.create_and_login_user()
         user.mfa.setup()
