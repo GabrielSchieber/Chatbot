@@ -1,3 +1,4 @@
+import secrets
 import uuid
 from datetime import datetime, timedelta, timezone as dt_timezone
 
@@ -992,9 +993,10 @@ class AuthenticateAsGuest(ViewsTestCase):
 
     def test_invalid_guest_token(self):
         self.assertEqual(User.objects.count(), 0)
+        self.assertEqual(GuestIdentity.objects.count(), 0)
         self.assertAlmostEqual(len(self.client.cookies.items()), 0)
 
-        for i, token in enumerate([str(uuid.uuid4()), "invalid"]):
+        for i, token in enumerate([secrets.token_urlsafe(32), str(uuid.uuid4()), "invalid"]):
             self.client.cookies["guest_token"] = token
 
             response = self.client.post("/api/authenticate-as-guest/")
@@ -1011,21 +1013,33 @@ class AuthenticateAsGuest(ViewsTestCase):
                 self.assertEqual(response.cookies[cookie_name]["samesite"], "Strict")
                 self.assertEqual(self.client.cookies[cookie_name]["samesite"], "Strict")
 
+            for cookies in [response.cookies, self.client.cookies]:
+                self.assertEqual(len(cookies["guest_token"].value), 43)
+
             self.assertEqual(User.objects.count(), i + 1)
+            self.assertEqual(GuestIdentity.objects.count(), i + 1)
+
+            identity = GuestIdentity.objects.order_by("created_at").last()
             user: User = User.objects.order_by("created_at").last()
 
-            for cookies in [response.cookies, self.client.cookies]:
-                self.assertEqual(len(cookies["guest_token"].value), 36)
-                self.assertEqual(cookies["guest_token"].value, user.password)
+            self.assertEqual(identity.user, user)
+            self.assertHasAttr(identity, "expires_at")
+            self.assertHasAttr(identity, "last_used_at")
+            self.assertHasAttr(identity, "created_at")
 
-            self.assertEqual(len(user.email), 36 + len("@example.com"))
-            self.assertEqual(len(user.password), 36)
+            self.assertEqual(len(user.email), 89 + len("@example.com"))
+            self.assertEqual(len(user.password), 89)
             self.assertEqual(user.email, user.password + "@example.com")
             self.assertEqual(user.password, user.email[:-len("@example.com")])
             self.assertTrue(user.is_active)
             self.assertTrue(user.is_guest)
             self.assertFalse(user.is_staff)
             self.assertFalse(user.is_superuser)
+
+            self.assertHasAttr(user, "chats")
+            self.assertHasAttr(user, "preferences")
+            self.assertHasAttr(user, "sessions")
+            self.assertNotHasAttr(user, "mfa")
 
     def test_tampered_guest_token(self):
         self.assertEqual(User.objects.count(), 0)
