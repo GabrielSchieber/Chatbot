@@ -360,7 +360,7 @@ class SetupMFA(ViewsTestCase):
         self.assertEqual(user.mfa.backup_codes, [])
         self.assertFalse(user.mfa.is_enabled)
 
-        response = self.client.post("/api/setup-mfa/")
+        response = self.client.post("/api/setup-mfa/", {"password": "testpassword"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 2)
 
@@ -370,7 +370,7 @@ class SetupMFA(ViewsTestCase):
         self.assertEqual(auth_url, f"otpauth://totp/Chatbot:test%40example.com?secret={secret}&issuer=Chatbot")
         self.assertNotEqual(secret, user.mfa.secret)
 
-        user = User.objects.get(email = "test@example.com")
+        user.refresh_from_db()
         self.assertNotEqual(user.mfa.secret, b"")
         self.assertEqual(len(user.mfa.secret), 140)
         self.assertEqual(user.mfa.backup_codes, [])
@@ -398,7 +398,7 @@ class SetupMFA(ViewsTestCase):
         user.mfa.setup()
         previous_encrypted_secret = user.mfa.secret
 
-        response = self.client.post("/api/setup-mfa/")
+        response = self.client.post("/api/setup-mfa/", {"password": "testpassword"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 2)
 
