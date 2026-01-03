@@ -407,6 +407,20 @@ class SetupMFA(ViewsTestCase):
         self.assertEqual(user.mfa.backup_codes, [])
         self.assertFalse(user.mfa.is_enabled)
 
+    def test_invalid_password(self):
+        user = self.create_and_login_user()
+        self.assertEqual(user.mfa.secret, b"")
+        self.assertEqual(user.mfa.backup_codes, [])
+        self.assertFalse(user.mfa.is_enabled)
+
+        response = self.client.post("/api/setup-mfa/", {"password": "invalid"})
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidPassword"})
+
+        self.assertEqual(user.mfa.secret, b"")
+        self.assertEqual(user.mfa.backup_codes, [])
+        self.assertFalse(user.mfa.is_enabled)
+
     def test_overwrites_secret(self):
         user = self.create_and_login_user()
         user.mfa.setup()
