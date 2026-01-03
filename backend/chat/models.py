@@ -1,3 +1,4 @@
+import hashlib
 import secrets
 import uuid
 from datetime import timedelta
@@ -68,13 +69,6 @@ class UserManager(BaseUserManager):
 
     def create_superuser(self, email: str, password: str):
         return self.create_user(email, password, is_staff = True, is_superuser = True)
-
-    def create_guest_user(self):
-        token = str(uuid.uuid4())
-        user: User = self.model(email = token + "@example.com", password = token, is_guest = True)
-        user.save(using = self._db)
-        UserPreferences.objects.create(user = user)
-        return user
 
 class User(CleanOnSaveMixin, AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique = True)
@@ -283,3 +277,34 @@ class MessageFile(CleanOnSaveMixin, models.Model):
 
     def __str__(self):
         return f"File of message named {self.name} created at {self.created_at} in {self.message} owned by {self.message.chat.user.email}."
+
+class GuestIdentity(models.Model):
+    user = models.OneToOneField(User, models.CASCADE, related_name = "guest_identity")
+    expires_at = models.DateTimeField()
+    last_used_at = models.DateTimeField(auto_now = True)
+    created_at = models.DateTimeField(auto_now_add = True)
+
+    ip_address = models.GenericIPAddressField(null = True, blank = True)
+    user_agent_hash = models.CharField(max_length = 64, blank = True)
+
+    @staticmethod
+    def hash_user_agent(ua: str) -> str:
+        return hashlib.sha256(ua.encode()).hexdigest()
+
+    @staticmethod
+    def create(ip_address: str, user_agent_raw: str):
+        token = secrets.token_urlsafe(32)
+        password = make_password(token)
+        email = f"{password}@example.com"
+        user: User = User.objects.create(email = email, password = password, is_guest = True)
+
+        UserPreferences.objects.create(user = user)
+
+        identity = GuestIdentity.objects.create(
+            user = user,
+            expires_at = timezone.now() + timedelta(days = 30),
+            ip_address = ip_address,
+            user_agent_hash = GuestIdentity.hash_user_agent(user_agent_raw)
+        )
+
+        return identity, token

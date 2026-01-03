@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import check_password
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -12,7 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
-from ..models import PreAuthToken, User
+from ..models import GuestIdentity, PreAuthToken, User
 from ..serializers.user import (
     AuthenticateAsGuestSerializer, DeleteAccountSerializer, LoginSerializer,
     MeSerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
@@ -298,24 +299,29 @@ class AuthenticateAsGuest(APIView):
         except ValidationError:
             guest_token = None
 
-        should_create = True
+        user: User | None = None
         if guest_token:
-            try:
-                user = User.objects.get(is_guest = True, password = guest_token)
-                response = Response(status = status.HTTP_200_OK)
-                should_create = False
-            except User.DoesNotExist:
-                pass
+            identity = GuestIdentity.objects.select_related("user").filter(expires_at__gt = timezone.now()).first()
 
-        if should_create:
-            user = User.objects.create_guest_user()
-            response = Response(status = status.HTTP_201_CREATED)
+            if identity:
+                if not check_password(guest_token, identity.user.password):
+                    identity = None
+                elif identity.user_agent_hash:
+                    current_ua_hash = GuestIdentity.hash_user_agent(request.user_agent_raw or "")
+                    if current_ua_hash != identity.user_agent_hash:
+                        identity = None
+
+            if identity:
+                user = identity.user
+
+        created = False
+
+        if user is None:
+            identity, guest_token = GuestIdentity.create(request.ip_address, request.user_agent_raw or "")
+            user = identity.user
+            created = True
 
         refresh = RefreshToken.for_user(user)
-
-        response.set_cookie("access_token", str(refresh.access_token), secure = True, httponly = True, samesite = "Strict")
-        response.set_cookie("refresh_token", str(refresh), secure = True, httponly = True, samesite = "Strict")
-        response.set_cookie("guest_token", user.password, secure = True, httponly = True, samesite = "Strict")
 
         user.sessions.create(
             ip_address = request.ip_address,
@@ -327,6 +333,10 @@ class AuthenticateAsGuest(APIView):
         )
 
         user.last_login = timezone.now()
-        user.save(update_fields = ["last_login"])
+        user.save(update_fields=["last_login"])
 
+        response = Response(status = status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        response.set_cookie("access_token", str(refresh.access_token), secure = True, httponly = True, samesite = "Strict")
+        response.set_cookie("refresh_token", str(refresh), secure = True, httponly = True, samesite = "Strict")
+        response.set_cookie("guest_token", guest_token, 60 * 60 * 24 * 30, secure = True, httponly = True, samesite = "Strict")
         return response
