@@ -69,8 +69,8 @@ class Login(APIView):
             )
 
             response = Response(status = status.HTTP_200_OK)
-            response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
-            response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+            response.set_cookie("access_token", str(refresh.access_token), secure = True, httponly = True, samesite = "Lax")
+            response.set_cookie("refresh_token", str(refresh), secure = True, httponly = True, samesite = "Lax")
 
             user.last_login = timezone.now()
             user.save(update_fields = ["last_login"])
@@ -131,8 +131,8 @@ class Refresh(TokenRefreshView):
         refresh_token = qs.validated_data["refresh"]
 
         response = Response(status = status.HTTP_200_OK)
-        response.set_cookie("access_token", access_token, httponly = True, samesite = "Lax")
-        response.set_cookie("refresh_token", refresh_token, httponly = True, samesite = "Lax")
+        response.set_cookie("access_token", access_token, secure = True, httponly = True, samesite = "Lax")
+        response.set_cookie("refresh_token", refresh_token, secure = True, httponly = True, samesite = "Lax")
         return response
 
 class SetupMFA(APIView):
@@ -227,8 +227,8 @@ class VerifyMFA(APIView):
         )
 
         response = Response(status = status.HTTP_200_OK)
-        response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
-        response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
+        response.set_cookie("access_token", str(refresh.access_token), secure = True, httponly = True, samesite = "Lax")
+        response.set_cookie("refresh_token", str(refresh), secure = True, httponly = True, samesite = "Lax")
 
         pre_auth_token.delete()
 
@@ -313,9 +313,9 @@ class AuthenticateAsGuest(APIView):
 
         refresh = RefreshToken.for_user(user)
 
-        response.set_cookie("access_token", str(refresh.access_token), httponly = True, samesite = "Lax")
-        response.set_cookie("refresh_token", str(refresh), httponly = True, samesite = "Lax")
-        response.set_cookie("guest_token", user.password, httponly = True, samesite = "Lax")
+        response.set_cookie("access_token", str(refresh.access_token), secure = True, httponly = True, samesite = "Lax")
+        response.set_cookie("refresh_token", str(refresh), secure = True, httponly = True, samesite = "Lax")
+        response.set_cookie("guest_token", user.password, secure = True, httponly = True, samesite = "Lax")
 
         user.sessions.create(
             ip_address = request.ip_address,
