@@ -6,7 +6,6 @@ from django.test.client import encode_multipart, BOUNDARY
 
 from ..utils import ViewsTestCase
 from ...models import Chat, Message, MessageFile, User
-from ...urls.api import urlpatterns
 
 class GetMessageFileContent(ViewsTestCase):
     def test(self):
@@ -674,19 +673,3 @@ class RegenerateMessage(ViewsTestCase):
         response = self.client.patch("/api/regenerate-message/", body, content_type)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"index": ["Ensure this value is greater than or equal to 0."]})
-
-class TestRequireAuthentication(ViewsTestCase):
-    def test(self):
-        urls = [f"/api/{p.pattern}" for p in urlpatterns]
-        for url in ["/api/signup/", "/api/login/", "/api/verify-mfa/", "/api/refresh/", "/api/authenticate-as-guest/"]:
-            urls.remove(url)
-
-        for url in urls:
-            responses = [
-                method(url, **{"HTTP_ACCEPT": "application/json"})
-                for method in [self.client.get, self.client.post, self.client.patch, self.client.delete]
-            ]
-
-            for response in responses:
-                self.assertEqual(response.status_code, 401)
-                self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})

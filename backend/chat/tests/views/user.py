@@ -11,6 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from ..utils import ViewsTestCase, create_user
 from ...models import GuestIdentity, User, UserMFA, UserSession
+from ...urls.api import urlpatterns
 
 class Signup(ViewsTestCase):
     def test(self):
@@ -1114,3 +1115,19 @@ class AuthenticateAsGuest(ViewsTestCase):
         self.assertHasAttr(user2, "preferences")
         self.assertHasAttr(user2, "sessions")
         self.assertNotHasAttr(user2, "mfa")
+
+class TestRequireAuthentication(ViewsTestCase):
+    def test(self):
+        urls = [f"/api/{p.pattern}" for p in urlpatterns]
+        for url in ["/api/signup/", "/api/login/", "/api/refresh/", "/api/verify-mfa/", "/api/authenticate-as-guest/"]:
+            urls.remove(url)
+
+        for url in urls:
+            responses = [
+                method(url, **{"HTTP_ACCEPT": "application/json"})
+                for method in [self.client.get, self.client.post, self.client.patch, self.client.delete]
+            ]
+
+            for response in responses:
+                self.assertEqual(response.status_code, 401)
+                self.assertEqual(response.json(), {"detail": "Authentication credentials were not provided."})
