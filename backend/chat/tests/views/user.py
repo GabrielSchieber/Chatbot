@@ -533,13 +533,6 @@ class DisableMFA(ViewsTestCase):
 
 class VerifyMFA(ViewsTestCase):
     def test(self):
-        def is_valid_uuid4(value: str):
-            try:
-                uuid.UUID(value, version = 4)
-            except ValueError:
-                return False
-            return True
-
         user = create_user()
         user.mfa.setup()
         user.mfa.enable()
@@ -552,7 +545,7 @@ class VerifyMFA(ViewsTestCase):
 
         token = response.json()["token"]
         self.assertEqual(type(token), str)
-        self.assertTrue(is_valid_uuid4(token))
+        self.assertEqual(len(token), 43)
 
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 401)
@@ -574,7 +567,7 @@ class VerifyMFA(ViewsTestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_invalid_or_expired_code(self):
-        response = self.client.post("/api/verify-mfa/", {"token": str(uuid.uuid4()), "code": "123456"})
+        response = self.client.post("/api/verify-mfa/", {"token": secrets.token_urlsafe(32), "code": "123456"})
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidOrExpiredCode"})
 
@@ -595,7 +588,7 @@ class VerifyMFA(ViewsTestCase):
         with freeze_time(time_to_freeze + timedelta(minutes = 5)):
             response = self.client.post("/api/verify-mfa/", {"token": token, "code": "123456"})
             self.assertEqual(response.status_code, 401)
-            self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidCode"})
+            self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidOrExpiredCode"})
 
         with freeze_time(time_to_freeze + timedelta(minutes = 5, seconds = 1)):
             response = self.client.post("/api/verify-mfa/", {"token": token, "code": "123456"})
@@ -703,7 +696,7 @@ class VerifyMFA(ViewsTestCase):
         self.assertEqual(user.sessions.count(), 0)
 
         response = self.client.post("/api/verify-mfa/", {"token": "invalid", "code": UserMFA.generate_code(user.mfa.secret)})
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 401)
 
         self.assertEqual(user.sessions.count(), 0)
 
