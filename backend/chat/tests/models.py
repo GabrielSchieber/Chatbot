@@ -257,7 +257,13 @@ class PreAuthToken(TestCase):
 
         time_to_freeze = timezone.datetime(2025, 1, 1, 12)
         with freeze_time(time_to_freeze):
-            pre_auth_token = models.PreAuthToken.objects.create(user = user)
+            pre_auth_token = models.PreAuthToken.objects.create(
+                user = user,
+                token_hash = "-",
+                ip_address = "127.0.0.1",
+                user_agent_hash = "-",
+                expires_at = timezone.now() + timedelta(minutes = 3)
+            )
             self.assertFalse(pre_auth_token.is_expired())
 
         with freeze_time(time_to_freeze + timedelta(minutes = 4, seconds = 59)):
