@@ -140,11 +140,12 @@ function SetupDialog({ setAuthURL, setSecret, setStep, setIsLocked }: {
                     {t("auth.password.label")}
                 </Label.Root>
                 <input
-                    className={inputClassNames}
-                    value={password}
+                    id="password"
                     type="password"
-                    onChange={handleInputChange}
+                    className={inputClassNames}
                     placeholder={t("auth.password.placeholder")}
+                    value={password}
+                    onChange={handleInputChange}
                     required
                 />
             </div>

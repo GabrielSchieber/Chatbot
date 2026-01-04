@@ -65,7 +65,7 @@ test("user cannot login with invalid password", async ({ page }) => {
 })
 
 test("user can enable multi-factor authentication", async ({ page }) => {
-    await signupAndLogin(page)
+    const user = await signupAndLogin(page)
 
     const settingsButton = page.getByText("Settings")
     if (!(await settingsButton.isVisible())) {
@@ -76,8 +76,11 @@ test("user can enable multi-factor authentication", async ({ page }) => {
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
     await expect(page.getByText("Step 1: Setup", { exact: true })).toBeVisible()
+    await expect(page.getByText("Generate QR and secret codes", { exact: true })).toBeVisible()
 
-    await page.getByText("Generate QR and secret codes", { exact: true }).click()
+    await page.getByLabel("Password").fill(user.password)
+
+    await page.getByText("Generate", { exact: true }).click()
     await expect(page.getByText("Step 2: Verify", { exact: true })).toBeVisible()
 
     const secret = await page.getByTestId("mfa-secret").textContent()
