@@ -331,7 +331,7 @@ class AuthenticateAsGuest(APIView):
                 if not check_password(guest_token, identity.user.password):
                     identity = None
                 elif identity.user_agent_hash:
-                    current_ua_hash = GuestIdentity.hash_user_agent(request.user_agent_raw or "")
+                    current_ua_hash = hash_user_agent(request.user_agent_raw or "")
                     if current_ua_hash != identity.user_agent_hash:
                         identity = None
 
