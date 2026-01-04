@@ -1,5 +1,8 @@
+import secrets
+from datetime import timedelta
+
 from django.contrib.auth import authenticate
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -13,12 +16,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
-from ..models import GuestIdentity, PreAuthToken, User
+from ..models import GuestIdentity, PreAuthToken, User, hash_user_agent
 from ..serializers.user import (
     AuthenticateAsGuestSerializer, DeleteAccountSerializer, LoginSerializer,
     MeSerializer, SetupMFASerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
 )
-from ..throttles import IPEmailRateThrottle, RefreshRateThrottle, SignupRateThrottle
+from ..throttles import IPEmailRateThrottle, MFATokenRateThrottle, RefreshRateThrottle, SignupRateThrottle
 
 class Signup(APIView):
     authentication_classes = []
@@ -54,8 +57,15 @@ class Login(APIView):
             return Response({"detail": "login.error"}, status.HTTP_401_UNAUTHORIZED)
 
         if user.mfa.is_enabled:
-            pre_auth_token = PreAuthToken.objects.create(user = user)
-            return Response({"token": str(pre_auth_token.token)}, status.HTTP_200_OK)
+            token = secrets.token_urlsafe(32)
+            PreAuthToken.objects.create(
+                user = user,
+                token_hash = make_password(token),
+                ip_address = request.ip_address,
+                user_agent_hash = hash_user_agent(request.user_agent_raw or ""),
+                expires_at = timezone.now() + timedelta(minutes = 3)
+            )
+            return Response({"token": token}, status.HTTP_200_OK)
         else:
             refresh = RefreshToken.for_user(user)
 
@@ -201,7 +211,7 @@ class DisableMFA(APIView):
 
 class VerifyMFA(APIView):
     authentication_classes = []
-    throttle_classes = [IPEmailRateThrottle]
+    throttle_classes = [IPEmailRateThrottle, MFATokenRateThrottle]
 
     def post(self, request: Request):
         qs = VerifyMFASerializer(data = request.data)
@@ -210,18 +220,26 @@ class VerifyMFA(APIView):
         token = qs.validated_data["token"]
         code = qs.validated_data["code"]
 
-        try:
-            pre_auth_token = PreAuthToken.objects.get(token = token)
-        except PreAuthToken.DoesNotExist:
+        for t in PreAuthToken.objects.filter(used_at__isnull = True, expires_at__gt = timezone.now()):
+            if check_password(token, t.token_hash):
+                pre_auth_token = t
+                break
+        else:
             return Response({"detail": "mfa.messages.errorInvalidOrExpiredCode"}, status.HTTP_401_UNAUTHORIZED)
 
-        if pre_auth_token.is_expired():
-            pre_auth_token.delete()
+        if any([
+            not check_password(token, pre_auth_token.token_hash),
+            pre_auth_token.ip_address != request.ip_address,
+            pre_auth_token.user_agent_hash != hash_user_agent(request.user_agent_raw or "")
+        ]):
             return Response({"detail": "mfa.messages.errorInvalidOrExpiredCode"}, status.HTTP_401_UNAUTHORIZED)
 
         user = pre_auth_token.user
         if not user.mfa.verify(code):
             return Response({"detail": "mfa.messages.errorInvalidCode"}, status.HTTP_401_UNAUTHORIZED)
+
+        pre_auth_token.used_at = timezone.now()
+        pre_auth_token.save(update_fields = ["used_at"])
 
         refresh = RefreshToken.for_user(user)
 
@@ -238,8 +256,6 @@ class VerifyMFA(APIView):
         response = Response(status = status.HTTP_200_OK)
         response.set_cookie("access_token", str(refresh.access_token), secure = True, httponly = True, samesite = "Strict")
         response.set_cookie("refresh_token", str(refresh), secure = True, httponly = True, samesite = "Strict")
-
-        pre_auth_token.delete()
 
         user.last_login = timezone.now()
         user.save(update_fields = ["last_login"])

@@ -216,7 +216,13 @@ class UserSession(CleanOnSaveMixin, models.Model):
 
 class PreAuthToken(CleanOnSaveMixin, models.Model):
     user = models.ForeignKey(User, models.CASCADE, related_name = "pre_auth_tokens")
-    token = models.UUIDField(unique = True, default = uuid.uuid4, editable = False)
+
+    token_hash = models.CharField(max_length = 128)
+    ip_address = models.GenericIPAddressField()
+    user_agent_hash = models.CharField(max_length = 64)
+
+    used_at = models.DateTimeField(null = True, blank = True)
+    expires_at = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add = True)
 
     def is_expired(self):
@@ -288,10 +294,6 @@ class GuestIdentity(models.Model):
     user_agent_hash = models.CharField(max_length = 64, blank = True)
 
     @staticmethod
-    def hash_user_agent(ua: str) -> str:
-        return hashlib.sha256(ua.encode()).hexdigest()
-
-    @staticmethod
     def create(ip_address: str, user_agent_raw: str):
         token = secrets.token_urlsafe(32)
         password = make_password(token)
@@ -304,7 +306,10 @@ class GuestIdentity(models.Model):
             user = user,
             expires_at = timezone.now() + timedelta(days = 30),
             ip_address = ip_address,
-            user_agent_hash = GuestIdentity.hash_user_agent(user_agent_raw)
+            user_agent_hash = hash_user_agent(user_agent_raw)
         )
 
         return identity, token
+
+def hash_user_agent(user_agent: str) -> str:
+    return hashlib.sha256(user_agent.encode()).hexdigest()

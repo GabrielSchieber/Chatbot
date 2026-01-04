@@ -1,6 +1,6 @@
 import os
 
-from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+from rest_framework.throttling import AnonRateThrottle, SimpleRateThrottle, UserRateThrottle
 
 class DebugBypassThrottleMixin:
     def allow_request(self, request, view):
@@ -13,6 +13,15 @@ class SignupRateThrottle(DebugBypassThrottleMixin, AnonRateThrottle):
 
 class RefreshRateThrottle(DebugBypassThrottleMixin, AnonRateThrottle):
     scope = "refresh"
+
+class MFATokenRateThrottle(DebugBypassThrottleMixin, SimpleRateThrottle):
+    scope = "mfa_token"
+
+    def get_cache_key(self, request, view):
+        token = request.data.get("token")
+        if not token:
+            return None
+        return f"mfa_token:{token}"
 
 class IPEmailRateThrottle(DebugBypassThrottleMixin, AnonRateThrottle):
     scope = "ip_email"

@@ -48,7 +48,7 @@ class SetupMFASerializer(serializers.Serializer):
     password = serializers.CharField()
 
 class VerifyMFASerializer(serializers.Serializer):
-    token = serializers.UUIDField()
+    token = serializers.CharField()
     code = serializers.CharField()
 
 class MeSerializer(serializers.Serializer):

@@ -119,6 +119,7 @@ REST_FRAMEWORK = {
         "per_user_ip": "60/minute",
         "signup": "3/minute",
         "refresh": "20/minute",
+        "mfa_token": "5/minute",
         "ip_email": "5/minute" 
     }
 }
