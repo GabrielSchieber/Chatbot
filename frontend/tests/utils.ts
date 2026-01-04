@@ -83,8 +83,11 @@ export async function signupWithMFAEnabledAndLogin(page: Page) {
     await page.getByRole("tab", { name: "Security" }).click()
     await page.getByText("Multi-factor authentication", { exact: true }).locator("..").getByRole("button").click()
     await expect(page.getByText("Step 1: Setup", { exact: true })).toBeVisible()
+    await expect(page.getByText("Generate QR and secret code.", { exact: true })).toBeVisible()
 
-    await page.getByText("Generate QR and secret codes", { exact: true }).click()
+    await page.getByLabel("Password").fill(user.password)
+
+    await page.getByText("Generate", { exact: true }).click()
     await expect(page.getByText("Step 2: Verify", { exact: true })).toBeVisible({ timeout: 10_000 })
 
     const secret = await page.getByTestId("mfa-secret").textContent()
