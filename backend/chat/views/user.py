@@ -21,7 +21,7 @@ from ..serializers.user import (
     AuthenticateAsGuestSerializer, DeleteAccountSerializer, LoginSerializer,
     MeSerializer, SetupMFASerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
 )
-from ..throttles import IPEmailRateThrottle, MFATokenRateThrottle, RefreshRateThrottle, SignupRateThrottle
+from ..throttles import IPEmailRateThrottle, MFATokenRateThrottle, RefreshRateThrottle, RefreshTokenRateThrottle, SignupRateThrottle
 
 class Signup(APIView):
     authentication_classes = []
@@ -125,7 +125,7 @@ class LogoutAllSessions(APIView):
 
 class Refresh(TokenRefreshView):
     authentication_classes = []
-    throttle_classes = [RefreshRateThrottle]
+    throttle_classes = [RefreshRateThrottle, RefreshTokenRateThrottle]
 
     def post(self, request: Request):
         refresh_token = request.COOKIES.get("refresh_token")

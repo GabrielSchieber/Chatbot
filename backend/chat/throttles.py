@@ -1,3 +1,4 @@
+import hashlib
 import os
 
 from rest_framework.throttling import AnonRateThrottle, SimpleRateThrottle, UserRateThrottle
@@ -13,6 +14,16 @@ class SignupRateThrottle(DebugBypassThrottleMixin, AnonRateThrottle):
 
 class RefreshRateThrottle(DebugBypassThrottleMixin, AnonRateThrottle):
     scope = "refresh"
+
+class RefreshTokenRateThrottle(SimpleRateThrottle):
+    scope = "refresh_token"
+
+    def get_cache_key(self, request, view):
+        token = request.data.get("refresh")
+        if not token:
+            return None
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        return f"refresh_token:{token_hash}"
 
 class MFATokenRateThrottle(DebugBypassThrottleMixin, SimpleRateThrottle):
     scope = "mfa_token"
