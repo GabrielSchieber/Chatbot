@@ -34,6 +34,7 @@ export default function Login() {
         } else {
             const data = await response.json()
             setError(t(data.detail))
+            setToken("")
             setIsVerifying(false)
         }
     }
@@ -48,6 +49,7 @@ export default function Login() {
         } else {
             const data = await response.json()
             setError(t(data.detail))
+            setToken("")
             setIsVerifying(false)
         }
     }
