@@ -228,6 +228,20 @@ class PreAuthToken(CleanOnSaveMixin, models.Model):
     def __str__(self):
         return f"Pre-authentication token created at {self.created_at} owned by {self.user.email}."
 
+class PasswordResetToken(models.Model):
+    user = models.ForeignKey(User, models.CASCADE, related_name = "password_reset_tokens")
+    token_hash = models.CharField(max_length = 128)
+
+    ip_address = models.GenericIPAddressField()
+    user_agent_hash = models.CharField(max_length = 64)
+
+    used_at = models.DateTimeField(blank = True, null = True)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add = True)
+
+    def is_valid(self):
+        return self.used_at is None and timezone.now() < self.expires_at
+
 class Chat(CleanOnSaveMixin, models.Model):
     user = models.ForeignKey(User, models.CASCADE, related_name = "chats")
     uuid = models.UUIDField(primary_key = True, default = uuid.uuid4, editable = False)

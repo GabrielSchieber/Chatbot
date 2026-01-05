@@ -1,5 +1,5 @@
 import { t } from "i18next"
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 
 import { Button, Email, Error, Form, Header, MFA, MFARecovery, MFAStepSwitch, Password, Recommendation, type Step } from "../components/Auth"
 import { login, verifyMFA } from "../utils/api"
@@ -54,14 +54,18 @@ export default function Login() {
         }
     }
 
-    useEffect(() => setError(""), [email, password])
-
     return (
         step === "login" ? (
             <Form handleSubmit={handleSubmit}>
                 <Header text={t("login.header")} />
                 <Email email={email} setEmail={setEmail} />
-                <Password password={password} setPassword={setPassword} label={t("login.password")} id="password" />
+                <Password
+                    password={password}
+                    setPassword={setPassword}
+                    label={t("login.password")}
+                    id="password"
+                    includeForgotPassword={true}
+                />
                 {error && <Error text={error} />}
                 <Button text={isVerifying ? t("login.loggingIn") : t("login.logIn")} isDisabled={isVerifying} />
                 <Recommendation text={t("login.noAccount")} url="/signup" urlText={t("login.signUp")} />

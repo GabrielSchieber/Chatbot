@@ -60,6 +60,13 @@ class MeSerializer(serializers.Serializer):
     occupation = serializers.CharField(allow_blank = True, max_length = 50, required = False)
     about = serializers.CharField(allow_blank = True, max_length = 1000, required = False)
 
+class RequestPasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+class ConfirmPasswordResetSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    password = serializers.CharField(min_length = 12, max_length = 1000)
+
 class DeleteAccountSerializer(serializers.Serializer):
     password = serializers.CharField()
     mfa_code = serializers.CharField(required = False, allow_blank = True)

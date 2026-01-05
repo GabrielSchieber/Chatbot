@@ -1,6 +1,6 @@
 import { t } from "i18next"
 import { Label as RadixLabel } from "radix-ui"
-import type { Dispatch, ReactNode, SetStateAction } from "react"
+import { type Dispatch, type ReactNode, type SetStateAction } from "react"
 
 export type Step = "login" | "mfa" | "mfa-recovery"
 
@@ -39,13 +39,14 @@ export function Email({ email, setEmail }: { email: string, setEmail: Dispatch<S
     )
 }
 
-export function Password({ password, setPassword, label, id, minLength, maxLength }: {
+export function Password({ password, setPassword, label, id, minLength, maxLength, includeForgotPassword = false }: {
     password: string
     setPassword: Dispatch<SetStateAction<string>>
     label: string
     id?: string
     minLength?: number
     maxLength?: number
+    includeForgotPassword?: boolean
 }) {
     return (
         <div className="flex flex-col space-y-2">
@@ -64,6 +65,14 @@ export function Password({ password, setPassword, label, id, minLength, maxLengt
                 "
                 required
             />
+            {includeForgotPassword &&
+                <a
+                    className="text-gray-400 light:text-gray-700 hover:underline"
+                    href="/forgot-password"
+                >
+                    Forgot password?
+                </a>
+            }
         </div>
     )
 }
@@ -155,14 +164,15 @@ export function Error({ text }: { text: string }) {
     return <p className="text-sm text-red-400 light:text-red-600">{text}</p>
 }
 
-export function Button({ text, isDisabled }: { text: string, isDisabled: boolean }) {
+export function Button({ text, isDisabled, onClick }: { text: string, isDisabled: boolean, onClick?: VoidFunction }) {
     return (
         <button
             className="
                 w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md cursor-pointer disabled:bg-indigo-600/30
                 disabled:cursor-not-allowed disabled:text-gray-200 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500
             "
-            type="submit"
+            type={onClick === undefined ? "submit" : "button"}
+            onClick={onClick}
             disabled={isDisabled}
         >
             {text}

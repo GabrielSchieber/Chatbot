@@ -136,3 +136,11 @@ SIMPLE_JWT = {
     "AUTH_COOKIE_SECURE": True,
     "AUTH_COOKIE_SAMESITE": "Strict"
 }
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+DEFAULT_FROM_EMAIL = "Chatbot <no-reply@localhost>"
+
+FRONTEND_URL = "http://localhost:5173"

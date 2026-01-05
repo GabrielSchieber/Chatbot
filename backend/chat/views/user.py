@@ -1,8 +1,10 @@
 import secrets
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password, make_password
+from django.core.mail import send_mail
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -16,10 +18,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
-from ..models import GuestIdentity, PreAuthToken, User, hash_user_agent
+from ..models import GuestIdentity, PasswordResetToken, PreAuthToken, User, hash_user_agent
 from ..serializers.user import (
-    AuthenticateAsGuestSerializer, DeleteAccountSerializer, LoginSerializer,
-    MeSerializer, SetupMFASerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
+    AuthenticateAsGuestSerializer, ConfirmPasswordResetSerializer, DeleteAccountSerializer, LoginSerializer,
+    MeSerializer, RequestPasswordResetSerializer, SetupMFASerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
 )
 from ..throttles import IPEmailRateThrottle, MFATokenRateThrottle, RefreshRateThrottle, RefreshTokenRateThrottle, SignupRateThrottle
 
@@ -310,6 +312,61 @@ class DeleteAccount(APIView):
         response.delete_cookie("refresh_token")
         response.delete_cookie("guest_token")
         return response
+
+class RequestPasswordReset(APIView):
+    authentication_classes = []
+    throttle_classes = [IPEmailRateThrottle]
+
+    def post(self, request: Request):
+        qs = RequestPasswordResetSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        try:
+            user = User.objects.get(email = qs.validated_data["email"], is_guest = False)
+        except User.DoesNotExist:
+            return Response(status = status.HTTP_200_OK)
+
+        token = secrets.token_urlsafe(48)
+
+        PasswordResetToken.objects.create(
+            user = user,
+            token_hash = make_password(token),
+            ip_address = request.ip_address,
+            user_agent_hash = hash_user_agent(request.user_agent_raw or ""),
+            expires_at = timezone.now() + timedelta(minutes = 15)
+        )
+
+        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+        subject = "Reset your password"
+        message = f"Reset your password using the link below:\n\n{reset_url}"
+
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+
+        return Response(status = status.HTTP_200_OK)
+
+class ConfirmPasswordReset(APIView):
+    authentication_classes = []
+
+    def post(self, request):
+        qs = ConfirmPasswordResetSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        for t in PasswordResetToken.objects.filter(used_at__isnull = True, expires_at__gt = timezone.now()).select_related("user"):
+            if check_password(qs.validated_data["token"], t.token_hash):
+                token = t
+                break
+        else:
+            return Response({"detail": "auth.resetPassword.invalid"}, status.HTTP_400_BAD_REQUEST)
+
+        token.user.set_password(qs.validated_data["password"])
+        token.user.save(update_fields = ["password"])
+
+        token.used_at = timezone.now()
+        token.save(update_fields = ["used_at"])
+
+        OutstandingToken.objects.filter(user = token.user).delete()
+
+        return Response(status = status.HTTP_204_NO_CONTENT)
 
 class AuthenticateAsGuest(APIView):
     authentication_classes = []

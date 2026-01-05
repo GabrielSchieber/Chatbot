@@ -76,6 +76,22 @@ export function deleteAccount(password: string, mfaCode?: string) {
     })
 }
 
+export function requestPasswordReset(email: string) {
+    return apiFetch("request-password-reset/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+    })
+}
+
+export function confirmPasswordReset(token: string, password: string) {
+    return apiFetch("confirm-password-reset/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password })
+    })
+}
+
 export function authenticateAsGuest() {
     return apiFetch("authenticate-as-guest/", { method: "POST" })
 }

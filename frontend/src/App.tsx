@@ -1,11 +1,13 @@
-import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router"
 import { useEffect, useState } from "react"
+import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router"
 
-import { useAuth } from "./providers/AuthProvider"
-import { NotificationProvider } from "./providers/NotificationProvider"
+import { ForgotPassword } from "./components/ForgotPassword"
+import { ResetPassword } from "./components/ResetPassword"
 import Index from "./pages/Index"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
+import { useAuth } from "./providers/AuthProvider"
+import { NotificationProvider } from "./providers/NotificationProvider"
 import i18n from "./utils/i18n"
 import { applyTheme, getLanguageAbbreviation } from "./utils/misc"
 import "./App.css"
@@ -42,6 +44,8 @@ export default function App() {
                     <Route path="/chat/:chatUUID" element={<Index />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
             </Router>
