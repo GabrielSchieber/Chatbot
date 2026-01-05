@@ -225,9 +225,6 @@ class PreAuthToken(CleanOnSaveMixin, models.Model):
     expires_at = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add = True)
 
-    def is_expired(self):
-        return timezone.now() - self.created_at > timedelta(minutes = 5)
-
     def __str__(self):
         return f"Pre-authentication token created at {self.created_at} owned by {self.user.email}."
 
