@@ -13,7 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
 from ..utils import ViewsTestCase, create_user
-from ...models import GuestIdentity, PasswordResetToken, User, UserMFA, UserSession, derive_token_fingerprint
+from ...models import GuestIdentity, PasswordResetToken, PreAuthToken, User, UserMFA, UserSession, derive_token_fingerprint
 from ...urls.api import urlpatterns
 
 class Signup(ViewsTestCase):
@@ -120,6 +120,24 @@ class Login(ViewsTestCase):
         self.assertEqual(session.os, "Other")
         self.assertEqual(len(session.refresh_jti), 32)
         assert all(c in "0123456789abcdefABCDEF" for c in session.refresh_jti)
+
+    def test_with_inactive_user(self):
+        user = create_user()
+        user.is_active = False
+        user.save()
+        response = self.login_user()
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "login.error"})
+        self.assertFalse(UserSession.objects.count(), 0)
+        self.assertFalse(PreAuthToken.objects.count(), 0)
+
+    def test_with_guest_user(self):
+        identity, token = GuestIdentity.create("", "")
+        response = self.login_user(identity.user.email, token)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "login.error"})
+        self.assertFalse(UserSession.objects.count(), 0)
+        self.assertFalse(PreAuthToken.objects.count(), 0)
 
 class Logout(ViewsTestCase):
     def test(self):

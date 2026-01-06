@@ -54,7 +54,10 @@ class Login(APIView):
         email = qs.validated_data["email"]
         password = qs.validated_data["password"]
 
-        user: User | None = authenticate(request, email = email, password = password, is_guest = False)
+        if not User.objects.filter(email = email, is_active = True, is_guest = False).exists():
+            return Response({"detail": "login.error"}, status.HTTP_401_UNAUTHORIZED)
+
+        user: User | None = authenticate(request, email = email, password = password)
         if user is None:
             return Response({"detail": "login.error"}, status.HTTP_401_UNAUTHORIZED)
 
