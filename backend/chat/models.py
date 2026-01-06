@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 import secrets
 import uuid
 from datetime import timedelta
@@ -230,8 +231,8 @@ class PreAuthToken(CleanOnSaveMixin, models.Model):
 
 class PasswordResetToken(models.Model):
     user = models.ForeignKey(User, models.CASCADE, related_name = "password_reset_tokens")
-    token_hash = models.CharField(max_length = 128)
 
+    token_fingerprint = models.CharField(max_length = 64, db_index = True)
     ip_address = models.GenericIPAddressField()
     user_agent_hash = models.CharField(max_length = 64)
 
@@ -324,3 +325,6 @@ class GuestIdentity(models.Model):
 
 def hash_user_agent(user_agent: str) -> str:
     return hashlib.sha256(user_agent.encode()).hexdigest()
+
+def derive_token_fingerprint(token: str) -> str:
+    return hmac.new(settings.SECRET_KEY.encode(), token.encode(), hashlib.sha256).hexdigest()

@@ -13,7 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
 from ..utils import ViewsTestCase, create_user
-from ...models import GuestIdentity, PasswordResetToken, User, UserMFA, UserSession
+from ...models import GuestIdentity, PasswordResetToken, User, UserMFA, UserSession, derive_token_fingerprint
 from ...urls.api import urlpatterns
 
 class Signup(ViewsTestCase):
@@ -939,8 +939,8 @@ class RequestPasswordReset(ViewsTestCase):
         reset_token = PasswordResetToken.objects.get(user = user)
         raw_token = re.search(r"token=([^\s]+)", mail.outbox[0].body).group(1)
 
-        self.assertNotEqual(raw_token, reset_token.token_hash)
-        self.assertTrue(check_password(raw_token, reset_token.token_hash))
+        self.assertNotEqual(raw_token, reset_token.token_fingerprint)
+        self.assertEqual(derive_token_fingerprint(raw_token), reset_token.token_fingerprint)
 
 class ConfirmPasswordReset(ViewsTestCase):
     def test_password_reset_success(self):
@@ -948,7 +948,7 @@ class ConfirmPasswordReset(ViewsTestCase):
         raw_token = "test-reset-token"
         reset_token = PasswordResetToken.objects.create(
             user = user,
-            token_hash = make_password(raw_token),
+            token_fingerprint = derive_token_fingerprint(raw_token),
             ip_address = "127.0.0.1",
             user_agent_hash = "test",
             expires_at = timezone.now() + timedelta(minutes = 15)
@@ -968,7 +968,7 @@ class ConfirmPasswordReset(ViewsTestCase):
         raw_token = "test-reset-token"
         PasswordResetToken.objects.create(
             user = user,
-            token_hash = make_password(raw_token),
+            token_fingerprint = derive_token_fingerprint(raw_token),
             ip_address = "127.0.0.1",
             user_agent_hash = "test",
             expires_at = timezone.now() + timedelta(minutes = 15)
@@ -986,7 +986,7 @@ class ConfirmPasswordReset(ViewsTestCase):
         raw_token = "test-reset-token"
         reset_token = PasswordResetToken.objects.create(
             user = user,
-            token_hash = make_password(raw_token),
+            token_fingerprint = derive_token_fingerprint(raw_token),
             ip_address = "127.0.0.1",
             user_agent_hash = "test",
             expires_at = timezone.now() + timedelta(minutes = 15)
@@ -1014,7 +1014,7 @@ class ConfirmPasswordReset(ViewsTestCase):
         raw_token = "test-reset-token"
         PasswordResetToken.objects.create(
             user = user,
-            token_hash = make_password(raw_token),
+            token_fingerprint = derive_token_fingerprint(raw_token),
             ip_address = "127.0.0.1",
             user_agent_hash = "test",
             expires_at = timezone.now() + timedelta(minutes = 15)

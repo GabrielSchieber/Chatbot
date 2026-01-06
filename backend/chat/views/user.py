@@ -18,7 +18,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
-from ..models import GuestIdentity, PasswordResetToken, PreAuthToken, User, hash_user_agent
+from ..models import GuestIdentity, PasswordResetToken, PreAuthToken, User, derive_token_fingerprint, hash_user_agent
 from ..serializers.user import (
     AuthenticateAsGuestSerializer, ConfirmPasswordResetSerializer, DeleteAccountSerializer, LoginSerializer,
     MeSerializer, RequestPasswordResetSerializer, SetupMFASerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
@@ -330,7 +330,7 @@ class RequestPasswordReset(APIView):
 
         PasswordResetToken.objects.create(
             user = user,
-            token_hash = make_password(token),
+            token_fingerprint = derive_token_fingerprint(token),
             ip_address = request.ip_address,
             user_agent_hash = hash_user_agent(request.user_agent_raw or ""),
             expires_at = timezone.now() + timedelta(minutes = 15)
@@ -351,11 +351,13 @@ class ConfirmPasswordReset(APIView):
         qs = ConfirmPasswordResetSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
 
-        for t in PasswordResetToken.objects.filter(used_at__isnull = True, expires_at__gt = timezone.now()).select_related("user"):
-            if check_password(qs.validated_data["token"], t.token_hash):
-                token = t
-                break
-        else:
+        try:
+            token = PasswordResetToken.objects.select_related("user").get(
+                token_fingerprint = derive_token_fingerprint(qs.validated_data["token"]),
+                used_at__isnull = True,
+                expires_at__gt = timezone.now()
+            )
+        except PasswordResetToken.DoesNotExist:
             return Response({"detail": "auth.resetPassword.invalid"}, status.HTTP_400_BAD_REQUEST)
 
         token.user.set_password(qs.validated_data["password"])
