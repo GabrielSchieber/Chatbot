@@ -47,7 +47,15 @@ class CleanOnSaveMixin(models.Model):
         return super().save(*args, **kwargs)
 
 class UserManager(BaseUserManager):
-    def create_user(self, email: str, password: str, is_staff: bool = False, is_superuser: bool = False):
+    def create_user(
+        self,
+        email: str,
+        password: str,
+        has_verified_email: bool = False,
+        is_active: bool = False,
+        is_staff: bool = False,
+        is_superuser: bool = False
+    ):
         try:
             validate_email(email)
         except:
@@ -59,7 +67,13 @@ class UserManager(BaseUserManager):
         if User.objects.filter(email = email).exists():
             raise ValueError("Email is already registered.")
 
-        user: User = self.model(email = self.normalize_email(email), is_staff = is_staff, is_superuser = is_superuser)
+        user: User = self.model(
+            email = self.normalize_email(email),
+            has_verified_email = has_verified_email,
+            is_active = is_active,
+            is_staff = is_staff,
+            is_superuser = is_superuser
+        )
         user.set_password(password)
         user.save(using = self._db)
 
@@ -73,7 +87,8 @@ class UserManager(BaseUserManager):
 
 class User(CleanOnSaveMixin, AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique = True)
-    is_active = models.BooleanField(default = True)
+    has_verified_email = models.BooleanField(default = False)
+    is_active = models.BooleanField(default = False)
     is_guest = models.BooleanField(default = False)
     is_staff = models.BooleanField(default = False)
     created_at = models.DateTimeField(auto_now_add = True)
@@ -228,6 +243,18 @@ class PreAuthToken(CleanOnSaveMixin, models.Model):
 
     def __str__(self):
         return f"Pre-authentication token created at {self.created_at} owned by {self.user.email}."
+
+class EmailVerificationToken(models.Model):
+    user = models.ForeignKey(User, models.CASCADE, related_name = "email_tokens")
+
+    token_hash = models.CharField(max_length = 128)
+
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(blank = True, null = True)
+    created_at = models.DateTimeField(auto_now_add = True)
+
+    def is_valid(self):
+        return self.used_at is None and self.expires_at > timezone.now()
 
 class PasswordResetToken(models.Model):
     user = models.ForeignKey(User, models.CASCADE, related_name = "password_reset_tokens")

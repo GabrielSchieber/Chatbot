@@ -157,7 +157,6 @@
     "auth.forgotPassword.paragraph": "Enter your account email address to continue.",
     "auth.forgotPassword.next": "Next",
     "auth.forgotPassword.nextParagraph": "Instructions on how to change your password have been sent to your email address.",
-    "auth.forgotPassword.goBackToLogin": "Go back to login page",
     "auth.resetPassword.header": "Change Password",
     "auth.resetPassword.success": "Password changed successfully.",
     "auth.resetPassword.password": "New Password",
@@ -167,6 +166,13 @@
     "auth.resetPassword.failed": "Failed",
     "auth.resetPassword.invalid": "An error has ocurred. Try sending the email with the form again.",
     "auth.resetPassword.passwordsDoNotMatch": "Passwords do not match.",
+    "auth.verifyEmail.header": "Verifying your email...",
+    "auth.verifyEmail.paragraph": "Please wait a moment.",
+    "auth.verifyEmail.error": "This verification link has expired. Please sign up again to receive another verification link.",
+    "auth.verifyEmailSent.header": "Verify your email",
+    "auth.verifyEmailSent.firstParagraph": "We sent a verification link to {{email}}.",
+    "auth.verifyEmailSent.secondParagraph": "Please check your inbox to continue.",
+    "auth.goBackToLogin": "Go back to login page",
     "auth.mfa.label": "Authentication Code",
     "auth.mfa.placeholder": "6-digit code",
     "auth.mfaRecovery.label": "Recovery Code",
@@ -194,6 +200,5 @@
     "signup.signUp": "Sign up",
     "signup.haveAccount": "Already have an account?",
     "signup.logIn": "Log in!",
-    "signup.emailError": "The email address is already registered. Please choose another one.",
-    "signup.loginAfterSignupError": "An error occurred. Please try again later."
+    "signup.emailError": "The email address is already registered. Please choose another one."
 }

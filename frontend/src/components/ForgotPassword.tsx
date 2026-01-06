@@ -5,7 +5,7 @@ import { useNavigate } from "react-router"
 import { Button, Email, Form, Header } from "./Auth"
 import { requestPasswordReset } from "../utils/api"
 
-export function ForgotPassword() {
+export default function ForgotPassword() {
     const navigate = useNavigate()
 
     const [email, setEmail] = useState("")
@@ -23,7 +23,7 @@ export function ForgotPassword() {
             {hasSent ? (
                 <>
                     <p className="text-center text-gray-300 light:text-gray-600">{t("auth.forgotPassword.nextParagraph")}</p>
-                    <Button text={t("auth.forgotPassword.goBackToLogin")} isDisabled={false} onClick={() => navigate("/login")} />
+                    <Button text={t("auth.goBackToLogin")} isDisabled={false} onClick={() => navigate("/login")} />
                 </>
             ) : (
                 <>

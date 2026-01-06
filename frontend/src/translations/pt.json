@@ -157,7 +157,6 @@
     "auth.forgotPassword.paragraph": "Insira o endereço de e-mail da sua conta para continuar.",
     "auth.forgotPassword.next": "Seguir",
     "auth.forgotPassword.nextParagraph": "As instruções sobre como alterar sua senha foram enviadas para o seu endereço de e-mail.",
-    "auth.forgotPassword.goBackToLogin": "Voltar para a página de login",
     "auth.resetPassword.header": "Alterar Senha",
     "auth.resetPassword.success": "Senha alterada com sucesso.",
     "auth.resetPassword.password": "Nova Senha",
@@ -166,7 +165,14 @@
     "auth.resetPassword.changing": "Alterando",
     "auth.resetPassword.failed": "Erro",
     "auth.resetPassword.invalid": "Ocorreu um erro. Tente enviar o e-mail com o formulário novamente.",
-    "auth.resetPassword.passwordsDoNotMatch": "Passwords do not match.",
+    "auth.resetPassword.passwordsDoNotMatch": "As senhas não coincidem.",
+    "auth.verifyEmail.header": "Verificando seu e-mail...",
+    "auth.verifyEmail.paragraph": "Aguarde um momento.",
+    "auth.verifyEmail.error": "Este link de verificação expirou. Cadastre-se novamente para receber outro link de verificação.",
+    "auth.verifyEmailSent.header": "Verifique seu e-mail",
+    "auth.verifyEmailSent.firstParagraph": "Enviamos um link de verificação para {{email}}.",
+    "auth.verifyEmailSent.secondParagraph": "Por favor, verifique sua caixa de entrada para continuar.",
+    "auth.goBackToLogin": "Voltar para a página de login",
     "auth.mfa.label": "Código de Autenticação",
     "auth.mfa.placeholder": "Código de 6 dígitos",
     "auth.mfaRecovery.label": "Código de Recuperação",
@@ -194,6 +200,5 @@
     "signup.signUp": "Cadastrar",
     "signup.haveAccount": "Já tem uma conta?",
     "signup.logIn": "Entrar!",
-    "signup.emailError": "O endereço de e-mail já está cadastrado. Por favor, escolha outro.",
-    "signup.loginAfterSignupError": "Ocorreu um erro. Tente novamente mais tarde."
+    "signup.emailError": "O endereço de e-mail já está cadastrado. Por favor, escolha outro."
 }

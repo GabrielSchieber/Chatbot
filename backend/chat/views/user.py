@@ -18,10 +18,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
-from ..models import GuestIdentity, PasswordResetToken, PreAuthToken, User, derive_token_fingerprint, hash_user_agent
+from ..models import EmailVerificationToken, GuestIdentity, PasswordResetToken, PreAuthToken, User, derive_token_fingerprint, hash_user_agent
 from ..serializers.user import (
     AuthenticateAsGuestSerializer, ConfirmPasswordResetSerializer, DeleteAccountSerializer, LoginSerializer,
-    MeSerializer, RequestPasswordResetSerializer, SetupMFASerializer, SignupSerializer, UserSerializer, VerifyMFASerializer
+    MeSerializer, RequestPasswordResetSerializer, SetupMFASerializer, SignupSerializer, UserSerializer, VerifyEmailSerializer, VerifyMFASerializer
 )
 from ..throttles import IPEmailRateThrottle, MFATokenRateThrottle, RefreshRateThrottle, RefreshTokenRateThrottle, SignupRateThrottle
 
@@ -36,12 +36,76 @@ class Signup(APIView):
         email = qs.validated_data["email"]
         password = qs.validated_data["password"]
 
-        if User.objects.filter(email = email).exists():
+        if User.objects.filter(email = email, has_verified_email = True).exists():
             return Response({"detail": "signup.emailError"}, status.HTTP_400_BAD_REQUEST)
 
-        User.objects.create_user(email = email, password = password)
+        try:
+            user: User = User.objects.get(email = email)
+            user.set_password(password)
+            user.save()
+        except User.DoesNotExist:
+            user = User.objects.create_user(email = email, password = password)
+
+        EmailVerificationToken.objects.filter(user = user, used_at__isnull = True).update(expires_at = timezone.now())
+
+        raw_token = secrets.token_urlsafe(32)
+        EmailVerificationToken.objects.create(
+            user = user,
+            token_hash = make_password(raw_token),
+            expires_at = timezone.now() + timedelta(hours = 24)
+        )
+
+        subject = "Verify your email"
+        verify_url = f"{settings.FRONTEND_URL}/verify-email?email={user.email}&token={raw_token}"
+        message = f"Click the link to verify your email:\n\n{verify_url}"
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
 
         return Response(status = status.HTTP_201_CREATED)
+
+class VerifyEmail(APIView):
+    authentication_classes = []
+    throttle_classes = [IPEmailRateThrottle]
+
+    def post(self, request: Request):
+        qs = VerifyEmailSerializer(data = request.data)
+        qs.is_valid(raise_exception = True)
+
+        email = qs.validated_data["email"]
+        token = qs.validated_data["token"]
+
+        try:
+            user: User = User.objects.get(email = email)
+        except User.DoesNotExist:
+            return Response(status = status.HTTP_400_BAD_REQUEST)
+
+        for t in EmailVerificationToken.objects.filter(user = user, used_at__isnull = True, expires_at__gt = timezone.now()):
+            if check_password(token, t.token_hash):
+                t.used_at = timezone.now()
+                t.save(update_fields = ["used_at"])
+
+                refresh = RefreshToken.for_user(user)
+                refresh_jti = refresh.get("jti")
+                user.sessions.create(
+                    ip_address = request.ip_address,
+                    user_agent = request.user_agent_raw,
+                    device = request.device,
+                    browser = request.browser,
+                    os = request.os,
+                    refresh_jti = refresh_jti
+                )
+
+                response = Response(status = status.HTTP_204_NO_CONTENT)
+                response.set_cookie("access_token", str(refresh.access_token), secure = True, httponly = True, samesite = "Strict")
+                response.set_cookie("refresh_token", str(refresh), secure = True, httponly = True, samesite = "Strict")
+
+                user.has_verified_email = True
+                user.is_active = True
+                user.last_login = timezone.now()
+                user.save(update_fields = ["has_verified_email", "is_active", "last_login"])
+
+                return response
+
+        return Response(status = status.HTTP_400_BAD_REQUEST)
 
 class Login(APIView):
     authentication_classes = []
@@ -54,7 +118,7 @@ class Login(APIView):
         email = qs.validated_data["email"]
         password = qs.validated_data["password"]
 
-        if not User.objects.filter(email = email, is_active = True, is_guest = False).exists():
+        if not User.objects.filter(email = email, has_verified_email = True, is_active = True, is_guest = False).exists():
             return Response({"detail": "login.error"}, status.HTTP_401_UNAUTHORIZED)
 
         user: User | None = authenticate(request, email = email, password = password)

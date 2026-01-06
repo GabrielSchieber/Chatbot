@@ -2,12 +2,9 @@ import { t } from "i18next"
 import React, { useEffect, useState } from "react"
 
 import { Button, Email, Error, Form, Header, Password, Recommendation } from "../components/Auth"
-import { useNotify } from "../providers/NotificationProvider"
-import { login, me, signup } from "../utils/api"
+import { signup } from "../utils/api"
 
 export default function Signup() {
-    const notify = useNotify()
-
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
@@ -28,16 +25,7 @@ export default function Signup() {
 
         const response = await signup(email, password)
         if (response.ok) {
-            const response = await login(email, password)
-            if (response.ok) {
-                if (window.innerWidth < 750) {
-                    await me(undefined, undefined, false)
-                }
-                location.href = "/"
-            } else {
-                notify(t("signup.loginAfterSignupError"), "error")
-                setIsVerifying(false)
-            }
+            location.href = `/verify-email-sent?email=${encodeURIComponent(email)}`
         } else {
             const data = await response.json()
             setError(t(data.detail))

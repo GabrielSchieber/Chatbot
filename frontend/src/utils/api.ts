@@ -8,6 +8,14 @@ export function signup(email: string, password: string) {
     })
 }
 
+export function verifyEmail(email: string, token: string) {
+    return fetch("/api/verify-email/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, token })
+    })
+}
+
 export function login(email: string, password: string) {
     return fetch("/api/login/", {
         method: "POST",

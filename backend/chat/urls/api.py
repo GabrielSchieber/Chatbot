@@ -6,6 +6,7 @@ from ..views import chat, message, user
 
 urlpatterns = [
     path("signup/", user.Signup.as_view()),
+    path("verify-email/", user.VerifyEmail.as_view()),
     path("login/", user.Login.as_view()),
     path("logout/", user.Logout.as_view()),
     path("logout-all-sessions/", user.LogoutAllSessions.as_view()),

@@ -5,7 +5,7 @@ import { useNavigate } from "react-router"
 import { Button, Error, Form, Header, Password } from "./Auth"
 import { confirmPasswordReset } from "../utils/api"
 
-export function ResetPassword() {
+export default function ResetPassword() {
     const token = new URLSearchParams(location.search).get("token")
 
     if (!token) {
@@ -53,7 +53,7 @@ export function ResetPassword() {
             {isDone ? (
                 <>
                     <p className="font-semibold text-center text-white light:text-black">{t("auth.resetPassword.success")}</p>
-                    <Button text={t("auth.forgotPassword.goBackToLogin")} isDisabled={false} onClick={() => navigate("/login")} />
+                    <Button text={t("auth.goBackToLogin")} isDisabled={false} onClick={() => navigate("/login")} />
                 </>
             ) : (
                 <>

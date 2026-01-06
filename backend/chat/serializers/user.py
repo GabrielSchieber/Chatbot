@@ -40,6 +40,10 @@ class SignupSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(min_length = 12, max_length = 1000)
 
+class VerifyEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    token = serializers.CharField()
+
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
