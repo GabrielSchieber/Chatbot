@@ -53,6 +53,7 @@ class UserManager(BaseUserManager):
         password: str,
         has_verified_email: bool = False,
         is_active: bool = False,
+        is_guest: bool = False,
         is_staff: bool = False,
         is_superuser: bool = False
     ):
@@ -71,6 +72,7 @@ class UserManager(BaseUserManager):
             email = self.normalize_email(email),
             has_verified_email = has_verified_email,
             is_active = is_active,
+            is_guest = is_guest,
             is_staff = is_staff,
             is_superuser = is_superuser
         )
@@ -83,7 +85,7 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email: str, password: str):
-        return self.create_user(email, password, is_staff = True, is_superuser = True)
+        return self.create_user(email, password, True, True, False, True, True)
 
 class User(CleanOnSaveMixin, AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique = True)
@@ -334,12 +336,9 @@ class GuestIdentity(models.Model):
 
     @staticmethod
     def create(ip_address: str, user_agent_raw: str):
+        email = f"guest_{uuid.uuid4()}@example.com"
         token = secrets.token_urlsafe(32)
-        password = make_password(token)
-        email = f"{password}@example.com"
-        user: User = User.objects.create(email = email, password = password, is_guest = True)
-
-        UserPreferences.objects.create(user = user)
+        user: User = User.objects.create_user(email, token, True, True, True)
 
         identity = GuestIdentity.objects.create(
             user = user,
