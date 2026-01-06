@@ -1,8 +1,10 @@
+import re
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone as dt_timezone
 
 from django.contrib.auth.hashers import check_password
+from django.core import mail
 from django.utils import timezone
 from freezegun import freeze_time
 from rest_framework_simplejwt.backends import TokenBackend
@@ -10,7 +12,7 @@ from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from ..utils import ViewsTestCase, create_user
-from ...models import GuestIdentity, User, UserMFA, UserSession
+from ...models import GuestIdentity, PasswordResetToken, User, UserMFA, UserSession
 from ...urls.api import urlpatterns
 
 class Signup(ViewsTestCase):
@@ -909,6 +911,35 @@ class DeleteAccount(ViewsTestCase):
         self.assertEqual(response.json(), {"detail": "mfa.messages.errorInvalidCode"})
         self.assertEqual(User.objects.count(), 1)
         self.assertEqual(User.objects.first(), user)
+
+class RequestPasswordReset(ViewsTestCase):
+    def test_returns_200_for_existing_email(self):
+        self.create_and_login_user()
+        response = self.client.post("/api/request-password-reset/", {"email": "test@example.com"})
+        self.assertEqual(response.status_code, 200)
+
+    def test_returns_200_for_non_existing_email(self):
+        response = self.client.post("/api/request-password-reset/", {"email": "test@example.com"})
+        self.assertEqual(response.status_code, 200)
+
+    def test_email_sent_for_existing_user(self):
+        self.create_and_login_user()
+        self.client.post("/api/request-password-reset/", {"email": "test@example.com"})
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_no_email_sent_for_unknown_user(self):
+        self.client.post("/api/request-password-reset/", {"email": "test@example.com"})
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_token_is_hashed_in_database(self):
+        user = self.create_and_login_user()
+        self.client.post("/api/request-password-reset/", {"email": "test@example.com"})
+
+        reset_token = PasswordResetToken.objects.get(user = user)
+        raw_token = re.search(r"token=([^\s]+)", mail.outbox[0].body).group(1)
+
+        self.assertNotEqual(raw_token, reset_token.token_hash)
+        self.assertTrue(check_password(raw_token, reset_token.token_hash))
 
 class AuthenticateAsGuest(ViewsTestCase):
     def test(self):
