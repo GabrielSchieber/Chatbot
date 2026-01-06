@@ -152,6 +152,7 @@
     "auth.password.label": "Senha",
     "auth.password.confirmLabel": "Confirmar Senha",
     "auth.password.placeholder": "••••••••",
+    "auth.password.forgot": "Esqueceu a senha?",
     "auth.forgotPassword.header": "Alterar Senha",
     "auth.forgotPassword.paragraph": "Insira o endereço de e-mail da sua conta para continuar.",
     "auth.forgotPassword.next": "Seguir",

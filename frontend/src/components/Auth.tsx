@@ -70,7 +70,7 @@ export function Password({ password, setPassword, label, id, minLength, maxLengt
                     className="text-gray-400 light:text-gray-700 hover:underline"
                     href="/forgot-password"
                 >
-                    Forgot password?
+                    {t("auth.password.forgot")}
                 </a>
             }
         </div>
