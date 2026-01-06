@@ -3,13 +3,14 @@ import secrets
 import uuid
 from datetime import datetime, timedelta, timezone as dt_timezone
 
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.core import mail
 from django.utils import timezone
 from freezegun import freeze_time
 from rest_framework_simplejwt.backends import TokenBackend
 from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
 from ..utils import ViewsTestCase, create_user
 from ...models import GuestIdentity, PasswordResetToken, User, UserMFA, UserSession
@@ -940,6 +941,96 @@ class RequestPasswordReset(ViewsTestCase):
 
         self.assertNotEqual(raw_token, reset_token.token_hash)
         self.assertTrue(check_password(raw_token, reset_token.token_hash))
+
+class ConfirmPasswordReset(ViewsTestCase):
+    def test_password_reset_success(self):
+        user = self.create_and_login_user()
+        raw_token = "test-reset-token"
+        reset_token = PasswordResetToken.objects.create(
+            user = user,
+            token_hash = make_password(raw_token),
+            ip_address = "127.0.0.1",
+            user_agent_hash = "test",
+            expires_at = timezone.now() + timedelta(minutes = 15)
+        )
+
+        response = self.client.post("/api/confirm-password-reset/", {"token": raw_token, "password": "somepassword"})
+        self.assertEqual(response.status_code, 204)
+
+        user.refresh_from_db()
+        self.assertTrue(user.check_password("somepassword"))
+
+        reset_token.refresh_from_db()
+        self.assertIsNotNone(reset_token.used_at)
+
+    def test_token_cannot_be_reused(self):
+        user = self.create_and_login_user()
+        raw_token = "test-reset-token"
+        PasswordResetToken.objects.create(
+            user = user,
+            token_hash = make_password(raw_token),
+            ip_address = "127.0.0.1",
+            user_agent_hash = "test",
+            expires_at = timezone.now() + timedelta(minutes = 15)
+        )
+
+        response = self.client.post("/api/confirm-password-reset/", {"token": raw_token, "password": "somepassword"})
+        self.assertEqual(response.status_code, 204)
+
+        response = self.client.post("/api/confirm-password-reset/", {"token": raw_token, "password": "someotherpassword"})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"detail": "auth.resetPassword.invalid"})
+
+    def test_expired_token_is_rejected(self):
+        user = self.create_and_login_user()
+        raw_token = "test-reset-token"
+        reset_token = PasswordResetToken.objects.create(
+            user = user,
+            token_hash = make_password(raw_token),
+            ip_address = "127.0.0.1",
+            user_agent_hash = "test",
+            expires_at = timezone.now() + timedelta(minutes = 15)
+        )
+
+        reset_token.expires_at = timezone.now() - timedelta(seconds = 1)
+        reset_token.save()
+
+        response = self.client.post("/api/confirm-password-reset/", {"token": raw_token, "password": "somepassword"})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"detail": "auth.resetPassword.invalid"})
+
+    def test_invalid_token_is_rejected(self):
+        self.create_and_login_user()
+        response = self.client.post("/api/confirm-password-reset/", {"token": "invalid", "password": "somepassword"})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"detail": "auth.resetPassword.invalid"})
+
+    def test_weak_password_rejected(self):
+        response = self.client.post("/api/confirm-password-reset/", {"token": "invalid", "password": "123"})
+        self.assertEqual(response.json(), {"password": ["Ensure this field has at least 12 characters."]})
+
+    def test_refresh_tokens_are_revoked(self):
+        user = self.create_and_login_user()
+        raw_token = "test-reset-token"
+        PasswordResetToken.objects.create(
+            user = user,
+            token_hash = make_password(raw_token),
+            ip_address = "127.0.0.1",
+            user_agent_hash = "test",
+            expires_at = timezone.now() + timedelta(minutes = 15)
+        )
+
+        OutstandingToken.objects.create(
+            user = user,
+            jti = "abc",
+            token = "dummy",
+            expires_at = timezone.now() + timedelta(days = 1)
+        )
+
+        response = self.client.post("/api/confirm-password-reset/", {"token": raw_token, "password": "somepassword"})
+        self.assertEqual(response.status_code, 204)
+
+        self.assertEqual(OutstandingToken.objects.filter(user = user).count(), 0)
 
 class AuthenticateAsGuest(ViewsTestCase):
     def test(self):
