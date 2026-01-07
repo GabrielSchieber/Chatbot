@@ -12,35 +12,56 @@ from .. import models
 
 class User(TestCase):
     def test_creation(self):
-        def test(email: str, is_staff: bool, is_superuser: bool, user: models.User | None = None):
+        def test(
+            email: str,
+            has_verified_email: bool,
+            is_active: bool,
+            is_guest: bool,
+            is_staff: bool,
+            is_superuser: bool,
+            user: models.User | None = None
+        ):
             if user is None:
                 initial_count = models.User.objects.count()
-                user = models.User.objects.create_user(email, "testpassword", True, True, False, is_staff, is_superuser)
+                user = models.User.objects.create_user(email, "testpassword", has_verified_email, is_active, is_guest, is_staff, is_superuser)
             else:
                 initial_count = None
 
             self.assertEqual(user.email, email)
             self.assertNotEqual(user.password, "testpassword")
             self.assertTrue(check_password("testpassword", user.password))
-            self.assertTrue(user.has_verified_email)
-            self.assertTrue(user.is_active)
-            self.assertFalse(user.is_guest)
+            self.assertEqual(user.has_verified_email, has_verified_email)
+            self.assertEqual(user.is_active, is_active)
+            self.assertEqual(user.is_guest, is_guest)
             self.assertEqual(user.is_staff, is_staff)
             self.assertEqual(user.is_superuser, is_superuser)
 
-            self.assertHasAttr(user, "chats")
-            self.assertHasAttr(user, "mfa")
-            self.assertHasAttr(user, "preferences")
+            for name in ["mfa", "preferences", "sessions", "email_verification_tokens", "pre_auth_tokens", "password_reset_tokens", "chats"]:
+                self.assertHasAttr(user, name)
 
             if initial_count is not None:
                 self.assertEqual(models.User.objects.count(), initial_count + 1)
 
-        test("test1@example.com", False, False)
-        test("test2@example.com", True, False)
-        test("test3@example.com", False, True)
-        test("test4@example.com", True, True)
-        test("test5@example.com", True, True, models.User.objects.create_superuser("test5@example.com", "testpassword"))
-        self.assertEqual(models.User.objects.count(), 5)
+        for i, [has_verified_email, is_active, is_guest, is_staff, is_superuser] in enumerate([
+            [False, False, False, False, False],
+            [True, False, False, False, False],
+            [True, True, True, False, False],
+            [True, True, False, True, False],
+            [True, True, False, True, True]
+        ], 1):
+            test(f"test{i}@example.com", has_verified_email, is_active, is_guest, is_staff, is_superuser)
+
+        test(
+            "test@example.com",
+            has_verified_email,
+            is_active,
+            is_guest,
+            is_staff,
+            is_superuser,
+            models.User.objects.create_superuser("test@example.com", "testpassword")
+        )
+
+        self.assertEqual(models.User.objects.count(), 6)
 
     def test_authentication(self):
         create_user()
