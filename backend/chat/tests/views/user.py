@@ -63,6 +63,102 @@ class Signup(ViewsTestCase):
         test("onepassword", {"password": ["Ensure this field has at least 12 characters."]})
         test("".join(["password123" for _ in range(91)]), {"password": ["Ensure this field has no more than 1000 characters."]})
 
+class VerifyEmail(ViewsTestCase):
+    def test(self):
+        email = "test@example.com"
+        password = "testpassword"
+
+        response = self.client.post("/api/signup/", {"email": email, "password": password})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.content, b"")
+
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 401)
+
+        token = re.search(r"token=([^\s]+)", mail.outbox[0].body).group(1)
+
+        response = self.client.post("/api/verify-email/", {"email": email, "token": token})
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.content, b"")
+
+        for cookies in [response.cookies, self.client.cookies]:
+            self.assertEqual(len(cookies), 2)
+            self.assertIn("access_token", cookies)
+            self.assertIn("refresh_token", cookies)
+
+            for _, cookie in cookies.items():
+                self.assertTrue(cookie["httponly"])
+                self.assertEqual(cookie["samesite"], "Strict")
+
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 200)
+
+    def test_requires_email_and_token(self):
+        response = self.client.post("/api/verify-email/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"email": ["This field is required."], "token": ["This field is required."]})
+
+    def test_requires_valid_email(self):
+        email = "test@example.com"
+        password = "testpassword"
+
+        response = self.client.post("/api/signup/", {"email": email, "password": password})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.content, b"")
+
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 401)
+
+        token = re.search(r"token=([^\s]+)", mail.outbox[0].body).group(1)
+
+        response = self.client.post("/api/verify-email/", {"email": "invalid@example.com", "token": token})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b"")
+
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 401)
+
+    def test_requires_valid_token(self):
+        email = "test@example.com"
+        password = "testpassword"
+
+        response = self.client.post("/api/signup/", {"email": email, "password": password})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.content, b"")
+
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 401)
+
+        response = self.client.post("/api/verify-email/", {"email": email, "token": "invalid"})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b"")
+
+        response = self.client.get("/api/me/")
+        self.assertEqual(response.status_code, 401)
+
+    def test_requires_non_expired_token(self):
+        email = "test@example.com"
+        password = "testpassword"
+
+        time_to_freeze = timezone.datetime(2025, 1, 1, 12)
+        with freeze_time(time_to_freeze):
+            response = self.client.post("/api/signup/", {"email": email, "password": password})
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.content, b"")
+
+            response = self.client.get("/api/me/")
+            self.assertEqual(response.status_code, 401)
+
+            token = re.search(r"token=([^\s]+)", mail.outbox[0].body).group(1)
+
+        with freeze_time(time_to_freeze + timedelta(hours = 24)):
+            response = self.client.post("/api/verify-email/", {"email": email, "token": token})
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.content, b"")
+
+            response = self.client.get("/api/me/")
+            self.assertEqual(response.status_code, 401)
+
 class Login(ViewsTestCase):
     def test(self):
         self.create_and_login_user()
