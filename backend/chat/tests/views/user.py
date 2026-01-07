@@ -3,7 +3,7 @@ import secrets
 import uuid
 from datetime import datetime, timedelta, timezone as dt_timezone
 
-from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.hashers import check_password
 from django.core import mail
 from django.utils import timezone
 from freezegun import freeze_time
@@ -13,7 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
 from ..utils import ViewsTestCase, create_user
-from ...models import GuestIdentity, PasswordResetToken, PreAuthToken, User, UserMFA, UserSession, derive_token_fingerprint
+from ...models import EmailVerificationToken, GuestIdentity, PasswordResetToken, PreAuthToken, User, UserMFA, UserSession, derive_token_fingerprint
 from ...urls.api import urlpatterns
 
 class Signup(ViewsTestCase):
@@ -21,11 +21,13 @@ class Signup(ViewsTestCase):
         response = self.client.post("/api/signup/", {"email": "test@example.com", "password": "testpassword"})
         self.assertEqual(response.status_code, 201)
         self.assertEqual(User.objects.all().count(), 1)
-        user = User.objects.first()
+        self.assertEqual(EmailVerificationToken.objects.count(), 1)
+        user: User = User.objects.first()
         self.assertEqual(user.email, "test@example.com")
         self.assertNotEqual(user.password, "testpassword")
         self.assertTrue(check_password("testpassword", user.password))
-        self.assertTrue(user.is_active)
+        self.assertFalse(user.has_verified_email)
+        self.assertFalse(user.is_active)
         self.assertFalse(user.is_staff)
 
     def test_with_existing_email(self):
@@ -1084,10 +1086,9 @@ class AuthenticateAsGuest(ViewsTestCase):
         for cookies in [response.cookies, self.client.cookies]:
             self.assertEqual(len(cookies["guest_token"].value), 43)
 
-        self.assertEqual(len(user.email), 89 + len("@example.com"))
+        self.assertEqual(len(user.email), 42 + len("@example.com"))
         self.assertEqual(len(user.password), 89)
-        self.assertEqual(user.email, user.password + "@example.com")
-        self.assertEqual(user.password, user.email[:-len("@example.com")])
+        self.assertTrue(user.email.endswith("@example.com"))
         self.assertTrue(user.is_active)
         self.assertTrue(user.is_guest)
         self.assertFalse(user.is_staff)
@@ -1096,11 +1097,10 @@ class AuthenticateAsGuest(ViewsTestCase):
         self.assertHasAttr(user, "chats")
         self.assertHasAttr(user, "preferences")
         self.assertHasAttr(user, "sessions")
-        self.assertNotHasAttr(user, "mfa")
+        self.assertHasAttr(user, "mfa")
 
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
-        self.assertIsNone(response.json()["mfa"])
 
     def test_existing_guest_token(self):
         self.assertEqual(User.objects.count(), 0)
@@ -1135,10 +1135,9 @@ class AuthenticateAsGuest(ViewsTestCase):
 
         user: User = User.objects.first()
         self.assertEqual(identity.user, user)
-        self.assertEqual(len(user.email), 89 + len("@example.com"))
+        self.assertEqual(len(user.email), 42 + len("@example.com"))
         self.assertEqual(len(user.password), 89)
-        self.assertEqual(user.email, user.password + "@example.com")
-        self.assertEqual(user.password, user.email[:-len("@example.com")])
+        self.assertTrue(user.email.endswith("@example.com"))
         self.assertTrue(user.is_active)
         self.assertTrue(user.is_guest)
         self.assertFalse(user.is_staff)
@@ -1147,11 +1146,10 @@ class AuthenticateAsGuest(ViewsTestCase):
         self.assertHasAttr(user, "chats")
         self.assertHasAttr(user, "preferences")
         self.assertHasAttr(user, "sessions")
-        self.assertNotHasAttr(user, "mfa")
+        self.assertHasAttr(user, "mfa")
 
         response = self.client.get("/api/me/")
         self.assertEqual(response.status_code, 200)
-        self.assertIsNone(response.json()["mfa"])
 
     def test_invalid_guest_token(self):
         self.assertEqual(User.objects.count(), 0)
@@ -1189,10 +1187,9 @@ class AuthenticateAsGuest(ViewsTestCase):
             self.assertHasAttr(identity, "last_used_at")
             self.assertHasAttr(identity, "created_at")
 
-            self.assertEqual(len(user.email), 89 + len("@example.com"))
+            self.assertEqual(len(user.email), 42 + len("@example.com"))
             self.assertEqual(len(user.password), 89)
-            self.assertEqual(user.email, user.password + "@example.com")
-            self.assertEqual(user.password, user.email[:-len("@example.com")])
+            self.assertTrue(user.email.endswith("@example.com"))
             self.assertTrue(user.is_active)
             self.assertTrue(user.is_guest)
             self.assertFalse(user.is_staff)
@@ -1201,7 +1198,7 @@ class AuthenticateAsGuest(ViewsTestCase):
             self.assertHasAttr(user, "chats")
             self.assertHasAttr(user, "preferences")
             self.assertHasAttr(user, "sessions")
-            self.assertNotHasAttr(user, "mfa")
+            self.assertHasAttr(user, "mfa")
 
     def test_tampered_guest_token(self):
         self.assertEqual(User.objects.count(), 0)
@@ -1242,10 +1239,9 @@ class AuthenticateAsGuest(ViewsTestCase):
             self.assertEqual(len(cookies["guest_token"].value), 43)
             self.assertNotEqual(cookies["guest_token"].value, token)
 
-        self.assertEqual(len(user2.email), 89 + len("@example.com"))
+        self.assertEqual(len(user2.email), 42 + len("@example.com"))
         self.assertEqual(len(user2.password), 89)
-        self.assertEqual(user2.email, user2.password + "@example.com")
-        self.assertEqual(user2.password, user2.email[:-len("@example.com")])
+        self.assertTrue(user2.email.endswith("@example.com"))
         self.assertTrue(user2.is_active)
         self.assertTrue(user2.is_guest)
         self.assertFalse(user2.is_staff)
@@ -1254,13 +1250,17 @@ class AuthenticateAsGuest(ViewsTestCase):
         self.assertHasAttr(user2, "chats")
         self.assertHasAttr(user2, "preferences")
         self.assertHasAttr(user2, "sessions")
-        self.assertNotHasAttr(user2, "mfa")
+        self.assertHasAttr(user2, "mfa")
 
 class TestRequireAuthentication(ViewsTestCase):
     def test(self):
         urls = [f"/api/{p.pattern}" for p in urlpatterns]
-        for url in ["/api/signup/", "/api/login/", "/api/refresh/", "/api/verify-mfa/", "/api/authenticate-as-guest/"]:
-            urls.remove(url)
+        exclude_urls = [f"/api/{u}/" for u in [
+            "signup", "verify-email", "login", "refresh", "verify-mfa",
+            "request-password-reset", "confirm-password-reset", "authenticate-as-guest"
+        ]]
+        for exclude_url in exclude_urls:
+            urls.remove(exclude_url)
 
         for url in urls:
             responses = [

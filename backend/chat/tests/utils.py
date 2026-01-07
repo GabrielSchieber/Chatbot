@@ -20,4 +20,4 @@ class ViewsTestCase(TestCase):
         return user
 
 def create_user(email: str = "test@example.com", password: str = "testpassword") -> User:
-    return User.objects.create_user(email = email, password = password)
+    return User.objects.create_user(email, password, True, True)
