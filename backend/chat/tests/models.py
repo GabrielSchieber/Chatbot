@@ -15,13 +15,14 @@ class User(TestCase):
         def test(email: str, is_staff: bool, is_superuser: bool, user: models.User | None = None):
             if user is None:
                 initial_count = models.User.objects.count()
-                user = models.User.objects.create_user(email, "testpassword", is_staff, is_superuser)
+                user = models.User.objects.create_user(email, "testpassword", True, True, False, is_staff, is_superuser)
             else:
                 initial_count = None
 
             self.assertEqual(user.email, email)
             self.assertNotEqual(user.password, "testpassword")
             self.assertTrue(check_password("testpassword", user.password))
+            self.assertTrue(user.has_verified_email)
             self.assertTrue(user.is_active)
             self.assertFalse(user.is_guest)
             self.assertEqual(user.is_staff, is_staff)
@@ -254,7 +255,7 @@ class UserSession(TestCase):
 class Chat(TestCase):
     def test_creation(self):
         user = create_user()
-        chat = models.Chat.objects.create(user = user, title = "Test chat")
+        chat = user.chats.create(title = "Test chat")
         self.assertEqual(chat.user, user)
         self.assertEqual(chat.title, "Test chat")
         self.assertIsNone(chat.pending_message)
@@ -269,16 +270,16 @@ class Chat(TestCase):
 
         time_to_freeze = timezone.datetime(2025, 1, 1, 12)
         with freeze_time(time_to_freeze):
-            chat = models.Chat.objects.create(user = user, title = "Test chat")
+            chat = user.chats.create(title = "Test chat")
             self.assertEqual(chat.last_modified_at(), chat.created_at)
 
         with freeze_time(time_to_freeze + timedelta(minutes = 5)):
-            user_message = models.Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
+            user_message = chat.messages.create(text = "Hello!", is_from_user = True)
             self.assertEqual(chat.last_modified_at(), user_message.last_modified_at)
             self.assertEqual(chat.last_modified_at(), user_message.created_at)
 
         with freeze_time(time_to_freeze + timedelta(minutes = 10)):
-            bot_message = models.Message.objects.create(chat = chat, text = "Hello! How are you?", is_from_user = False)
+            bot_message = chat.messages.create(text = "Hello! How are you?", is_from_user = False)
             self.assertEqual(chat.last_modified_at(), bot_message.last_modified_at)
             self.assertEqual(chat.last_modified_at(), bot_message.created_at)
 
@@ -297,9 +298,9 @@ class Chat(TestCase):
 class Message(TestCase):
     def test_creation(self):
         user = create_user()
-        chat = models.Chat.objects.create(user = user, title = "Test chat")
-        user_message = models.Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
-        bot_message = models.Message.objects.create(chat = chat, text = "Hi!", is_from_user = False, model = "SmolLM2-135M")
+        chat = user.chats.create(title = "Test chat")
+        user_message = chat.messages.create(text = "Hello!", is_from_user = True)
+        bot_message = chat.messages.create(text = "Hi!", is_from_user = False, model = "SmolLM2-135M")
         self.assertEqual(user_message.chat, chat)
         self.assertEqual(bot_message.chat, chat)
         self.assertEqual(user_message.text, "Hello!")
@@ -343,10 +344,9 @@ class Message(TestCase):
 class MessageFile(TestCase):
     def test_creation(self):
         user = create_user()
-        chat = models.Chat.objects.create(user = user, title = "Test chat")
-        message = models.Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
-        message_file = models.MessageFile.objects.create(
-            message = message,
+        chat = user.chats.create(title = "Test chat")
+        message = chat.messages.create(text = "Hello!", is_from_user = True)
+        message_file = message.files.create(
             name = "document.txt",
             content = "This is a document about...".encode(),
             content_type = "text/plain"
@@ -377,10 +377,9 @@ class GuestIdentity(TestCase):
             user = identity.user
             self.assertEqual(type(user), models.User)
 
-            self.assertEqual(len(user.email), 89 + len("@example.com"))
+            self.assertEqual(len(user.email), 42 + len("@example.com"))
             self.assertEqual(len(user.password), 89)
-            self.assertEqual(user.email, user.password + "@example.com")
-            self.assertEqual(user.password, user.email[:-len("@example.com")])
+            self.assertTrue(user.email.endswith("@example.com"))
             self.assertTrue(user.is_active)
             self.assertTrue(user.is_guest)
             self.assertFalse(user.is_staff)
@@ -389,4 +388,4 @@ class GuestIdentity(TestCase):
             self.assertHasAttr(user, "chats")
             self.assertHasAttr(user, "preferences")
             self.assertHasAttr(user, "sessions")
-            self.assertNotHasAttr(user, "mfa")
+            self.assertHasAttr(user, "mfa")

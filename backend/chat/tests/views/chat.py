@@ -10,26 +10,26 @@ class GetChat(ViewsTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"chat_uuid": ["This field is required."]})
 
-        chat1 = Chat.objects.create(user = user1, title = "Greetings")
+        chat1 = user1.chats.create(title = "Greetings")
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat1.uuid}")
         self.assertEqual(response.status_code, 200)
         expected_json = {"uuid": str(chat1.uuid), "title": "Greetings", "pending_message_id": None, "is_archived": False, "is_temporary": False, "index": 0}
         self.assertEqual(response.json(), expected_json)
 
-        chat2 = Chat.objects.create(user = user1, title = "Math Question")
+        chat2 = user1.chats.create(title = "Math Question")
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat2.uuid}")
         self.assertEqual(response.status_code, 200)
         expected_json = {"uuid": str(chat2.uuid),"title": "Math Question", "pending_message_id": None, "is_archived": False, "is_temporary": False, "index": 0}
         self.assertEqual(response.json(), expected_json)
 
-        chat3 = Chat.objects.create(user = user1, title = "Weather Inquiry", is_archived = True)
+        chat3 = user1.chats.create(title = "Weather Inquiry", is_archived = True)
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat3.uuid}")
         self.assertEqual(response.status_code, 200)
         expected_json = {"uuid": str(chat3.uuid),"title": "Weather Inquiry", "pending_message_id": None, "is_archived": True, "is_temporary": False, "index": 0}
         self.assertEqual(response.json(), expected_json)
 
-        chat4 = Chat.objects.create(user = user1, title = "Joke Request")
-        chat4.pending_message = Message.objects.create(chat = chat4, text = "Tell me a joke.", is_from_user = True)
+        chat4 = user1.chats.create(title = "Joke Request")
+        chat4.pending_message = chat4.messages.create(text = "Tell me a joke.", is_from_user = True)
         chat4.save()
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat4.uuid}")
         self.assertEqual(response.status_code, 200)
@@ -48,7 +48,7 @@ class GetChat(ViewsTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"chat_uuid": ["This field is required."]})
 
-        chat5 = Chat.objects.create(user = user2, title = "Travel Advice")
+        chat5 = user2.chats.create(title = "Travel Advice")
         response = self.client.get(f"/api/get-chat/?chat_uuid={chat5.uuid}")
         self.assertEqual(response.status_code, 200)
         expected_json = {"uuid": str(chat5.uuid), "title": "Travel Advice", "pending_message_id": None, "is_archived": False, "is_temporary": False, "index": 0}
@@ -154,7 +154,7 @@ class SearchChats(ViewsTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"entries": [], "has_more": False})
 
-        chat = Chat.objects.create(user = user, title = "A question about math")
+        chat = user.chats.create(title = "A question about math")
 
         response = self.client.get("/api/search-chats/?search=What is math?")
         self.assertEqual(response.status_code, 200)
@@ -172,8 +172,8 @@ class SearchChats(ViewsTestCase):
         }]
         self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
 
-        Message.objects.create(chat = chat, text = "What is math?", is_from_user = True)
-        Message.objects.create(chat = chat, text = "Math is...", is_from_user = False)
+        chat.messages.create(text = "What is math?", is_from_user = True)
+        chat.messages.create(text = "Math is...", is_from_user = False)
 
         response = self.client.get("/api/search-chats/?search=What is math?")
         self.assertEqual(response.status_code, 200)
@@ -203,7 +203,7 @@ class SearchChats(ViewsTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"entries": [], "has_more": False})
 
-        chat = Chat.objects.create(user = user, title = "Geometry question")
+        chat = user.chats.create(title = "Geometry question")
 
         response = self.client.get("/api/search-chats/?search=Question about geometry")
         self.assertEqual(response.status_code, 200)
@@ -221,8 +221,8 @@ class SearchChats(ViewsTestCase):
         }]
         self.assertEqual(response.json(), {"entries": expected_entries, "has_more": False})
 
-        Message.objects.create(chat = chat, text = "What is geometry?", is_from_user = True)
-        Message.objects.create(chat = chat, text = "Geometry is...", is_from_user = False)
+        chat.messages.create(text = "What is geometry?", is_from_user = True)
+        chat.messages.create(text = "Geometry is...", is_from_user = False)
 
         response = self.client.get("/api/search-chats/?search=What is geometry?")
         self.assertEqual(response.status_code, 200)
@@ -369,7 +369,7 @@ class RenameChat(ViewsTestCase):
             self.assertEqual(response.content, b"")
 
         user1 = self.create_and_login_user()
-        chat1 = Chat.objects.create(user = user1, title = "Test title")
+        chat1 = user1.chats.create(title = "Test title")
 
         rename(chat1.uuid, "Greetings")
         self.assertEqual(Chat.objects.first().title, "Greetings")
@@ -377,7 +377,7 @@ class RenameChat(ViewsTestCase):
         self.logout_user()
 
         user2 = self.create_and_login_user("someone@example.com", "somepassword")
-        chat2 = Chat.objects.create(user = user2, title = "Some chat")
+        chat2 = user2.chats.create(title = "Some chat")
 
         rename(chat2.uuid, "Travel Advice")
 
@@ -561,21 +561,21 @@ class ArchiveChats(ViewsTestCase):
         response = self.client.patch("/api/archive-chats/")
         self.assertEqual(response.status_code, 200)
 
-        Chat.objects.create(user = user1, title = "Greetings")
+        user1.chats.create(title = "Greetings")
 
         response = self.client.patch("/api/archive-chats/")
         self.assertEqual(response.status_code, 200)
 
-        self.assertTrue(Chat.objects.get(user = user1, title = "Greetings").is_archived)
+        self.assertTrue(user1.chats.get(title = "Greetings").is_archived)
 
-        Chat.objects.create(user = user1, title = "Travel Advice")
-        Chat.objects.create(user = user1, title = "Math Help")
+        user1.chats.create(title = "Travel Advice")
+        user1.chats.create(title = "Math Help")
 
         response = self.client.patch("/api/archive-chats/")
         self.assertEqual(response.status_code, 200)
 
-        self.assertTrue(Chat.objects.get(user = user1, title = "Travel Advice").is_archived)
-        self.assertTrue(Chat.objects.get(user = user1, title = "Math Help").is_archived)
+        self.assertTrue(user1.chats.get(title = "Travel Advice").is_archived)
+        self.assertTrue(user1.chats.get(title = "Math Help").is_archived)
 
         user1.chats.update(is_archived = False)
         for c in Chat.objects.filter(user__email = "test@example.com"):
@@ -585,13 +585,13 @@ class ArchiveChats(ViewsTestCase):
 
         user2 = self.create_and_login_user("someone@example.com", "somepassword")
 
-        Chat.objects.create(user = user2, title = "Math Question")
-        Chat.objects.create(user = user2, title = "Recipe Suggestion")
+        user2.chats.create(title = "Math Question")
+        user2.chats.create(title = "Recipe Suggestion")
 
         response = self.client.patch("/api/archive-chats/")
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(Chat.objects.get(user = user2, title = "Math Question").is_archived)
-        self.assertTrue(Chat.objects.get(user = user2, title = "Recipe Suggestion").is_archived)
+        self.assertTrue(user2.chats.get(title = "Math Question").is_archived)
+        self.assertTrue(user2.chats.get(title = "Recipe Suggestion").is_archived)
 
         for c in Chat.objects.filter(user__email = "test@example.com"):
             self.assertFalse(c.is_archived)
@@ -602,21 +602,21 @@ class UnarchiveChats(ViewsTestCase):
         response = self.client.patch("/api/unarchive-chats/")
         self.assertEqual(response.status_code, 200)
 
-        Chat.objects.create(user = user1, title = "Greetings", is_archived = True)
+        user1.chats.create(title = "Greetings", is_archived = True)
 
         response = self.client.patch("/api/unarchive-chats/")
         self.assertEqual(response.status_code, 200)
 
-        self.assertFalse(Chat.objects.get(user = user1, title = "Greetings").is_archived)
+        self.assertFalse(user1.chats.get(title = "Greetings").is_archived)
 
-        Chat.objects.create(user = user1, title = "Travel Advice", is_archived = True)
-        Chat.objects.create(user = user1, title = "Math Help", is_archived = True)
+        user1.chats.create(title = "Travel Advice", is_archived = True)
+        user1.chats.create(title = "Math Help", is_archived = True)
 
         response = self.client.patch("/api/unarchive-chats/")
         self.assertEqual(response.status_code, 200)
 
-        self.assertFalse(Chat.objects.get(user = user1, title = "Travel Advice").is_archived)
-        self.assertFalse(Chat.objects.get(user = user1, title = "Math Help").is_archived)
+        self.assertFalse(user1.chats.get(title = "Travel Advice").is_archived)
+        self.assertFalse(user1.chats.get(title = "Math Help").is_archived)
 
         user1.chats.update(is_archived = True)
         for c in Chat.objects.filter(user__email = "test@example.com"):
@@ -626,13 +626,13 @@ class UnarchiveChats(ViewsTestCase):
 
         user2 = self.create_and_login_user("someone@example.com", "somepassword")
 
-        Chat.objects.create(user = user2, title = "Math Question", is_archived = True)
-        Chat.objects.create(user = user2, title = "Recipe Suggestion", is_archived = True)
+        user2.chats.create(title = "Math Question", is_archived = True)
+        user2.chats.create(title = "Recipe Suggestion", is_archived = True)
 
         response = self.client.patch("/api/unarchive-chats/")
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(Chat.objects.get(user = user2, title = "Math Question").is_archived)
-        self.assertFalse(Chat.objects.get(user = user2, title = "Recipe Suggestion").is_archived)
+        self.assertFalse(user2.chats.get(title = "Math Question").is_archived)
+        self.assertFalse(user2.chats.get(title = "Recipe Suggestion").is_archived)
 
         for c in Chat.objects.filter(user__email = "test@example.com"):
             self.assertTrue(c.is_archived)
@@ -643,25 +643,25 @@ class DeleteChats(ViewsTestCase):
         response = self.client.delete("/api/delete-chats/")
         self.assertEqual(response.status_code, 204)
 
-        Chat.objects.create(user = user1, title = "Test chat 1")
+        user1.chats.create(title = "Test chat 1")
         response = self.client.delete("/api/delete-chats/")
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Chat.objects.count(), 0)
 
-        Chat.objects.create(user = user1, title = "Test chat 2")
-        Chat.objects.create(user = user1, title = "Test chat 3")
+        user1.chats.create(title = "Test chat 2")
+        user1.chats.create(title = "Test chat 3")
 
         response = self.client.delete("/api/delete-chats/")
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Chat.objects.count(), 0)
 
-        Chat.objects.create(user = user1, title = "Test chat 4")
-        Chat.objects.create(user = user1, title = "Test chat 5")
+        user1.chats.create(title = "Test chat 4")
+        user1.chats.create(title = "Test chat 5")
 
         self.logout_user()
         user2 = self.create_and_login_user("someone@example.com", "somepassword")
-        Chat.objects.create(user = user2, title = "Test chat 6")
-        Chat.objects.create(user = user2, title = "Test chat 7")
+        user2.chats.create(title = "Test chat 6")
+        user2.chats.create(title = "Test chat 7")
         response = self.client.delete("/api/delete-chats/")
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Chat.objects.count(), 2)
@@ -672,12 +672,12 @@ class StopPendingChats(ViewsTestCase):
     def test(self):
         user1 = self.create_and_login_user()
 
-        chat1 = Chat.objects.create(user = user1, title = "Greetings")
-        chat2 = Chat.objects.create(user = user1, title = "Math Help")
+        chat1 = user1.chats.create(title = "Greetings")
+        chat2 = user1.chats.create(title = "Math Help")
 
-        chat1.pending_message = Message.objects.create(chat = chat1, text = "Hello!", is_from_user = True)
+        chat1.pending_message = chat1.messages.create(text = "Hello!", is_from_user = True)
         chat1.save()
-        chat2.pending_message = Message.objects.create(chat = chat2, text = "What is 2 + 5?", is_from_user = True)
+        chat2.pending_message = chat2.messages.create(text = "What is 2 + 5?", is_from_user = True)
         chat2.save()
 
         for c in Chat.objects.all():
@@ -700,12 +700,12 @@ class StopPendingChats(ViewsTestCase):
         self.logout_user()
 
         user2 = self.create_and_login_user("someone@example.com", "somepassword")
-        chat3 = Chat.objects.create(user = user2, title = "Travel Advice")
-        chat4 = Chat.objects.create(user = user2, title = "Recipe Suggestion")
+        chat3 = user2.chats.create(title = "Travel Advice")
+        chat4 = user2.chats.create(title = "Recipe Suggestion")
 
-        chat3.pending_message = Message.objects.create(chat = chat1, text = "Where should I travel to?", is_from_user = True)
+        chat3.pending_message = chat1.messages.create(text = "Where should I travel to?", is_from_user = True)
         chat3.save()
-        chat4.pending_message = Message.objects.create(chat = chat2, text = "I have eggs and spinach. What can I make?", is_from_user = True)
+        chat4.pending_message = chat2.messages.create(text = "I have eggs and spinach. What can I make?", is_from_user = True)
         chat4.save()
 
         for c in Chat.objects.all():

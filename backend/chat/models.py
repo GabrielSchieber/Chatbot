@@ -100,10 +100,14 @@ class User(CleanOnSaveMixin, AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
-    chats: BaseManager[Chat]
     preferences: UserPreferences
     mfa: UserMFA
+
     sessions: BaseManager[UserSession]
+    email_verification_tokens: BaseManager[EmailVerificationToken]
+    pre_auth_tokens: BaseManager[PreAuthToken]
+    password_reset_tokens: BaseManager[EmailVerificationToken]
+    chats: BaseManager[Chat]
 
     def __str__(self):
         return f"User with email {self.email} created at {self.created_at}."
@@ -232,22 +236,8 @@ class UserSession(CleanOnSaveMixin, models.Model):
     def __str__(self):
         return f"Session created at {self.login_at} for {self.user.email}."
 
-class PreAuthToken(CleanOnSaveMixin, models.Model):
-    user = models.ForeignKey(User, models.CASCADE, related_name = "pre_auth_tokens")
-
-    token_hash = models.CharField(max_length = 128)
-    ip_address = models.GenericIPAddressField()
-    user_agent_hash = models.CharField(max_length = 64)
-
-    used_at = models.DateTimeField(null = True, blank = True)
-    expires_at = models.DateTimeField()
-    created_at = models.DateTimeField(auto_now_add = True)
-
-    def __str__(self):
-        return f"Pre-authentication token created at {self.created_at} owned by {self.user.email}."
-
 class EmailVerificationToken(models.Model):
-    user = models.ForeignKey(User, models.CASCADE, related_name = "email_tokens")
+    user = models.ForeignKey(User, models.CASCADE, related_name = "email_verification_tokens")
 
     token_hash = models.CharField(max_length = 128)
 
@@ -257,6 +247,20 @@ class EmailVerificationToken(models.Model):
 
     def is_valid(self):
         return self.used_at is None and self.expires_at > timezone.now()
+
+class PreAuthToken(CleanOnSaveMixin, models.Model):
+    user = models.ForeignKey(User, models.CASCADE, related_name = "pre_auth_tokens")
+
+    token_hash = models.CharField(max_length = 128)
+    ip_address = models.GenericIPAddressField()
+    user_agent_hash = models.CharField(max_length = 64)
+
+    used_at = models.DateTimeField(blank = True, null = True)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add = True)
+
+    def __str__(self):
+        return f"Pre-authentication token created at {self.created_at} owned by {self.user.email}."
 
 class PasswordResetToken(models.Model):
     user = models.ForeignKey(User, models.CASCADE, related_name = "password_reset_tokens")
@@ -327,12 +331,13 @@ class MessageFile(CleanOnSaveMixin, models.Model):
 
 class GuestIdentity(models.Model):
     user = models.OneToOneField(User, models.CASCADE, related_name = "guest_identity")
+
+    ip_address = models.GenericIPAddressField(blank = True, null = True)
+    user_agent_hash = models.CharField(max_length = 64, blank = True)
+
     expires_at = models.DateTimeField()
     last_used_at = models.DateTimeField(auto_now = True)
     created_at = models.DateTimeField(auto_now_add = True)
-
-    ip_address = models.GenericIPAddressField(null = True, blank = True)
-    user_agent_hash = models.CharField(max_length = 64, blank = True)
 
     @staticmethod
     def create(ip_address: str, user_agent_raw: str):

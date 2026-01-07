@@ -18,7 +18,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
-from ..models import EmailVerificationToken, GuestIdentity, PasswordResetToken, PreAuthToken, User, derive_token_fingerprint, hash_user_agent
+from ..models import GuestIdentity, PasswordResetToken, PreAuthToken, User, derive_token_fingerprint, hash_user_agent
 from ..serializers.user import (
     AuthenticateAsGuestSerializer, ConfirmPasswordResetSerializer, DeleteAccountSerializer, LoginSerializer,
     MeSerializer, RequestPasswordResetSerializer, SetupMFASerializer, SignupSerializer, UserSerializer, VerifyEmailSerializer, VerifyMFASerializer
@@ -46,14 +46,10 @@ class Signup(APIView):
         except User.DoesNotExist:
             user = User.objects.create_user(email = email, password = password)
 
-        EmailVerificationToken.objects.filter(user = user, used_at__isnull = True).update(expires_at = timezone.now())
+        user.email_verification_tokens.filter(used_at__isnull = True).update(expires_at = timezone.now())
 
         raw_token = secrets.token_urlsafe(32)
-        EmailVerificationToken.objects.create(
-            user = user,
-            token_hash = make_password(raw_token),
-            expires_at = timezone.now() + timedelta(hours = 24)
-        )
+        user.email_verification_tokens.create(token_hash = make_password(raw_token), expires_at = timezone.now() + timedelta(hours = 24))
 
         subject = "Verify your email"
         verify_url = f"{settings.FRONTEND_URL}/verify-email?email={user.email}&token={raw_token}"
@@ -78,7 +74,7 @@ class VerifyEmail(APIView):
         except User.DoesNotExist:
             return Response(status = status.HTTP_400_BAD_REQUEST)
 
-        for t in EmailVerificationToken.objects.filter(user = user, used_at__isnull = True, expires_at__gt = timezone.now()):
+        for t in user.email_verification_tokens.filter(used_at__isnull = True, expires_at__gt = timezone.now()):
             if check_password(token, t.token_hash):
                 t.used_at = timezone.now()
                 t.save(update_fields = ["used_at"])
@@ -127,8 +123,7 @@ class Login(APIView):
 
         if user.mfa.is_enabled:
             token = secrets.token_urlsafe(32)
-            PreAuthToken.objects.create(
-                user = user,
+            user.pre_auth_tokens.create(
                 token_hash = make_password(token),
                 ip_address = request.ip_address,
                 user_agent_hash = hash_user_agent(request.user_agent_raw or ""),
@@ -389,14 +384,13 @@ class RequestPasswordReset(APIView):
         qs.is_valid(raise_exception = True)
 
         try:
-            user = User.objects.get(email = qs.validated_data["email"], is_guest = False)
+            user: User = User.objects.get(email = qs.validated_data["email"], is_guest = False)
         except User.DoesNotExist:
             return Response(status = status.HTTP_200_OK)
 
         token = secrets.token_urlsafe(48)
 
-        PasswordResetToken.objects.create(
-            user = user,
+        user.password_reset_tokens.create(
             token_fingerprint = derive_token_fingerprint(token),
             ip_address = request.ip_address,
             user_agent_hash = hash_user_agent(request.user_agent_raw or ""),

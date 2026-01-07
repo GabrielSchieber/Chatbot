@@ -22,14 +22,13 @@ class GetMessageFileContent(ViewsTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json(), {"detail": "Chat was not found."})
 
-        chat1 = Chat.objects.create(user = user, title = "File Analysis")
+        chat1 = user.chats.create(title = "File Analysis")
         response = self.client.get(f"/api/get-message-file-content/?chat_uuid={chat1.uuid}&message_file_id=1", **{"HTTP_ACCEPT": "application/json"})
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json(), {"detail": "Message file was not found."})
 
-        message1 = Message.objects.create(chat = chat1, text = "Describe the file.", is_from_user = True)
-        message_file1 = MessageFile.objects.create(
-            message = message1,
+        message1 = chat1.messages.create(text = "Describe the file.", is_from_user = True)
+        message_file1 = message1.files.create(
             name = "document.txt",
             content = "This is a document about...".encode(),
             content_type = "text/plain"
@@ -39,16 +38,14 @@ class GetMessageFileContent(ViewsTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, "This is a document about...".encode())
 
-        chat2 = Chat.objects.create(user = user, title = "Another File Analysis")
-        message2 = Message.objects.create(chat = chat2, text = "Describe the files.", is_from_user = True)
-        message_file2 = MessageFile.objects.create(
-            message = message2,
+        chat2 = user.chats.create(title = "Another File Analysis")
+        message2 = chat2.messages.create(text = "Describe the files.", is_from_user = True)
+        message_file2 = message2.files.create(
             name = "another_document.txt",
             content = "This is another document about...".encode(),
             content_type = "text/plain"
         )
-        message_file3 = MessageFile.objects.create(
-            message = message2,
+        message_file3 = message2.files.create(
             name = "yet_another_document.txt",
             content = "This is yet another document about...".encode(),
             content_type = "text/plain"
@@ -116,17 +113,17 @@ class GetMessages(ViewsTestCase):
         response = self.client.get("/api/get-messages/?chat_uuid=849087f8-4b3f-47f1-980d-5a5a3d325912")
         self.assertEqual(response.status_code, 404)
 
-        chat = Chat.objects.create(user = user, title = "Test chat")
+        chat = user.chats.create(title = "Test chat")
         response = self.client.get("/api/get-messages/?chat_uuid=invalid_uuid")
         self.assertEqual(response.status_code, 400)
 
-        chat = Chat.objects.create(user = user, title = "Test chat")
+        chat = user.chats.create(title = "Test chat")
         response = self.client.get(f"/api/get-messages/?chat_uuid={str(chat.uuid)}")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), [])
 
-        user_message_1 = Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
-        bot_message_1 = Message.objects.create(chat = chat, text = "Hi!", is_from_user = False)
+        user_message_1 = chat.messages.create(text = "Hello!", is_from_user = True)
+        bot_message_1 = chat.messages.create(text = "Hi!", is_from_user = False)
 
         response = self.client.get(f"/api/get-messages/?chat_uuid={str(chat.uuid)}")
         self.assertEqual(response.status_code, 200)
@@ -137,8 +134,8 @@ class GetMessages(ViewsTestCase):
         ]
         self.assertEqual(response.json(), expected_messages)
 
-        user_message_2 = Message.objects.create(chat = chat, text = "Hello again!", is_from_user = True)
-        bot_message_2 = Message.objects.create(chat = chat, text = "Hi again!", is_from_user = False)
+        user_message_2 = chat.messages.create(text = "Hello again!", is_from_user = True)
+        bot_message_2 = chat.messages.create(text = "Hi again!", is_from_user = False)
 
         response = self.client.get(f"/api/get-messages/?chat_uuid={str(chat.uuid)}")
         self.assertEqual(response.status_code, 200)
@@ -162,7 +159,7 @@ class NewMessage(ViewsTestCase):
         response = self.client.post("/api/new-message/", data, format = "multipart")
         self.assertEqual(response.status_code, 200)
 
-        chats = Chat.objects.filter(user = user)
+        chats = user.chats
         self.assertEqual(chats.count(), 1)
 
         chat = chats.first()
@@ -171,7 +168,7 @@ class NewMessage(ViewsTestCase):
         self.assertIn("uuid", response.data)
         self.assertEqual(response.data["uuid"], str(chat.uuid))
 
-        messages = Message.objects.filter(chat = chat).order_by("created_at")
+        messages = chat.messages.order_by("created_at")
         self.assertEqual(messages.count(), 2)
 
         user_message = messages[0]
@@ -187,7 +184,7 @@ class NewMessage(ViewsTestCase):
         chat.refresh_from_db()
         self.assertEqual(chat.pending_message, bot_message)
 
-        files = MessageFile.objects.filter(message = user_message)
+        files = user_message.files
         self.assertEqual(files.count(), 1)
 
         file = files.first()
@@ -240,7 +237,7 @@ class NewMessage(ViewsTestCase):
     @patch("chat.views.message.generate_pending_message_in_chat")
     def test_post_to_existing_chat(self, mock_task, _):
         user = self.create_and_login_user()
-        chat = Chat.objects.create(user = user, title = "Test Chat")
+        chat = user.chats.create(title = "Test Chat")
 
         response = self.client.post("/api/new-message/", {"chat_uuid": str(chat.uuid), "text": "hello"}, format = "multipart")
         self.assertEqual(response.status_code, 200)
@@ -342,9 +339,9 @@ class EditMessage(ViewsTestCase):
     def test(self, mock_generate):
         user = self.create_and_login_user()
 
-        chat = Chat.objects.create(user = user, title = "Greetings")
-        user_message = Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
-        bot_message = Message.objects.create(chat = chat, text = "Hello! How can I help you today?", is_from_user = False)
+        chat = user.chats.create(title = "Greetings")
+        user_message = chat.messages.create(text = "Hello!", is_from_user = True)
+        bot_message = chat.messages.create(text = "Hello! How can I help you today?", is_from_user = False)
 
         data = {"chat_uuid": str(chat.uuid), "index": 0, "text": "Hi! How are you?"}
 
@@ -405,7 +402,7 @@ class EditMessage(ViewsTestCase):
     @patch("chat.views.message.is_any_user_chat_pending", return_value = False)
     def test_requires_index(self, _):
         user = self.create_and_login_user()
-        chat = Chat.objects.create(user = user, title = "Greetings")
+        chat = user.chats.create(title = "Greetings")
         body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid)})
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/edit-message/", body, content_type)
@@ -415,8 +412,8 @@ class EditMessage(ViewsTestCase):
     @patch("chat.views.message.is_any_user_chat_pending", return_value = False)
     def test_requires_valid_model(self, _):
         user = self.create_and_login_user()
-        chat = Chat.objects.create(user = user, title = "Greetings")
-        Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
+        chat = user.chats.create(title = "Greetings")
+        chat.messages.create(text = "Hello!", is_from_user = True)
         body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid)," index": 0, "model": "INVALID"})
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/edit-message/", body, content_type)
@@ -560,9 +557,9 @@ class RegenerateMessage(ViewsTestCase):
     @patch("chat.views.message.generate_pending_message_in_chat")
     def test(self, mock_generate):
         user = self.create_and_login_user()
-        chat = Chat.objects.create(user = user, title = "Greetings")
-        user_message = Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
-        bot_message = Message.objects.create(chat = chat, text = "Hello! How can I help you today?", is_from_user = False, model = "SmolLM2-135M")
+        chat = user.chats.create(title = "Greetings")
+        user_message = chat.messages.create(text = "Hello!", is_from_user = True)
+        bot_message = chat.messages.create(text = "Hello! How can I help you today?", is_from_user = False, model = "SmolLM2-135M")
 
         body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid), "index": 1, "model": "SmolLM2-360M"})
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
@@ -628,7 +625,7 @@ class RegenerateMessage(ViewsTestCase):
     @patch("chat.views.message.is_any_user_chat_pending", return_value = False)
     def test_requires_index(self, _):
         user = self.create_and_login_user()
-        chat = Chat.objects.create(user = user, title = "Greetings")
+        chat = user.chats.create(title = "Greetings")
         body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid)})
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/regenerate-message/", body, content_type)
@@ -638,9 +635,9 @@ class RegenerateMessage(ViewsTestCase):
     @patch("chat.views.message.is_any_user_chat_pending", return_value = False)
     def test_requires_valid_model(self, _):
         user = self.create_and_login_user()
-        chat = Chat.objects.create(user = user, title = "Greetings")
-        Message.objects.create(chat = chat, text = "Hello!", is_from_user = True)
-        Message.objects.create(chat = chat, text = "Hello! How can I help you today?", is_from_user = False)
+        chat = user.chats.create(title = "Greetings")
+        chat.messages.create(text = "Hello!", is_from_user = True)
+        chat.messages.create(text = "Hello! How can I help you today?", is_from_user = False)
         body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid)," index": 1, "model": "INVALID"})
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/regenerate-message/", body, content_type)
