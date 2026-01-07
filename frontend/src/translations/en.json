@@ -45,6 +45,8 @@
     "dialogs.deleteAccount.descriptionAlert": "This action cannot be undone.",
     "dialogs.deleteAccount.descriptionInformation": "Enter your password to confirm",
     "dialogs.deleteAccount.descriptionInformationWithMFA": "Enter your password and the 6-digit code from your authenticator or one 12-character recovery code to confirm.",
+    "dialogs.deleteAccount.authenticatorTab": "Authenticator Code",
+    "dialogs.deleteAccount.recoveryTab": "Recovery Code",
     "dialogs.deleteAccount.error.passwordRequired": "Password is required to delete the account.",
     "dialogs.deleteAccount.error.mfaRequired": "MFA code is required.",
     "dialogs.deleteAccount.error.deletionFailed": "Deletion of account was not possible.",

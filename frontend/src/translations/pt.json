@@ -45,6 +45,8 @@
     "dialogs.deleteAccount.descriptionAlert": "Esta ação não pode ser desfeita.",
     "dialogs.deleteAccount.descriptionInformation": "Digite sua senha para confirmar.",
     "dialogs.deleteAccount.descriptionInformationWithMFA": "Digite sua senha e o código de 6 dígitos do seu autenticador ou um código de recuperação de 12 caracteres para confirmar.",
+    "dialogs.deleteAccount.authenticatorTab": "Código de Autenticador",
+    "dialogs.deleteAccount.recoveryTab": "Código de Recuperação",
     "dialogs.deleteAccount.error.passwordRequired": "A senha é obrigatória para excluir a conta.",
     "dialogs.deleteAccount.error.mfaRequired": "O código MFA é obrigatório.",
     "dialogs.deleteAccount.error.deletionFailed": "Não foi possível excluir a conta.",

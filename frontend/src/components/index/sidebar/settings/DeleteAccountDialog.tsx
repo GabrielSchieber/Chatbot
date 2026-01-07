@@ -111,16 +111,16 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                                         `}
                                         value="authenticator"
                                     >
-                                        Authenticator Code
+                                        {t("dialogs.deleteAccount.authenticatorTab")}
                                     </Tabs.Trigger>
                                     <Tabs.Trigger
                                         className={`
-                                                w-[90%] px-3 py-1 cursor-pointer font-medium
-                                                ${mfaMethod === "recovery" ? "border-b" : "hover:border-b hover:border-gray-500"}
-                                                `}
+                                            w-[90%] px-3 py-1 cursor-pointer font-medium
+                                            ${mfaMethod === "recovery" ? "border-b" : "hover:border-b hover:border-gray-500"}
+                                        `}
                                         value="recovery"
                                     >
-                                        Recovery Code
+                                        {t("dialogs.deleteAccount.recoveryTab")}
                                     </Tabs.Trigger>
                                 </Tabs.List>
 
