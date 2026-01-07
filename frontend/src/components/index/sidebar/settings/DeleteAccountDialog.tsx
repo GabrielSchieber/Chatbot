@@ -56,7 +56,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                             <Dialog.Title className="text-xl font-semibold">{t("dialogs.deleteAccount.title")}</Dialog.Title>
                             <Dialog.Description className="flex flex-col gap-1">
                                 <span className="text-lg">{t("dialogs.deleteAccount.descriptionAlert")}</span>
-                                {user.mfa &&
+                                {!user.is_guest &&
                                     <span>
                                         {user.mfa.is_enabled ?
                                             t("dialogs.deleteAccount.descriptionInformationWithMFA") :
