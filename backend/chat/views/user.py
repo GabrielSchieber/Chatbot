@@ -19,6 +19,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
+from .utils import readable_user_agent
 from ..models import GuestIdentity, PasswordResetToken, PreAuthToken, User, derive_token_fingerprint, hash_user_agent
 from ..serializers.user import (
     AuthenticateAsGuestSerializer, ConfirmPasswordResetSerializer, DeleteAccountSerializer, LoginSerializer,
@@ -398,10 +399,32 @@ class RequestPasswordReset(APIView):
             expires_at = timezone.now() + timedelta(minutes = 15)
         )
 
-        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
         subject = "Reset your password"
-        message = f"Reset your password using the link below:\n\n{reset_url}\n\nThis link expires in 15 minutes."
-        html_message = render_to_string("chat/password_reset.html", {"reset_url": reset_url, "year": timezone.now().year})
+        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+
+        device = readable_user_agent(request.user_agent_raw)
+
+        message = (
+            "We received a request to reset your password.\n\n"
+            f"Reset link (expires in 15 minutes):\n{reset_url}\n\n"
+            f"Request details:\n"
+            f"Time: {timezone.localtime(timezone.now())}\n"
+            f"IP: {request.ip_address}\n"
+            f"Device: {device}\n\n"
+            "If you didn’t request this, ignore this email."
+        )
+
+        html_message = render_to_string(
+            "chat/password_reset.html",
+            {
+                "reset_url": reset_url, 
+                "year": timezone.now().year,
+                "request_time": timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M:%S %Z"),
+                "ip_address": request.ip_address,
+                "user_agent": device
+            }
+        )
+
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], html_message = html_message)
 
         return Response(status = status.HTTP_200_OK)
