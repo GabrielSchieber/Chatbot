@@ -1,8 +1,8 @@
 import { t } from "i18next"
 
-import { Button, Header } from "./Auth"
+import { Button, Header } from "../Auth"
 
-export default function VerifyEmailSent() {
+export default function CheckEmail() {
     const email = new URLSearchParams(location.search).get("email")
 
     return (

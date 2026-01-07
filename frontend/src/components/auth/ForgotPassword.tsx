@@ -2,8 +2,8 @@ import { t } from "i18next"
 import { useState } from "react"
 import { useNavigate } from "react-router"
 
-import { Button, Email, Form, Header } from "./Auth"
-import { requestPasswordReset } from "../utils/api"
+import { Button, Email, Form, Header } from "../Auth"
+import { requestPasswordReset } from "../../utils/api"
 
 export default function ForgotPassword() {
     const navigate = useNavigate()

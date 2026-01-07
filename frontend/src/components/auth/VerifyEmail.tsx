@@ -1,8 +1,8 @@
 import { t } from "i18next"
 import { useEffect, useState } from "react"
 
-import { Button, Error, Header } from "./Auth"
-import { verifyEmail } from "../utils/api"
+import { Button, Error, Header } from "../Auth"
+import { verifyEmail } from "../../utils/api"
 
 export default function VerifyEmail() {
     const [error, setError] = useState("")
@@ -22,9 +22,7 @@ export default function VerifyEmail() {
         }
     }
 
-    useEffect(() => {
-        verify()
-    }, [])
+    useEffect(() => { verify() }, [])
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-900 light:bg-gray-100">

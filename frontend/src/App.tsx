@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router"
 
-import ForgotPassword from "./components/ForgotPassword"
-import ResetPassword from "./components/ResetPassword"
-import VerifyEmail from "./components/VerifyEmail"
-import VerifyEmailSent from "./components/VerifyEmailSent"
+import ForgotPassword from "./components/auth/ForgotPassword"
+import ResetPassword from "./components/auth/ResetPassword"
+import VerifyEmail from "./components/auth/VerifyEmail"
+import CheckEmail from "./components/auth/CheckEmail"
 import Index from "./pages/Index"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
@@ -44,12 +44,15 @@ export default function App() {
                 <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/chat/:chatUUID" element={<Index />} />
-                    <Route path="/login" element={<Login />} />
+
                     <Route path="/signup" element={<Signup />} />
+                    <Route path="/check-email" element={<CheckEmail />} />
+                    <Route path="/verify-email" element={<VerifyEmail />} />
+
+                    <Route path="/login" element={<Login />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
-                    <Route path="/verify-email" element={<VerifyEmail />} />
-                    <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
+
                     <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
             </Router>
