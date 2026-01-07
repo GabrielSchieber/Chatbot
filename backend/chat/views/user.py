@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -399,9 +400,9 @@ class RequestPasswordReset(APIView):
 
         reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
         subject = "Reset your password"
-        message = f"Reset your password using the link below:\n\n{reset_url}"
-
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+        message = f"Reset your password using the link below:\n\n{reset_url}\n\nThis link expires in 15 minutes."
+        html_message = render_to_string("chat/password_reset.html", {"reset_url": reset_url, "year": timezone.now().year})
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], html_message = html_message)
 
         return Response(status = status.HTTP_200_OK)
 
