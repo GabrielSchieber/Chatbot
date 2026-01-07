@@ -1,3 +1,4 @@
+import { t } from "i18next"
 import { Label as RadixLabel } from "radix-ui"
 import { useState, useEffect, type ReactNode, useRef } from "react"
 
@@ -41,37 +42,37 @@ export default function Customizations() {
     return (
         <>
             <Entry>
-                <Label htmlFor="custom-instructions" text="Custom instructions" />
+                <Label htmlFor="custom-instructions" text={t("settings.customInstructions")} />
                 <TextArea
                     id="custom-instructions"
-                    placeholder="Additional instructions that I should follow."
+                    placeholder={t("settings.customInstructionsPlaceholder")}
                     value={customInstructions !== undefined ? customInstructions : user !== null ? user.preferences.custom_instructions : ""}
                     onChange={e => setCustomInstructions(e.currentTarget.value)}
                 />
             </Entry>
             <Entry>
-                <Label htmlFor="nickname" text="Nickname" />
+                <Label htmlFor="nickname" text={t("settings.nickname")} />
                 <Input
                     id="nickname"
-                    placeholder="What should I call you?"
+                    placeholder={t("settings.nicknamePlaceholder")}
                     value={nickname !== undefined ? nickname : user !== null ? user.preferences.nickname : ""}
                     onChange={e => setNickname(e.currentTarget.value)}
                 />
             </Entry>
             <Entry>
-                <Label htmlFor="occupation" text="Occupation" />
+                <Label htmlFor="occupation" text={t("settings.occupation")} />
                 <Input
                     id="occupation"
-                    placeholder="Your role..."
+                    placeholder={t("settings.occupationPlaceholder")}
                     value={occupation !== undefined ? occupation : user !== null ? user.preferences.occupation : ""}
                     onChange={e => setOccupation(e.currentTarget.value)}
                 />
             </Entry>
             <Entry>
-                <Label htmlFor="about" text="About" />
+                <Label htmlFor="about" text={t("settings.about")} />
                 <TextArea
                     id="about"
-                    placeholder="Anything else that I should know about you?"
+                    placeholder={t("settings.aboutPlaceholder")}
                     value={about !== undefined ? about : user !== null ? user.preferences.about : ""}
                     onChange={e => setAbout(e.currentTarget.value)}
                 />
