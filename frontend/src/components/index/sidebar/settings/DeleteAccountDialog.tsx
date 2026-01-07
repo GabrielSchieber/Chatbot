@@ -34,6 +34,8 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
         }
     }
 
+    if (!user) return
+
     return (
         <Dialog.Root>
             <Dialog.Trigger className={destructiveEntryClasses} data-testid="open-delete-account">
@@ -54,7 +56,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                             <Dialog.Title className="text-xl font-semibold">{t("dialogs.deleteAccount.title")}</Dialog.Title>
                             <Dialog.Description className="flex flex-col gap-1">
                                 <span className="text-lg">{t("dialogs.deleteAccount.descriptionAlert")}</span>
-                                {user?.mfa &&
+                                {user.mfa &&
                                     <span>
                                         {user.mfa.is_enabled ?
                                             t("dialogs.deleteAccount.descriptionInformationWithMFA") :
@@ -70,7 +72,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                     </div>
 
                     <form className="flex flex-col gap-3 px-3 py-1" onSubmit={handleConfirmDelete}>
-                        {user?.mfa &&
+                        {!user.is_guest && (
                             <div className="flex flex-col gap-1">
                                 <Label.Root htmlFor="password" className="font-medium text-gray-200 light:text-gray-700">
                                     {t("auth.password.label")}
@@ -89,9 +91,9 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                                     required
                                 />
                             </div>
-                        }
+                        )}
 
-                        {user?.mfa?.is_enabled && (
+                        {!user.is_guest && user.mfa.is_enabled &&
                             <Tabs.Root
                                 className="flex flex-col gap-2 items-center"
                                 value={mfaMethod}
@@ -113,9 +115,9 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                                     </Tabs.Trigger>
                                     <Tabs.Trigger
                                         className={`
-                                            w-[90%] px-3 py-1 cursor-pointer font-medium
-                                            ${mfaMethod === "recovery" ? "border-b" : "hover:border-b hover:border-gray-500"}
-                                        `}
+                                                w-[90%] px-3 py-1 cursor-pointer font-medium
+                                                ${mfaMethod === "recovery" ? "border-b" : "hover:border-b hover:border-gray-500"}
+                                                `}
                                         value="recovery"
                                     >
                                         Recovery Code
@@ -154,7 +156,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                                     />
                                 </Tabs.Content>
                             </Tabs.Root>
-                        )}
+                        }
 
                         {error && <div className="text-red-400 light:text-red-600">{error}</div>}
 

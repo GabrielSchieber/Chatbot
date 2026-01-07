@@ -29,7 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["email", "preferences", "mfa", "sessions"]
+        fields = ["email", "is_guest", "preferences", "mfa", "sessions"]
 
     def get_sessions(self, user: User):
         active_sessions = user.sessions.filter(logout_at__isnull = True).count()

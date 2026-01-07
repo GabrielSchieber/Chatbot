@@ -30,6 +30,8 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
         return () => window.removeEventListener("resize", onResize)
     }, [])
 
+    if (!user) return
+
     return (
         <Dialog.Root>
             <OpenSettings withLabel={isSidebarOpen} />
@@ -63,10 +65,10 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                             <Trigger icon={<GearIcon className="size-4.5" />} title={t("settings.general")} />
                             <Trigger icon={<MixerVerticalIcon className="size-4.5" />} title={t("settings.customizations")} />
                             <Trigger icon={<MixerHorizontalIcon className="size-4.5" />} title={t("settings.data")} />
-                            {user?.mfa &&
+                            {!user.is_guest &&
                                 <Trigger icon={<LockClosedIcon className="size-4.5" />} title={t("settings.security")} />
                             }
-                            <Trigger icon={<PersonIcon className="size-4.5" />} title={t(user?.mfa ? "settings.account" : "settings.accountAsGuest")} />
+                            <Trigger icon={<PersonIcon className="size-4.5" />} title={t("settings.account")} />
                         </Tabs.List>
 
                         <Content title={t("settings.general")} isScreenHeightSmall={isScreenHeightSmall}>
@@ -89,8 +91,8 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                             <SessionsEntryItem />
                         </Content>
 
-                        <Content title={t(user?.mfa ? "settings.account" : "settings.accountAsGuest")} isScreenHeightSmall={isScreenHeightSmall}>
-                            {user?.mfa && (
+                        <Content title={t("settings.account")} isScreenHeightSmall={isScreenHeightSmall}>
+                            {!user.is_guest && (
                                 <div className="flex gap-2 py-3 items-center">
                                     <EnvelopeClosedIcon className="size-4.5" />
                                     <p>{user.email}</p>
@@ -150,7 +152,9 @@ function ThemeEntryItem() {
     const { user, setUser } = useAuth()
     const { t } = useTranslation()
 
-    const [theme, setTheme] = useState(user?.preferences.theme || "System")
+    if (!user) return
+
+    const [theme, setTheme] = useState(user.preferences.theme || "System")
 
     function isTheme(value: unknown): value is Theme {
         return value === "System" || value === "Light" || value === "Dark"
@@ -195,7 +199,9 @@ function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetState
     const { user, setUser } = useAuth()
     const { i18n, t } = useTranslation()
 
-    const [language, setLanguage] = useState<Language>(user?.preferences.language || "")
+    if (!user) return
+
+    const [language, setLanguage] = useState<Language>(user.preferences.language || "")
 
     const languages: Language[] = ["", "English", "Português"]
     const autoDetect = t("settings.autoDetect")
@@ -295,20 +301,22 @@ function SessionsEntryItem() {
         location.reload()
     }
 
+    if (!user) return
+
     return (
         <div className="flex flex-col gap-1 my-2 rounded-lg py-1 border border-gray-500">
             <h3 className="px-2 pb-1 text-lg font-semibold border-b border-gray-500">
                 {t("settings.sessions.title")}
             </h3>
             <div className="flex flex-col max-h-100 gap-1 px-2 py-1 overflow-y-auto">
-                {user?.sessions.length === 0 ? (
+                {user.sessions.length === 0 ? (
                     <p>{t("settings.sessions.noActiveSessions")}</p>
                 ) : (
                     <div className="flex flex-col gap-2">
                         <button className={entryClasses} onClick={handleLogoutAllSessions}>
                             {t("settings.sessions.logoutAll")}
                         </button>
-                        {user?.sessions.map((s, i) => (
+                        {user.sessions.map((s, i) => (
                             <div key={i} className="flex flex-col p-2 border border-gray-500 rounded-lg">
                                 {s.logout_at === null && <p className="text-sm text-green-500">Active Session</p>}
                                 <p><strong>{t("settings.sessions.login")}:</strong> {new Date(s.login_at).toLocaleString()}</p>

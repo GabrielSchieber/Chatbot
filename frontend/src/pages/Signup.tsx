@@ -25,7 +25,7 @@ export default function Signup() {
 
         const response = await signup(email, password)
         if (response.ok) {
-            location.href = `/verify-email-sent?email=${encodeURIComponent(email)}`
+            location.href = `/check-email?email=${encodeURIComponent(email)}`
         } else {
             const data = await response.json()
             setError(t(data.detail))

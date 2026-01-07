@@ -32,6 +32,8 @@ export default function Header() {
         return () => window.removeEventListener("resize", onResize)
     }, [])
 
+    if (!user) return
+
     return (
         <header className="sticky top-0 flex w-full gap-1 p-2 items-center justify-between">
             {isMobile &&
@@ -82,12 +84,12 @@ export default function Header() {
                     <p
                         className={`
                             text-2xl font-semibold not-md:mx-auto
-                            ${((user?.mfa && screenWidth < 300) || (!user?.mfa && screenWidth < 500)) ? "hidden" : ""}
+                            ${((user.is_guest && screenWidth < 300) || (!user.is_guest && screenWidth < 500)) ? "hidden" : ""}
                         `}>
                         Chatbot
                     </p>
 
-                    {!user?.mfa ? (
+                    {user.is_guest ? (
                         <div className="flex gap-2 items-center">
                             {!isMobile && <TemporaryChat withLabel={true} />}
 

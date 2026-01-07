@@ -4,8 +4,9 @@ export type Model = "" | "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moo
 
 export type User = {
     email: string
+    is_guest: boolean
     preferences: UserPreferences
-    mfa: UserMFA | null
+    mfa: UserMFA
     sessions: UserSession[]
 }
 
