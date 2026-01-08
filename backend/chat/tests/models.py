@@ -23,7 +23,7 @@ class User(TestCase):
         ):
             if user is None:
                 initial_count = models.User.objects.count()
-                user = models.User.objects.create_user(email, "testpassword", has_verified_email, is_active, is_guest, is_staff, is_superuser)
+                user = models.User.objects.create_user(email, "testpassword", has_verified_email, is_active, is_guest)
             else:
                 initial_count = None
 
@@ -42,26 +42,29 @@ class User(TestCase):
             if initial_count is not None:
                 self.assertEqual(models.User.objects.count(), initial_count + 1)
 
-        for i, [has_verified_email, is_active, is_guest, is_staff, is_superuser] in enumerate([
-            [False, False, False, False, False],
-            [True, False, False, False, False],
-            [True, True, True, False, False],
-            [True, True, False, True, False],
-            [True, True, False, True, True]
+        for i, [has_verified_email, is_active, is_guest] in enumerate([
+            [False, False, False],
+            [True, False, False],
+            [False, True, False],
+            [True, True, False],
+            [False, False, True],
+            [True, False, True],
+            [False, True, True],
+            [True, True, True]
         ], 1):
-            test(f"test{i}@example.com", has_verified_email, is_active, is_guest, is_staff, is_superuser)
+            test(f"test{i}@example.com", has_verified_email, is_active, is_guest, False, False)
 
         test(
             "test@example.com",
-            has_verified_email,
-            is_active,
-            is_guest,
-            is_staff,
-            is_superuser,
+            True,
+            True,
+            False,
+            True,
+            True,
             models.User.objects.create_superuser("test@example.com", "testpassword")
         )
 
-        self.assertEqual(models.User.objects.count(), 6)
+        self.assertEqual(models.User.objects.count(), 9)
 
     def test_authentication(self):
         create_user()
@@ -72,9 +75,9 @@ class User(TestCase):
 
     def test_invalid_email(self):
         def test(email: str):
-            with self.assertRaises(ValueError) as cm:
+            with self.assertRaises(ValidationError) as cm:
                 create_user(email)
-            self.assertEqual(str(cm.exception), "Email address is invalid.")
+            self.assertEqual(cm.exception.message_dict, {"email": ["Enter a valid email address."]})
 
         test("test")
         test("example.com")
@@ -86,24 +89,26 @@ class User(TestCase):
         self.assertEqual(models.User.objects.count(), 0)
 
     def test_invalid_password(self):
-        def test(password: str):
-            with self.assertRaises(ValueError) as cm:
+        def test(password, type_tried: str):
+            with self.assertRaises(TypeError) as cm:
                 create_user(password = password)
-            self.assertEqual(str(cm.exception), "Password must have between 12 and 1000 characters.")
+            self.assertEqual(str(cm.exception), f"Password must be a string or bytes, got {type_tried}.")
 
-        test("")
-        test("test")
-        test("onepassword")
-        test("".join(["password123" for _ in range(91)]))
+        test(0, "int")
+        test(-5.25, "float")
+        test(False, "bool")
+        test({}, "dict")
+        test([], "list")
+        test((), "tuple")
         self.assertEqual(models.User.objects.count(), 0)
 
     def test_existing_email(self):
         create_user()
         self.assertEqual(models.User.objects.count(), 1)
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(ValidationError) as cm:
             create_user()
-        self.assertEqual(str(cm.exception), "Email is already registered.")
+        self.assertEqual(cm.exception.message_dict, {"email": ["User with this Email already exists."]})
 
         self.assertEqual(models.User.objects.count(), 1)
 

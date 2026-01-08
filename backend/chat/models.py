@@ -9,7 +9,6 @@ from cryptography.fernet import Fernet
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.core.validators import validate_email
 from django.db import models
 from django.db.models.manager import BaseManager
 from django.utils import timezone
@@ -53,28 +52,13 @@ class UserManager(BaseUserManager):
         password: str,
         has_verified_email: bool = False,
         is_active: bool = False,
-        is_guest: bool = False,
-        is_staff: bool = False,
-        is_superuser: bool = False
+        is_guest: bool = False
     ):
-        try:
-            validate_email(email)
-        except:
-            raise ValueError("Email address is invalid.")
-
-        if len(password) < 12 or len(password) > 1000:
-            raise ValueError("Password must have between 12 and 1000 characters.")
-
-        if User.objects.filter(email = email).exists():
-            raise ValueError("Email is already registered.")
-
         user: User = self.model(
             email = self.normalize_email(email),
             has_verified_email = has_verified_email,
             is_active = is_active,
-            is_guest = is_guest,
-            is_staff = is_staff,
-            is_superuser = is_superuser
+            is_guest = is_guest
         )
         user.set_password(password)
         user.save(using = self._db)
@@ -85,7 +69,20 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email: str, password: str):
-        return self.create_user(email, password, True, True, False, True, True)
+        user: User = self.model(
+            email = self.normalize_email(email),
+            has_verified_email = True,
+            is_active = True,
+            is_staff = True,
+            is_superuser = True
+        )
+        user.set_password(password)
+        user.save(using = self._db)
+
+        UserPreferences.objects.create(user = user)
+        UserMFA.objects.create(user = user)
+
+        return user
 
 class User(CleanOnSaveMixin, AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique = True)
