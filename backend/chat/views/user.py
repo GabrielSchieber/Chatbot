@@ -83,6 +83,10 @@ class VerifyEmail(APIView):
                 t.used_at = timezone.now()
                 t.save(update_fields = ["used_at"])
 
+                user.has_verified_email = True
+                user.is_active = True
+                user.save(update_fields = ["has_verified_email", "is_active"])
+
                 refresh = RefreshToken.for_user(user)
                 refresh_jti = refresh.get("jti")
                 user.sessions.create(
@@ -98,10 +102,8 @@ class VerifyEmail(APIView):
                 response.set_cookie("access_token", str(refresh.access_token), secure = True, httponly = True, samesite = "Strict")
                 response.set_cookie("refresh_token", str(refresh), secure = True, httponly = True, samesite = "Strict")
 
-                user.has_verified_email = True
-                user.is_active = True
                 user.last_login = timezone.now()
-                user.save(update_fields = ["has_verified_email", "is_active", "last_login"])
+                user.save(update_fields = ["last_login"])
 
                 return response
 
