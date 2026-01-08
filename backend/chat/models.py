@@ -233,7 +233,7 @@ class UserSession(CleanOnSaveMixin, models.Model):
     def __str__(self):
         return f"Session created at {self.login_at} for {self.user.email}."
 
-class EmailVerificationToken(models.Model):
+class EmailVerificationToken(CleanOnSaveMixin, models.Model):
     user = models.ForeignKey(User, models.CASCADE, related_name = "email_verification_tokens")
 
     token_hash = models.CharField(max_length = 128)
@@ -259,7 +259,7 @@ class PreAuthToken(CleanOnSaveMixin, models.Model):
     def __str__(self):
         return f"Pre-authentication token created at {self.created_at} owned by {self.user.email}."
 
-class PasswordResetToken(models.Model):
+class PasswordResetToken(CleanOnSaveMixin, models.Model):
     user = models.ForeignKey(User, models.CASCADE, related_name = "password_reset_tokens")
 
     token_fingerprint = models.CharField(max_length = 64, db_index = True)
@@ -326,7 +326,7 @@ class MessageFile(CleanOnSaveMixin, models.Model):
     def __str__(self):
         return f"File of message named {self.name} created at {self.created_at} in {self.message} owned by {self.message.chat.user.email}."
 
-class GuestIdentity(models.Model):
+class GuestIdentity(CleanOnSaveMixin, models.Model):
     user = models.OneToOneField(User, models.CASCADE, related_name = "guest_identity")
 
     ip_address = models.GenericIPAddressField(blank = True, null = True)
