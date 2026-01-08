@@ -55,10 +55,20 @@ class Signup(APIView):
         raw_token = secrets.token_urlsafe(32)
         user.email_verification_tokens.create(token_hash = make_password(raw_token), expires_at = timezone.now() + timedelta(hours = 24))
 
-        subject = "Verify your email"
+        subject = _("Signup.subject")
         verify_url = f"{settings.FRONTEND_URL}/verify-email?email={user.email}&token={raw_token}"
-        message = f"Click the link to verify your email:\n\n{verify_url}"
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+
+        device = readable_user_agent(request.user_agent_raw)
+        request_time = date_format(timezone.localtime(timezone.now()), "DATETIME_FORMAT")
+
+        message = _("Signup.message").format(verify_url = verify_url, time = request_time, ip = request.ip_address, device = device)
+
+        html_message = render_to_string(
+            "chat/email_verification.html",
+            {"verify_url": verify_url, "year": timezone.now().year, "request_time": request_time, "ip_address": request.ip_address, "user_agent": device}
+        )
+
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], html_message = html_message)
 
         return Response(status = status.HTTP_201_CREATED)
 
@@ -403,21 +413,13 @@ class RequestPasswordReset(APIView):
             expires_at = timezone.now() + timedelta(minutes = 15)
         )
 
-        subject = _("Reset your password")
+        subject = _("RequestPasswordReset.subject")
         reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
 
         device = readable_user_agent(request.user_agent_raw)
         request_time = date_format(timezone.localtime(timezone.now()), "DATETIME_FORMAT")
 
-        message = _(
-            "We received a request to reset the password for your account.\n\n"
-            "Reset link (expires in 15 minutes):\n{reset_url}\n\n"
-            "Request details:\n"
-            "Date and time: {time}\n"
-            "IP address: {ip}\n"
-            "Browser and device: {device}\n\n"
-            "If you didn’t request this, you can safely ignore this email. Your password will not be changed."
-        ).format(reset_url = reset_url, time = request_time, ip = request.ip_address, device = device)
+        message = _("RequestPasswordReset.message").format(reset_url = reset_url, time = request_time, ip = request.ip_address, device = device)
 
         html_message = render_to_string(
             "chat/password_reset.html",

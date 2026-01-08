@@ -13,7 +13,7 @@ def readable_user_agent(user_agent_raw: str | None) -> str:
         parts.append(ua.browser.family)
 
     if ua.os.family:
-        parts.append(f"{_("on")} {ua.os.family}")
+        parts.append(f"{_("readable_user_agent.preposition")} {ua.os.family}")
 
     if ua.device.family and ua.device.family != "Other":
         parts.append(f"({ua.device.family})")

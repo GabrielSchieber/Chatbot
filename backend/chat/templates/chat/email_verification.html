@@ -5,7 +5,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>{% trans "password_reset.title" %}</title>
+    <title>{% trans "email_verification.title" %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
 
@@ -17,20 +17,20 @@
                     style="max-width:600px; background-color:#ffffff; border-radius:8px; overflow:hidden;">
                     <tr>
                         <td style="padding:24px; background-color:#111827; color:#ffffff;">
-                            <h1 style="margin:0; font-size:20px;">{% trans "password_reset.header" %}</h1>
+                            <h1 style="margin:0; font-size:20px;">{% trans "email_verification.header" %}</h1>
                         </td>
                     </tr>
 
                     <tr>
                         <td style="padding:24px; color:#111827; font-size:14px; line-height:1.6;">
-                            <p style="margin-top:0;">{% trans "password_reset.context_paragraph" %}</p>
+                            <p style="margin-top:0;">{% trans "email_verification.thanks_paragraph" %}</p>
 
-                            <p>{% trans "password_reset.action_paragraph" %}</p>
+                            <p>{% trans "email_verification.action_paragraph" %} </p>
 
                             <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
                                 <tr>
                                     <td align="center">
-                                        <a href="{{ reset_url }}" style="
+                                        <a href="{{ verify_url }}" style="
                                             display:inline-block;
                                             padding:12px 20px;
                                             background-color:#2563eb;
@@ -39,47 +39,47 @@
                                             font-weight:bold;
                                             border-radius:6px;
                                         ">
-                                            {% trans "password_reset.action" %}
+                                            {% trans "email_verification.action" %}
                                         </a>
                                     </td>
                                 </tr>
                             </table>
 
-                            <p>{% trans "password_reset.action_alternative" %} </p>
+                            <p>{% trans "email_verification.action_alternative" %}</p>
 
-                            <p style="word-break:break-all; color:#2563eb;">{{ reset_url }} </p>
+                            <p style="word-break:break-all; color:#2563eb;">{{ verify_url }}</p>
 
                             <hr style="border:none; border-top:1px solid #e5e7eb; margin:24px 0;" />
 
                             <p style="font-size:13px; color:#374151; margin-bottom:8px;">
-                                <strong>{% trans "password_reset.request_details" %}</strong>
+                                <strong>{% trans "email_verification.request_details" %}</strong>
                             </p>
 
                             <table cellpadding="0" cellspacing="0" style="font-size:12px; color:#4b5563;">
                                 <tr>
                                     <td style="padding:2px 8px 2px 0;">
-                                        {% trans "password_reset.date_and_time" %}:
+                                        {% trans "email_verification.date_and_time" %}:
                                     </td>
                                     <td>{{ request_time }}</td>
                                 </tr>
 
                                 <tr>
                                     <td style="padding:2px 8px 2px 0;">
-                                        {% trans "password_reset.ip_address" %}:
+                                        {% trans "email_verification.ip_address" %}:
                                     </td>
                                     <td>{{ ip_address }}</td>
                                 </tr>
 
                                 <tr>
                                     <td style="padding:2px 8px 2px 0;">
-                                        {% trans "password_reset.browser_and_device" %}:
+                                        {% trans "email_verification.browser_and_device" %}:
                                     </td>
                                     <td>{{ user_agent }}</td>
                                 </tr>
                             </table>
 
                             <p style="margin-bottom:0;">
-                                {% trans "password_reset.notice_paragraph" %}
+                                {% trans "email_verification.notice_paragraph" %}
                             </p>
                         </td>
                     </tr>
