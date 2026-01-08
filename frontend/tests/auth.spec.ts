@@ -301,11 +301,24 @@ test("user cannot disable multi-factor authentication with an already used backu
 async function signup() {
     const email = getRandomEmail()
     const password = "testpassword"
+
     const response = await apiFetch("/api/signup/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
     })
     expect(response.status).toBe(201)
+
+    const emailData = await waitForEmail({ to: email, subject: "Verify your email" })
+    const emailBody = await getEmailBody(emailData.ID)
+    const emailContent = emailBody.HTML || emailBody.Text
+    const token = emailContent.slice(emailContent.search("token=") + 6)
+    const verifyResponse = await apiFetch("/api/verify-email/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, token })
+    })
+    expect(verifyResponse.status).toBe(204)
+
     return [email, password]
 }
