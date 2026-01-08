@@ -846,6 +846,7 @@ class Me(ViewsTestCase):
 
         expected_json = {
             "email": user.email,
+            "is_guest": False,
             "preferences": {
                 "language": "",
                 "theme": "System",
@@ -876,6 +877,7 @@ class Me(ViewsTestCase):
 
         expected_json = {
             "email": user.email,
+            "is_guest": False,
             "preferences": {
                 "language": "",
                 "theme": "System",
