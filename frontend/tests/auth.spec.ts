@@ -1,18 +1,37 @@
 import { expect, test } from "@playwright/test"
 import { authenticator } from "otplib"
-import { apiFetch, getRandomEmail, signupAndLogin, signupWithMFAEnabled, signupWithMFAEnabledAndLogin } from "./utils"
+import { apiFetch, getEmailBody, getRandomEmail, signupAndLogin, signupWithMFAEnabled, signupWithMFAEnabledAndLogin, waitForEmail } from "./utils"
 
 test("user can sign up", async ({ page }) => {
-    await page.goto("/login")
+    const email = getRandomEmail()
+    const password = "testpassword"
 
-    await page.click("text=Sign up!")
+    await page.goto("/signup")
 
-    await page.getByRole("textbox", { name: "Email", exact: true }).fill(getRandomEmail())
-    await page.getByRole("textbox", { name: "Password", exact: true }).fill("testpassword")
-    await page.getByRole("textbox", { name: "Confirm Password", exact: true }).fill("testpassword")
+    await page.getByLabel("Email", { exact: true }).fill(email)
+    await page.getByLabel("Password", { exact: true }).fill(password)
+    await page.getByLabel("Confirm Password", { exact: true }).fill(password)
+    await page.getByRole("button", { name: "Sign up", exact: true }).click()
 
-    await page.click("button")
+    const emailData = await waitForEmail({ page, to: email, subject: "Verify your email" })
+    const emailBody = await getEmailBody(page, emailData.ID)
+    const emailContent = emailBody.HTML || emailBody.Text
+    const verifyLink = emailContent.slice(emailContent.search("http://"))
+
+    await page.goto(verifyLink)
     await page.waitForURL("/")
+
+    await expect(page.getByText("Log in")).not.toBeVisible()
+    await expect(page.getByText("Sign up")).not.toBeVisible()
+
+    const settingsButton = page.getByText("Settings")
+    if (!(await settingsButton.isVisible())) {
+        await page.getByRole("banner").getByRole("button").first().click()
+    }
+    await settingsButton.click()
+
+    await page.getByRole("tab", { name: "Account" }).click()
+    await expect(page.getByText(email, { exact: true })).toBeVisible()
 })
 
 test("user cannot sign up with existing email", async ({ page }) => {

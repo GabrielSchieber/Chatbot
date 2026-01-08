@@ -163,6 +163,49 @@ export async function getGuestTokenCookie(browser: Browser) {
     return guestToken
 }
 
+const MAILPIT_API = "http://mailpit:8025/api/v1"
+
+export async function waitForEmail({ page, to, subject, timeoutMs = 10_000, pollIntervalMs = 500 }: {
+    page: any
+    to: string
+    subject?: string
+    timeoutMs?: number
+    pollIntervalMs?: number
+}) {
+    const start = Date.now()
+
+    while (Date.now() - start < timeoutMs) {
+        const response = await page.request.get(`${MAILPIT_API}/messages`)
+        expect(response.ok()).toBeTruthy()
+
+        const data = await response.json()
+
+        const message = data.messages.find((m: any) => {
+            const matchesTo = m.To?.some((r: any) => r.Address === to)
+            const matchesSubject = subject ? m.Subject === subject : true
+            return matchesTo && matchesSubject
+        })
+
+        if (message) {
+            return message
+        }
+
+        await new Promise(r => setTimeout(r, pollIntervalMs))
+    }
+
+    throw new Error(`Timed out waiting for email to ${to}.`)
+}
+
+export async function getEmailBody(page: any, messageId: string) {
+    const response = await page.request.get(`${MAILPIT_API}/message/${messageId}`)
+
+    if (!response.ok()) {
+        throw new Error(`Failed to fetch email for message with ID: ${messageId}.`)
+    }
+
+    return response.json()
+}
+
 export type User = {
     email: string
     password: string
