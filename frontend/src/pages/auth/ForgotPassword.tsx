@@ -2,7 +2,7 @@ import { t } from "i18next"
 import { useState } from "react"
 import { useNavigate } from "react-router"
 
-import { Button, Email, Form, Header } from "../Auth"
+import { Button, Email, Form, Header } from "../../components/Auth"
 import { requestPasswordReset } from "../../utils/api"
 
 export default function ForgotPassword() {

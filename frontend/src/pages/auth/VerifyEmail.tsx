@@ -1,7 +1,7 @@
 import { t } from "i18next"
 import { useEffect, useState } from "react"
 
-import { Button, Error, Header } from "../Auth"
+import { Button, Error, Header } from "../../components/Auth"
 import { me, verifyEmail } from "../../utils/api"
 
 export default function VerifyEmail() {
