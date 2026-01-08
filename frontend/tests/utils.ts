@@ -18,36 +18,29 @@ export async function signupAndLogin(page: Page, withChats: boolean = false): Pr
     await page.getByLabel("Email", { exact: true }).fill(email)
     await page.getByLabel("Password", { exact: true }).fill(password)
     await page.getByLabel("Confirm Password", { exact: true }).fill(password)
-
-    const shouldWaitForMeResponse = page.viewportSize()!.width < 750
-
-    const signupResponse = page.waitForResponse(response =>
-        response.url().endsWith("/api/signup/") && response.status() === 201 && response.request().method() === "POST"
-    )
-    const loginResponse = page.waitForResponse(response =>
-        response.url().endsWith("/api/login/") && response.status() === 200 && response.request().method() === "POST"
-    )
-
-    let meResponse
-    if (shouldWaitForMeResponse) {
-        meResponse = page.waitForResponse(response =>
-            response.url().endsWith("/api/me/") && response.status() === 200 && response.request().method() === "PATCH"
-        )
-    }
-
     await page.getByRole("button", { name: "Sign up", exact: true }).click()
-    await signupResponse
-    await loginResponse
-    if (shouldWaitForMeResponse) {
-        await meResponse
-    }
+
+    const emailData = await waitForEmail({ to: email, subject: "Verify your email" })
+    const emailBody = await getEmailBody(emailData.ID)
+    const beginLink = emailBody.Text.indexOf("http://")
+    const endLink = emailBody.Text.slice(beginLink).indexOf("\n") + beginLink
+    const verifyLink = emailBody.Text.slice(beginLink, endLink)
+
+    await page.goto(verifyLink)
+    await page.waitForURL("/")
 
     async function waitForPageToLoad() {
-        await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
-        await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
+        await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).not.toBeVisible()
+        if (page.viewportSize()!.width < 750) {
+            await expect(page.locator("p").getByText("Chatbot", { exact: true })).not.toBeVisible()
+        } else {
+            await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
+            await expect(page.getByRole("link", { name: "Log in", exact: true })).not.toBeVisible()
+            await expect(page.getByRole("link", { name: "Sign up", exact: true })).not.toBeVisible()
+            await expect(page.getByTestId("history").locator("a")).toHaveCount(withChats ? 14 : 0)
+        }
     }
 
-    await page.waitForURL("/")
     await waitForPageToLoad()
 
     let chats: Chat[] = []
@@ -64,7 +57,6 @@ export async function signupAndLogin(page: Page, withChats: boolean = false): Pr
     }
 
     await page.reload()
-    await waitForPageToLoad()
 
     return { email, password, chats }
 }
