@@ -84,8 +84,9 @@ export default function Header() {
                     <p
                         className={`
                             text-2xl font-semibold not-md:mx-auto
-                            ${((user.is_guest && screenWidth < 300) || (!user.is_guest && screenWidth < 500)) ? "hidden" : ""}
-                        `}>
+                            ${((!user.is_guest && screenWidth < 300) || (user.is_guest && screenWidth < 500)) ? "hidden" : ""}
+                        `}
+                    >
                         Chatbot
                     </p>
 
