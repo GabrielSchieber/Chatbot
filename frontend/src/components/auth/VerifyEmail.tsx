@@ -2,7 +2,7 @@ import { t } from "i18next"
 import { useEffect, useState } from "react"
 
 import { Button, Error, Header } from "../Auth"
-import { verifyEmail } from "../../utils/api"
+import { me, verifyEmail } from "../../utils/api"
 
 export default function VerifyEmail() {
     const [error, setError] = useState("")
@@ -16,6 +16,9 @@ export default function VerifyEmail() {
 
         const response = await verifyEmail(email, token)
         if (response.ok) {
+            if (window.innerWidth < 750) {
+                await me(undefined, undefined, false)
+            }
             location.href = "/"
         } else {
             setError("auth.verifyEmail.error")
