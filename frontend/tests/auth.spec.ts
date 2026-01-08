@@ -313,8 +313,10 @@ async function signup() {
 
     const emailData = await waitForEmail({ to: email, subject: "Verify your email" })
     const emailBody = await getEmailBody(emailData.ID)
-    const emailContent = emailBody.HTML || emailBody.Text
-    const token = emailContent.slice(emailContent.search("token=") + 6)
+    const beginToken = emailBody.Text.indexOf("token=") + 6
+    const endToken = emailBody.Text.slice(beginToken).indexOf("\n") + beginToken
+    const token = emailBody.Text.slice(beginToken, endToken)
+
     const verifyResponse = await apiFetch("/api/verify-email/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
