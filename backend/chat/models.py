@@ -86,10 +86,12 @@ class UserManager(BaseUserManager):
 
 class User(CleanOnSaveMixin, AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique = True)
+
     has_verified_email = models.BooleanField(default = False)
     is_active = models.BooleanField(default = False)
     is_guest = models.BooleanField(default = False)
     is_staff = models.BooleanField(default = False)
+
     created_at = models.DateTimeField(auto_now_add = True)
 
     objects: UserManager = UserManager()
@@ -109,13 +111,13 @@ class User(CleanOnSaveMixin, AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"User with email {self.email} created at {self.created_at}."
 
-class UserPreferences(CleanOnSaveMixin, models.Model):
+class UserPreferences(CleanOnSaveMixin):
     user = models.OneToOneField(User, models.CASCADE, related_name = "preferences")
+
+    has_sidebar_open = models.BooleanField(default = True)
 
     language = models.CharField(blank = True, default = "", choices = [[c, c] for c in ["", "English", "Português"]])
     theme = models.CharField(default = "System", choices = [[c, c] for c in ["System", "Light", "Dark"]])
-
-    has_sidebar_open = models.BooleanField(default = True)
 
     custom_instructions = models.CharField(max_length = 1000, blank = True)
     nickname = models.CharField(max_length = 50, blank = True)
@@ -133,11 +135,12 @@ class UserPreferences(CleanOnSaveMixin, models.Model):
     def __str__(self):
         return f"Preferences for {self.user.email}."
 
-class UserMFA(CleanOnSaveMixin, models.Model):
+class UserMFA(CleanOnSaveMixin):
     user = models.OneToOneField(User, models.CASCADE, related_name = "mfa")
+
+    is_enabled = models.BooleanField(default = False)
     secret = models.BinaryField(max_length = 140)
     backup_codes = models.JSONField(default = list, blank = True)
-    is_enabled = models.BooleanField(default = False)
 
     def verify(self, code: str):
         if type(code) != str:
@@ -211,7 +214,7 @@ class UserMFA(CleanOnSaveMixin, models.Model):
     def __str__(self):
         return f"MFA for {self.user.email}."
 
-class UserSession(CleanOnSaveMixin, models.Model):
+class UserSession(CleanOnSaveMixin):
     class Meta:
         verbose_name = "User Session"
         verbose_name_plural = "User Sessions"
@@ -233,7 +236,7 @@ class UserSession(CleanOnSaveMixin, models.Model):
     def __str__(self):
         return f"Session created at {self.login_at} for {self.user.email}."
 
-class EmailVerificationToken(CleanOnSaveMixin, models.Model):
+class EmailVerificationToken(CleanOnSaveMixin):
     user = models.ForeignKey(User, models.CASCADE, related_name = "email_verification_tokens")
 
     token_hash = models.CharField(max_length = 128)
@@ -245,7 +248,10 @@ class EmailVerificationToken(CleanOnSaveMixin, models.Model):
     def is_valid(self):
         return self.used_at is None and self.expires_at > timezone.now()
 
-class PreAuthToken(CleanOnSaveMixin, models.Model):
+    def __str__(self):
+        return f"Email verification token created at {self.created_at} owned by {self.user.email}."
+
+class PreAuthToken(CleanOnSaveMixin):
     user = models.ForeignKey(User, models.CASCADE, related_name = "pre_auth_tokens")
 
     token_hash = models.CharField(max_length = 128)
@@ -259,7 +265,7 @@ class PreAuthToken(CleanOnSaveMixin, models.Model):
     def __str__(self):
         return f"Pre-authentication token created at {self.created_at} owned by {self.user.email}."
 
-class PasswordResetToken(CleanOnSaveMixin, models.Model):
+class PasswordResetToken(CleanOnSaveMixin):
     user = models.ForeignKey(User, models.CASCADE, related_name = "password_reset_tokens")
 
     token_fingerprint = models.CharField(max_length = 64, db_index = True)
@@ -273,13 +279,18 @@ class PasswordResetToken(CleanOnSaveMixin, models.Model):
     def is_valid(self):
         return self.used_at is None and timezone.now() < self.expires_at
 
-class Chat(CleanOnSaveMixin, models.Model):
+    def __str__(self):
+        return f"Password reset token created at {self.created_at} owned by {self.user.email}."
+
+class Chat(CleanOnSaveMixin):
     user = models.ForeignKey(User, models.CASCADE, related_name = "chats")
+
     uuid = models.UUIDField(primary_key = True, default = uuid.uuid4, editable = False)
     title = models.CharField(max_length = 200)
     pending_message: Message | None = models.OneToOneField("Message", models.CASCADE, related_name = "pending_message", blank = True, null = True)
     is_archived = models.BooleanField(default = False)
     is_temporary = models.BooleanField(default = False)
+
     created_at = models.DateTimeField(auto_now_add = True)
 
     messages: BaseManager[Message]
@@ -291,11 +302,13 @@ class Chat(CleanOnSaveMixin, models.Model):
     def __str__(self):
         return f"Chat titled {self.title} created at {self.created_at} owned by {self.user.email}."
 
-class Message(CleanOnSaveMixin, models.Model):
+class Message(CleanOnSaveMixin):
     chat = models.ForeignKey(Chat, models.CASCADE, related_name = "messages")
+
     text = models.TextField(blank = True)
     is_from_user = models.BooleanField()
     model = models.CharField(blank = True, choices = [[c, c] for c in ["", "SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]])
+
     last_modified_at = models.DateTimeField(auto_now = True)
     created_at = models.DateTimeField(auto_now_add = True)
 
@@ -308,11 +321,13 @@ class Message(CleanOnSaveMixin, models.Model):
     def __str__(self):
         return f"Message created at {self.created_at} in {self.chat.title} owned by {self.chat.user.email}."
 
-class MessageFile(CleanOnSaveMixin, models.Model):
+class MessageFile(CleanOnSaveMixin):
     message = models.ForeignKey(Message, models.CASCADE, related_name = "files")
+
     name = models.CharField(max_length = 200)
     content = models.BinaryField(max_length = 5_000_000)
     content_type = models.CharField(max_length = 100)
+
     created_at = models.DateTimeField(auto_now_add = True)
 
     @staticmethod
@@ -326,7 +341,7 @@ class MessageFile(CleanOnSaveMixin, models.Model):
     def __str__(self):
         return f"File of message named {self.name} created at {self.created_at} in {self.message} owned by {self.message.chat.user.email}."
 
-class GuestIdentity(CleanOnSaveMixin, models.Model):
+class GuestIdentity(CleanOnSaveMixin):
     user = models.OneToOneField(User, models.CASCADE, related_name = "guest_identity")
 
     ip_address = models.GenericIPAddressField(blank = True, null = True)
@@ -350,6 +365,9 @@ class GuestIdentity(CleanOnSaveMixin, models.Model):
         )
 
         return identity, token
+
+    def __str__(self):
+        return f"Guest identity with email {self.user.email} to expire at {self.expires_at} and created at {self.created_at}"
 
 def hash_user_agent(user_agent: str) -> str:
     return hashlib.sha256(user_agent.encode()).hexdigest()
