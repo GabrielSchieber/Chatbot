@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy as _
 from user_agents import parse
 
 def readable_user_agent(user_agent_raw: str | None) -> str:
@@ -12,7 +13,7 @@ def readable_user_agent(user_agent_raw: str | None) -> str:
         parts.append(ua.browser.family)
 
     if ua.os.family:
-        parts.append(f"on {ua.os.family}")
+        parts.append(f"{_("on")} {ua.os.family}")
 
     if ua.device.family and ua.device.family != "Other":
         parts.append(f"({ua.device.family})")

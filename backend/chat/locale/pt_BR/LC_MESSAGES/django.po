@@ -1,0 +1,106 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-08 00:05+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+#: backend/chat/templates/chat/password_reset.html:8
+#: backend/chat/templates/chat/password_reset.html:24
+#: backend/chat/views/user.py:404
+msgid "Reset your password"
+msgstr "Redefina sua senha"
+
+#: backend/chat/templates/chat/password_reset.html:32
+msgid "We received a request to reset the password for your account."
+msgstr "Recebemos uma solicitação para redefinir a senha da sua conta."
+
+#: backend/chat/templates/chat/password_reset.html:36
+msgid ""
+"\n"
+"                                Click the button below to choose a new "
+"password.\n"
+"                                This link will expire in <strong>15 minutes</"
+"strong>.\n"
+"                                "
+msgstr ""
+"\n"
+"Clique no botão abaixo para escolher uma nova senha"
+"Este link expirará em <strong>15 minutos</strong>."
+""
+
+#: backend/chat/templates/chat/password_reset.html:55
+msgid "Reset password"
+msgstr "Redefinir senha"
+
+#: backend/chat/templates/chat/password_reset.html:62
+msgid "If the button doesn’t work, copy and paste this link:"
+msgstr "Se o botão não funcionar, copie e cole este link:"
+
+#: backend/chat/templates/chat/password_reset.html:73
+msgid "Request details"
+msgstr "Detalhes da solicitação"
+
+#: backend/chat/templates/chat/password_reset.html:78
+msgid "Date and time"
+msgstr "Data e hora"
+
+#: backend/chat/templates/chat/password_reset.html:82
+msgid "IP address"
+msgstr "Endereço IP"
+
+#: backend/chat/templates/chat/password_reset.html:86
+msgid "Browser and device"
+msgstr "Navegador e dispositivo"
+
+#: backend/chat/templates/chat/password_reset.html:92
+msgid ""
+"If you didn’t request this, you can safely ignore this email. Your password "
+"will not be changed."
+msgstr "Se você não solicitou isso, pode ignorar este e-mail com segurança. Sua senha não será alterada."
+
+#: backend/chat/views/user.py:411
+#, python-brace-format
+msgid ""
+"We received a request to reset the password for your account.\n"
+"\n"
+"Reset link (expires in 15 minutes):\n"
+"{reset_url}\n"
+"\n"
+"Request details:\n"
+"Date and time: {time}\n"
+"IP address: {ip}\n"
+"Browser and device: {device}\n"
+"\n"
+"If you didn’t request this, you can safely ignore this email. Your password "
+"will not be changed."
+msgstr ""
+"Recebemos uma solicitação para redefinir a senha da sua conta.\n"
+"\n"
+"Link para redefinição (expira em 15 minutos):\n"
+"{reset_url}\n"
+"\n"
+"Detalhes da solicitação:\n"
+"Data e hora: {time}\n"
+"Endereço IP: {ip}\n"
+"Navegador e dispositivo: {device}\n"
+"\n"
+"Se você não solicitou isso, pode ignorar este e-mail com segurança. Sua senha "
+"não será alterada."
+
+#: backend/chat/views/utils.py:16
+#, python-brace-format
+msgid "on"
+msgstr "no"

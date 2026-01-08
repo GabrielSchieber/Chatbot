@@ -7,6 +7,8 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.formats import date_format
+from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -399,30 +401,25 @@ class RequestPasswordReset(APIView):
             expires_at = timezone.now() + timedelta(minutes = 15)
         )
 
-        subject = "Reset your password"
+        subject = _("Reset your password")
         reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
 
         device = readable_user_agent(request.user_agent_raw)
+        request_time = date_format(timezone.localtime(timezone.now()), "DATETIME_FORMAT")
 
-        message = (
-            "We received a request to reset your password.\n\n"
-            f"Reset link (expires in 15 minutes):\n{reset_url}\n\n"
-            f"Request details:\n"
-            f"Time: {timezone.localtime(timezone.now())}\n"
-            f"IP: {request.ip_address}\n"
-            f"Device: {device}\n\n"
-            "If you didn’t request this, ignore this email."
-        )
+        message = _(
+            "We received a request to reset the password for your account.\n\n"
+            "Reset link (expires in 15 minutes):\n{reset_url}\n\n"
+            "Request details:\n"
+            "Date and time: {time}\n"
+            "IP address: {ip}\n"
+            "Browser and device: {device}\n\n"
+            "If you didn’t request this, you can safely ignore this email. Your password will not be changed."
+        ).format(reset_url = reset_url, time = request_time, ip = request.ip_address, device = device)
 
         html_message = render_to_string(
             "chat/password_reset.html",
-            {
-                "reset_url": reset_url, 
-                "year": timezone.now().year,
-                "request_time": timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M:%S %Z"),
-                "ip_address": request.ip_address,
-                "user_agent": device
-            }
+            {"reset_url": reset_url, "year": timezone.now().year, "request_time": request_time, "ip_address": request.ip_address, "user_agent": device}
         )
 
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], html_message = html_message)
