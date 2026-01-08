@@ -15,12 +15,14 @@ test("user can sign up", async ({ page }) => {
 
     const emailData = await waitForEmail({ to: email, subject: "Verify your email" })
     const emailBody = await getEmailBody(emailData.ID)
-    const emailContent = emailBody.HTML || emailBody.Text
-    const verifyLink = emailContent.slice(emailContent.search("http://"))
+    const beginLink = emailBody.Text.indexOf("http://")
+    const endLink = emailBody.Text.slice(beginLink).indexOf("\n") + beginLink
+    const verifyLink = emailBody.Text.slice(beginLink, endLink)
 
     await page.goto(verifyLink)
     await page.waitForURL("/")
 
+    await expect(page.getByText("Chatbot")).toBeVisible()
     await expect(page.getByText("Log in")).not.toBeVisible()
     await expect(page.getByText("Sign up")).not.toBeVisible()
 
