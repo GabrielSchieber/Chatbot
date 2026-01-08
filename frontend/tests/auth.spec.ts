@@ -13,8 +13,8 @@ test("user can sign up", async ({ page }) => {
     await page.getByLabel("Confirm Password", { exact: true }).fill(password)
     await page.getByRole("button", { name: "Sign up", exact: true }).click()
 
-    const emailData = await waitForEmail({ page, to: email, subject: "Verify your email" })
-    const emailBody = await getEmailBody(page, emailData.ID)
+    const emailData = await waitForEmail({ to: email, subject: "Verify your email" })
+    const emailBody = await getEmailBody(emailData.ID)
     const emailContent = emailBody.HTML || emailBody.Text
     const verifyLink = emailContent.slice(emailContent.search("http://"))
 
