@@ -38,7 +38,7 @@ export default defineConfig({
     webServer: [
         {
             name: "Backend",
-            command: "cd ../backend && python manage.py flush --no-input && python manage.py runserver",
+            command: "python ../backend/manage.py testserver tests/fixture.json --no-input",
             port: 8000,
             reuseExistingServer: true,
             env: { "PLAYWRIGHT_TEST": "True" }
