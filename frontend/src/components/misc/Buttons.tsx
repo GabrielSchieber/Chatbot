@@ -163,6 +163,7 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
     const { chatUUID } = useParams()
 
     const { chats, setChats, setMessages } = useChat()
+    const notify = useNotify()
 
     const [isRotating, setIsRotating] = useState(false)
 
@@ -184,10 +185,10 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
                 setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
                 setIsRotating(true)
             } else {
-                alert(t("regenerateButton.alert.failed"))
+                notify(t("regenerateButton.alert.failed"), "error")
             }
         } else {
-            alert(t("regenerateButton.alert.noChat"))
+            notify(t("regenerateButton.alert.noChat"), "error")
         }
     }
 

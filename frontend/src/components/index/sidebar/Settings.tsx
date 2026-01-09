@@ -11,6 +11,7 @@ import { OpenSettings } from "../../misc/Buttons"
 import ConfirmDialog from "../../misc/ConfirmDialog"
 import { useAuth } from "../../../providers/AuthProvider"
 import { useChat } from "../../../providers/ChatProvider"
+import { useNotify } from "../../../providers/NotificationProvider"
 import { deleteChats, logout, logoutAllSessions, me } from "../../../utils/api"
 import { applyTheme, getLanguageAbbreviation } from "../../../utils/misc"
 import type { Language, Theme } from "../../../utils/types"
@@ -245,6 +246,7 @@ function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetState
 
 function DeleteChatsEntryItem() {
     const { setChats } = useChat()
+    const notify = useNotify()
     const { t } = useTranslation()
 
     async function handleDeleteChats() {
@@ -256,7 +258,7 @@ function DeleteChatsEntryItem() {
                 setChats([])
             }
         } else {
-            alert(t("dialogs.deleteChats.error"))
+            notify(t("dialogs.deleteChats.error"), "error")
         }
     }
 
