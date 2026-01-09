@@ -132,7 +132,10 @@ def get_message_dict(message: Message) -> dict[str, str]:
         file_contents = []
         for file in message.files.all():
             if "image" not in file.content_type:
-                file_contents.append(f"=== File: {file.name} ===\n{file.content.decode()}")
+                try:
+                    file_contents.append(f"=== File: {file.name} ===\n{file.content.decode()}")
+                except UnicodeDecodeError:
+                    pass
 
         content = f"{message.text}\n\nFiles:\n{"\n\n".join(file_contents)}" if len(file_contents) > 0 else message.text
 
