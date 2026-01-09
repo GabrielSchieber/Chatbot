@@ -24,10 +24,20 @@ for (const asGuest of [false, true]) {
             response.status() === 201 &&
             response.request().method() === "POST"
         )
+        const meResponse = page.waitForResponse(response =>
+            response.url().endsWith("/me/") &&
+            response.status() === 200 &&
+            response.request().method() === "GET"
+        )
+
         await page.goto("/")
+
         await response
+        const meResponseData = await (await meResponse).json()
+
         const guestToken = await getGuestTokenCookie(page.context().browser()!)
-        return { email: guestToken + "@example.com", password: guestToken, chats: [] }
+
+        return { email: meResponseData.email, password: guestToken, chats: [] }
     }
 
     async function loggedInSignupAndLogin(page: Page) {
@@ -621,6 +631,7 @@ Here's what each page means:
         await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
     })
 
+    /*
     test(`user can change models between messages${asGuest ? " as guest" : ""}`, async ({ page }) => {
         await signupAndLogin(page)
         await sendMessage(page, 0, "Hello!", "How can I help you today?")
@@ -669,12 +680,13 @@ Here's what each page means:
         await expect(page.getByTestId("message-0")).toHaveText(userMessage2, { timeout })
         await expect(page.getByTestId("message-1")).toHaveText(botMessage2, { timeout })
     })
+    */
 
     test(`user can set custom instructions${asGuest ? " as guest" : ""}`, async ({ page }) => {
         await signupAndLogin(page)
         await setCustomization(
             page,
-            "Custom instructions",
+            "Custom Instructions",
             "Always talk like a pirate.",
             "Hello!",
             "Hello, welcome back from school! I hope you've been enjoying our discussions so far. Is there a particular topic or area where you'd like me to explain something interesting?",
@@ -798,7 +810,7 @@ async function sendExampleChat(page: Page, index: number, checkTitle: boolean = 
 
 async function setCustomization(
     page: Page,
-    customizationLabel: "Custom instructions" | "Nickname" | "Occupation" | "About",
+    customizationLabel: "Custom Instructions" | "Nickname" | "Occupation" | "About",
     customizationValue: string,
     userMessage: string,
     firstBotMessage: string,

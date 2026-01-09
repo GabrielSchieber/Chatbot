@@ -29,20 +29,6 @@ export async function signupAndLogin(page: Page, withChats: boolean = false): Pr
     await page.goto(verifyLink)
     await page.waitForURL("/")
 
-    async function waitForPageToLoad() {
-        await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).not.toBeVisible()
-        if (page.viewportSize()!.width < 750) {
-            await expect(page.locator("p").getByText("Chatbot", { exact: true })).not.toBeVisible()
-        } else {
-            await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
-            await expect(page.getByRole("link", { name: "Log in", exact: true })).not.toBeVisible()
-            await expect(page.getByRole("link", { name: "Sign up", exact: true })).not.toBeVisible()
-            await expect(page.getByTestId("history").locator("a")).toHaveCount(withChats ? 14 : 0)
-        }
-    }
-
-    await waitForPageToLoad()
-
     let chats: Chat[] = []
     if (withChats) {
         const response = await apiFetch("/test/create-chats/", {
@@ -57,6 +43,16 @@ export async function signupAndLogin(page: Page, withChats: boolean = false): Pr
     }
 
     await page.reload()
+
+    await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).not.toBeVisible()
+    if (page.viewportSize()!.width < 750) {
+        await expect(page.locator("p").getByText("Chatbot", { exact: true })).not.toBeVisible()
+    } else {
+        await expect(page.locator("p").getByText("Chatbot", { exact: true })).toBeVisible()
+        await expect(page.getByRole("link", { name: "Log in", exact: true })).not.toBeVisible()
+        await expect(page.getByRole("link", { name: "Sign up", exact: true })).not.toBeVisible()
+        await expect(page.getByTestId("history").locator("a")).toHaveCount(withChats ? 14 : 0)
+    }
 
     return { email, password, chats }
 }

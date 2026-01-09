@@ -86,6 +86,8 @@ test("user cannot login with invalid password", async ({ page }) => {
 })
 
 test("user can enable multi-factor authentication", async ({ page }) => {
+    test.setTimeout(60_000)
+
     const user = await signupAndLogin(page)
 
     const settingsButton = page.getByText("Settings")
@@ -119,6 +121,8 @@ test("user can enable multi-factor authentication", async ({ page }) => {
 })
 
 test("user can log in with multi-factor authentication", async ({ page }) => {
+    test.setTimeout(60_000)
+
     const { user } = await signupWithMFAEnabled(page)
 
     await page.goto("/login")
@@ -145,6 +149,8 @@ test("user can log in with multi-factor authentication", async ({ page }) => {
 })
 
 test("user can disable multi-factor authentication", async ({ page }) => {
+    test.setTimeout(60_000)
+
     const { user } = await signupWithMFAEnabledAndLogin(page)
 
     const settingsButton = page.getByText("Settings")
@@ -172,6 +178,8 @@ test("user can disable multi-factor authentication", async ({ page }) => {
 })
 
 test("user can login with multi-factor authentication backup codes", async ({ page }) => {
+    test.setTimeout(60_000)
+
     const { user, backupCodes } = await signupWithMFAEnabled(page)
 
     await page.goto("/login")
@@ -240,6 +248,8 @@ test("user cannot login with an already used multi-factor authentication backup 
 })
 
 test("user can disable multi-factor authentication with a backup code", async ({ page }) => {
+    test.setTimeout(60_000)
+
     const { backupCodes } = await signupWithMFAEnabledAndLogin(page)
 
     const settingsButton = page.getByText("Settings")

@@ -19,7 +19,7 @@ test("user can see and toggle sidebar", async ({ page }) => {
 
     const header = page.getByRole("banner").locator("div")
 
-    await expect(header.getByRole("button")).toHaveCount(isWidthSmall ? 2 : 0)
+    await expect(header.getByRole("button")).toHaveCount(isWidthSmall ? 3 : 0)
     await expect(header.getByRole("link")).toHaveCount(isWidthSmall ? 1 : 0)
 
     const headerToggleSidebar = header.getByRole("button").first()
@@ -113,7 +113,7 @@ test("user can see and toggle sidebar with chats", async ({ page }, testInfo) =>
 
     const header = page.getByRole("banner").locator("div")
 
-    await expect(header.getByRole("button")).toHaveCount(isWidthSmall ? 2 : 0)
+    await expect(header.getByRole("button")).toHaveCount(isWidthSmall ? 3 : 0)
     await expect(header.getByRole("link")).toHaveCount(isWidthSmall ? 1 : 0)
 
     const headerToggleSidebar = header.getByRole("button").first()

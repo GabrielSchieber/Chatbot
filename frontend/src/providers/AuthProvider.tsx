@@ -15,6 +15,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const response = await me()
             if (response.ok) {
                 setUser(await response.json())
+                if (window.innerWidth < 750) {
+                    await me(undefined, undefined, false)
+                    setUser(previous => previous ? { ...previous, preferences: { ...previous.preferences, has_sidebar_open: false } } : previous)
+                }
                 setLoading(false)
                 return
             }

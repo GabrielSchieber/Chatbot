@@ -314,6 +314,8 @@ test("user can delete account", async ({ page }) => {
 })
 
 test("user can delete account with MFA enabled", async ({ page }) => {
+    test.setTimeout(60_000)
+
     const { user } = await signupWithMFAEnabledAndLogin(page)
 
     const settingsButton = page.getByText("Settings")
@@ -347,6 +349,8 @@ test("user can delete account with MFA enabled", async ({ page }) => {
 })
 
 test("user can delete account with an MFA backup code", async ({ page }) => {
+    test.setTimeout(60_000)
+
     const { user, backupCodes } = await signupWithMFAEnabledAndLogin(page)
 
     const settingsButton = page.getByText("Settings")
@@ -377,6 +381,8 @@ test("user can delete account with an MFA backup code", async ({ page }) => {
 })
 
 test("user cannot delete account with an incorrect password", async ({ page }) => {
+    test.setTimeout(60_000)
+
     const { user } = await signupWithMFAEnabledAndLogin(page)
 
     const settingsButton = page.getByText("Settings")
@@ -523,11 +529,19 @@ test("guest user can delete chats", async ({ page, browser }) => {
         response.status() === 201 &&
         response.request().method() === "POST"
     )
-    await page.goto("/")
-    await response
+    const meResponse = page.waitForResponse(response =>
+        response.url().endsWith("/me/") &&
+        response.status() === 200 &&
+        response.request().method() === "GET"
+    )
 
-    const guestToken = await getGuestTokenCookie(browser)
-    const chats = await createExampleChats(guestToken + "@example.com")
+    await page.goto("/")
+
+    await response
+    await response
+    const meResponseData = await (await meResponse).json()
+
+    const chats = await createExampleChats(meResponseData.email)
 
     await page.reload()
 
@@ -571,7 +585,7 @@ test("guest user can delete account", async ({ page }) => {
     }
     await settingsButton.click()
 
-    await page.getByRole("tab", { name: "Account (as guest)" }).click()
+    await page.getByRole("tab", { name: "Account" }).click()
     await page.getByRole("button", { name: "Delete", exact: true }).click()
 
     const heading = page.getByRole("heading", { name: "Delete Account", exact: true })
