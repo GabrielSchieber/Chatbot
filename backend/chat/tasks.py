@@ -125,9 +125,9 @@ def get_message_dict(message: Message) -> dict[str, str]:
         for file in message.files.all():
             if "image" in file.content_type:
                 os.makedirs("chat_temp", exist_ok = True)
-                with open(f"chat_temp/{file.name}", "wb+") as writer:
+                with open(f"chat_temp/{file.pk}_{file.name}", "wb+") as writer:
                     writer.write(file.content)
-                images.append(f"chat_temp/{file.name}")
+                images.append(f"chat_temp/{file.pk}_{file.name}")
 
         file_contents = []
         for file in message.files.all():
