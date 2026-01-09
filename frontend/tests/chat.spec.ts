@@ -1,4 +1,4 @@
-import { Browser, Page, expect, test } from "@playwright/test"
+import { Page, expect, test } from "@playwright/test"
 import { User, apiFetch, getGuestTokenCookie, signupAndLogin as utilsSignupAndLogin } from "./utils"
 
 test.beforeEach(async ({ page }) => {
@@ -17,8 +17,8 @@ test.beforeEach(async ({ page }) => {
     })
 })
 
-for (const asGuest of [false]) {
-    async function guestSignupAndLogin(page: Page, browser: Browser): Promise<User> {
+for (const asGuest of [false, true]) {
+    async function guestSignupAndLogin(page: Page): Promise<User> {
         const response = page.waitForResponse(response =>
             response.url().endsWith("/authenticate-as-guest/") &&
             response.status() === 201 &&
@@ -26,24 +26,24 @@ for (const asGuest of [false]) {
         )
         await page.goto("/")
         await response
-        const guestToken = await getGuestTokenCookie(browser)
+        const guestToken = await getGuestTokenCookie(page.context().browser()!)
         return { email: guestToken + "@example.com", password: guestToken, chats: [] }
     }
 
-    async function loggedInSignupAndLogin(page: Page, browser: Browser) {
+    async function loggedInSignupAndLogin(page: Page) {
         return await utilsSignupAndLogin(page, false)
     }
 
     const signupAndLogin = asGuest ? guestSignupAndLogin : loggedInSignupAndLogin
 
-    test(`user can chat with bot${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can chat with bot${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
         await sendExampleChat(page, 0)
         await sendExampleChat(page, 1)
     })
 
-    test(`user can chat with bot with a file${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can chat with bot with a file${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
 
         const message = "Describe the following file in a concise way."
         const fileName = "about-cats.txt"
@@ -84,8 +84,8 @@ for (const asGuest of [false]) {
         await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
     })
 
-    test(`user can chat with bot with multiple files${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can chat with bot with multiple files${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
 
         const message = "Describe the files."
         const file1Name = "about-cats.txt"
@@ -134,8 +134,8 @@ def create_cat_object():
         await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
     })
 
-    test(`user can remove attached file before sending message${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can remove attached file before sending message${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
 
         const message = "Hello!"
         const fileName = "about-cats.txt"
@@ -178,8 +178,8 @@ def create_cat_object():
         await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
     })
 
-    test(`user can remove one attached file from many existing ones before sending message${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can remove one attached file from many existing ones before sending message${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
 
         const message = "Describe the files briefly."
         const file1Name = "about-cats.txt"
@@ -233,8 +233,8 @@ Purpose of this file to provide assistance on cat care and`
         await expect(page.getByTestId("history").getByRole("link").first()).toBeVisible()
     })
 
-    test(`user can copy their own message${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can copy their own message${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
         await sendExampleChat(page, 0)
 
         const copyButtons = page.getByTestId("copy")
@@ -243,8 +243,8 @@ Purpose of this file to provide assistance on cat care and`
         await expectClipboard(page, exampleChats[0].messages[0])
     })
 
-    test(`user can copy bot messages${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can copy bot messages${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
         await sendExampleChat(page, 0)
 
         const copyButtons = page.getByTestId("copy")
@@ -253,8 +253,8 @@ Purpose of this file to provide assistance on cat care and`
         await expectClipboard(page, exampleChats[0].messages[1])
     })
 
-    test(`user can edit their message${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can edit their message${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
         await sendExampleChat(page, 0)
 
         const firstUserMessage = exampleChats[0].messages[0]
@@ -281,8 +281,8 @@ Purpose of this file to provide assistance on cat care and`
         await expect(stopButton).not.toBeVisible()
     })
 
-    test(`user can edit their message and attach a file${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can edit their message and attach a file${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
         await sendExampleChat(page, 0)
 
         const firstUserMessage = exampleChats[0].messages[0]
@@ -327,8 +327,8 @@ Use it in a day === A lot of times, most days, but more often`
         await expect(stopButton).not.toBeVisible()
     })
 
-    test(`user can edit their message and remove a file${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can edit their message and remove a file${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
 
         const userMessage1 = "Describe the following file in a concise way."
         const fileName = "about-cats.txt"
@@ -386,8 +386,8 @@ Use it in a day === A lot of times, most days, but more often`
         await expect(stopButton).not.toBeVisible()
     })
 
-    test(`user can add and remove files while editing their message${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        const user = await signupAndLogin(page, browser)
+    test(`user can add and remove files while editing their message${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        const user = await signupAndLogin(page)
 
         const userMessageText = "Describe the files."
 
@@ -514,8 +514,8 @@ Here's what each page means:
         await checkFileVisibilityInMessage(userMessage2FileName, true)
     })
 
-    test(`user can regenerate messages${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can regenerate messages${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
         await sendExampleChat(page, 0)
 
         const firstUserMessage = exampleChats[0].messages[0]
@@ -544,8 +544,8 @@ Here's what each page means:
         await expect(stopButton).not.toBeVisible()
     })
 
-    test(`user can delete chats${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can delete chats${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
 
         await sendExampleChat(page, 0)
         await sendExampleChat(page, 1)
@@ -599,8 +599,8 @@ Here's what each page means:
         await expect(page.getByText("You don't have any chats.", { exact: true })).toBeVisible()
     })
 
-    test(`user can create new chat${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can create new chat${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
         await sendExampleChat(page, 0)
 
         await expect(page.getByTestId("message-0")).toBeVisible({ timeout })
@@ -621,8 +621,8 @@ Here's what each page means:
         await expect(page.getByRole("heading", { name: "How can I help you today?", exact: true })).toBeVisible()
     })
 
-    test(`user can change models between messages${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can change models between messages${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
         await sendMessage(page, 0, "Hello!", "How can I help you today?")
 
         const dropdownTrigger = page.getByLabel("Add files and more")
@@ -638,8 +638,8 @@ Here's what each page means:
         await sendMessage(page, 2, "Hello again!", "Please make it into a sentence, please, what's your question?")
     })
 
-    test(`user can change models while editing a message${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can change models while editing a message${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
 
         const userMessage1 = "Hello!"
         const userMessage2 = "Hello again!"
@@ -670,8 +670,8 @@ Here's what each page means:
         await expect(page.getByTestId("message-1")).toHaveText(botMessage2, { timeout })
     })
 
-    test(`user can set custom instructions${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can set custom instructions${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
         await setCustomization(
             page,
             "Custom instructions",
@@ -682,8 +682,8 @@ Here's what each page means:
         )
     })
 
-    test(`user can set their nickname${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can set their nickname${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
         await setCustomization(
             page,
             "Nickname",
@@ -694,8 +694,8 @@ Here's what each page means:
         )
     })
 
-    test(`user can set their occupation${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can set their occupation${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
         await setCustomization(
             page,
             "Occupation",
@@ -710,8 +710,8 @@ Here's what each page means:
         )
     })
 
-    test(`user can set information about them${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can set information about them${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
         await setCustomization(
             page,
             "About",
@@ -725,8 +725,8 @@ Please go ahead and ask for a person's assistance!`,
         )
     })
 
-    test(`user can chat temporarily${asGuest ? " as guest" : ""}`, async ({ page, browser }) => {
-        await signupAndLogin(page, browser)
+    test(`user can chat temporarily${asGuest ? " as guest" : ""}`, async ({ page }) => {
+        await signupAndLogin(page)
 
         await page.getByRole("button", { name: "Temporary" }).click()
 

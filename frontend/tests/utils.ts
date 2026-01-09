@@ -148,7 +148,7 @@ export async function getGuestTokenCookie(browser: Browser) {
         }
     }
     expect(guestToken).toBeDefined()
-    expect(guestToken).toHaveLength(36)
+    expect(guestToken).toHaveLength(43)
     if (typeof (guestToken) !== "string") {
         throw Error("typeof(guestToken) !== string")
     }
