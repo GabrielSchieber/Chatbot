@@ -1,14 +1,14 @@
 import { t } from "i18next"
 import { useEffect } from "react"
 
-export default function TextArea({ ref, text, setText, sendMessageWithEvent, selectionStart, selectionEnd, tabIndex = 1 }: {
+export default function TextArea({ ref, text, setText, sendMessageWithEvent, selectionStart, selectionEnd, tabIndex }: {
     ref: React.RefObject<HTMLTextAreaElement | null>
     text: string
     setText: React.Dispatch<React.SetStateAction<string>>
     sendMessageWithEvent: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
-    selectionStart?: React.RefObject<number>
-    selectionEnd?: React.RefObject<number>
-    tabIndex?: number
+    selectionStart: React.RefObject<number>
+    selectionEnd: React.RefObject<number>
+    tabIndex: number
 }) {
     useEffect(() => {
         if (!ref.current) return
@@ -30,8 +30,8 @@ export default function TextArea({ ref, text, setText, sendMessageWithEvent, sel
             placeholder={t("textarea.placeholder")}
             onChange={e => {
                 setText(e.target.value)
-                if (selectionStart) selectionStart.current = e.target.selectionStart
-                if (selectionEnd) selectionEnd.current = e.target.selectionEnd
+                selectionStart.current = e.target.selectionStart
+                selectionEnd.current = e.target.selectionEnd
             }}
             onKeyDown={sendMessageWithEvent}
             tabIndex={tabIndex}

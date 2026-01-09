@@ -11,7 +11,7 @@ import { useNotify } from "../../providers/NotificationProvider"
 import { archiveChat, deleteChat, regenerateMessage, renameChat, unarchiveChat } from "../../utils/api"
 import type { Chat, Model } from "../../utils/types"
 
-export function AddFilesButton({ fileInputRef, tabIndex = 2 }: { fileInputRef: RefObject<HTMLInputElement | null>, tabIndex?: number }) {
+export function AddFilesButton({ fileInputRef, tabIndex }: { fileInputRef: RefObject<HTMLInputElement | null>, tabIndex: number }) {
     return (
         <TooltipButton
             trigger={<PlusIcon className="size-6" />}
@@ -25,7 +25,7 @@ export function AddFilesButton({ fileInputRef, tabIndex = 2 }: { fileInputRef: R
 }
 
 export function SelectModelButton(
-    { model, setModel, isMobile, tabIndex = 2 }: { model: Model, setModel: Dispatch<SetStateAction<Model>>, isMobile: boolean, tabIndex?: number }
+    { model, setModel, isMobile, tabIndex }: { model: Model, setModel: Dispatch<SetStateAction<Model>>, isMobile: boolean, tabIndex: number }
 ) {
     return (
         <Select.Root value={model} onValueChange={v => setModel(v as Model)}>
@@ -77,7 +77,7 @@ export function SelectModelButton(
     )
 }
 
-export function SendButton({ sendMessage, isDisabled, tabIndex = 2 }: { sendMessage: () => void, isDisabled: boolean, tabIndex?: number }) {
+export function SendButton({ sendMessage, isDisabled, tabIndex }: { sendMessage: () => void, isDisabled: boolean, tabIndex: number }) {
     return (
         <TooltipButton
             trigger={<ArrowUpIcon className="size-6" />}
@@ -92,7 +92,7 @@ export function SendButton({ sendMessage, isDisabled, tabIndex = 2 }: { sendMess
     )
 }
 
-export function StopButton({ onClick, tabIndex = 2 }: { onClick: VoidFunction, tabIndex?: number }) {
+export function StopButton({ onClick, tabIndex }: { onClick: VoidFunction, tabIndex: number }) {
     return (
         <TooltipButton
             trigger={<PauseIcon className="size-6" />}
@@ -106,7 +106,7 @@ export function StopButton({ onClick, tabIndex = 2 }: { onClick: VoidFunction, t
     )
 }
 
-export function CancelButton({ setIndex, tabIndex = 2 }: { setIndex: React.Dispatch<React.SetStateAction<number>>, tabIndex?: number }) {
+export function CancelButton({ setIndex, tabIndex }: { setIndex: React.Dispatch<React.SetStateAction<number>>, tabIndex: number }) {
     return (
         <TooltipButton
             trigger={<Cross2Icon className="size-6" />}

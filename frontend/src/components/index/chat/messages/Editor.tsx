@@ -184,7 +184,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
             model={model}
             setModel={setModel}
             withBorderAndShadow={false}
-            tabIndex={3}
+            tabIndex={8}
             ariaLabel="Edit message"
             onChangeFile={handleFileChange}
             onRemoveFile={removeFile}

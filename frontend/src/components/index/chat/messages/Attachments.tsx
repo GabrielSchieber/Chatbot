@@ -5,12 +5,15 @@ import { MAX_FILE_SIZE, MAX_FILES } from "../../Chat"
 import { getFileSize, getFileType } from "../../../../utils/misc"
 import type { MessageFile } from "../../../../utils/types"
 
-export default function Attachments({ files, onRemove, onRemoveAll }: { files: MessageFile[], onRemove?: (file: MessageFile) => void, onRemoveAll?: () => void }) {
+export default function Attachments(
+    { files, onRemove, onRemoveAll, tabIndex }:
+        { files: MessageFile[], onRemove?: (file: MessageFile) => void, onRemoveAll?: () => void, tabIndex?: number }
+) {
     return (
         <div className="flex flex-1 gap-1 justify-between">
             <div className="flex flex-col gap-1 items-start">
                 {files.map(f => (
-                    <Attachment key={f.id} file={f} onRemove={onRemove} />
+                    <Attachment key={f.id} file={f} onRemove={onRemove} tabIndex={tabIndex ? tabIndex + 1 : undefined} />
                 ))}
                 {files.length > 0 &&
                     <div className="flex gap-1 text-sm">
@@ -26,7 +29,13 @@ export default function Attachments({ files, onRemove, onRemoveAll }: { files: M
 
             {onRemoveAll && files.length > 0 &&
                 <div>
-                    <button type="button" className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/40" onClick={onRemoveAll} tabIndex={3} data-testid="remove-all-attachments-button">
+                    <button
+                        type="button"
+                        className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/40"
+                        onClick={onRemoveAll}
+                        tabIndex={tabIndex}
+                        data-testid="remove-all-attachments-button"
+                    >
                         <Cross1Icon className="size-3.5" />
                     </button>
                 </div>
@@ -35,7 +44,7 @@ export default function Attachments({ files, onRemove, onRemoveAll }: { files: M
     )
 }
 
-function Attachment({ file, onRemove }: { file: MessageFile, onRemove?: (file: MessageFile) => void }) {
+function Attachment({ file, onRemove, tabIndex }: { file: MessageFile, onRemove?: (file: MessageFile) => void, tabIndex?: number }) {
     return (
         <div className="flex px-2 py-1 gap-1 items-center rounded-md bg-gray-800 light:bg-gray-200">
             {getFileType(file.name) === "Image" ? (
@@ -49,7 +58,13 @@ function Attachment({ file, onRemove }: { file: MessageFile, onRemove?: (file: M
                 Size: {getFileSize(file.content_size)}
             </div>
             {onRemove &&
-                <button type="button" className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/40" onClick={() => onRemove(file)} tabIndex={3} data-testid={`remove-attachment-button-${file.name}`}>
+                <button
+                    type="button"
+                    className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/40"
+                    onClick={() => onRemove(file)}
+                    tabIndex={tabIndex}
+                    data-testid={`remove-attachment-button-${file.name}`}
+                >
                     <Cross1Icon className="size-3.5" />
                 </button>
             }

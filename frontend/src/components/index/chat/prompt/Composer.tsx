@@ -105,7 +105,7 @@ export default function Composer({
             {isExtended ? (
                 <>
                     <div className="flex flex-col gap-1 overflow-x-hidden overflow-y-auto">
-                        <Files files={files} onRemoveFile={onRemoveFile} onRemoveAllFiles={onRemoveAllFiles} overflowYAuto={false} />
+                        <Files files={files} onRemoveFile={onRemoveFile} onRemoveAllFiles={onRemoveAllFiles} overflowYAuto={false} tabIndex={tabIndex + 5} />
                         <TextArea
                             ref={textAreaRef}
                             text={text}
@@ -118,24 +118,24 @@ export default function Composer({
                     </div>
 
                     <div className="flex gap-1 items-center justify-between">
-                        <AddFilesButton fileInputRef={fileInputRef} />
+                        <AddFilesButton fileInputRef={fileInputRef} tabIndex={tabIndex + 1} />
 
                         <div className="flex gap-1">
-                            <SelectModelButton model={model} setModel={setModel} isMobile={isMobile} />
-                            {setIndex && <CancelButton setIndex={setIndex!} tabIndex={tabIndex + 1} />}
+                            <SelectModelButton model={model} setModel={setModel} isMobile={isMobile} tabIndex={tabIndex + 2} />
+                            {setIndex && <CancelButton setIndex={setIndex!} tabIndex={tabIndex + 3} />}
                             {pendingChat !== undefined && pendingChat !== null ? (
-                                <StopButton onClick={onStopClick} tabIndex={tabIndex + 1} />
+                                <StopButton onClick={onStopClick} tabIndex={tabIndex + 4} />
                             ) : (
-                                <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} tabIndex={tabIndex + 1} />
+                                <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} tabIndex={tabIndex + 4} />
                             )}
                         </div>
                     </div>
                 </>
             ) : (
                 <>
-                    <Files files={files} onRemoveFile={onRemoveFile} onRemoveAllFiles={onRemoveAllFiles} overflowYAuto={true} />
+                    <Files files={files} onRemoveFile={onRemoveFile} onRemoveAllFiles={onRemoveAllFiles} overflowYAuto={true} tabIndex={tabIndex + 5} />
                     <div className="flex min-h-fit gap-1 items-center overflow-x-hidden overflow-y-auto">
-                        <AddFilesButton fileInputRef={fileInputRef} />
+                        <AddFilesButton fileInputRef={fileInputRef} tabIndex={tabIndex + 1} />
 
                         <TextArea
                             ref={textAreaRef}
@@ -147,12 +147,12 @@ export default function Composer({
                             tabIndex={tabIndex}
                         />
 
-                        <SelectModelButton model={model} setModel={setModel} isMobile={isMobile} />
-                        {setIndex && <CancelButton setIndex={setIndex} tabIndex={tabIndex + 1} />}
+                        <SelectModelButton model={model} setModel={setModel} isMobile={isMobile} tabIndex={tabIndex + 2} />
+                        {setIndex && <CancelButton setIndex={setIndex} tabIndex={tabIndex + 3} />}
                         {pendingChat !== undefined && pendingChat !== null ? (
-                            <StopButton onClick={onStopClick} tabIndex={tabIndex + 1} />
+                            <StopButton onClick={onStopClick} tabIndex={tabIndex + 4} />
                         ) : (
-                            <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} tabIndex={tabIndex + 1} />
+                            <SendButton sendMessage={sendMessage} isDisabled={isSendButtonDisabled} tabIndex={tabIndex + 4} />
                         )}
                     </div>
                 </>
@@ -165,12 +165,14 @@ export function Files({
     files,
     onRemoveFile,
     onRemoveAllFiles,
-    overflowYAuto
+    overflowYAuto,
+    tabIndex
 }: {
     files: MessageFile[]
     onRemoveFile: (file: MessageFile) => void
     onRemoveAllFiles: () => void
-    overflowYAuto: boolean
+    overflowYAuto: boolean,
+    tabIndex: number
 }) {
     return (
         <>
@@ -182,7 +184,7 @@ export function Files({
                         ${overflowYAuto && "overflow-x-hidden overflow-y-auto"}
                     `}
                 >
-                    <Attachments files={files} onRemove={onRemoveFile} onRemoveAll={onRemoveAllFiles} />
+                    <Attachments files={files} onRemove={onRemoveFile} onRemoveAll={onRemoveAllFiles} tabIndex={tabIndex} />
                 </div>
             )}
         </>
