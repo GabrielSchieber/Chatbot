@@ -18,8 +18,8 @@ class ChatAdmin(admin.ModelAdmin):
     inlines = (MessageInline,)
 
     class Media:
-        css = {"all": ("admin/static/chat/css/admin_pending_message.css",)}
-        js = ("admin/static/chat/js/admin_pending.js",)
+        css = {"all": ("chat/css/admin_pending_message.css",)}
+        js = ("chat/js/admin_pending.js",)
 
     readonly_fields = ("user_link", "display_uuid", "pending_message_display", "created_at_display")
     fieldsets = (
