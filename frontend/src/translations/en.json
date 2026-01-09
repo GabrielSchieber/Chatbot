@@ -113,7 +113,7 @@
     "mfa.placeholders.sixDigitCode": "6-digit code",
     "mfa.labels.secret": "Secret:",
     "mfa.labels.recoveryFileName": "Recovery Codes.txt",
-    "addFilesButton.tooltip": "Add files and more",
+    "addFilesButton.tooltip": "Add files",
     "selectModelButton.tooltip": "Select model",
     "sendButton.tooltip": "Send",
     "stopButton.tooltip": "Stop",
