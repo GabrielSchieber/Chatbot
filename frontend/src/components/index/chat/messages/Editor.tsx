@@ -84,16 +84,27 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
         }
     }
 
-    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
         if (!e.target.files) return
+
+        const newFiles = []
+        for (const file of e.target.files) {
+            if (!file.type.includes("image") && (await file.text()).includes("�")) {
+                notify(t("prompt.file.error.invalidType", { removedFile: file.name }), "error")
+            } else {
+                newFiles.push(file)
+            }
+        }
+        if (newFiles.length === 0) {
+            e.target.value = ""
+            return
+        }
 
         if (getCurrentFiles().length + e.target.files.length > MAX_FILES) {
             notify(t("prompt.file.error.tooMany", { max: MAX_FILES }), "error")
             e.target.value = ""
             return
         }
-
-        const newFiles = Array.from(e.target.files)
 
         if (newFiles.some(f => f.size === 0)) {
             notify(t("prompt.file.error.empty"), "error")

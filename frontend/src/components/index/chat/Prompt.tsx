@@ -193,7 +193,7 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
     )
 }
 
-export function handleFileChange(
+export async function handleFileChange(
     e: React.ChangeEvent<HTMLInputElement>,
     files: File[],
     setFiles: React.Dispatch<React.SetStateAction<File[]>>,
@@ -201,13 +201,24 @@ export function handleFileChange(
 ) {
     if (!e.target.files) return
 
-    if (files.length + e.target.files.length > MAX_FILES) {
-        notify(t("prompt.file.error.tooMany", { max: MAX_FILES }), "error")
+    const newFiles = []
+    for (const file of e.target.files) {
+        if (!file.type.includes("image") && (await file.text()).includes("�")) {
+            notify(t("prompt.file.error.invalidType", { removedFile: file.name }), "error")
+        } else {
+            newFiles.push(file)
+        }
+    }
+    if (newFiles.length === 0) {
         e.target.value = ""
         return
     }
 
-    const newFiles = Array.from(e.target.files)
+    if (newFiles.length + newFiles.length > MAX_FILES) {
+        notify(t("prompt.file.error.tooMany", { max: MAX_FILES }), "error")
+        e.target.value = ""
+        return
+    }
 
     if (newFiles.some(f => f.size === 0)) {
         notify(t("prompt.file.error.empty"), "error")
