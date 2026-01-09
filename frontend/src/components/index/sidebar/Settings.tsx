@@ -247,18 +247,17 @@ function DeleteChatsEntryItem() {
     const { setChats } = useChat()
     const { t } = useTranslation()
 
-    function handleDeleteChats() {
-        deleteChats().then(response => {
-            if (response.ok) {
-                if (location.pathname.includes("chat")) {
-                    location.href = "/"
-                } else {
-                    setChats([])
-                }
+    async function handleDeleteChats() {
+        const response = await deleteChats()
+        if (response.ok) {
+            if (location.pathname.includes("chat")) {
+                location.href = "/"
             } else {
-                alert(t("dialogs.deleteChats.error"))
+                setChats([])
             }
-        })
+        } else {
+            alert(t("dialogs.deleteChats.error"))
+        }
     }
 
     return (
