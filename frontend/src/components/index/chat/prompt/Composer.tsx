@@ -39,7 +39,7 @@ export default function Composer({
     sendMessageWithEvent: (e: KeyboardEvent<HTMLTextAreaElement>) => void | (() => void)
     setIndex?: Dispatch<SetStateAction<number>>
 }) {
-    const { chats, setChats, isLoading, isMobile } = useChat()
+    const { chats, setChats, isMobile } = useChat()
 
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -51,7 +51,7 @@ export default function Composer({
     const [isWidthSmall, setIsWidthSmall] = useState(window.innerWidth < 425)
 
     const pendingChat = chats.find(c => c.pending_message_id !== null)
-    const isSendButtonDisabled = (text.trim() === "" && files.length === 0) || pendingChat !== undefined || isLoading
+    const isSendButtonDisabled = (text.trim() === "" && files.length === 0) || pendingChat !== undefined
 
     function onStopClick() {
         stopPendingChats()

@@ -123,7 +123,7 @@ export function CancelButton({ setIndex, tabIndex }: { setIndex: React.Dispatch<
 export function EditButton({ onClick }: { onClick: () => void }) {
     const { chatUUID } = useParams()
 
-    const { chats, isLoading } = useChat()
+    const { chats } = useChat()
 
     const currentChat = chats.find(c => c.uuid === chatUUID)
     const pendingChat = chats.find(c => c.pending_message_id !== null)
@@ -135,7 +135,7 @@ export function EditButton({ onClick }: { onClick: () => void }) {
             onClick={onClick}
             type="button"
             className={messageButtonClassNames}
-            isDisabled={currentChat?.is_archived || pendingChat !== undefined || isLoading}
+            isDisabled={currentChat?.is_archived || pendingChat !== undefined}
             dataTestID="edit"
         />
     )
@@ -162,32 +162,30 @@ export function CopyButton({ text }: { text: string }) {
 export function RegenerateButton({ index, model }: { index: number, model: Model | null }) {
     const { chatUUID } = useParams()
 
-    const { chats, setChats, setMessages, isLoading } = useChat()
+    const { chats, setChats, setMessages } = useChat()
 
     const [isRotating, setIsRotating] = useState(false)
 
     const currentChat = chats.find(c => c.uuid === chatUUID)
     const pendingChat = chats.find(c => c.pending_message_id !== null)
 
-    function regenerate(model: Model) {
+    async function regenerate(model: Model) {
         if (chatUUID) {
-            regenerateMessage(chatUUID, index, model).then(response => {
-                if (response.ok) {
-                    setMessages(previous => {
-                        const previousMessages = [...previous]
-                        previousMessages[index].text = ""
-                        previousMessages[index].model = model
-                        return previousMessages
-                    })
+            const response = await regenerateMessage(chatUUID, index, model)
+            if (response.ok) {
+                setMessages(previous => {
+                    const previousMessages = [...previous]
+                    previousMessages[index].text = ""
+                    previousMessages[index].model = model
+                    return previousMessages
+                })
 
-                    response.json().then(chat => {
-                        setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
-                        setIsRotating(true)
-                    })
-                } else {
-                    alert(t("regenerateButton.alert.failed"))
-                }
-            })
+                const chat = await response.json()
+                setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
+                setIsRotating(true)
+            } else {
+                alert(t("regenerateButton.alert.failed"))
+            }
         } else {
             alert(t("regenerateButton.alert.noChat"))
         }
@@ -206,7 +204,7 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
                     <Tooltip.Trigger asChild>
                         <DropdownMenu.Trigger
                             className={messageButtonClassNames}
-                            disabled={currentChat?.is_archived || pendingChat !== undefined || isLoading}
+                            disabled={currentChat?.is_archived || pendingChat !== undefined}
                             data-testid="regenerate"
                         >
                             <UpdateIcon className={`size-4.5 ${isRotating && "animate-spin"}`} />
