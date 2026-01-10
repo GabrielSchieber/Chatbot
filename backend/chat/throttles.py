@@ -1,11 +1,12 @@
 import hashlib
 import os
 
+from django.conf import settings
 from rest_framework.throttling import AnonRateThrottle, SimpleRateThrottle, UserRateThrottle
 
 class DebugBypassThrottleMixin:
     def allow_request(self, request, view):
-        if os.getenv("DJANGO_TEST") == "True" or os.environ.get("PLAYWRIGHT_TEST") == "True":
+        if settings.DEBUG or os.getenv("DJANGO_TEST") == "True" or os.environ.get("PLAYWRIGHT_TEST") == "True":
             return True
         return super().allow_request(request, view)
 
@@ -15,7 +16,7 @@ class SignupRateThrottle(DebugBypassThrottleMixin, AnonRateThrottle):
 class RefreshRateThrottle(DebugBypassThrottleMixin, AnonRateThrottle):
     scope = "refresh"
 
-class RefreshTokenRateThrottle(SimpleRateThrottle):
+class RefreshTokenRateThrottle(DebugBypassThrottleMixin, SimpleRateThrottle):
     scope = "refresh_token"
 
     def get_cache_key(self, request, view):
