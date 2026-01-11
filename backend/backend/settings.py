@@ -121,6 +121,7 @@ REST_FRAMEWORK = {
         "refresh": "20/minute",
         "refresh_token": "10/minute",
         "mfa_token": "5/minute",
+        "message": "20/hours",
         "ip_email": "5/minute" 
     }
 }

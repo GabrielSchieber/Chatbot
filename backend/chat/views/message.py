@@ -6,12 +6,14 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
+
 from ..models import Chat, Message, MessageFile, User
 from ..serializers.chat import ChatSerializer, ChatUUIDSerializer
 from ..serializers.message import (
     EditMessageSerializer, GetMessageFileContentSerializer,
     MessageSerializer, NewMessageSerializer, RegenerateMessageSerializer
 )
+from ..throttles import MessageRateThrottle
 
 from ..tasks import generate_pending_message_in_chat, is_any_user_chat_pending
 
@@ -93,6 +95,7 @@ class GetMessages(APIView):
 class NewMessage(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
+    throttle_classes = [MessageRateThrottle]
 
     def post(self, request: Request):
         user: User = request.user
@@ -137,6 +140,7 @@ class NewMessage(APIView):
 class EditMessage(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
+    throttle_classes = [MessageRateThrottle]
 
     def patch(self, request: Request):
         user: User = request.user
@@ -209,6 +213,7 @@ class EditMessage(APIView):
 class RegenerateMessage(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
+    throttle_classes = [MessageRateThrottle]
 
     def patch(self, request: Request):
         user: User = request.user

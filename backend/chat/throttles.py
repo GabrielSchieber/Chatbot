@@ -2,7 +2,10 @@ import hashlib
 import os
 
 from django.conf import settings
+from rest_framework.request import Request
 from rest_framework.throttling import AnonRateThrottle, SimpleRateThrottle, UserRateThrottle
+
+from .models import User
 
 class DebugBypassThrottleMixin:
     def allow_request(self, request, view):
@@ -34,6 +37,13 @@ class MFATokenRateThrottle(DebugBypassThrottleMixin, SimpleRateThrottle):
         if not token:
             return None
         return f"mfa_token:{token}"
+
+class MessageRateThrottle(DebugBypassThrottleMixin, SimpleRateThrottle):
+    scope = "message"
+
+    def get_cache_key(self, request: Request, view):
+        user: User = request.user
+        return f"message:{user.email}"
 
 class IPEmailRateThrottle(DebugBypassThrottleMixin, AnonRateThrottle):
     scope = "ip_email"

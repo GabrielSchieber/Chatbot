@@ -150,6 +150,7 @@
     "prompt.file.error.sendFailed": "Falha ao enviar a mensagem.",
     "prompt.pendingNotificationPrefix": "Já existe uma mensagem sendo gerada em",
     "prompt.pendingNotificationSuffix": ".",
+    "generation.throttled": "Você atingiu o limite de geração de mensagens. Por favor, tente novamente em alguns minutos.",
     "textarea.placeholder": "Me pergunte qualquer coisa...",
     "search.placeholder": "Pesquisar conversas...",
     "search.loading": "Carregando...",

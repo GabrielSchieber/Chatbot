@@ -69,6 +69,8 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
                 const file_ids: number[][] = await fileIDsResponse.json()
                 setMessages(previous => previous.map((m, i) => ({ ...m, files: m.files.map((f, j) => ({ ...f, id: file_ids[i][j] })) })))
             }
+        } else if (response.status === 429) {
+            notify(t("generation.throttled"), "error")
         } else {
             notify(t("prompt.file.error.sendFailed"), "error")
         }

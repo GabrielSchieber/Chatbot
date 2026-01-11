@@ -184,6 +184,8 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
                 const chat = await response.json()
                 setChats(previous => previous.map(c => c.uuid === chat.uuid ? chat : c))
                 setIsRotating(true)
+            } else if (response.status === 429) {
+                notify(t("generation.throttled"), "error")
             } else {
                 notify(t("regenerateButton.alert.failed"), "error")
             }

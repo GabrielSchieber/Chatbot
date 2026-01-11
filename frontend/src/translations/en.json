@@ -150,6 +150,7 @@
     "prompt.file.error.sendFailed": "Failed to send message.",
     "prompt.pendingNotificationPrefix": "A message is already being generated in",
     "prompt.pendingNotificationSuffix": ".",
+    "generation.throttled": "You've reached the message generation limit. Please try again in a few minutes.",
     "textarea.placeholder": "Ask me anything...",
     "search.placeholder": "Search chats...",
     "search.loading": "Loading...",

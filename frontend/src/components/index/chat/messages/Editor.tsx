@@ -79,6 +79,8 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
                 const file_ids: number[][] = await fileIDsResponse.json()
                 setMessages(previous => previous.map((m, i) => ({ ...m, files: m.files.map((f, j) => ({ ...f, id: file_ids[i][j] })) })))
             }
+        } else if (response.status === 429) {
+            notify(t("generation.throttled"), "error")
         } else {
             notify(t("editor.error.sendFailed"), "error")
         }
