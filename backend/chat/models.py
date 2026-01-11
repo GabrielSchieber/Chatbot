@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import os
 import secrets
 import uuid
 from datetime import timedelta
@@ -60,7 +61,7 @@ class UserManager(BaseUserManager):
             has_verified_email = has_verified_email,
             is_active = is_active,
             is_guest = is_guest,
-            created_with_ip_address = ip_address
+            created_with_ip_address = ip_address if os.getenv("PLAYWRIGHT_TEST") != "True" else ""
         )
         user.set_password(password)
         user.save(using = self._db)
