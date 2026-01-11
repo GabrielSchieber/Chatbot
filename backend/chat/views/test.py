@@ -16,10 +16,10 @@ class CreateChat(APIView):
         title = request.data.get("title")
         messages = request.data.get("messages")
 
-        user = User.objects.filter(email = email).first()
-        if user is None:
-           return Response({"error": f"User with {email} email does not exist."}, status.HTTP_400_BAD_REQUEST)
-        assert type(user) == User
+        try:
+            user: User = User.objects.get(email = email)
+        except Chat.DoesNotExist:
+            return Response({"detail": "User was not found."}, status.HTTP_404_NOT_FOUND)
 
         chat = user.chats.create(title = title)
         chat.messages.bulk_create([Message(chat = chat, text = m["text"], is_from_user = m["is_from_user"]) for m in messages])
@@ -36,9 +36,10 @@ class CreateChats(APIView):
         email = request.data.get("email")
         chats_json = request.data.get("chats")
 
-        user = User.objects.filter(email = email).first()
-        if user is None:
-           return Response({"error": f"User with {email} email does not exist."}, status.HTTP_400_BAD_REQUEST) 
+        try:
+            user: User = User.objects.get(email = email)
+        except Chat.DoesNotExist:
+            return Response({"detail": "User was not found."}, status.HTTP_404_NOT_FOUND)
 
         chats = Chat.objects.bulk_create([Chat(user = user, title = chat_json["title"]) for chat_json in chats_json])
         for chat, chat_json in zip(chats, chats_json):
@@ -53,12 +54,13 @@ class GetMFASecret(APIView):
     def get(self, request: Request):
         email = request.query_params.get("email")
 
-        user = User.objects.filter(email = email).first()
-        if user is None:
-           return Response({"error": f"User with {email} email does not exist."}, status.HTTP_400_BAD_REQUEST)
+        try:
+            user: User = User.objects.get(email = email)
+        except Chat.DoesNotExist:
+            return Response({"detail": "User was not found."}, status.HTTP_404_NOT_FOUND)
 
         if not user.mfa.is_enabled:
-            return Response({"error": f"MFA for user with email {email} is not enabled."}, status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "MFA is not enabled."}, status.HTTP_400_BAD_REQUEST)
 
         return Response(UserMFA.decrypt_secret(user.mfa.secret), status.HTTP_200_OK)
 
