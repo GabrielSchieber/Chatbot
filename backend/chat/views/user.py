@@ -34,6 +34,12 @@ class Signup(APIView):
     throttle_classes = [SignupRateThrottle]
 
     def post(self, request: Request):
+        if User.objects.filter(
+            created_with_ip_address = request.ip_address,
+            created_at__gt = timezone.now() - timedelta(days = 30)
+        ).exists():
+            return Response({"detail": "signup.ipAddressError"}, status.HTTP_400_BAD_REQUEST)
+
         qs = SignupSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
 
@@ -48,7 +54,7 @@ class Signup(APIView):
             user.set_password(password)
             user.save()
         except User.DoesNotExist:
-            user = User.objects.create_user(email = email, password = password)
+            user = User.objects.create_user(email, password, ip_address = request.ip_address)
 
         user.email_verification_tokens.filter(used_at__isnull = True).update(expires_at = timezone.now())
 

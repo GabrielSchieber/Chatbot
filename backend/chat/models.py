@@ -52,13 +52,15 @@ class UserManager(BaseUserManager):
         password: str,
         has_verified_email: bool = False,
         is_active: bool = False,
-        is_guest: bool = False
+        is_guest: bool = False,
+        ip_address: str = ""
     ):
         user: User = self.model(
             email = self.normalize_email(email),
             has_verified_email = has_verified_email,
             is_active = is_active,
-            is_guest = is_guest
+            is_guest = is_guest,
+            created_with_ip_address = ip_address
         )
         user.set_password(password)
         user.save(using = self._db)
@@ -92,6 +94,7 @@ class User(CleanOnSaveMixin, AbstractBaseUser, PermissionsMixin):
     is_guest = models.BooleanField(default = False)
     is_staff = models.BooleanField(default = False)
 
+    created_with_ip_address = models.GenericIPAddressField(blank = True, null = True)
     created_at = models.DateTimeField(auto_now_add = True)
 
     objects: UserManager = UserManager()
