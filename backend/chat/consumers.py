@@ -32,6 +32,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             chat = await database_sync_to_async(self.user.chats.filter(uuid = self.chat_uuid, is_temporary = True).first)()
             if chat is not None:
                 await astop_pending_chat(chat)
+                await chat.adelete()
 
     async def receive_json(self, content):
         allowed, retry_after = await self.redis_limiter.allow(str(getattr(self.user, "id", "anon")))
