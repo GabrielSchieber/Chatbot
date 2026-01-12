@@ -35,6 +35,7 @@ class Signup(APIView):
 
     def post(self, request: Request):
         if User.objects.filter(
+            has_verified_email = True,
             created_with_ip_address = request.ip_address,
             created_at__gt = timezone.now() - timedelta(days = 30)
         ).exists():
