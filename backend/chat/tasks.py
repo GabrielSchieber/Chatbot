@@ -57,11 +57,11 @@ async def generate_message(chat: Chat, should_generate_title: bool, should_rando
                 opened_chats.discard(str(chat.uuid))
                 await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": chat.pending_message.text, "message_index": message_index})
     except asyncio.CancelledError:
+        if should_generate_title:
+            await generate_title(chat)
         chat.pending_message = None
         if not await safe_save_chat_pending_message(chat):
             return
-        if should_generate_title:
-            await generate_title(chat)
         return
 
     await channel_layer.group_send(f"chat_{str(chat.uuid)}", {"type": "send_message", "message": chat.pending_message.text, "message_index": message_index})
