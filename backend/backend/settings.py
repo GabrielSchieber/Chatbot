@@ -146,7 +146,7 @@ EMAIL_HOST_PASSWORD = os.getenv("DJANGO_EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = os.getenv("DJANGO_EMAIL_USE_TLS", "True") != "False"
 DEFAULT_FROM_EMAIL = os.getenv("DJANGO_DEFAULT_FROM_EMAIL")
 
-FRONTEND_URL = "http://localhost:5173"
+BASE_EMAIL_URL = os.getenv("BASE_EMAIL_URL")
 
 LANGUAGES = [
     ("en-us", "English (US)"),

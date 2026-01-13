@@ -63,7 +63,7 @@ class Signup(APIView):
         user.email_verification_tokens.create(token_hash = make_password(raw_token), expires_at = timezone.now() + timedelta(hours = 24))
 
         subject = _("Signup.subject")
-        verify_url = f"{settings.FRONTEND_URL}/verify-email?email={user.email}&token={raw_token}"
+        verify_url = f"{settings.BASE_EMAIL_URL}/verify-email?email={user.email}&token={raw_token}"
 
         device = readable_user_agent(request.user_agent_raw)
         request_time = date_format(timezone.localtime(timezone.now()), "DATETIME_FORMAT")
@@ -421,7 +421,7 @@ class RequestPasswordReset(APIView):
         )
 
         subject = _("RequestPasswordReset.subject")
-        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+        reset_url = f"{settings.BASE_EMAIL_URL}/reset-password?token={token}"
 
         device = readable_user_agent(request.user_agent_raw)
         request_time = date_format(timezone.localtime(timezone.now()), "DATETIME_FORMAT")
