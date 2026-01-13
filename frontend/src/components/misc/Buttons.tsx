@@ -58,7 +58,7 @@ export function SelectModelButton(
                     onCloseAutoFocus={e => e.preventDefault()}
                 >
                     <Select.Viewport>
-                        {(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
+                        {(["Gemma3:1B", "Qwen3-VL:4B"] as Model[]).map(m => (
                             <Select.Item
                                 key={m}
                                 value={m}
@@ -228,7 +228,7 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
 
                 <DropdownMenu.Portal>
                     <DropdownMenu.Content className={dropdownContentClassName} sideOffset={5} data-testid="regenerate-dropdown">
-                        {(["SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"] as Model[]).map(m => (
+                        {(["Gemma3:1B", "Qwen3-VL:4B"] as Model[]).map(m => (
                             <DropdownMenu.Item
                                 key={m}
                                 className={dropdownItemClassName}

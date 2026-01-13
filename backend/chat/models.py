@@ -311,7 +311,7 @@ class Message(CleanOnSaveMixin):
 
     text = models.TextField(blank = True)
     is_from_user = models.BooleanField()
-    model = models.CharField(blank = True, choices = [[c, c] for c in ["", "SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]])
+    model = models.CharField(blank = True, choices = [[c, c] for c in ["", "Gemma3:1B", "Qwen3-VL:4B"]])
 
     last_modified_at = models.DateTimeField(auto_now = True)
     created_at = models.DateTimeField(auto_now_add = True)

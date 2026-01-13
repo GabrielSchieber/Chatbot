@@ -209,17 +209,7 @@ def is_any_user_chat_pending(user: User) -> bool:
     return True if pending_chats.count() > 0 else False
 
 def get_ollama_model_and_options(model: str):
-    base_options = {"numa": True, "num_ctx": 512, "num_batch": 1, "logits_all": True, "use_mmap": True, "use_mlock": True, "num_predict": 256}
-
-    match model:
-        case "SmolLM2-135M":
-            return "smollm2:135m-instruct-q2_K", base_options
-        case "SmolLM2-360M":
-            return "smollm2:360m-instruct-q2_K", base_options
-        case "SmolLM2-1.7B":
-            return "smollm2:1.7b-instruct-q2_K", base_options
-        case "Moondream":
-            return "moondream:1.8b-v2-q2_K", base_options
+    return model.lower(), {"numa": True, "num_ctx": 512, "num_batch": 1, "logits_all": True, "use_mmap": True, "use_mlock": True, "num_predict": 1000}
 
 async def safe_save_message_text(message: Message):
     exists = await database_sync_to_async(Message.objects.filter(pk = message.pk).exists)()

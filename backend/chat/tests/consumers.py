@@ -133,7 +133,7 @@ async def test_generate_message_streaming(transactional_db, monkeypatch):
     user, ws = await connect_to_communicator_with_user()
     chat = await user.chats.acreate(title = "Chat", is_temporary = True)
 
-    pending = await chat.messages.acreate(text = "", is_from_user = False, model = "SmolLM2-135M")
+    pending = await chat.messages.acreate(text = "", is_from_user = False, model = "Qwen3-VL:4B")
     chat.pending_message = pending
     await chat.asave(update_fields = ["pending_message"])
 

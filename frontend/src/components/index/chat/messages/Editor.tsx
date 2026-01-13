@@ -19,7 +19,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
     const message = messages[index]
 
     const [text, setText] = useState(message.text)
-    const [model, setModel] = useState<Model>(messages[index + 1].model || "SmolLM2-135M")
+    const [model, setModel] = useState<Model>(messages[index + 1].model || "Qwen3-VL:4B")
 
     const [addedFiles, setAddedFiles] = useState<File[]>([])
     const [removedFiles, setRemovedFiles] = useState<MessageFile[]>([])

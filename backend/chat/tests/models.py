@@ -326,7 +326,7 @@ class Message(TestCase):
         user = create_user()
         chat = user.chats.create(title = "Test chat")
         user_message = chat.messages.create(text = "Hello!", is_from_user = True)
-        bot_message = chat.messages.create(text = "Hi!", is_from_user = False, model = "SmolLM2-135M")
+        bot_message = chat.messages.create(text = "Hi!", is_from_user = False, model = "Qwen3-VL:4B")
         self.assertEqual(user_message.chat, chat)
         self.assertEqual(bot_message.chat, chat)
         self.assertEqual(user_message.text, "Hello!")
@@ -334,7 +334,7 @@ class Message(TestCase):
         self.assertTrue(user_message.is_from_user)
         self.assertFalse(bot_message.is_from_user)
         self.assertEqual(user_message.model, "")
-        self.assertEqual(bot_message.model, "SmolLM2-135M")
+        self.assertEqual(bot_message.model, "Qwen3-VL:4B")
         self.assertHasAttr(user_message, "files")
         self.assertHasAttr(bot_message, "files")
         self.assertEqual(user_message.files.count(), 0)
@@ -343,9 +343,9 @@ class Message(TestCase):
     def test_valid_models(self):
         user = create_user()
         chat = user.chats.create(title = "Test chat")
-        for m in ["", "SmolLM2-135M", "SmolLM2-360M", "SmolLM2-1.7B", "Moondream"]:
+        for m in ["", "Gemma3:1B", "Qwen3-VL:4B"]:
             chat.messages.create(text = "Hi!", is_from_user = False, model = m)
-        self.assertEqual(models.Message.objects.count(), 5)
+        self.assertEqual(models.Message.objects.count(), 3)
 
     def test_invalid_models(self):
         user = create_user()

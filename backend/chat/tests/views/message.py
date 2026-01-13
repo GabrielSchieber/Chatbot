@@ -154,7 +154,7 @@ class NewMessage(ViewsTestCase):
         user = self.create_and_login_user()
 
         file1 = SimpleUploadedFile("file1.txt", b"hello world", "text/plain")
-        data = {"chat_uuid": "", "text": "Hello assistant!", "model": "SmolLM2-135M", "files": [file1]}
+        data = {"chat_uuid": "", "text": "Hello assistant!", "model": "Qwen3-VL:4B", "files": [file1]}
 
         response = self.client.post("/api/new-message/", data, format = "multipart")
         self.assertEqual(response.status_code, 200)
@@ -178,7 +178,7 @@ class NewMessage(ViewsTestCase):
         self.assertEqual(user_message.text, "Hello assistant!")
 
         self.assertFalse(bot_message.is_from_user)
-        self.assertEqual(bot_message.model, "SmolLM2-135M")
+        self.assertEqual(bot_message.model, "Qwen3-VL:4B")
         self.assertEqual(bot_message.text, "")
 
         chat.refresh_from_db()
@@ -275,7 +275,7 @@ class NewMessage(ViewsTestCase):
     def test_too_many_files(self, _):
         self.create_and_login_user()
         files = [SimpleUploadedFile(f"file{i + 1}.txt", f"Document {i + 1}".encode(), "text/plain") for i in range(11)]
-        data = {"chat_uuid": "", "text": "Describe the files.", "model": "SmolLM2-135M", "files": files}
+        data = {"chat_uuid": "", "text": "Describe the files.", "model": "Qwen3-VL:4B", "files": files}
         response = self.client.post("/api/new-message/", data, format = "multipart")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"files": ["Ensure this field has no more than 10 elements."]})
@@ -285,7 +285,7 @@ class NewMessage(ViewsTestCase):
         self.create_and_login_user()
 
         def post_and_assert(files: list[SimpleUploadedFile]):
-            data = {"chat_uuid": "", "text": "Describe the file.", "model": "SmolLM2-135M", "files": files}
+            data = {"chat_uuid": "", "text": "Describe the file.", "model": "Qwen3-VL:4B", "files": files}
             response = self.client.post("/api/new-message/", data, format = "multipart")
             self.assertEqual(response.status_code, 400)
             self.assertEqual(response.json(), {"files": ["Total file size exceeds limit of 5 MB."]})
@@ -332,7 +332,7 @@ class NewMessage(ViewsTestCase):
         bot_message = chat.messages.last()
         self.assertEqual(bot_message.text, "")
         self.assertFalse(bot_message.is_from_user)
-        self.assertEqual(bot_message.model, "SmolLM2-135M")
+        self.assertEqual(bot_message.model, "Qwen3-VL:4B")
 
 class EditMessage(ViewsTestCase):
     @patch("chat.views.message.generate_pending_message_in_chat")
@@ -527,7 +527,7 @@ class EditMessage(ViewsTestCase):
             MessageFile(message = message, name = f"File {i + 1}.txt", content = f"Content {i + 1}".encode(), content_type = "text/plain") 
             for i in range(5)
         ])
-        chat.messages.create(chat = chat, text = "The files are about...", is_from_user = False, model = "SmolLM2-135M")
+        chat.messages.create(chat = chat, text = "The files are about...", is_from_user = False, model = "Qwen3-VL:4B")
 
         added_files = [SimpleUploadedFile(f"File {i + 6}.txt", f"Document {i + 6}".encode(), "text/plain") for i in range(2)]
         body = encode_multipart(
@@ -559,9 +559,9 @@ class RegenerateMessage(ViewsTestCase):
         user = self.create_and_login_user()
         chat = user.chats.create(title = "Greetings")
         user_message = chat.messages.create(text = "Hello!", is_from_user = True)
-        bot_message = chat.messages.create(text = "Hello! How can I help you today?", is_from_user = False, model = "SmolLM2-135M")
+        bot_message = chat.messages.create(text = "Hello! How can I help you today?", is_from_user = False, model = "Qwen3-VL:4B")
 
-        body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid), "index": 1, "model": "SmolLM2-360M"})
+        body = encode_multipart(BOUNDARY, {"chat_uuid": str(chat.uuid), "index": 1, "model": "Gemma3:1B"})
         content_type = f"multipart/form-data; boundary={BOUNDARY}"
         response = self.client.patch("/api/regenerate-message/", body, content_type)
         self.assertEqual(response.status_code, 200)
@@ -578,7 +578,7 @@ class RegenerateMessage(ViewsTestCase):
 
         self.assertEqual(bot_message.text, "")
         self.assertFalse(bot_message.is_from_user)
-        self.assertEqual(bot_message.model, "SmolLM2-360M")
+        self.assertEqual(bot_message.model, "Gemma3:1B")
 
         self.assertEqual(Chat.objects.count(), 1)
         self.assertEqual(Message.objects.count(), 2)

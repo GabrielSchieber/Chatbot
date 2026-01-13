@@ -30,7 +30,7 @@ class GetMessageFileContentSerializer(serializers.Serializer):
 class NewMessageSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField(required = False)
     text = serializers.CharField(default = "")
-    model = serializers.ChoiceField(Message.available_models(), default = "SmolLM2-135M")
+    model = serializers.ChoiceField(Message.available_models(), default = "Qwen3-VL:4B")
     files = serializers.ListField(child = serializers.FileField(max_length = MessageFile.max_content_size()), max_length = 10, default = [])
     temporary = serializers.BooleanField(default = False)
 
@@ -43,11 +43,11 @@ class EditMessageSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
     index = serializers.IntegerField(min_value = 0)
     text = serializers.CharField(default = "")
-    model = serializers.ChoiceField(Message.available_models(), default = "SmolLM2-135M")
+    model = serializers.ChoiceField(Message.available_models(), default = "Qwen3-VL:4B")
     added_files = serializers.ListField(child = serializers.FileField(max_length = MessageFile.max_content_size()), max_length = 10, default = [])
     removed_file_ids = serializers.ListField(child = serializers.IntegerField(min_value = 1), default = [])
 
 class RegenerateMessageSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
     index = serializers.IntegerField(min_value = 0)
-    model = serializers.ChoiceField(Message.available_models(), default = "SmolLM2-135M")
+    model = serializers.ChoiceField(Message.available_models(), default = "Qwen3-VL:4B")

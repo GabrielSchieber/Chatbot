@@ -1,6 +1,6 @@
 export type Language = "" | "English" | "Português"
 export type Theme = "System" | "Light" | "Dark"
-export type Model = "" | "SmolLM2-135M" | "SmolLM2-360M" | "SmolLM2-1.7B" | "Moondream"
+export type Model = "" | "Gemma3:1B" | "Qwen3-VL:4B"
 
 export type User = {
     email: string
