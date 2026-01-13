@@ -115,6 +115,7 @@
     "mfa.labels.recoveryFileName": "Recovery Codes.txt",
     "addFilesButton.tooltip": "Add files",
     "selectModelButton.tooltip": "Select model",
+    "selectModelButton.gemmaModelTooltip": "Gemma3:1B does not have vision capabilities",
     "sendButton.tooltip": "Send",
     "stopButton.tooltip": "Stop",
     "cancelButton.tooltip": "Cancel",

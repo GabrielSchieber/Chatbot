@@ -69,7 +69,7 @@ export function SelectModelButton(
                                         </Select.ItemIndicator>
                                     </Select.Item>
                                 }
-                                tooltip="Gemma3:1B does not have vision capabilities"
+                                tooltip={t("selectModelButton.gemmaModelTooltip")}
                             />
                         ) : (
                             <Select.Item value="Gemma3:1B" className={dropdownItemClassName} disabled={hasImages}>
