@@ -24,6 +24,7 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
     const [text, setText] = useState("")
     const [files, setFiles] = useState<File[]>([])
     const [model, setModel] = useState<Model>("Gemma3:1B")
+    const [hasImages, setHasImages] = useState(false)
 
     const [shouldShowPendingNotification, setShouldShowPendingNotification] = useState(false)
 
@@ -99,6 +100,17 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
         observer.observe(ref.current)
         return () => observer.disconnect()
     }, [])
+
+    useEffect(() => {
+        for (const file of files) {
+            if (file.type.includes("image")) {
+                setHasImages(true)
+                setModel("Qwen3-VL:4B")
+                return
+            }
+        }
+        setHasImages(false)
+    }, [files])
 
     return (
         chatUUID && chats.find(c => c.uuid === chatUUID)?.is_archived ? (
@@ -181,6 +193,7 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
                     files={files.map((f, id) => ({ id, name: f.name, content: f.slice(), content_size: f.size, content_type: f.type }))}
                     model={model}
                     setModel={setModel}
+                    hasImages={hasImages}
                     withBorderAndShadow={true}
                     tabIndex={1}
                     ariaLabel="Message composer"

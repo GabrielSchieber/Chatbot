@@ -1,5 +1,5 @@
 import { t } from "i18next"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useParams } from "react-router"
 
 import Composer from "../prompt/Composer"
@@ -20,6 +20,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
 
     const [text, setText] = useState(message.text)
     const [model, setModel] = useState<Model>(messages[index + 1].model || "Gemma3:1B")
+    const [hasImages, setHasImages] = useState(false)
 
     const [addedFiles, setAddedFiles] = useState<File[]>([])
     const [removedFiles, setRemovedFiles] = useState<MessageFile[]>([])
@@ -189,6 +190,17 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
         return [...current, ...added]
     }
 
+    useEffect(() => {
+        for (const file of addedFiles) {
+            if (file.type.includes("image")) {
+                setHasImages(true)
+                setModel("Qwen3-VL:4B")
+                return
+            }
+        }
+        setHasImages(false)
+    }, [addedFiles])
+
     return (
         <Composer
             text={text}
@@ -196,6 +208,7 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
             files={getCurrentFiles()}
             model={model}
             setModel={setModel}
+            hasImages={hasImages}
             withBorderAndShadow={false}
             tabIndex={8}
             ariaLabel="Edit message"

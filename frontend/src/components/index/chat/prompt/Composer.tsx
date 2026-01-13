@@ -14,6 +14,7 @@ export default function Composer({
     files,
     model,
     setModel,
+    hasImages,
     withBorderAndShadow,
     tabIndex,
     ariaLabel,
@@ -29,6 +30,7 @@ export default function Composer({
     files: MessageFile[]
     model: Model
     setModel: Dispatch<React.SetStateAction<Model>>
+    hasImages: boolean,
     withBorderAndShadow: boolean
     tabIndex: number
     ariaLabel: string
@@ -121,7 +123,7 @@ export default function Composer({
                         <AddFilesButton fileInputRef={fileInputRef} tabIndex={tabIndex + 1} />
 
                         <div className="flex gap-1">
-                            <SelectModelButton model={model} setModel={setModel} isMobile={isMobile} tabIndex={tabIndex + 2} />
+                            <SelectModelButton model={model} setModel={setModel} hasImages={hasImages} isMobile={isMobile} tabIndex={tabIndex + 2} />
                             {setIndex && <CancelButton setIndex={setIndex!} tabIndex={tabIndex + 3} />}
                             {pendingChat !== undefined && pendingChat !== null ? (
                                 <StopButton onClick={onStopClick} tabIndex={tabIndex + 4} />
@@ -147,7 +149,7 @@ export default function Composer({
                             tabIndex={tabIndex}
                         />
 
-                        <SelectModelButton model={model} setModel={setModel} isMobile={isMobile} tabIndex={tabIndex + 2} />
+                        <SelectModelButton model={model} setModel={setModel} hasImages={hasImages} isMobile={isMobile} tabIndex={tabIndex + 2} />
                         {setIndex && <CancelButton setIndex={setIndex} tabIndex={tabIndex + 3} />}
                         {pendingChat !== undefined && pendingChat !== null ? (
                             <StopButton onClick={onStopClick} tabIndex={tabIndex + 4} />

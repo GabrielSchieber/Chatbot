@@ -25,7 +25,8 @@ export function AddFilesButton({ fileInputRef, tabIndex }: { fileInputRef: RefOb
 }
 
 export function SelectModelButton(
-    { model, setModel, isMobile, tabIndex }: { model: Model, setModel: Dispatch<SetStateAction<Model>>, isMobile: boolean, tabIndex: number }
+    { model, setModel, hasImages, isMobile, tabIndex }:
+        { model: Model, setModel: Dispatch<SetStateAction<Model>>, hasImages: boolean, isMobile: boolean, tabIndex: number }
 ) {
     return (
         <Select.Root value={model} onValueChange={v => setModel(v as Model)}>
@@ -58,18 +59,33 @@ export function SelectModelButton(
                     onCloseAutoFocus={e => e.preventDefault()}
                 >
                     <Select.Viewport>
-                        {(["Gemma3:1B", "Qwen3-VL:4B"] as Model[]).map(m => (
-                            <Select.Item
-                                key={m}
-                                value={m}
-                                className={dropdownItemClassName}
-                            >
-                                <Select.ItemText>{m}</Select.ItemText>
+                        {hasImages ? (
+                            <TooltipButton
+                                trigger={
+                                    <Select.Item value="Gemma3:1B" className={dropdownItemClassName} disabled={true}>
+                                        <Select.ItemText>Gemma3:1B</Select.ItemText>
+                                        <Select.ItemIndicator>
+                                            <CheckIcon className="size-5.5" />
+                                        </Select.ItemIndicator>
+                                    </Select.Item>
+                                }
+                                tooltip="Gemma3:1B does not have vision capabilities"
+                            />
+                        ) : (
+                            <Select.Item value="Gemma3:1B" className={dropdownItemClassName} disabled={hasImages}>
+                                <Select.ItemText>Gemma3:1B</Select.ItemText>
                                 <Select.ItemIndicator>
                                     <CheckIcon className="size-5.5" />
                                 </Select.ItemIndicator>
                             </Select.Item>
-                        ))}
+                        )}
+
+                        <Select.Item value="Qwen3-VL:4B" className={dropdownItemClassName}>
+                            <Select.ItemText>Qwen3-VL:4B</Select.ItemText>
+                            <Select.ItemIndicator>
+                                <CheckIcon className="size-5.5" />
+                            </Select.ItemIndicator>
+                        </Select.Item>
                     </Select.Viewport>
                 </Select.Content>
             </Select.Portal>
@@ -513,9 +529,10 @@ const dropdownContentClassName = `
 `
 
 const dropdownItemClassName = `
-    flex w-40 px-3 py-2 items-center justify-between rounded-xl cursor-pointer outline-none
+    flex w-37 px-3 py-2 items-center justify-between rounded-xl cursor-pointer outline-none
     hover:bg-gray-700 light:hover:bg-gray-300
     not-hover-none:focus:bg-gray-700 not-hover-none:light:focus:bg-gray-300
+    data-[disabled]:text-gray-500 data-[disabled]:cursor-not-allowed
 `
 
 const chatDropdownItemClassName = "flex gap-2 px-3 py-2 items-center text-center rounded-xl cursor-pointer outline-none"
