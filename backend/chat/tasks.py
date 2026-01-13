@@ -35,7 +35,7 @@ async def generate_message(chat: Chat, should_generate_title: bool, should_rando
     model, options = get_ollama_model_and_options(chat.pending_message.model)
 
     if IS_PLAYWRIGHT_TEST:
-        options["num_predict"] = 64
+        options["num_predict"] = 75
         options["seed"] = get_test_seed(chat)
     elif should_randomize:
         options["seed"] = random.randint(-(10 ** 10), 10 ** 10)
@@ -84,11 +84,12 @@ async def generate_title(chat: Chat):
 
     messages = [
         {
+            "role": "system",
+            "content": "You are a helpful assistant that generates very concise and accurate titles for chat conversations. The titles should be no longer than 7 words."
+        },
+        {
             "role": "user",
-            "content": (
-                "Generate a simple and concise title for the following conversation."
-                f"\n\nUser:\n{first_message.text}\n\nAssistant:\n{last_message.text}"
-            )
+            "content": f"Generate a concise title for the following conversation:\n\nUser:\n{first_message.text}\n\nAssistant:\n{last_message.text}\n\nTitle:"
         }
     ]
 
@@ -140,35 +141,30 @@ def get_message_dict(message: Message) -> dict[str, str]:
     else:
         return {"role": "assistant", "content": message.text}
 
-def get_system_prompt(user: User | None = None):
-    system_prompt = (
-        "You are a helpful and nice AI personal assistant. "
-        "Your role is to provide assistance to the user. "
-        "Always answer the user concisely using one small phrase with simple words."
-    )
-
-    if user is None:
-        return system_prompt
+def get_system_prompt(user: User):
+    system_prompt = "You are a helpful and friendly AI personal assistant."
+    if IS_PLAYWRIGHT_TEST:
+        system_prompt += " Always answer the user using one small phrase with simple words."
 
     custom_instructions = user.preferences.custom_instructions
     nickname = user.preferences.nickname
     occupation = user.preferences.occupation
     about = user.preferences.about
 
-    if any(map(lambda p: p != "", [custom_instructions, nickname, occupation, about])):
-        system_prompt += f"\nIn addition, you should know the following:"
+    if custom_instructions != "":
+        system_prompt += f"\n\nYou should follow these instructions:\n{custom_instructions}"
+
+    if any(map(lambda p: p != "", [nickname, occupation])):
+        system_prompt += f"\n\nYou know the following about the user:"
 
     if nickname != "":
-        system_prompt += f"\nThe nickname of the user is: {nickname}"
+        system_prompt += f"\nNickname: {nickname.strip().replace("\n", " ")}"
 
     if occupation != "":
-        system_prompt += f"\nThe user's occupation is: {occupation}"
+        system_prompt += f"\nOccupation: {occupation.strip().replace("\n", " ")}"
 
     if about != "":
-        system_prompt += f"\nThe user has the following to say about them:\n{about}"
-
-    if custom_instructions != "":
-        system_prompt += f"\nYou should follow these instructions:\n{custom_instructions}"
+        system_prompt += f"\n\nThe user has the following to say about them:\n{about}"
 
     return system_prompt
 
@@ -209,7 +205,7 @@ def is_any_user_chat_pending(user: User) -> bool:
     return True if pending_chats.count() > 0 else False
 
 def get_ollama_model_and_options(model: str):
-    return model.lower(), {"numa": True, "num_ctx": 512, "num_batch": 1, "logits_all": True, "use_mmap": True, "use_mlock": True, "num_predict": 1000}
+    return model.lower(), {"numa": True, "num_ctx": 1000, "num_batch": 1, "logits_all": True, "use_mmap": True, "use_mlock": True, "num_predict": 1000}
 
 async def safe_save_message_text(message: Message):
     exists = await database_sync_to_async(Message.objects.filter(pk = message.pk).exists)()

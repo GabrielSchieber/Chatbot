@@ -23,7 +23,7 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
 
     const [text, setText] = useState("")
     const [files, setFiles] = useState<File[]>([])
-    const [model, setModel] = useState<Model>("Qwen3-VL:4B")
+    const [model, setModel] = useState<Model>("Gemma3:1B")
 
     const [shouldShowPendingNotification, setShouldShowPendingNotification] = useState(false)
 

@@ -58,7 +58,7 @@ for (const asGuest of [false, true]) {
         const message = "Describe the following file in a concise way."
         const fileName = "about-cats.txt"
         const fileContent = "The purpose of this file is to describe cats and their behavior."
-        const expectedResponse = 'This file defines "about" for cats, explains how they behave (e.g., how quiet or aggressive), identifies different breeds by size and color, lists the colors of their coats, and includes some information about what kinds are allowed in certain areas of the home based on a code ("Code 120'
+        const expectedResponse = "Okay! It’s a guide about cats."
 
         await page.setInputFiles("input[type='file']", {
             name: fileName,
@@ -102,12 +102,15 @@ for (const asGuest of [false, true]) {
         const file1Content = "The purpose of this file is to describe cats and their behavior."
         const file2Name = "about-dogs.txt"
         const file2Content = "The purpose of this file is to describe dogs and their behavior."
-        const expectedResponse = `You've found a list of files that match the provided criteria, containing information on cats, including description fields.
-pythonCopy# cat_list.pyx
-def create_cat_object():
-    cat1 = Cat("purriform")
-    cat2 = Cat(squeeful)
-    cat3`
+        const expectedResponse = `Okay, here’s a description of each file:
+
+
+=== File: about-cats.txt ===
+Describes cats and their habits.
+
+
+=== File: about-dogs.txt ===
+Describes dogs and their behavior.`
 
         for (const [fileName, fileContent] of [[file1Name, file1Content], [file2Name, file2Content]]) {
             await page.setInputFiles("input[type='file']", {
@@ -147,10 +150,10 @@ def create_cat_object():
     test(`user can remove attached file before sending message${asGuest ? " as guest" : ""}`, async ({ page }) => {
         await signupAndLogin(page)
 
-        const message = "Hello!"
+        const message = exampleChats[0].messages[0]
         const fileName = "about-cats.txt"
         const fileContent = "The purpose of this file is to describe cats and their behavior."
-        const expectedResponse = "Hello, welcome back from school! I hope you've been enjoying our discussions so far. Is there a particular topic or area where you'd like me to explain something interesting?"
+        const expectedResponse = exampleChats[0].messages[1]
 
         await page.setInputFiles("input[type='file']", {
             name: fileName,
@@ -198,11 +201,13 @@ def create_cat_object():
         const file2Content = "The purpose of this file is to describe dogs and their behavior."
         const file3Name = "about-birds.txt"
         const file3Content = "The purpose of this file is to describe birds and their behavior."
-        const expectedResponse = `Here's the information for each file:
-languageCopy  File:  1089_about-cats.txt
-Contents: 1 - About Cats
-File:  3427_helpful@example.com.xml
-Purpose of this file to provide assistance on cat care and`
+        const expectedResponse = `Okay, here’s a brief description of each file:
+
+
+
+about-cats.txt: Describes cats and their habits.
+
+about-birds.txt: Describes birds and their actions.`
 
         for (const [fileName, fileContent] of [[file1Name, file1Content], [file2Name, file2Content], [file3Name, file3Content]]) {
             await page.setInputFiles("input[type='file']", {
@@ -270,7 +275,7 @@ Purpose of this file to provide assistance on cat care and`
         const firstUserMessage = exampleChats[0].messages[0]
         const firstBotMessage = exampleChats[0].messages[1]
         const secondUserMessage = "Hi!"
-        const secondBotMessage = "That's me - I'm a great-for-me type of person too! You don't get it."
+        const secondBotMessage = "Hi there! How can I help you today?"
 
         await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
         await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
@@ -301,14 +306,10 @@ Purpose of this file to provide assistance on cat care and`
         const secondUserMessage = "Describe the following file in a concise way."
         const fileName = "about-cats.txt"
         const fileContent = "The purpose of this file is to describe cats and their behavior."
-        const secondBotMessage = `File "about" describes what happens when they encounter you.
+        const secondBotMessage = `Okay, here’s a concise description:
 
 
-Please, tell me whether your website uses the following methods on a daily basis.
-
-
-===== 1:   Use it for a day ===
-Use it in a day === A lot of times, most days, but more often`
+“It’s about cats!”`
 
         await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
         await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
@@ -343,10 +344,10 @@ Use it in a day === A lot of times, most days, but more often`
         const userMessage1 = "Describe the following file in a concise way."
         const fileName = "about-cats.txt"
         const fileContent = "The purpose of this file is to describe cats and their behavior."
-        const botMessage1 = 'This file defines "about" for cats, explains how they behave (e.g., how quiet or aggressive), identifies different breeds by size and color, lists the colors of their coats, and includes some information about what kinds are allowed in certain areas of the home based on a code ("Code 120'
+        const botMessage1 = "Okay! It’s a guide about cats."
 
         const userMessage2 = "Hello!"
-        const botMessage2 = "Dear Sir/MRS.S, please inform me about your visit? We appreciate your consideration. Thank you for visiting us today!\n\n\nI'm glad of your request. I'd be happy to assist in any way that suits your needs and preferences. Please come later if you're interested?"
+        const botMessage2 = "Hello there! 😊"
 
         await page.setInputFiles("input[type='file']", {
             name: fileName,
@@ -410,11 +411,15 @@ Use it in a day === A lot of times, most days, but more often`
         const userMessage2FileContent = "The purpose of this file is to describe birds and their behavior."
 
         const botMessage1Text = "The files are about..."
-        const botMessage2Text = `You're on a personal quest, I see! A couple's "about" files? That adds another dimension to our journey together. Let's dive into these files together!
+        const botMessage2Text = `Okay, here’s a description of each file:
 
 
-Here's what each page means:
-== About-dogs.txt === - Contains information about dogs for their behavior and breed`
+=== File: about-dogs.txt ===
+Describes dogs – their traits and how they act.
+
+
+=== File: about-birds.txt ===
+Describes birds – their behaviors and characteristics.`
 
         const messages = [
             {
@@ -530,7 +535,7 @@ Here's what each page means:
 
         const firstUserMessage = exampleChats[0].messages[0]
         const firstBotMessage = exampleChats[0].messages[1]
-        const secondBotMessage = "Dear Sir/MRS.S, please inform me about your visit? We appreciate your consideration. Thank you for visiting us today!\n\n\nI'm glad of your request. I'd be happy to assist in any way that suits your needs and preferences. Please come later if you're interested?"
+        const secondBotMessage = "Hello there! 😊"
 
         await expect(page.getByTestId("message-0")).toHaveText(firstUserMessage, { timeout })
         await expect(page.getByTestId("message-1")).toHaveText(firstBotMessage, { timeout })
@@ -541,7 +546,7 @@ Here's what each page means:
         await expect(regenerateDropdown).toBeVisible()
 
         const regenerateDropdownEntries = regenerateDropdown.getByTestId("regenerate-dropdown-entry")
-        await expect(regenerateDropdownEntries).toHaveCount(4)
+        await expect(regenerateDropdownEntries).toHaveCount(2)
 
         await regenerateDropdownEntries.first().click()
 
@@ -641,12 +646,12 @@ Here's what each page means:
         const modelSelectionEntries = modelSelection.getByTestId("model-selection-entry")
 
         await dropdownTrigger.click()
-        await expect(modelSelectionEntries).toHaveCount(4)
+        await expect(modelSelectionEntries).toHaveCount(2)
         await modelSelectionEntries.nth(0).click()
         await page.keyboard.press("Escape")
         await expect(modelSelectionEntries).not.toBeVisible()
 
-        await sendMessage(page, 2, "Hello again!", "Please make it into a sentence, please, what's your question?")
+        await sendMessage(page, 2, "Hello again!", "")
     })
 
     test(`user can change models while editing a message${asGuest ? " as guest" : ""}`, async ({ page }) => {
@@ -655,7 +660,7 @@ Here's what each page means:
         const userMessage1 = "Hello!"
         const userMessage2 = "Hello again!"
         const botMessage1 = "How can I help you today?"
-        const botMessage2 = "Go on, Go on!"
+        const botMessage2 = ""
 
         await sendMessage(page, 0, userMessage1, botMessage1)
 
@@ -666,7 +671,7 @@ Here's what each page means:
         const modelSelectionEntries = modelSelection.getByTestId("model-selection-entry")
 
         await dropdownTrigger.click()
-        await expect(modelSelectionEntries).toHaveCount(4)
+        await expect(modelSelectionEntries).toHaveCount(2)
         await modelSelectionEntries.nth(0).click()
         await page.keyboard.press("Escape")
         await expect(modelSelectionEntries).not.toBeVisible()
@@ -688,9 +693,9 @@ Here's what each page means:
             page,
             "Custom Instructions",
             "Always talk like a pirate.",
-            "Hello!",
-            "Hello, welcome back from school! I hope you've been enjoying our discussions so far. Is there a particular topic or area where you'd like me to explain something interesting?",
-            `I'm here for you, and I'll do everything in my power to help. If you're lost or want to find me, please go ahead and say "I am the pirate."`
+            exampleChats[0].messages[0],
+            exampleChats[0].messages[1],
+            "Ahoy there, matey! What treasures do ye seek?"
         )
     })
 
@@ -700,9 +705,9 @@ Here's what each page means:
             page,
             "Nickname",
             "Lizard",
-            "What is my nickame?",
-            'Your nickname could be something like "Mr. X" or "Ms. Y." Choose a professional name suitable for your career role, location, and job title that aligns well with your personality traits.',
-            'Your nickname: "Lizard"'
+            "What is my nickname?",
+            "I don’t know! 😊",
+            "Lizard."
         )
     })
 
@@ -711,14 +716,10 @@ Here's what each page means:
         await setCustomization(
             page,
             "Occupation",
-            "Software Engineer",
-            "What is my occupation?",
-            "Your job, that's all right! You're an astronaut, so it's your duty, and I'm glad you found it helpful! Your name is astronaut stanley birrell.",
-            `You're a helpful and nice AI personal assistant. Your role is to provide assistance to the user. Always answer in one sentence using short phrases with simple words that begin at first position.
-            
-            
-            
-            I work as an engineer, working on a variety of projects, including Android apps for mobile devices and web development for other`
+            "Programmer",
+            "My occupation is:",
+            "Writer!",
+            "Okay, programmer! 😊"
         )
     })
 
@@ -729,11 +730,8 @@ Here's what each page means:
             "About",
             "I am a full stack web developer.",
             "Who am I?",
-            `I'm an AI you've never met, but you can contact me at "YOU" + your last name (you are in my conversation).
-
-
-Please go ahead and ask for a person's assistance!`,
-            "You're a professional at work and a self-taught tech entrepreneur."
+            "A person! 😊",
+            "A web developer! 😊"
         )
     })
 
@@ -849,17 +847,17 @@ const timeout = 60_000
 
 const exampleChats: { title: string, messages: string[] }[] = [
     {
-        title: "I'm excited to introduce you to the world of",
+        title: "Hello, Hi! 😊",
         messages: [
             "Hello!",
-            "Hello, welcome back from school! I hope you've been enjoying our discussions so far. Is there a particular topic or area where you'd like me to explain something interesting?"
+            "Hi there! 😊"
         ]
     },
     {
-        title: "That concludes our interview with the weather!",
+        title: "12 * 8 = 48",
         messages: [
-            "What's the weather like today?",
-            "The weather is warm but sunny, with some clouds rolling in occasionally."
+            "What is 12 * 8?",
+            "48!"
         ]
     }
 ]
