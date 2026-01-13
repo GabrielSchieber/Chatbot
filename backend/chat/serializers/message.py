@@ -39,6 +39,13 @@ class NewMessageSerializer(serializers.Serializer):
             raise serializers.ValidationError(f"Total file size exceeds limit of {MessageFile.max_content_size_str()}.")
         return value
 
+    def validate(self, attrs):
+        if attrs["model"] == "Gemma3:1B":
+            for f in attrs["files"]:
+                if "image" in f.content_type:
+                    raise serializers.ValidationError("Image file inputs are only supported with the Qwen3-VL:4B model.")
+        return attrs
+
 class EditMessageSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
     index = serializers.IntegerField(min_value = 0)
@@ -46,6 +53,13 @@ class EditMessageSerializer(serializers.Serializer):
     model = serializers.ChoiceField(Message.available_models(), default = "Qwen3-VL:4B")
     added_files = serializers.ListField(child = serializers.FileField(max_length = MessageFile.max_content_size()), max_length = 10, default = [])
     removed_file_ids = serializers.ListField(child = serializers.IntegerField(min_value = 1), default = [])
+
+    def validate(self, attrs):
+        if attrs["model"] == "Gemma3:1B":
+            for f in attrs["added_files"]:
+                if "image" in f.content_type:
+                    raise serializers.ValidationError("Image file inputs are only supported with the Qwen3-VL:4B model.")
+        return attrs
 
 class RegenerateMessageSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField()
