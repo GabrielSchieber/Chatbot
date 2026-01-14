@@ -33,6 +33,9 @@ export default function Login() {
             } else {
                 location.href = "/"
             }
+        } else if (response.status === 429) {
+            setError(t("login.throttled"))
+            setIsVerifying(false)
         } else {
             const data = await response.json()
             setError(t(data.detail))
@@ -48,6 +51,9 @@ export default function Login() {
         const response = await verifyMFA(token, code)
         if (response.ok) {
             location.href = "/"
+        } else if (response.status === 429) {
+            setError(t("login.throttled"))
+            setIsVerifying(false)
         } else {
             const data = await response.json()
             setError(t(data.detail))

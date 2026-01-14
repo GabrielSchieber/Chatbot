@@ -204,6 +204,7 @@
     "login.mfaRecovery.description": "Enter one of your recovery codes",
     "login.mfaRecovery.useAuthenticator": "Use authenticator code",
     "login.error": "The email and/or password are invalid.",
+    "login.throttled": "You’ve tried logging in too many times. Please wait a minute before trying again.",
     "signup.header": "Create your account",
     "signup.password": "Password",
     "signup.confirmPassword": "Confirm Password",

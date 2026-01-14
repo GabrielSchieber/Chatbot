@@ -204,6 +204,7 @@
     "login.mfaRecovery.description": "Digite um dos seus códigos de recuperação",
     "login.mfaRecovery.useAuthenticator": "Usar código do autenticador",
     "login.error": "O e-mail e/ou a senha estão inválidos.",
+    "login.throttled": "Você tentou fazer login muitas vezes. Aguarde um minuto antes de tentar novamente.",
     "signup.header": "Crie sua conta",
     "signup.password": "Senha",
     "signup.confirmPassword": "Confirmar Senha",
