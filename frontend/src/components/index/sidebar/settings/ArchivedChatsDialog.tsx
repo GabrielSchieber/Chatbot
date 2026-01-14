@@ -47,6 +47,8 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
         const response = await archiveChats()
         if (response.ok) {
             setChats(previous => previous.map(c => ({ ...c, is_archived: true })))
+        } else if (response.status === 429) {
+            notify(t("throttled"), "error")
         } else {
             notify(t("archivedChats.error.archiveAll"), "error")
         }
@@ -56,6 +58,8 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
         const response = await unarchiveChats()
         if (response.ok) {
             setChats(previous => previous.map(c => ({ ...c, is_archived: false })))
+        } else if (response.status === 429) {
+            notify(t("throttled"), "error")
         } else {
             notify(t("archivedChats.error.unarchiveAll"), "error")
         }
@@ -65,6 +69,8 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
         const response = await unarchiveChat(chat.uuid)
         if (response.ok) {
             setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, is_archived: false } : c))
+        } else if (response.status === 429) {
+            notify(t("throttled"), "error")
         } else {
             notify(t("archivedChats.error.unarchiveOne", { title: chat.title }), "error")
         }
@@ -77,6 +83,8 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
             if (location.pathname.includes(chat.uuid)) {
                 location.href = "/"
             }
+        } else if (response.status === 429) {
+            notify(t("throttled"), "error")
         } else {
             notify(t("archivedChats.error.deleteOne", { title: chat.title }), "error")
         }

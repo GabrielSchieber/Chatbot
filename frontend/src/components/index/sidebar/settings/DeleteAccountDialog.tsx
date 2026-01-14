@@ -4,13 +4,16 @@ import React, { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { useAuth } from "../../../../providers/AuthProvider"
+import { useNotify } from "../../../../providers/NotificationProvider"
 import { deleteAccount } from "../../../../utils/api"
 
 export default function DeleteAccountDialog({ entryClasses, destructiveEntryClasses }: { entryClasses: string, destructiveEntryClasses: string }) {
     type MFAMethod = "authenticator" | "recovery"
 
-    const { user } = useAuth()
     const { t } = useTranslation()
+
+    const { user } = useAuth()
+    const notify = useNotify()
 
     const [password, setPassword] = useState("")
     const [mfaMethod, setMFAMethod] = useState<MFAMethod>("authenticator")
@@ -27,6 +30,9 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
         const response = await deleteAccount(password, mfaCode)
         if (response.ok) {
             location.href = "/login"
+        } else if (response.status === 429) {
+            setIsDeleting(false)
+            notify(t("throttled"), "error")
         } else {
             const data = await response.json()
             setError(t(data.detail))

@@ -2,14 +2,17 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button, Error, Header } from "../../components/Auth"
+import { useNotify } from "../../providers/NotificationProvider"
 import { me, verifyEmail } from "../../utils/api"
 
 export default function VerifyEmail() {
     const { t } = useTranslation()
 
-    const [error, setError] = useState("")
-    const params = new URLSearchParams(location.search)
+    const notify = useNotify()
 
+    const [error, setError] = useState("")
+
+    const params = new URLSearchParams(location.search)
     const email = params.get("email")
     const token = params.get("token")
 
@@ -22,6 +25,8 @@ export default function VerifyEmail() {
                 await me(undefined, undefined, false)
             }
             location.href = "/"
+        } else if (response.status === 429) {
+            notify(t("throttled"), "error")
         } else {
             setError("auth.verifyEmail.error")
         }

@@ -107,6 +107,8 @@ function SetupDialog({ setAuthURL, setSecret, setStep, setIsLocked }: {
 }) {
     const { t } = useTranslation()
 
+    const notify = useNotify()
+
     const [password, setPassword] = useState("")
     const [error, setError] = useState("")
     const [isSettingUp, setIsSettingUp] = useState(false)
@@ -124,6 +126,9 @@ function SetupDialog({ setAuthURL, setSecret, setStep, setIsLocked }: {
             setAuthURL(data.auth_url)
             setSecret(data.secret)
             setStep("enable")
+        } else if (response.status === 429) {
+            setIsSettingUp(false)
+            notify(t("throttled"), "error")
         } else {
             setIsSettingUp(false)
             setError(t((await response.json()).detail))
@@ -191,6 +196,9 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
             setBackupCodes(data.backup_codes)
             setStep("enabled")
             notify(t("mfa.messages.enabledSuccess"), "success")
+        } else if (response.status === 429) {
+            setIsEnabling(false)
+            notify(t("throttled"), "error")
         } else {
             const data = await response.json()
             setIsEnabling(false)
@@ -347,6 +355,9 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
         if (response.ok) {
             setStep("disabled")
             notify(t("mfa.messages.disabledMessage"), "success")
+        } else if (response.status === 429) {
+            setIsDisabling(false)
+            notify(t("throttled"), "error")
         } else {
             const data = await response.json()
             setIsDisabling(false)

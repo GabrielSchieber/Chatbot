@@ -2,17 +2,20 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button, Error, Form, Header, Password } from "../../components/Auth"
+import { useNotify } from "../../providers/NotificationProvider"
 import { confirmPasswordReset } from "../../utils/api"
 
 export default function ResetPassword() {
-    const { t } = useTranslation()
-
     const token = new URLSearchParams(location.search).get("token")
 
     if (!token) {
         location.href = "/login"
         return
     }
+
+    const { t } = useTranslation()
+
+    const notify = useNotify()
 
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
@@ -35,6 +38,8 @@ export default function ResetPassword() {
         const response = await confirmPasswordReset(token, password)
         if (response.ok) {
             setIsDone(true)
+        } else if (response.status === 429) {
+            notify(t("throttled"), "error")
         } else {
             setError((await response.json()).detail)
         }

@@ -296,6 +296,8 @@ export function ArchiveButton({ chat }: { chat: Chat }) {
         const response = await archiveChat(chat.uuid)
         if (response.ok) {
             setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, is_archived: true } : c))
+        } else if (response.status === 429) {
+            notify(t("throttled"), "error")
         } else {
             notify(t("archiveButton.error", { title: chat.title }))
         }
@@ -317,6 +319,8 @@ export function UnarchiveButton({ chat }: { chat: Chat }) {
         const response = await unarchiveChat(chat.uuid)
         if (response.ok) {
             setChats(previous => previous.map(c => c.uuid === chat.uuid ? { ...c, is_archived: false } : c))
+        } else if (response.status === 429) {
+            notify(t("throttled"), "error")
         } else {
             notify(t("unarchiveButton.error", { title: chat.title }))
         }
@@ -341,6 +345,8 @@ export function DeleteButton({ chat }: { chat: Chat }) {
             if (location.pathname.includes(chat.uuid)) {
                 location.href = "/"
             }
+        } else if (response.status === 429) {
+            notify(t("throttled"), "error")
         } else {
             notify(t("deleteButton.error", { title: chat.title }))
         }
