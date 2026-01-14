@@ -303,7 +303,7 @@ function SessionsEntryItem() {
 
     async function handleLogoutAllSessions() {
         await logoutAllSessions()
-        location.reload()
+        location.href = "/login"
     }
 
     if (!user) return
