@@ -214,5 +214,6 @@
     "signup.haveAccount": "Already have an account?",
     "signup.logIn": "Log in!",
     "signup.emailError": "The email address is already registered. Please choose another one.",
-    "signup.ipAddressError": "It appears that at least one other account has recently been created using the same IP address. To avoid spam, try registering using a different device."
+    "signup.ipAddressError": "It appears that at least one other account has recently been created using the same IP address. To avoid spam, try registering using a different device.",
+    "signup.throttled": "You’ve tried signing up too many times. Please wait a minute before trying again."
 }

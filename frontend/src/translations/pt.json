@@ -214,5 +214,6 @@
     "signup.haveAccount": "Já tem uma conta?",
     "signup.logIn": "Entrar!",
     "signup.emailError": "O endereço de e-mail já está cadastrado. Por favor, escolha outro.",
-    "signup.ipAddressError": "Parece que pelo menos outra conta foi criada recentemente usando o mesmo endereço IP. Para evitar spam, tente se cadastrar usando um dispositivo diferente."
+    "signup.ipAddressError": "Parece que pelo menos outra conta foi criada recentemente usando o mesmo endereço IP. Para evitar spam, tente se cadastrar usando um dispositivo diferente.",
+    "signup.throttled": "Você tentou se cadastrar muitas vezes. Aguarde um minuto antes de tentar novamente."
 }

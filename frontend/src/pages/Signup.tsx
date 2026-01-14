@@ -28,6 +28,9 @@ export default function Signup() {
         const response = await signup(email, password)
         if (response.ok) {
             location.href = `/check-email?email=${encodeURIComponent(email)}`
+        } else if (response.status === 429) {
+            setError(t("signup.throttled"))
+            setIsVerifying(false)
         } else {
             const data = await response.json()
             setError(t(data.detail))
