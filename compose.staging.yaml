@@ -4,3 +4,8 @@ services:
 
     postgres:
         env_file: .env.staging
+
+    mailpit:
+        image: axllent/mailpit
+        ports:
+            - 8025:8025
