@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router"
 
 import { Button, Error, Form, Header, Password } from "../../components/Auth"
 import { confirmPasswordReset } from "../../utils/api"
@@ -14,8 +13,6 @@ export default function ResetPassword() {
         location.href = "/login"
         return
     }
-
-    const navigate = useNavigate()
 
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
@@ -55,7 +52,13 @@ export default function ResetPassword() {
             {isDone ? (
                 <>
                     <p className="font-semibold text-center text-white light:text-black">{t("auth.resetPassword.success")}</p>
-                    <Button text={t("auth.goBackToLogin")} isDisabled={false} onClick={() => navigate("/login")} />
+                    <Button
+                        text={t("auth.goBackToLogin")}
+                        isDisabled={false}
+                        onClick={() => {
+                            location.href = "/login"
+                        }}
+                    />
                 </>
             ) : (
                 <>
