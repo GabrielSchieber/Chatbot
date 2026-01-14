@@ -1,8 +1,10 @@
-import { t } from "i18next"
+import { useTranslation } from "react-i18next"
 
 import { Button, Header } from "../../components/Auth"
 
 export default function CheckEmail() {
+    const { t } = useTranslation()
+
     const email = new URLSearchParams(location.search).get("email")
 
     return (

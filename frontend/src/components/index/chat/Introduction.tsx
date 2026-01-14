@@ -1,9 +1,10 @@
-import { t } from "i18next"
 import type React from "react"
+import { useTranslation } from "react-i18next"
 import { useParams } from "react-router"
 
 export default function Introduction({ ref }: { ref: React.RefObject<HTMLHeadingElement | null> }) {
     const { chatUUID } = useParams()
+    const { t } = useTranslation()
 
     return (
         <h1

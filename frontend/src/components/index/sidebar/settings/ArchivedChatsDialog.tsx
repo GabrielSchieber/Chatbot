@@ -1,7 +1,7 @@
 import { Cross1Icon } from "@radix-ui/react-icons"
-import { t } from "i18next"
 import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { TooltipButton } from "../../../misc/Buttons"
 import ConfirmDialog from "../../../misc/ConfirmDialog"
@@ -12,6 +12,8 @@ import { archiveChats, deleteChat, getChats, unarchiveChat, unarchiveChats } fro
 import type { Chat } from "../../../../utils/types"
 
 export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: string }) {
+    const { t } = useTranslation()
+
     const { chats, setChats, isMobile } = useChat()
     const notify = useNotify()
 
@@ -148,6 +150,8 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
 }
 
 function ArchiveOrUnarchiveDialog({ action, onConfirm }: { action: "archive" | "unarchive", onConfirm: () => void }) {
+    const { t } = useTranslation()
+
     return (
         <ConfirmDialog
             trigger={
@@ -165,6 +169,8 @@ function ArchiveOrUnarchiveDialog({ action, onConfirm }: { action: "archive" | "
 }
 
 function Entry({ chat, handleUnarchive, handleDelete }: { chat: Chat, handleUnarchive: (chat: Chat) => void, handleDelete: (chat: Chat) => void }) {
+    const { t } = useTranslation()
+
     return (
         <a
             className="flex w-full px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-700 light:hover:bg-gray-300"

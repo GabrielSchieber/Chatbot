@@ -1,7 +1,7 @@
 import { ArchiveIcon, ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ClockIcon, CopyIcon, Cross2Icon, GearIcon, MagnifyingGlassIcon, PauseIcon, Pencil1Icon, PlusIcon, TrashIcon, UpdateIcon } from "@radix-ui/react-icons"
-import { t } from "i18next"
 import { Dialog, DropdownMenu, Select, Tooltip } from "radix-ui"
 import { useEffect, useState, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react"
+import { useTranslation } from "react-i18next"
 import { useParams } from "react-router"
 
 import ConfirmDialog from "./ConfirmDialog"
@@ -12,6 +12,8 @@ import { archiveChat, deleteChat, regenerateMessage, renameChat, unarchiveChat }
 import type { Chat, Model } from "../../utils/types"
 
 export function AddFilesButton({ fileInputRef, tabIndex }: { fileInputRef: RefObject<HTMLInputElement | null>, tabIndex: number }) {
+    const { t } = useTranslation()
+
     return (
         <TooltipButton
             trigger={<PlusIcon className="size-6" />}
@@ -28,6 +30,8 @@ export function SelectModelButton(
     { model, setModel, hasImages, isMobile, tabIndex }:
         { model: Model, setModel: Dispatch<SetStateAction<Model>>, hasImages: boolean, isMobile: boolean, tabIndex: number }
 ) {
+    const { t } = useTranslation()
+
     return (
         <Select.Root value={model} onValueChange={v => setModel(v as Model)}>
             <TooltipButton
@@ -94,6 +98,8 @@ export function SelectModelButton(
 }
 
 export function SendButton({ sendMessage, isDisabled, tabIndex }: { sendMessage: () => void, isDisabled: boolean, tabIndex: number }) {
+    const { t } = useTranslation()
+
     return (
         <TooltipButton
             trigger={<ArrowUpIcon className="size-6" />}
@@ -109,6 +115,8 @@ export function SendButton({ sendMessage, isDisabled, tabIndex }: { sendMessage:
 }
 
 export function StopButton({ onClick, tabIndex }: { onClick: VoidFunction, tabIndex: number }) {
+    const { t } = useTranslation()
+
     return (
         <TooltipButton
             trigger={<PauseIcon className="size-6" />}
@@ -123,6 +131,8 @@ export function StopButton({ onClick, tabIndex }: { onClick: VoidFunction, tabIn
 }
 
 export function CancelButton({ setIndex, tabIndex }: { setIndex: React.Dispatch<React.SetStateAction<number>>, tabIndex: number }) {
+    const { t } = useTranslation()
+
     return (
         <TooltipButton
             trigger={<Cross2Icon className="size-6" />}
@@ -137,6 +147,8 @@ export function CancelButton({ setIndex, tabIndex }: { setIndex: React.Dispatch<
 }
 
 export function EditButton({ onClick }: { onClick: () => void }) {
+    const { t } = useTranslation()
+
     const { chatUUID } = useParams()
 
     const { chats } = useChat()
@@ -158,6 +170,8 @@ export function EditButton({ onClick }: { onClick: () => void }) {
 }
 
 export function CopyButton({ text }: { text: string }) {
+    const { t } = useTranslation()
+
     const [isChecked, setIsChecked] = useState(false)
 
     return (
@@ -177,6 +191,7 @@ export function CopyButton({ text }: { text: string }) {
 
 export function RegenerateButton({ index, model }: { index: number, model: Model | null }) {
     const { chatUUID } = useParams()
+    const { t } = useTranslation()
 
     const { chats, setChats, setMessages } = useChat()
     const notify = useNotify()
@@ -263,6 +278,8 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
 }
 
 export function RenameButton({ onSelect }: { onSelect: () => void }) {
+    const { t } = useTranslation()
+
     return (
         <DropdownMenu.Item className={nonDestructiveChatDropdownItemClassName} onSelect={onSelect}>
             <Pencil1Icon className="size-4.5" /> {t("renameButton.label")}
@@ -272,6 +289,7 @@ export function RenameButton({ onSelect }: { onSelect: () => void }) {
 
 export function ArchiveButton({ chat }: { chat: Chat }) {
     const { setChats } = useChat()
+    const { t } = useTranslation()
     const notify = useNotify()
 
     async function handleArchiveChat() {
@@ -292,6 +310,7 @@ export function ArchiveButton({ chat }: { chat: Chat }) {
 
 export function UnarchiveButton({ chat }: { chat: Chat }) {
     const { setChats } = useChat()
+    const { t } = useTranslation()
     const notify = useNotify()
 
     async function handleUnarchiveChat() {
@@ -312,6 +331,7 @@ export function UnarchiveButton({ chat }: { chat: Chat }) {
 
 export function DeleteButton({ chat }: { chat: Chat }) {
     const { setChats } = useChat()
+    const { t } = useTranslation()
     const notify = useNotify()
 
     async function handleDelete(chat: Chat) {
@@ -378,6 +398,8 @@ export function TooltipButton({ trigger, tooltip, onClick, type, className, isDi
 }
 
 export function ToggleSidebar({ withLabel, onClick }: { withLabel: boolean, onClick: VoidFunction }) {
+    const { t } = useTranslation()
+
     return (
         <button className={sidebarButtonClasses} onClick={onClick}>
             {withLabel ? (
@@ -390,6 +412,8 @@ export function ToggleSidebar({ withLabel, onClick }: { withLabel: boolean, onCl
 }
 
 export function NewChat({ withLabel }: { withLabel: boolean }) {
+    const { t } = useTranslation()
+
     return (
         <a className={sidebarButtonClasses} href="/">
             <PlusIcon className="size-5" /> {withLabel && t("sidebar.newChat")}
@@ -399,7 +423,7 @@ export function NewChat({ withLabel }: { withLabel: boolean }) {
 
 export function TemporaryChat({ withLabel }: { withLabel: boolean }) {
     const { chatUUID } = useParams()
-
+    const { t } = useTranslation()
     const { isTemporaryChat, setIsTemporaryChat } = useChat()
 
     return (
@@ -421,6 +445,8 @@ export function TemporaryChat({ withLabel }: { withLabel: boolean }) {
 }
 
 export function SearchChats({ withLabel }: { withLabel: boolean }) {
+    const { t } = useTranslation()
+
     return (
         <Dialog.Trigger className={sidebarButtonClasses}>
             <MagnifyingGlassIcon className="size-5" /> {withLabel && t("sidebar.searchChats")}
@@ -429,6 +455,8 @@ export function SearchChats({ withLabel }: { withLabel: boolean }) {
 }
 
 export function OpenSettings({ withLabel }: { withLabel: boolean }) {
+    const { t } = useTranslation()
+
     return (
         <Dialog.Trigger className={sidebarButtonClasses}>
             <GearIcon className="size-5" /> {withLabel && t("sidebar.settings")}
@@ -438,7 +466,7 @@ export function OpenSettings({ withLabel }: { withLabel: boolean }) {
 
 export function RenameDialog() {
     const { chatUUID } = useParams()
-
+    const { t } = useTranslation()
     const { chats, setChats } = useChat()
 
     const currentChat = chats.find(c => c.uuid === chatUUID)

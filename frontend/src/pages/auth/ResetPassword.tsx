@@ -1,11 +1,13 @@
-import { t } from "i18next"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
 
 import { Button, Error, Form, Header, Password } from "../../components/Auth"
 import { confirmPasswordReset } from "../../utils/api"
 
 export default function ResetPassword() {
+    const { t } = useTranslation()
+
     const token = new URLSearchParams(location.search).get("token")
 
     if (!token) {

@@ -17,11 +17,12 @@ import { applyTheme, getLanguageAbbreviation } from "../../../utils/misc"
 import type { Language, Theme } from "../../../utils/types"
 
 export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) {
-    const { user } = useAuth()
-    const { isMobile } = useChat()
     const { t } = useTranslation()
 
-    const [currentTab, setCurrentTab] = useState(t("settings.general"))
+    const { user } = useAuth()
+    const { isMobile } = useChat()
+
+    const [currentTab, setCurrentTab] = useState<SettingsTab>("settings.general")
 
     const [isScreenHeightSmall, setIsScreenHeightSmall] = useState(window.innerHeight < 430)
 
@@ -50,7 +51,7 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                             ${isMobile ? "flex-col inset-0 size-full" : isScreenHeightSmall ? "inset-0 w-150 h-full" : "w-150 min-h-105"}
                         `}
                         value={currentTab}
-                        onValueChange={v => setCurrentTab(v)}
+                        onValueChange={v => setCurrentTab(v as SettingsTab)}
                     >
                         <Tabs.List
                             className={`
@@ -63,36 +64,36 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                                 <Cross1Icon className="size-5" />
                             </Dialog.Close>
 
-                            <Trigger icon={<GearIcon className="size-4.5" />} title={t("settings.general")} />
-                            <Trigger icon={<MixerVerticalIcon className="size-4.5" />} title={t("settings.customizations")} />
-                            <Trigger icon={<MixerHorizontalIcon className="size-4.5" />} title={t("settings.data")} />
+                            <Trigger icon={<GearIcon className="size-4.5" />} title={t("settings.general")} titleKey="settings.general" />
+                            <Trigger icon={<MixerVerticalIcon className="size-4.5" />} title={t("settings.customizations")} titleKey="settings.customizations" />
+                            <Trigger icon={<MixerHorizontalIcon className="size-4.5" />} title={t("settings.data")} titleKey="settings.data" />
                             {!user.is_guest &&
-                                <Trigger icon={<LockClosedIcon className="size-4.5" />} title={t("settings.security")} />
+                                <Trigger icon={<LockClosedIcon className="size-4.5" />} title={t("settings.security")} titleKey="settings.security" />
                             }
-                            <Trigger icon={<PersonIcon className="size-4.5" />} title={t("settings.account")} />
+                            <Trigger icon={<PersonIcon className="size-4.5" />} title={t("settings.account")} titleKey="settings.account" />
                         </Tabs.List>
 
-                        <Content title={t("settings.general")} isScreenHeightSmall={isScreenHeightSmall}>
+                        <Content title={t("settings.general")} titleKey="settings.general" isScreenHeightSmall={isScreenHeightSmall}>
                             <Entry name={t("settings.theme")} item={<ThemeEntryItem />} />
                             <Entry name={t("settings.language")} item={<LanguageEntryItem setCurrentTab={setCurrentTab} />} />
                         </Content>
 
-                        <Content title={t("settings.customizations")} isScreenHeightSmall={isScreenHeightSmall}>
+                        <Content title={t("settings.customizations")} titleKey="settings.customizations" isScreenHeightSmall={isScreenHeightSmall}>
                             <Customizations />
                         </Content>
 
-                        <Content title={t("settings.data")} isScreenHeightSmall={isScreenHeightSmall}>
+                        <Content title={t("settings.data")} titleKey="settings.data" isScreenHeightSmall={isScreenHeightSmall}>
                             <Entry name={t("settings.archivedChats")} item={<ArchivedChatsDialog triggerClassName={entryClasses} />} />
                             <Entry name={t("settings.deleteChats")} item={<DeleteChatsEntryItem />} />
                         </Content>
 
-                        <Content title={t("settings.security")} isScreenHeightSmall={isScreenHeightSmall}>
+                        <Content title={t("settings.security")} titleKey="settings.security" isScreenHeightSmall={isScreenHeightSmall}>
                             <Entry name={t("settings.mfa")} item={<MFADialog triggerClassName={entryClasses} />} />
                             <Entry name={t("settings.logout")} item={<LogoutEntryItem />} />
                             <SessionsEntryItem />
                         </Content>
 
-                        <Content title={t("settings.account")} isScreenHeightSmall={isScreenHeightSmall}>
+                        <Content title={t("settings.account")} titleKey="settings.account" isScreenHeightSmall={isScreenHeightSmall}>
                             {!user.is_guest && (
                                 <div className="flex gap-2 py-3 items-center">
                                     <EnvelopeClosedIcon className="size-4.5" />
@@ -111,12 +112,12 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
     )
 }
 
-function Trigger({ icon, title }: { icon: ReactNode, title: string }) {
+function Trigger({ icon, title, titleKey }: { icon: ReactNode, title: string, titleKey: SettingsTab }) {
     const { isMobile } = useChat()
 
     return (
         <Tabs.Trigger
-            value={title}
+            value={titleKey}
             className={`
                 flex gap-1 px-2 py-1 items-center cursor-pointer outline-none rounded-lg
                 hover:bg-gray-700 light:hover:bg-gray-300
@@ -130,12 +131,12 @@ function Trigger({ icon, title }: { icon: ReactNode, title: string }) {
     )
 }
 
-function Content({ title, isScreenHeightSmall, children }: { title: string, isScreenHeightSmall: boolean, children: ReactNode }) {
+function Content({ title, titleKey, isScreenHeightSmall, children }: { title: string, titleKey: string, isScreenHeightSmall: boolean, children: ReactNode }) {
     const { isMobile } = useChat()
 
     return (
         <Tabs.Content
-            value={title}
+            value={titleKey}
             className={`flex grow overflow-y-auto bg-gray-800 light:bg-gray-200 ${!isMobile && !isScreenHeightSmall && "rounded-r-xl"}`}
             tabIndex={-1}
         >
@@ -196,9 +197,10 @@ function ThemeEntryItem() {
     )
 }
 
-function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetStateAction<string>> }) {
-    const { user, setUser } = useAuth()
+function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetStateAction<SettingsTab>> }) {
     const { i18n, t } = useTranslation()
+
+    const { user, setUser } = useAuth()
 
     if (!user) return
 
@@ -211,8 +213,8 @@ function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetState
         me(language)
         setUser(previous => previous ? { ...previous, preferences: { ...previous.preferences, language } } : previous)
         setLanguage(language)
-        const t = await i18n.changeLanguage(getLanguageAbbreviation(language))
-        setCurrentTab(t("settings.general"))
+        await i18n.changeLanguage(getLanguageAbbreviation(language))
+        setCurrentTab("settings.general")
     }
 
     const getValue = (l: Language) => l ? l : autoDetect
@@ -245,9 +247,10 @@ function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetState
 }
 
 function DeleteChatsEntryItem() {
+    const { t } = useTranslation()
+
     const { setChats } = useChat()
     const notify = useNotify()
-    const { t } = useTranslation()
 
     async function handleDeleteChats() {
         const response = await deleteChats()
@@ -294,8 +297,9 @@ function LogoutEntryItem() {
 }
 
 function SessionsEntryItem() {
-    const { user } = useAuth()
     const { t } = useTranslation()
+
+    const { user } = useAuth()
 
     async function handleLogoutAllSessions() {
         await logoutAllSessions()
@@ -344,6 +348,13 @@ function Entry({ name, item }: { name: string, item: ReactNode }) {
         </div>
     )
 }
+
+type SettingsTab =
+    | "settings.general"
+    | "settings.customizations"
+    | "settings.data"
+    | "settings.security"
+    | "settings.account"
 
 const entryClasses = `
     flex px-2 py-1 items-center justify-center rounded-lg cursor-pointer

@@ -1,13 +1,15 @@
 import { ArchiveIcon, ChatBubbleIcon, Cross1Icon } from "@radix-ui/react-icons"
-import i18next, { t } from "i18next"
 import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { SearchChats } from "../../misc/Buttons"
 import { useChat } from "../../../providers/ChatProvider"
 import { searchChats } from "../../../utils/api"
 
 export default function Search({ openButtonWithLabel }: { openButtonWithLabel: boolean }) {
+    const { t } = useTranslation()
+
     const { chats, isMobile } = useChat()
 
     const entriesRef = useRef<HTMLDivElement | null>(null)
@@ -199,12 +201,14 @@ function Entry({ entry }: { entry: SearchEntry }) {
 }
 
 function formatChatDate(isoString: string): string {
+    const { t, i18n } = useTranslation()
+
     const date = new Date(isoString)
     const now = new Date()
     const differenceMonths = now.getTime() - date.getTime()
     const differenceDays = Math.floor(differenceMonths / (1000 * 60 * 60 * 24))
 
-    const language = i18next.language || "en"
+    const language = i18n.language || "en"
 
     if (differenceDays < 1) {
         return t("search.date.today")

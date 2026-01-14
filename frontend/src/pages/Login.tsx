@@ -1,10 +1,12 @@
-import { t } from "i18next"
 import React, { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { Button, Email, Error, Form, Header, MFA, MFARecovery, MFAStepSwitch, Password, Recommendation, type Step } from "../components/Auth"
 import { login, verifyMFA } from "../utils/api"
 
 export default function Login() {
+    const { t } = useTranslation()
+
     const [step, setStep] = useState<Step>("login")
 
     const [email, setEmail] = useState("")

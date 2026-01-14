@@ -1,5 +1,5 @@
-import { t } from "i18next"
 import { useEffect } from "react"
+import { useTranslation } from "react-i18next"
 
 export default function TextArea({ ref, text, setText, sendMessageWithEvent, selectionStart, selectionEnd, tabIndex }: {
     ref: React.RefObject<HTMLTextAreaElement | null>
@@ -10,6 +10,8 @@ export default function TextArea({ ref, text, setText, sendMessageWithEvent, sel
     selectionEnd: React.RefObject<number>
     tabIndex: number
 }) {
+    const { t } = useTranslation()
+
     useEffect(() => {
         if (!ref.current) return
 

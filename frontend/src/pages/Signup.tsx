@@ -1,10 +1,12 @@
-import { t } from "i18next"
 import React, { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { Button, Email, Error, Form, Header, Password, Recommendation } from "../components/Auth"
 import { signup } from "../utils/api"
 
 export default function Signup() {
+    const { t } = useTranslation()
+
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")

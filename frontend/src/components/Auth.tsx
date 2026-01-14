@@ -1,6 +1,6 @@
-import { t } from "i18next"
 import { Label as RadixLabel } from "radix-ui"
 import { type Dispatch, type ReactNode, type SetStateAction } from "react"
+import { useTranslation } from "react-i18next"
 
 export type Step = "login" | "mfa" | "mfa-recovery"
 
@@ -19,6 +19,8 @@ export function Header({ text }: { text: string }) {
 }
 
 export function Email({ email, setEmail }: { email: string, setEmail: Dispatch<SetStateAction<string>> }) {
+    const { t } = useTranslation()
+
     return (
         <div className="flex flex-col space-y-2">
             <Label htmlFor="email" text={t("auth.email.label")} />
@@ -48,6 +50,8 @@ export function Password({ password, setPassword, label, id, minLength, maxLengt
     maxLength?: number
     includeForgotPassword?: boolean
 }) {
+    const { t } = useTranslation()
+
     return (
         <div className="flex flex-col space-y-2">
             <Label htmlFor={id} text={label} />
@@ -82,6 +86,8 @@ export function MFA({ code, setCode, setError }: {
     setCode: Dispatch<SetStateAction<string>>
     setError: Dispatch<SetStateAction<string>>
 }) {
+    const { t } = useTranslation()
+
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         setCode(e.target.value)
         setError("")
@@ -138,6 +144,8 @@ export function MFARecovery({ code, setCode, setError }: {
     setCode: Dispatch<SetStateAction<string>>
     setError: Dispatch<SetStateAction<string>>
 }) {
+    const { t } = useTranslation()
+
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         setCode(e.target.value)
         setError("")

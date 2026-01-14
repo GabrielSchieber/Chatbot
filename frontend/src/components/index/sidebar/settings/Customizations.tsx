@@ -1,11 +1,13 @@
-import { t } from "i18next"
 import { Label as RadixLabel } from "radix-ui"
 import { useState, useEffect, type ReactNode, useRef } from "react"
+import { useTranslation } from "react-i18next"
 
 import { useAuth } from "../../../../providers/AuthProvider"
 import { me } from "../../../../utils/api"
 
 export default function Customizations() {
+    const { t } = useTranslation()
+
     const { user, setUser } = useAuth()
 
     const [customInstructions, setCustomInstructions] = useState<string | undefined>(undefined)

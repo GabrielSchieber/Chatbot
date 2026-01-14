@@ -1,7 +1,7 @@
 import { DotsVerticalIcon } from "@radix-ui/react-icons"
-import { t } from "i18next"
 import { DropdownMenu } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useParams } from "react-router"
 
 import { ArchiveButton, DeleteButton, RenameButton } from "../../misc/Buttons"
@@ -12,6 +12,7 @@ import type { Chat } from "../../../utils/types"
 
 export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: boolean, sidebarRef: React.RefObject<HTMLDivElement | null> }) {
     const { chatUUID } = useParams()
+    const { t } = useTranslation()
 
     const { chats, setChats } = useChat()
     const notify = useNotify()

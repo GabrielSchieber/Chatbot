@@ -1,7 +1,8 @@
 import { Cross2Icon } from "@radix-ui/react-icons"
+import type { TFunction } from "i18next"
 import { AnimatePresence, motion } from "motion/react"
-import { t } from "i18next"
 import React, { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useNavigate, useParams } from "react-router"
 
 import Composer from "./prompt/Composer"
@@ -13,8 +14,9 @@ import { getFileSize } from "../../../utils/misc"
 import type { Model } from "../../../utils/types"
 
 export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefObject<boolean> }) {
-    const { chatUUID } = useParams()
     const navigate = useNavigate()
+    const { chatUUID } = useParams()
+    const { t } = useTranslation()
 
     const { chats, setChats, setMessages, isMobile, isTemporaryChat, setPromptHeight } = useChat()
     const notify = useNotify()
@@ -197,7 +199,7 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
                     withBorderAndShadow={true}
                     tabIndex={1}
                     ariaLabel="Message composer"
-                    onChangeFile={e => handleFileChange(e, files, setFiles, notify)}
+                    onChangeFile={e => handleFileChange(e, files, setFiles, notify, t)}
                     onRemoveFile={f => setFiles(previous => previous.filter(p => p.name + "|" + p.size !== f.name + "|" + f.content_size))}
                     onRemoveAllFiles={() => setFiles([])}
                     sendMessage={sendMessage}
@@ -212,7 +214,8 @@ export async function handleFileChange(
     e: React.ChangeEvent<HTMLInputElement>,
     files: File[],
     setFiles: React.Dispatch<React.SetStateAction<File[]>>,
-    notify: (message: string, type: "info" | "success" | "error") => void
+    notify: (message: string, type: "info" | "success" | "error") => void,
+    t: TFunction<"translation", undefined>
 ) {
     if (!e.target.files) return
 

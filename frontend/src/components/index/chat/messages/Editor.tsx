@@ -1,5 +1,5 @@
-import { t } from "i18next"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useParams } from "react-router"
 
 import Composer from "../prompt/Composer"
@@ -12,6 +12,7 @@ import type { MessageFile, Model } from "../../../../utils/types"
 
 export default function Editor({ index, setIndex }: { index: number, setIndex: React.Dispatch<React.SetStateAction<number>> }) {
     const { chatUUID } = useParams()
+    const { t } = useTranslation()
 
     const { setChats, messages, setMessages } = useChat()
     const notify = useNotify()

@@ -1,8 +1,8 @@
 import { CheckIcon, CopyIcon, Cross1Icon, DownloadIcon } from "@radix-ui/react-icons"
-import { t } from "i18next"
 import { QRCodeCanvas } from "qrcode.react"
 import { Dialog, Label } from "radix-ui"
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react"
+import { useTranslation } from "react-i18next"
 
 import { useAuth } from "../../../../providers/AuthProvider"
 import { useNotify } from "../../../../providers/NotificationProvider"
@@ -12,6 +12,7 @@ import { useChat } from "../../../../providers/ChatProvider"
 export default function MFADialog({ triggerClassName }: { triggerClassName: string }) {
     const { user, setUser } = useAuth()
     const { isMobile } = useChat()
+    const { t } = useTranslation()
 
     if (!user) return
 
@@ -104,6 +105,8 @@ function SetupDialog({ setAuthURL, setSecret, setStep, setIsLocked }: {
     setStep: Dispatch<SetStateAction<Step>>
     setIsLocked: Dispatch<SetStateAction<boolean>>
 }) {
+    const { t } = useTranslation()
+
     const [password, setPassword] = useState("")
     const [error, setError] = useState("")
     const [isSettingUp, setIsSettingUp] = useState(false)
@@ -167,6 +170,7 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
     setIsLocked: Dispatch<SetStateAction<boolean>>
 }) {
     const { isMobile } = useChat()
+    const { t } = useTranslation()
     const notify = useNotify()
 
     const [code, setCode] = useState("")
@@ -242,6 +246,7 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
 
 function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], setIsLocked: Dispatch<SetStateAction<boolean>> }) {
     const { isMobile } = useChat()
+    const { t } = useTranslation()
 
     const [isCopyButtonChecked, setIsCopyButtonChecked] = useState(false)
     const [hasConfirmedBackup, setHasConfirmedBackup] = useState(false)
@@ -318,6 +323,7 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
 }
 
 function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAction<Step>>, setIsLocked: Dispatch<SetStateAction<boolean>> }) {
+    const { t } = useTranslation()
     const notify = useNotify()
 
     const [method, setMethod] = useState<"authenticator" | "recovery">("authenticator")
@@ -391,6 +397,8 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
 }
 
 function DisabledDialog() {
+    const { t } = useTranslation()
+
     return (
         <div className="flex flex-col gap-3 items-center">
             <p className={paragraphClassName}>{t("mfa.messages.disabledSuccess")}</p>

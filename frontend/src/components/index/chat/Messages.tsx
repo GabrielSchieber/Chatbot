@@ -1,7 +1,7 @@
 import { ArrowDownIcon, CheckIcon, CopyIcon } from "@radix-ui/react-icons"
-import { t } from "i18next"
 import { AnimatePresence, motion } from "motion/react"
 import React, { useEffect, useRef, useState, type ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import ReactMarkdown from "react-markdown"
 import { useParams } from "react-router"
 import rehypeHighlight from "rehype-highlight"
@@ -237,6 +237,8 @@ export function UserMessage({ index, text, files, onEditClick }: { index: number
 }
 
 export function BotMessage({ index, text, model }: { index: number, text: string, model?: Model | null }) {
+    const { t } = useTranslation()
+
     return (
         <div className="flex flex-col gap-1">
             <div className="wrap-anywhere whitespace-pre-wrap" data-testid={`message-${index}`}>

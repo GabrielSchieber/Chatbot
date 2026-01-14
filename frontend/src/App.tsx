@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router"
 
 import CheckEmail from "./pages/auth/CheckEmail"
@@ -10,11 +11,12 @@ import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import { useAuth } from "./providers/AuthProvider"
 import { NotificationProvider } from "./providers/NotificationProvider"
-import i18n from "./utils/i18n"
 import { applyTheme, getLanguageAbbreviation } from "./utils/misc"
 import "./App.css"
 
 export default function App() {
+    const { i18n } = useTranslation()
+
     const { user, loading } = useAuth()
 
     const [hasSetTheme, setHasSetTheme] = useState(false)
