@@ -1,11 +1,26 @@
 services:
     backend:
-        env_file: .env.staging
+        environment:
+            ENVIRONMENT: "Staging"
+
+            POSTGRES_DB: "postgres"
+            POSTGRES_USER: "postgres"
+            POSTGRES_PASSWORD: "123"
 
     postgres:
-        env_file: .env.staging
+        environment:
+            POSTGRES_DB: "postgres"
+            POSTGRES_USER: "postgres"
+            POSTGRES_PASSWORD: "123"
 
     mailpit:
         image: axllent/mailpit
         ports:
             - 8025:8025
+
+    nginx:
+        ports:
+            - 80:80
+            - 443:443
+        volumes:
+            - ./backend/nginx.staging.conf:/etc/nginx/nginx.conf:ro

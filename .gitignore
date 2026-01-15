@@ -1,14 +1,12 @@
-.venv/
 __pycache__/
+.venv/
 chat_temp/
-ssl/
 static_files/
+.coverage
+.coverage.*
 
 dist/
 node_modules/
 test-results/
 
-.coverage
-.coverage.*
-.env
-.env.*
+secrets/

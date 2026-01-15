@@ -1,12 +1,67 @@
 services:
     backend:
-        env_file: .env.production
+        environment:
+            ENVIRONMENT: "Production"
+
+            SECRET_KEY_PATH: /run/secrets/secret_key
+            TOTP_ENCRYPTION_KEY_PATH: /run/secrets/totp_encryption_key
+
+            EMAIL_HOST_USER_PATH: /run/secrets/email_host_user
+            EMAIL_HOST_PASSWORD_PATH: /run/secrets/email_host_password
+
+            POSTGRES_DB_PATH: /run/secrets/postgres_db
+            POSTGRES_USER_PATH: /run/secrets/postgres_user
+            POSTGRES_PASSWORD_PATH: /run/secrets/postgres_password
+        secrets:
+            - secret_key
+            - totp_encryption_key
+
+            - email_host_user
+            - email_host_password
+
+            - postgres_db
+            - postgres_user
+            - postgres_password
 
     postgres:
-        env_file: .env.production
+        environment:
+            POSTGRES_DB_FILE: /run/secrets/postgres_db
+            POSTGRES_USER_FILE: /run/secrets/postgres_user
+            POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+        secrets:
+            - postgres_db
+            - postgres_user
+            - postgres_password
+
+    nginx:
+        volumes:
+            - ./backend/nginx.production.conf:/etc/nginx/nginx.conf:ro
 
     cloudflared:
         image: cloudflare/cloudflared:latest
-        depends_on:
-            - nginx
-        command: tunnel --no-autoupdate --no-tls-verify --url https://nginx:443
+        command: tunnel run
+        environment:
+            TUNNEL_TOKEN: /run/secrets/tunnel_token
+        secrets:
+            - tunnel_token
+
+secrets:
+    secret_key:
+        file: secrets/secret_key.txt
+    totp_encryption_key:
+        file: secrets/totp_encryption_key.txt
+
+    email_host_user:
+        file: secrets/email_host_user.txt
+    email_host_password:
+        file: secrets/email_host_password.txt
+
+    postgres_db:
+        file: secrets/postgres_db.txt
+    postgres_user:
+        file: secrets/postgres_user.txt
+    postgres_password:
+        file: secrets/postgres_password.txt
+
+    tunnel_token:
+        file: secrets/tunnel_token.txt

@@ -1,7 +1,11 @@
-.venv/
 __pycache__/
+.pytest_cache/
+.venv/
 chat_temp/
 ollama/
+static_files/
 
+.coverage
+.coverage.*
 .dockerignore
 dockerfile

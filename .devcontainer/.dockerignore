@@ -2,19 +2,23 @@
 .gitignore
 
 .dockerignore
-.env
 compose.yaml
 devcontainer.json
 dockerfile
 
 .vscode/
 
-.venv/
 __pycache__/
+.pytest_cache/
+.venv/
 chat_temp/
 ollama/
-ssl/
+static_files/
+.coverage
+.coverage.*
 
 dist/
 node_modules/
 test-results/
+
+secrets/

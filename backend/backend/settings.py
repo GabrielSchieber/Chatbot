@@ -1,20 +1,80 @@
 import os
 from datetime import timedelta
-from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+def get_env(key: str):
+    value = os.getenv(key)
+    if value is None:
+        raise RuntimeError(f"'{key}' environment variable must be defined.")
+    return value
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
-if not SECRET_KEY:
-    raise RuntimeError("DJANGO_SECRET_KEY environment variable must be defined.")
+def get_secret(path_key: str):
+    with open(get_env(path_key)) as file:
+        return file.read()
 
-TOTP_ENCRYPTION_KEY = os.environ.get("DJANGO_TOTP_ENCRYPTION_KEY")
-if not TOTP_ENCRYPTION_KEY:
-    raise RuntimeError("DJANGO_TOTP_ENCRYPTION_KEY environment variable must be defined.")
+match get_env("ENVIRONMENT"):
+    case "Development":
+        SECRET_KEY = "123"
+        TOTP_ENCRYPTION_KEY = "1111111111111111111111111111111111111111111="
 
-DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
+        DEBUG = True
+        ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+        SECURE_SSL_REDIRECT = False
 
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+        EMAIL_HOST = "mailpit"
+        EMAIL_PORT = 1025
+        EMAIL_USE_TLS = False
+        DEFAULT_FROM_EMAIL = "Chatbot <no-reply@localhost>"
+        BASE_EMAIL_URL = "http://localhost:5173"
+
+        POSTGRES_DB = get_env("POSTGRES_DB")
+        POSTGRES_USER = get_env("POSTGRES_USER")
+        POSTGRES_PASSWORD = get_env("POSTGRES_PASSWORD")
+    case "Staging":
+        SECRET_KEY = "123"
+        TOTP_ENCRYPTION_KEY = "1111111111111111111111111111111111111111111="
+
+        DEBUG = False
+        ALLOWED_HOSTS = ["127.0.0.1"]
+        SECURE_SSL_REDIRECT = True
+
+        EMAIL_HOST = "mailpit"
+        EMAIL_PORT = 1025
+        EMAIL_USE_TLS = False
+        DEFAULT_FROM_EMAIL = "Chatbot <no-reply@localhost>"
+        BASE_EMAIL_URL = "https://127.0.0.1"
+
+        POSTGRES_DB = get_env("POSTGRES_DB")
+        POSTGRES_USER = get_env("POSTGRES_USER")
+        POSTGRES_PASSWORD = get_env("POSTGRES_PASSWORD")
+    case "Production":
+        SECRET_KEY = get_secret("SECRET_KEY_PATH")
+        TOTP_ENCRYPTION_KEY = get_secret("TOTP_ENCRYPTION_KEY_PATH")
+
+        DEBUG = False
+        ALLOWED_HOSTS = ["example.com"]
+        SECURE_SSL_REDIRECT = True
+
+        EMAIL_HOST = "smtp.example.com"
+        EMAIL_HOST_USER = get_secret("EMAIL_HOST_USER_PATH")
+        EMAIL_HOST_PASSWORD = get_secret("EMAIL_HOST_PASSWORD_PATH")
+        EMAIL_PORT = 587
+        EMAIL_USE_TLS = True
+        DEFAULT_FROM_EMAIL = "Chatbot <no-reply@example.com>"
+        BASE_EMAIL_URL = "https://example.com"
+
+        POSTGRES_DB = get_secret("POSTGRES_DB_PATH")
+        POSTGRES_USER = get_secret("POSTGRES_USER_PATH")
+        POSTGRES_PASSWORD = get_secret("POSTGRES_PASSWORD_PATH")
+    case _:
+        raise RuntimeError(f"Invalid value for 'ENVIRONMENT' environment variable.")
+
+ROOT_URLCONF = "backend.urls"
+ASGI_APPLICATION = "backend.asgi.application"
+
+AUTH_USER_MODEL = "chat.User"
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 INSTALLED_APPS = [
     "chat",
@@ -41,8 +101,6 @@ MIDDLEWARE = [
     "chat.middleware.JWTAuthCookieMiddleware"
 ]
 
-ROOT_URLCONF = "backend.urls"
-
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -59,41 +117,14 @@ TEMPLATES = [
     }
 ]
 
-ASGI_APPLICATION = "backend.asgi.application"
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB"),
-        "USER": os.getenv("POSTGRES_USER"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+        "NAME": POSTGRES_DB,
+        "USER": POSTGRES_USER,
+        "PASSWORD": POSTGRES_PASSWORD,
         "HOST": "postgres",
         "PORT": "5432"
-    }
-}
-
-STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "static_files"
-
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-AUTH_USER_MODEL = "chat.User"
-
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SECURE_SSL_REDIRECT = os.getenv("DJANGO_SECURE_SSL_REDIRECT", "True") != "False"
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-
-SECURE_HSTS_SECONDS = 31536000
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [["redis", "6379"]]
-        }
     }
 }
 
@@ -101,6 +132,33 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": "redis://redis:6379"
+    }
+}
+
+STATIC_URL = "static/"
+STATIC_ROOT = "backend/static_files"
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+LOCALE_PATHS = ["backend/locale"]
+
+LANGUAGES = [
+    ("en-us", "English (US)"),
+    ("pt-br", "Português (Brasil)")
+]
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [["redis", "6379"]]
+        }
     }
 }
 
@@ -135,20 +193,3 @@ SIMPLE_JWT = {
     "AUTH_COOKIE_SECURE": True,
     "AUTH_COOKIE_SAMESITE": "Strict"
 }
-
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = os.getenv("DJANGO_EMAIL_HOST")
-EMAIL_PORT = int(os.getenv("DJANGO_EMAIL_PORT", 587))
-EMAIL_HOST_USER = os.getenv("DJANGO_EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("DJANGO_EMAIL_HOST_PASSWORD")
-EMAIL_USE_TLS = os.getenv("DJANGO_EMAIL_USE_TLS", "True") != "False"
-DEFAULT_FROM_EMAIL = os.getenv("DJANGO_DEFAULT_FROM_EMAIL")
-
-BASE_EMAIL_URL = os.getenv("BASE_EMAIL_URL")
-
-LANGUAGES = [
-    ("en-us", "English (US)"),
-    ("pt-br", "Português (Brasil)")
-]
-
-LOCALE_PATHS = [BASE_DIR / "locale"]
