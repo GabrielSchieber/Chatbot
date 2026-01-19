@@ -3,7 +3,12 @@ services:
         build:
             context: ./backend
             dockerfile: dockerfile
-        command: daphne backend.asgi:application -e ssl:443:privateKey=/run/secrets/private_key:certKey=/run/secrets/certificate
+        command: 
+            bash -c "
+                python manage.py collectstatic --no-input &&
+                python manage.py migrate &&
+                daphne backend.asgi:application -e ssl:443:privateKey=/run/secrets/private_key:certKey=/run/secrets/certificate
+            "
         secrets:
             - certificate
             - private_key

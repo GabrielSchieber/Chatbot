@@ -42,12 +42,6 @@
                 "kind": "build",
                 "isDefault": true
             }
-        },
-        {
-            "label": "Setup Staging or Production Container",
-            "type": "shell",
-            "command": "docker exec chatbot-backend-1 sh -c \"python manage.py collectstatic --no-input && python manage.py migrate\"",
-            "problemMatcher": []
         }
     ]
 }
