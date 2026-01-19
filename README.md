@@ -56,20 +56,9 @@ The app is split into a clear backend/frontend boundary:
 - The frontend manages UI state, layout, and animations
 - Chat messages are streamed incrementally to improve perceived performance
 
-## Running Locally
+## Usage
 
-### Prerequisites
-- For development:
-  - The following tools intalled: Docker Desktop and VS Code with the Dev Containers extension
-  - Environment variables properly setup
-  - Open the folder in VS Code using the command: Open Folder in Container...
-- For production deployment:
-  - A Linux environment with Docker Engine and Docker Compose installed
-  - Environment variables properly setup
-  - Run the following command in bash inside the root folder of the project:
-    ```bash
-    docker compose -f compose.yaml -f compose.production.yaml up --build
-    ```
+Information about how to develop and publish the app is available in [docs/usage.md](docs/usage.md).
 
 ## Future Improvements
 
