@@ -13,7 +13,7 @@ __pycache__/
 .venv/
 chat_temp/
 ollama/
-static_files/
+static/
 .coverage
 .coverage.*
 

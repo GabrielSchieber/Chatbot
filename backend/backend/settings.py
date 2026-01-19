@@ -23,6 +23,7 @@ match get_env("ENVIRONMENT"):
         EMAIL_HOST = "mailpit"
         EMAIL_PORT = 1025
         EMAIL_USE_TLS = False
+        EMAIL_USE_SSL = False
         DEFAULT_FROM_EMAIL = "Chatbot <no-reply@localhost>"
         BASE_EMAIL_URL = "http://localhost:5173"
 
@@ -40,6 +41,7 @@ match get_env("ENVIRONMENT"):
         EMAIL_HOST = "mailpit"
         EMAIL_PORT = 1025
         EMAIL_USE_TLS = False
+        EMAIL_USE_SSL = False
         DEFAULT_FROM_EMAIL = "Chatbot <no-reply@localhost>"
         BASE_EMAIL_URL = "https://127.0.0.1"
 
@@ -59,6 +61,7 @@ match get_env("ENVIRONMENT"):
         EMAIL_HOST_PASSWORD = get_secret("EMAIL_HOST_PASSWORD_PATH")
         EMAIL_PORT = 587
         EMAIL_USE_TLS = True
+        EMAIL_USE_SSL = False
         DEFAULT_FROM_EMAIL = "Chatbot <no-reply@example.com>"
         BASE_EMAIL_URL = "https://example.com"
 
@@ -136,7 +139,7 @@ CACHES = {
 }
 
 STATIC_URL = "static/"
-STATIC_ROOT = "backend/static_files"
+STATIC_ROOT = "static"
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = True
@@ -146,7 +149,7 @@ SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
-LOCALE_PATHS = ["backend/locale"]
+LOCALE_PATHS = ["locale"]
 
 LANGUAGES = [
     ("en-us", "English (US)"),

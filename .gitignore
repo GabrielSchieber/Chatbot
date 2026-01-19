@@ -1,7 +1,7 @@
 __pycache__/
 .venv/
 chat_temp/
-static_files/
+static/
 .coverage
 .coverage.*
 
