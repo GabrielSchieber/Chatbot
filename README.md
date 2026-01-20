@@ -4,6 +4,18 @@ A full-stack AI-powered personal assistant web app built with Django, React, Doc
 
 [Live Demo](https://demo-link) • [Portfolio](https://portfolio-link)
 
+<table>
+  <tr>
+    <td><img src="docs/images/desktop_messages_ui.jpeg"></td>
+    <td><img src="docs/images/mobile_messages_ui.jpeg"></td>
+  </tr>
+
+  <tr>
+    <td><img src="docs/images/desktop_search_ui.jpeg"></td>
+    <td><img src="docs/images/mobile_search_ui.jpeg"></td>
+  </tr>
+</table>
+
 ## Overview
 
 This project explores how to build a responsive, production-ready chatbot interface that handles
