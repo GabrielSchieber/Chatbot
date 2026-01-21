@@ -2,7 +2,7 @@
 
 A full-stack AI-powered personal assistant web app built with Django, React, Docker, and modern UI/UX patterns.
 
-[Live Demo](https://demo-link) • [Portfolio](https://portfolio-link)
+[Portfolio](https://dimensionalarray.github.io/Portfolio/)
 
 <table>
   <tr>
