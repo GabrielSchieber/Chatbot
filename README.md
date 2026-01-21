@@ -31,7 +31,7 @@ mobile dialogs, and growing input composers.
 **Backend**
 - Django, Channels (WebSockets) and Django REST Framework
 - Custom model validation and querysets for improved robustness
-- HTTP-only JWT based authentication with email, password and optional TOTP 2FA.
+- HTTP-only JWT-based authentication with email, password and optional TOTP 2FA.
 - Ollama as the AI engine providing message generation
 
 **Frontend**
@@ -52,7 +52,7 @@ mobile dialogs, and growing input composers.
 
 ### Why this stack?
 I chose Django for its strong validation guarantees and React for its flexibility
-in handling complex, animated UI state such as dynamic chat layouts.
+in handling complex, animated UI states such as dynamic chat layouts.
 
 ## Architecture
 
@@ -65,3 +65,10 @@ The app is split into a clear backend/frontend boundary:
 ## Usage
 
 Information about how to develop and publish the app is available in [docs/usage.md](docs/usage.md).
+
+## Future Improvements
+
+- AI model memory for storing user preferences
+- Chat summarization for increased perceived context window
+- Canvas editor for writing and coding
+- Pluggable AI providers
