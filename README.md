@@ -4,17 +4,11 @@ A full-stack AI-powered personal assistant web app built with Django, React, Doc
 
 [Portfolio](https://dimensionalarray.github.io/Portfolio/)
 
-<table>
-  <tr>
-    <td><img src="docs/images/desktop_messages_ui.jpeg"></td>
-    <td><img src="docs/images/mobile_messages_ui.jpeg"></td>
-  </tr>
-
-  <tr>
-    <td><img src="docs/images/desktop_search_ui.jpeg"></td>
-    <td><img src="docs/images/mobile_search_ui.jpeg"></td>
-  </tr>
-</table>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/index_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/index_light.png">
+  <img alt="Chatbot Screenshot" src="docs/screenshots/index_dark.png">
+</picture>
 
 ## Overview
 
