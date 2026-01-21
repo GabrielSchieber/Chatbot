@@ -65,9 +65,3 @@ The app is split into a clear backend/frontend boundary:
 ## Usage
 
 Information about how to develop and publish the app is available in [docs/usage.md](docs/usage.md).
-
-## Future Improvements
-
-- WebSocket-based real-time updates
-- Pluggable AI providers
-- Offline-first support for mobile
