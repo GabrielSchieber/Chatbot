@@ -2,7 +2,7 @@
 
 The app can be used in three different environments: **Development**, **Staging** and **Production**. All of them use Docker, and the **Development** environment also requires VS Code with the Dev Containers extension.
 
-- The **Development** environment is used during development and the web app is only available locally.
+- The **Development** environment is used during development, and the web app is only available locally.
 - The **Staging** environment is used for validating the deployment of the app in the **Production** environment while not exposing it to the internet.
 - The **Production** environment is used when deploying the app to the general public.
 
@@ -20,8 +20,7 @@ The app can be used in three different environments: **Development**, **Staging*
 
   - Open VS Code and do the following:
     - Run the `WSL: Connect to WSL using distro...` command from the Command Palette and choose Ubuntu as the distribution.
-    - Create a folder inside WSL where you can clone the project in.
-    - Open the just created folder.
+    - Create and open a folder inside WSL where you can clone the project.
     - Open a terminal and run the following command:
       ```
       git clone https://github.com/Chatbot
@@ -35,11 +34,11 @@ The app can be used in three different environments: **Development**, **Staging*
       - Pressing the keyboard shortcut: `Ctrl + Shift + B`.
 
     - Manually running the servers:
-      - Open one terminal with the `backend` folder as its current directory and running:
+      - Open one terminal with the `backend` folder as its current directory and run:
         ```
         python manage.py runserver
         ```
-      - And open another with the `frontend` folder as its current directory and running:
+      - And open another with the `frontend` folder as its current directory and run:
         ```
         npm run dev -- --host
         ```
@@ -50,7 +49,7 @@ The app can be used in three different environments: **Development**, **Staging*
 
   - From there, you can *gracefully* develop the app inside a containerized and reproducible environment!
 
-  - To make the app fully functional, you need to apply the database migrations if the database is new, you can do so with the following command:
+  - If you just built the container for the first time, you need to apply the database migrations to make the app fully functional:
     ```
     python backend/manage.py migrate
     ```
@@ -73,18 +72,21 @@ The app can be used in three different environments: **Development**, **Staging*
       ```
       openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout secrets2/private_key.pem -out secrets2/certificate.pem
       ```
-      The command will ask you to fill some fields. For testing, you can leave all of them blank.
+      The command will ask you to fill in some fields. For testing, you can leave all of them blank.
   - Build and start the staging container:
     ```
     docker compose -f compose.yaml -f compose.staging.yaml up --build
     ```
 
-  - Go to https://127.0.0.1 in your browser to interact with the app. Note you may see an "Unsafe connection" warning page since the browser may not trust the mockup SSL certificates by default, if this happens, try to find a button on the notice page that allows you to trust the connection and access the app.
+  - Go to https://127.0.0.1 in your browser to interact with the app. Note, you may see an "Unsafe connection" warning page since the browser may not trust the mockup SSL certificates by default. If this happens, try to find a button on the notice page that allows you to trust the connection and access the app.
 
-## Get started with the *Production* environment:
+## Get started with the *Production* environment (draft):
+  > [!WARNING]
+  > The production environment has not yet been fully validated. You may need to change some of the code and check if there are no security issues before publishing the app. The following guide is only a draft and is incomplete.
+
   - You need to have a Linux virtual machine for the server with Docker Engine and Docker Compose installed.
 
-  - Register a website domain name in [Cloudflare Registrar][CloudflareRegistrarReference] and in Cloudflare dashboard:
+  - Register a website domain name in [Cloudflare Registrar][CloudflareRegistrarReference] and in Cloudflare's dashboard:
     - [Add your site to Cloudflare.][CloudflareWebsitesReference]
     - [Configure DNS records.][CloudflareDNSReference]
     - [Setup SSL/TLS settings.][CloudflareSSLReference]
@@ -96,7 +98,7 @@ The app can be used in three different environments: **Development**, **Staging*
       ```
 
     - Open the `settings.py` file found in the `backend/backend` folder and make the following  changes to these variables:
-      - `ALLOWED_HOSTS`: This is the list of domain names your server will be allowed to connect with, if your website domain name is `mywebsite.com`, set this to `["mywebsite.com"]`.
+      - `ALLOWED_HOSTS`: This is the list of domain names your server will be allowed to connect with. If your website domain name is `mywebsite.com`, set this to `["mywebsite.com"]`.
 
       - `EMAIL_HOST`: The domain name of your SMTP provider, for example, if you're using Gmail, set this to `smtp.gmail.com`.
 
@@ -106,16 +108,16 @@ The app can be used in three different environments: **Development**, **Staging*
 
       - `EMAIL_PORT`: The port number of your SMTP provider.
 
-      - Set either `EMAIL_USE_TLS` or `EMAIL_USE_SSL` to `True` depending whether your SMTP provider uses TLS or SSL for encryption, but not both.
+      - Set either `EMAIL_USE_TLS` or `EMAIL_USE_SSL` to `True` depending on whether your SMTP provider uses TLS or SSL for encryption, but not both.
 
       - `DEFAULT_FROM_EMAIL`: The default from email address that is used by Django when sending emails.
 
-      - `BASE_EMAIL_URL`: Set this to the domain name of your website you want your users to receive emails from. If your domain name is `mywebsite.com`, set this to `https://mywebsite.com`.
+      - `BASE_EMAIL_URL`: Set this to the domain name of your website you want your users to receive emails. If your domain name is `mywebsite.com`, set this to `https://mywebsite.com`.
 
     - Open the `nginx.production.conf` file found in the `backend` folder and change the `server_name` field for each `server` block to the domain name of your website.
 
     - Create a `secrets` folder with the following files and their respective contents:
-      - `secret_key.txt`: The key used for the Django's SECRET_KEY settings variable. You can generate one with the following command:
+      - `secret_key.txt`: The key used for Django's SECRET_KEY settings variable. You can generate one with the following command:
         ```
         python -c "from django.core.management.utils import get_random_secret_key;print(get_random_secret_key())"
         ```
@@ -124,7 +126,7 @@ The app can be used in three different environments: **Development**, **Staging*
         ```
         python -c "from cryptography.fernet import Fernet;print(Fernet.generate_key().decode())"
         ```
-      - `email_host_user.txt`: The name of the user you want to use your SMTP provider with.
+      - `email_host_user.txt`: The name of the user to connect to your SMTP provider.
 
       - `email_host_password.txt`: The password to use for your SMTP provider.
 
