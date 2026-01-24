@@ -208,6 +208,7 @@
     "signup.header": "Crie sua conta",
     "signup.password": "Senha",
     "signup.confirmPassword": "Confirmar Senha",
+    "signup.blankPassword": "Senhas completamente em branco não são permitidas. Certifique-se de que a senha tenha pelo menos um caractere que não seja um espaço em branco.",
     "signup.passwordsNoMatch": "As senhas não coincidem.",
     "signup.signingUp": "Cadastrando",
     "signup.signUp": "Cadastrar",

@@ -208,6 +208,7 @@
     "signup.header": "Create your account",
     "signup.password": "Password",
     "signup.confirmPassword": "Confirm Password",
+    "signup.blankPassword": "Completely blank passwords are not allowed. Ensure the password has at least one non-whitespace character.",
     "signup.passwordsNoMatch": "Passwords do not match.",
     "signup.signingUp": "Signing up",
     "signup.signUp": "Sign up",

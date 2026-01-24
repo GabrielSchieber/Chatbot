@@ -19,6 +19,12 @@ export default function Signup() {
         setError("")
         setIsVerifying(true)
 
+        if (password.trim() === "") {
+            setError(t("signup.blankPassword"))
+            setIsVerifying(false)
+            return
+        }
+
         if (password !== confirmPassword) {
             setError(t("signup.passwordsNoMatch"))
             setIsVerifying(false)
