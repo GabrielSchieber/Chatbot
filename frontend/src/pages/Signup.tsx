@@ -33,7 +33,7 @@ export default function Signup() {
             setIsVerifying(false)
         } else {
             const data = await response.json()
-            setError(t(data.detail))
+            setError(t(data.detail ? data.detail : "signup.unexpectedError"))
             setIsVerifying(false)
         }
     }
