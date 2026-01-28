@@ -85,8 +85,8 @@ class MessageInline(admin.StackedInline):
 class MessageAdmin(admin.ModelAdmin):
     model = Message
     form = MessageForm
-    readonly_fields = ("chat", "chat_title", "is_from_user", "model", "last_modified_at_display", "created_at_display", "files_display")
-    fields = ("chat_title", "text", "files_display", "is_from_user", "model", "last_modified_at_display", "created_at_display")
+    readonly_fields = ("last_modified_at_display", "created_at_display")
+    fields = ("chat", "text", "is_from_user", "model", "last_modified_at_display", "created_at_display")
     list_display = ("chat__title", "summary", "is_from_user", "model", "last_modified_at_display", "created_at_display")
     search_fields = ("chat__title", "text")
     ordering = ("-created_at",)
