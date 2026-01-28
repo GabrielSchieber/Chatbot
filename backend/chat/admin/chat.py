@@ -23,7 +23,7 @@ class ChatAdmin(admin.ModelAdmin):
 
     readonly_fields = ("user_link", "display_uuid", "pending_message_display", "created_at_display")
     fieldsets = (
-        (None, {"fields": ("user_link", "display_uuid", "title", "pending_message_display", "is_archived", "is_temporary", "created_at_display")} ),
+        (None, {"fields": ("user", "display_uuid", "title", "pending_message_display", "is_archived", "is_temporary", "created_at_display")} ),
     )
     list_display = ("title", "uuid", "user_link", "is_pending", "is_archived_display", "is_temporary_display", "created_at_display")
     search_fields = ("title", "user__email")
