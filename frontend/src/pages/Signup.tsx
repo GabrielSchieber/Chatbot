@@ -25,6 +25,12 @@ export default function Signup() {
             return
         }
 
+        if (/[\x00-\x1f\x7f]/.test(password)) {
+            setError(t("signup.controlPassword"))
+            setIsVerifying(false)
+            return
+        }
+
         if (password !== confirmPassword) {
             setError(t("signup.passwordsNoMatch"))
             setIsVerifying(false)

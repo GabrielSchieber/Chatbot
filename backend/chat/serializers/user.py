@@ -1,3 +1,5 @@
+import unicodedata
+
 from rest_framework import serializers
 
 from ..models import User, UserMFA, UserPreferences, UserSession
@@ -38,7 +40,13 @@ class UserSerializer(serializers.ModelSerializer):
 
 class SignupSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    password = serializers.CharField(min_length = 12, max_length = 1000)
+    password = serializers.CharField(min_length = 12, max_length = 1000, trim_whitespace = False)
+
+    def validate_password(self, value: serializers.CharField):
+        for c in value:
+            if unicodedata.category(c) == "Cc":
+                raise serializers.ValidationError("Password cannot contain control characters.")
+        return value
 
 class VerifyEmailSerializer(serializers.Serializer):
     email = serializers.EmailField()

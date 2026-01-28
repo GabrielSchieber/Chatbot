@@ -209,6 +209,7 @@
     "signup.password": "Password",
     "signup.confirmPassword": "Confirm Password",
     "signup.blankPassword": "Completely blank passwords are not allowed. Ensure the password has at least one non-whitespace character.",
+    "signup.controlPassword": "Passwords with control characters are not allowed.",
     "signup.passwordsNoMatch": "Passwords do not match.",
     "signup.signingUp": "Signing up",
     "signup.signUp": "Sign up",
