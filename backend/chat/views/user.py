@@ -154,6 +154,15 @@ class Login(APIView):
             )
             return Response({"token": token}, status.HTTP_200_OK)
         else:
+            user.sessions.filter(
+                logout_at__isnull = True,
+                ip_address = request.ip_address,
+                user_agent = request.user_agent_raw,
+                device = request.device,
+                browser = request.browser,
+                os = request.os
+            ).update(logout_at = timezone.now())
+
             refresh = RefreshToken.for_user(user)
 
             refresh_jti = refresh.get("jti")
