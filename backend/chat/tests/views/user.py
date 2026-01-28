@@ -241,6 +241,25 @@ class Login(ViewsTestCase):
         self.assertEqual(len(session.refresh_jti), 32)
         assert all(c in "0123456789abcdefABCDEF" for c in session.refresh_jti)
 
+    def test_does_not_activate_mutiple_same_sessions(self):
+        user = create_user()
+        self.assertEqual(user.sessions.count(), 0)
+
+        self.login_user()
+        self.assertEqual(user.sessions.count(), 1)
+
+        session1 = user.sessions.order_by("login_at").first()
+        self.assertIsNone(session1.logout_at)
+
+        self.login_user()
+        self.assertEqual(user.sessions.count(), 2)
+
+        session1.refresh_from_db()
+        self.assertIsNotNone(session1.logout_at)
+
+        session2 = user.sessions.order_by("login_at").last()
+        self.assertIsNone(session2.logout_at)
+
     def test_with_inactive_user(self):
         user = create_user()
         user.is_active = False
