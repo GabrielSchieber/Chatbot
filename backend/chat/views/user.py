@@ -91,7 +91,7 @@ class VerifyEmail(APIView):
         token = qs.validated_data["token"]
 
         try:
-            user: User = User.objects.get(email = email)
+            user: User = User.objects.get(email = email, has_verified_email = False)
         except User.DoesNotExist:
             return Response(status = status.HTTP_400_BAD_REQUEST)
 
