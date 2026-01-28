@@ -879,6 +879,36 @@ class VerifyMFA(ViewsTestCase):
 
         self.assertEqual(user.sessions.count(), 0)
 
+    def test_does_not_activate_mutiple_same_sessions(self):
+        user = create_user()
+        user.mfa.setup()
+        user.mfa.enable()
+
+        self.assertEqual(user.sessions.count(), 0)
+
+        response = self.login_user()
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post("/api/verify-mfa/", {"token": response.json()["token"], "code": UserMFA.generate_code(user.mfa.secret)})
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(user.sessions.count(), 1)
+
+        session1 = user.sessions.order_by("login_at").first()
+        self.assertIsNone(session1.logout_at)
+
+        response = self.login_user()
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post("/api/verify-mfa/", {"token": response.json()["token"], "code": UserMFA.generate_code(user.mfa.secret)})
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(user.sessions.count(), 2)
+
+        session1.refresh_from_db()
+        self.assertIsNotNone(session1.logout_at)
+
+        session2 = user.sessions.order_by("login_at").last()
+        self.assertIsNone(session2.logout_at)
+
 class Me(ViewsTestCase):
     def test(self):
         user = self.create_and_login_user()
