@@ -31,6 +31,7 @@
     "settings.theme.light": "Light",
     "settings.theme.dark": "Dark",
     "settings.sessions.title": "Sessions",
+    "settings.sessions.activeSession": "Active Session",
     "settings.sessions.noActiveSessions": "No active sessions.",
     "settings.sessions.login": "Login",
     "settings.sessions.logout": "Logout",

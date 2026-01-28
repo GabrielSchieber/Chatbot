@@ -323,7 +323,7 @@ function SessionsEntryItem() {
                         </button>
                         {user.sessions.map((s, i) => (
                             <div key={i} className="flex flex-col p-2 border border-gray-500 rounded-lg">
-                                {s.logout_at === null && <p className="text-sm text-green-500">Active Session</p>}
+                                {s.logout_at === null && <p className="text-sm text-green-500">{t("settings.sessions.activeSession")}</p>}
                                 <p><strong>{t("settings.sessions.login")}:</strong> {new Date(s.login_at).toLocaleString()}</p>
                                 {s.logout_at !== null &&
                                     <p><strong>{t("settings.sessions.logout")}:</strong> {new Date(s.logout_at).toLocaleString()}</p>

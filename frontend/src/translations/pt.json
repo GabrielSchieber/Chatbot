@@ -31,6 +31,7 @@
     "settings.theme.light": "Claro",
     "settings.theme.dark": "Escuro",
     "settings.sessions.title": "Sessões",
+    "settings.sessions.activeSession": "Sessão Ativa",
     "settings.sessions.noActiveSessions": "Nenhuma sessão ativa.",
     "settings.sessions.login": "Login",
     "settings.sessions.logout": "Logout",
