@@ -63,6 +63,28 @@ class Signup(ViewsTestCase):
         test("onepassword", {"password": ["Ensure this field has at least 12 characters."]})
         test("".join(["password123" for _ in range(91)]), {"password": ["Ensure this field has no more than 1000 characters."]})
 
+        control_characters = [chr(i) for i in range(0x00, 0x20)]
+        control_characters.append(chr(0x7F))
+        control_characters.extend(chr(i) for i in range(0x80, 0xA0))
+        self.assertEqual(len(control_characters), 65)
+
+        test(f"onepassword{control_characters[0]}", {"password": ["Null characters are not allowed."]})
+        test(f"{control_characters[0]}onepassword", {"password": ["Null characters are not allowed."]})
+        test(f"one{control_characters[0]}password", {"password": ["Null characters are not allowed."]})
+        control_characters.pop(0)
+
+        for control_character in control_characters:
+            test(f"onepassword{control_character}", {"password": ["Password cannot contain control characters."]})
+            test(f"{control_character}onepassword", {"password": ["Password cannot contain control characters."]})
+            test(f"{control_character} onepassword", {"password": ["Password cannot contain control characters."]})
+            test(f"onepassword {control_character}", {"password": ["Password cannot contain control characters."]})
+            test(f"one{control_character}password", {"password": ["Password cannot contain control characters."]})
+            test(f"one {control_character} password", {"password": ["Password cannot contain control characters."]})
+            test("".join([control_character for _ in range(12)]), {"password": ["Password cannot contain control characters."]})
+            test(f" {"".join([control_character for _ in range(12)])} ", {"password": ["Password cannot contain control characters."]})
+            test(" ".join([control_character for _ in range(12)]), {"password": ["Password cannot contain control characters."]})
+            test(f" {" ".join([control_character for _ in range(12)])} ", {"password": ["Password cannot contain control characters."]})
+
 class VerifyEmail(ViewsTestCase):
     def test(self):
         email = "test@example.com"
