@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button, Error, Header } from "../../components/Auth"
@@ -10,6 +10,8 @@ export default function VerifyEmail() {
 
     const notify = useNotify()
 
+    const shouldVerify = useRef(true)
+
     const [error, setError] = useState("")
 
     const params = new URLSearchParams(location.search)
@@ -17,7 +19,8 @@ export default function VerifyEmail() {
     const token = params.get("token")
 
     async function verify() {
-        if (!email || !token) return
+        if (!shouldVerify.current || !email || !token) return
+        shouldVerify.current = false
 
         const response = await verifyEmail(email, token)
         if (response.ok) {
