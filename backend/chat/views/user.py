@@ -337,6 +337,15 @@ class VerifyMFA(APIView):
         pre_auth_token.used_at = timezone.now()
         pre_auth_token.save(update_fields = ["used_at"])
 
+        user.sessions.filter(
+            logout_at__isnull = True,
+            ip_address = request.ip_address,
+            user_agent = request.user_agent_raw,
+            device = request.device,
+            browser = request.browser,
+            os = request.os
+        ).update(logout_at = timezone.now())
+
         refresh = RefreshToken.for_user(user)
 
         refresh_jti = refresh.get("jti")
