@@ -232,7 +232,7 @@ export async function handleFileChange(
         return
     }
 
-    if (newFiles.length + newFiles.length > MAX_FILES) {
+    if (files.length + newFiles.length > MAX_FILES) {
         notify(t("prompt.file.error.tooMany", { max: MAX_FILES }), "error")
         e.target.value = ""
         return
