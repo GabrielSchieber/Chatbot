@@ -1,4 +1,4 @@
-import { Cross1Icon, EyeOpenIcon, FileIcon } from "@radix-ui/react-icons"
+import { Cross1Icon, CrossCircledIcon, EyeOpenIcon, FileIcon } from "@radix-ui/react-icons"
 import { Dialog } from "radix-ui"
 import { useEffect, useState } from "react"
 
@@ -80,6 +80,8 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
     const [text, setText] = useState("")
     const [src, setSrc] = useState(() => file.content ? URL.createObjectURL(file.content) : "")
 
+    const maxFileSizeLimit = 5000
+
     useEffect(() => {
         if (!file.content) {
             setText("")
@@ -92,7 +94,7 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
             setSrc(objectUrl)
             return () => URL.revokeObjectURL(objectUrl)
         } else {
-            file.content.slice(0, 10000).text().then(text => setText(text))
+            file.content.slice(0, maxFileSizeLimit).text().then(text => setText(text))
         }
     }, [file.content])
 
@@ -123,6 +125,12 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
                             <Cross1Icon className="size-5" />
                         </Dialog.Close>
                     </div>
+                    {file.content && file.content.size > maxFileSizeLimit &&
+                        <p className="flex gap-2 px-2 items-center rounded-lg bg-red-400/10 light:bg-red-600/10">
+                            <CrossCircledIcon className="text-red-400 light:text-red-600" />
+                            File is too large. Only the beginning of the file is being displayed.
+                        </p>
+                    }
                     {src ? (
                         <div className="relative size-full">
                             <img className="absolute size-full object-contain" src={src} />
