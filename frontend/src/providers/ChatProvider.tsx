@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 
 import { getChat, getMessageFileContent, getMessages } from "../utils/api"
-import { getFileType } from "../utils/misc"
 import type { Chat, Message } from "../utils/types"
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
@@ -32,17 +31,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
             for (const m of fetchedMessages) {
                 for (const f of m.files) {
-                    if (getFileType(f.name) === "Image" && f.content === null) {
-                        const contentResponse = await getMessageFileContent(chatUUID, f.id)
-                        if (response.ok) {
-                            const fetchedContent = await contentResponse.blob()
-                            setMessages(previous =>
-                                previous.map(
-                                    p => p.id !== m.id ? p :
-                                        { ...p, files: p.files.map(file => file.id === f.id ? { ...file, content: fetchedContent } : file) }
-                                )
+                    const contentResponse = await getMessageFileContent(chatUUID, f.id)
+                    if (response.ok) {
+                        const fetchedContent = await contentResponse.blob()
+                        setMessages(previous =>
+                            previous.map(p => p.id !== m.id ? p :
+                                { ...p, files: p.files.map(file => file.id === f.id ? { ...file, content: fetchedContent } : file) }
                             )
-                        }
+                        )
                     }
                 }
             }

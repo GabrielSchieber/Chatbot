@@ -1,4 +1,5 @@
-import { Cross1Icon, FileIcon } from "@radix-ui/react-icons"
+import { Cross1Icon, EyeOpenIcon, FileIcon } from "@radix-ui/react-icons"
+import { Dialog } from "radix-ui"
 import { useEffect, useState } from "react"
 
 import { MAX_FILE_SIZE, MAX_FILES } from "../../Chat"
@@ -57,18 +58,83 @@ function Attachment({ file, onRemove, tabIndex }: { file: MessageFile, onRemove?
                 Name: {file.name}<br />
                 Size: {getFileSize(file.content_size)}
             </div>
-            {onRemove &&
-                <button
-                    type="button"
-                    className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/40"
-                    onClick={() => onRemove(file)}
-                    tabIndex={tabIndex}
-                    data-testid={`remove-attachment-button-${file.name}`}
-                >
-                    <Cross1Icon className="size-3.5" />
-                </button>
-            }
+            <div className="flex flex-col">
+                {onRemove &&
+                    <button
+                        type="button"
+                        className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/40"
+                        onClick={() => onRemove(file)}
+                        tabIndex={tabIndex}
+                        data-testid={`remove-attachment-button-${file.name}`}
+                    >
+                        <Cross1Icon className="size-3.5" />
+                    </button>
+                }
+                <AttachmentViewer file={file} />
+            </div>
         </div>
+    )
+}
+
+function AttachmentViewer({ file }: { file: MessageFile }) {
+    const [text, setText] = useState("")
+    const [src, setSrc] = useState(() => file.content ? URL.createObjectURL(file.content) : "")
+
+    useEffect(() => {
+        if (!file.content) {
+            setText("")
+            setSrc("")
+            return
+        }
+
+        if (getFileType(file.content_type) === "Image") {
+            const objectUrl = URL.createObjectURL(file.content)
+            setSrc(objectUrl)
+            return () => URL.revokeObjectURL(objectUrl)
+        } else {
+            file.content.slice(0, 10000).text().then(text => setText(text))
+        }
+    }, [file.content])
+
+    return (
+        <Dialog.Root>
+            <Dialog.Trigger type="button" className="p-1 rounded-3xl cursor-pointer hover:bg-gray-500/40">
+                <EyeOpenIcon className="size-3.5" />
+            </Dialog.Trigger>
+
+            <Dialog.Portal>
+                <Dialog.Overlay className="z-10 fixed inset-0 bg-black/50" />
+
+                <Dialog.Title hidden>View</Dialog.Title>
+                <Dialog.Description hidden>View</Dialog.Description>
+
+                <Dialog.Content
+                    className="
+                        z-10 fixed flex flex-col w-[75vw] not-md:w-[calc(100vw-20px)] h-[75vh]
+                        gap-2 p-2 rounded-lg top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2
+                        border border-gray-500 text-white light:text-black bg-gray-800 light:bg-gray-200
+                    "
+                >
+                    <div className="flex gap-1 px-3 py-1 items-center justify-between rounded-lg bg-gray-900">
+                        <p>Type: {getFileType(file.name)}</p>
+                        <p>Name: {file.name}</p>
+                        <p>Size: {getFileSize(file.content_size)}</p>
+                        <Dialog.Close className="p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
+                            <Cross1Icon className="size-5" />
+                        </Dialog.Close>
+                    </div>
+                    {src ? (
+                        <div className="relative size-full">
+                            <img className="absolute size-full object-contain" src={src} />
+                        </div>
+                    ) : (
+                        <div className="p-2 wrap-anywhere whitespace-pre-wrap overflow-y-auto rounded-lg bg-gray-900 light:bg-gray-100">
+                            {text}
+                        </div>
+                    )}
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
     )
 }
 
