@@ -117,7 +117,7 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
                         border border-gray-500 text-white light:text-black bg-gray-800 light:bg-gray-200
                     "
                 >
-                    <div className="flex gap-1 px-3 py-1 items-center justify-between rounded-lg bg-gray-900">
+                    <div className="flex gap-1 px-3 py-1 items-center justify-between rounded-lg bg-gray-900 light:bg-gray-100">
                         <p>Type: {getFileType(file.name)}</p>
                         <p>Name: {file.name}</p>
                         <p>Size: {getFileSize(file.content_size)}</p>
