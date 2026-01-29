@@ -249,9 +249,6 @@ class EmailVerificationToken(CleanOnSaveMixin):
     used_at = models.DateTimeField(blank = True, null = True)
     created_at = models.DateTimeField(auto_now_add = True)
 
-    def is_valid(self):
-        return self.used_at is None and self.expires_at > timezone.now()
-
     def __str__(self):
         return f"Email verification token created at {self.created_at} owned by {self.user.email}."
 
@@ -279,9 +276,6 @@ class PasswordResetToken(CleanOnSaveMixin):
     used_at = models.DateTimeField(blank = True, null = True)
     expires_at = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add = True)
-
-    def is_valid(self):
-        return self.used_at is None and timezone.now() < self.expires_at
 
     def __str__(self):
         return f"Password reset token created at {self.created_at} owned by {self.user.email}."
