@@ -360,7 +360,8 @@ class Logout(ViewsTestCase):
 class LogoutAllSessions(ViewsTestCase):
     def test(self):
         self.create_and_login_user()
-        self.login_user()
+        response = self.client.post("/api/login/", {"email": "test@example.com", "password": "testpassword"}, **{"HTTP_X_FORWARDED_FOR": "127.0.0.2"})
+        self.assertEqual(response.status_code, 200)
 
         self.assertEqual(len(self.client.cookies.items()), 2)
         self.assertNotEqual(self.client.cookies["access_token"].value, "")
