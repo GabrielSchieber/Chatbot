@@ -85,7 +85,9 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
     const { t } = useTranslation()
 
     const [text, setText] = useState("")
-    const [src, setSrc] = useState(() => file.content ? URL.createObjectURL(file.content) : "")
+    const [src, setSrc] = useState(() =>
+        file.content && getFileType(file.name) === "Image" ? URL.createObjectURL(file.content) : ""
+    )
 
     const maxFileSizeLimit = 5000
 
@@ -96,7 +98,7 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
             return
         }
 
-        if (getFileType(file.content_type) === "Image") {
+        if (getFileType(file.name) === "Image") {
             const objectUrl = URL.createObjectURL(file.content)
             setSrc(objectUrl)
             return () => URL.revokeObjectURL(objectUrl)
