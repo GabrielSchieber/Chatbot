@@ -51,12 +51,39 @@ export default function Attachments(
 function Attachment({ file, onRemove, tabIndex }: { file: MessageFile, onRemove?: (file: MessageFile) => void, tabIndex?: number }) {
     const { t } = useTranslation()
 
+    const [text, setText] = useState("")
+
+    async function tryGetText() {
+        if (!file.content) {
+            setText("")
+            return
+        }
+        try {
+            decoder.decode(await file.content.arrayBuffer())
+        } catch {
+            setText("")
+            return
+        }
+
+        setText(await file.content.slice(0, 200).text())
+    }
+
+    useEffect(() => { tryGetText() }, [file.content])
+
     return (
         <div className="flex px-2 py-1 gap-1 items-center rounded-md bg-gray-800 light:bg-gray-200">
             {file.content_type.includes("image") ? (
                 <ImageIcon file={file} />
             ) : (
-                <FileIcon className="size-14 p-1 rounded-md bg-gray-700 light:bg-gray-300" />
+                text ? (
+                    <textarea
+                        className="size-14 p-1 rounded-md text-[5px] overflow-hidden outline-none resize-none bg-gray-700 light:bg-gray-300"
+                        value={text}
+                        readOnly
+                    />
+                ) : (
+                    <FileIcon className="size-14 p-1 rounded-md bg-gray-700 light:bg-gray-300" />
+                )
             )}
             <div className="flex flex-col px-2 py-1 text-xs rounded-md bg-gray-700 light:bg-gray-300">
                 {t("attachments.label.type")}: {t(getFileTypeTranslationKey(file.name))}<br />
@@ -185,3 +212,5 @@ function ImageIcon({ file }: { file: MessageFile }) {
         )
     )
 }
+
+const decoder = new TextDecoder("utf-8", { fatal: true })
