@@ -226,5 +226,14 @@
     "signup.ipAddressError": "Parece que pelo menos outra conta foi criada recentemente usando o mesmo endereço IP. Para evitar spam, tente se cadastrar usando um dispositivo diferente.",
     "signup.unexpectedError": "Ocorreu um erro inesperado. Tente novamente mais tarde.",
     "signup.throttled": "Você tentou se cadastrar muitas vezes. Aguarde um minuto antes de tentar novamente.",
+    "utils.fileType.text": "Texto",
+    "utils.fileType.image": "Imagem",
+    "utils.fileType.wordDocument": "Documento do Word",
+    "utils.fileType.excelSpreadsheet": "Planilha do Excel",
+    "utils.fileType.powerPointPresentation": "Apresentação do PowerPoint",
+    "utils.fileType.zipArchive": "Arquivo ZIP",
+    "utils.fileType.rarArchive": "Arquivo RAR",
+    "utils.fileType.7zArchive": "Arquivo 7z",
+    "utils.fileType.file": "Arquivo",
     "throttled": "Sua última solicitação foi bloqueada devido a muitas tentativas. Aguarde um momento e tente novamente."
 }

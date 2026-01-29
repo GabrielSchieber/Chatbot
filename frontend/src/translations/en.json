@@ -226,5 +226,14 @@
     "signup.ipAddressError": "It appears that at least one other account has recently been created using the same IP address. To avoid spam, try registering using a different device.",
     "signup.unexpectedError": "An unexpected error has occurred. Please try again later.",
     "signup.throttled": "You’ve tried signing up too many times. Please wait a minute before trying again.",
+    "utils.fileType.text": "Text",
+    "utils.fileType.image": "Image",
+    "utils.fileType.wordDocument": "Word Document",
+    "utils.fileType.excelSpreadsheet": "Excel Spreadsheet",
+    "utils.fileType.powerPointPresentation": "PowerPoint Presentation",
+    "utils.fileType.zipArchive": "ZIP Archive",
+    "utils.fileType.rarArchive": "RAR Archive",
+    "utils.fileType.7zArchive": "7z Archive",
+    "utils.fileType.file": "File",
     "throttled": "Your last request was blocked because of too many attempts. Please wait a moment and try again."
 }

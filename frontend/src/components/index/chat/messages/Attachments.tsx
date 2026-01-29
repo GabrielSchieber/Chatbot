@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { MAX_FILE_SIZE, MAX_FILES } from "../../Chat"
-import { getFileSize, getFileType } from "../../../../utils/misc"
+import { getFileSize, getFileTypeTranslationKey } from "../../../../utils/misc"
 import type { MessageFile } from "../../../../utils/types"
 
 export default function Attachments(
@@ -53,13 +53,13 @@ function Attachment({ file, onRemove, tabIndex }: { file: MessageFile, onRemove?
 
     return (
         <div className="flex px-2 py-1 gap-1 items-center rounded-md bg-gray-800 light:bg-gray-200">
-            {getFileType(file.name) === "Image" ? (
+            {file.content_type.includes("image") ? (
                 <ImageIcon file={file} />
             ) : (
                 <FileIcon className="size-14 p-1 rounded-md bg-gray-700 light:bg-gray-300" />
             )}
             <div className="flex flex-col px-2 py-1 text-xs rounded-md bg-gray-700 light:bg-gray-300">
-                {t("attachments.label.type")}: {getFileType(file.name)}<br />
+                {t("attachments.label.type")}: {t(getFileTypeTranslationKey(file.name))}<br />
                 {t("attachments.label.name")}: {file.name}<br />
                 {t("attachments.label.size")}: {getFileSize(file.content_size)}
             </div>
@@ -86,7 +86,7 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
 
     const [text, setText] = useState("")
     const [src, setSrc] = useState(() =>
-        file.content && getFileType(file.name) === "Image" ? URL.createObjectURL(file.content) : ""
+        file.content && file.content_type.includes("image") ? URL.createObjectURL(file.content) : ""
     )
 
     const maxFileSizeLimit = 100_000
@@ -98,7 +98,7 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
             return
         }
 
-        if (getFileType(file.name) === "Image") {
+        if (file.content_type.includes("image")) {
             const objectUrl = URL.createObjectURL(file.content)
             setSrc(objectUrl)
             return () => URL.revokeObjectURL(objectUrl)
@@ -127,7 +127,7 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
                     "
                 >
                     <div className="flex gap-1 px-3 py-1 items-center justify-between rounded-lg bg-gray-900 light:bg-gray-100">
-                        <p>{t("attachments.label.type")}: {getFileType(file.name)}</p>
+                        <p>{t("attachments.label.type")}: {t(getFileTypeTranslationKey(file.name))}</p>
                         <p>{t("attachments.label.name")}: {file.name}</p>
                         <p>{t("attachments.label.size")}: {getFileSize(file.content_size)}</p>
                         <Dialog.Close className="p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">

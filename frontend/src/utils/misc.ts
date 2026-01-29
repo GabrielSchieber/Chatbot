@@ -12,12 +12,13 @@ export function applyTheme(theme: Theme) {
     }
 }
 
-export function getFileType(name: string) {
+export function getFileTypeTranslationKey(name: string) {
     const fileTypes = new Map([
-        [".txt", "Text"], [".md", "Markdown"], [".py", "Python"], [".js", "JavaScript"], [".png", "Image"],
-        [".jpg", "Image"], [".jpeg", "Image"], [".gif", "Image"], [".pdf", "PDF"], [".docx", "Word Document"],
-        [".xlsx", "Excel Spreadsheet"], [".pptx", "PowerPoint Presentation"], [".zip", "ZIP Archive"], [".rar", "RAR Archive"],
-        [".7z", "7z Archive"], [".csv", "CSV"], [".json", "JSON"], [".xml", "XML"], [".html", "HTML"], [".css", "CSS"]
+        [".txt", "utils.fileType.text"], ...[".png", ".jpg", ".jpeg", ".gif"].map<[string, string]>(e => [e, "utils.fileType.image"]),
+        [".docx", "utils.fileType.wordDocument"], [".xlsx", "utils.fileType.excelSpreadsheet"], [".pptx", "utils.fileType.powerPointPresentation"],
+        [".zip", "utils.fileType.zipArchive"], [".rar", "utils.fileType.rarArchive"], [".7z", "utils.fileType.7zArchive"],
+        [".md", "Markdown"], [".py", "Python"], [".js", "JavaScript"], [".pdf", "PDF"],
+        [".csv", "CSV"], [".json", "JSON"], [".xml", "XML"], [".html", "HTML"], [".css", "CSS"]
     ])
 
     for (const fileType of fileTypes) {
@@ -26,7 +27,7 @@ export function getFileType(name: string) {
         }
     }
 
-    return "File"
+    return "utils.fileType.file"
 }
 
 export function getFileSize(size: number): string {
