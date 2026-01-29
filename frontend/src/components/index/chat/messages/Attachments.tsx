@@ -89,7 +89,7 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
         file.content && getFileType(file.name) === "Image" ? URL.createObjectURL(file.content) : ""
     )
 
-    const maxFileSizeLimit = 5000
+    const maxFileSizeLimit = 100_000
 
     useEffect(() => {
         if (!file.content) {
