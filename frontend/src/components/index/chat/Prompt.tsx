@@ -221,11 +221,15 @@ export async function handleFileChange(
 
     const newFiles = []
     for (const file of e.target.files) {
-        if (!file.type.includes("image") && (await file.text()).includes("�")) {
-            notify(t("prompt.file.error.invalidType", { removedFile: file.name }), "error")
-        } else {
-            newFiles.push(file)
+        if (!file.type.includes("image")) {
+            try {
+                decoder.decode(await file.arrayBuffer())
+            } catch {
+                notify(t("prompt.file.error.invalidType", { removedFile: file.name }), "error")
+                continue
+            }
         }
+        newFiles.push(file)
     }
     if (newFiles.length === 0) {
         e.target.value = ""
@@ -260,3 +264,5 @@ export async function handleFileChange(
 
     e.target.value = ""
 }
+
+const decoder = new TextDecoder("utf-8", { fatal: true })
