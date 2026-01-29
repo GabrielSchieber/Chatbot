@@ -101,7 +101,7 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
 
         observer.observe(ref.current)
         return () => observer.disconnect()
-    }, [])
+    }, [ref.current])
 
     useEffect(() => {
         for (const file of files) {
@@ -116,20 +116,22 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
 
     return (
         chatUUID && chats.find(c => c.uuid === chatUUID)?.is_archived ? (
-            <div className="flex flex-col gap-3 mb-10 items-center">
-                <p className="px-3 text-center font-semibold">{t("prompt.unarchive.label")}</p>
-                <button
-                    className="
-                        px-3 py-1 rounded-3xl cursor-pointer text-black light:text-white
-                        bg-gray-100 light:bg-gray-900 hover:bg-gray-200 light:hover:bg-gray-800
-                    "
-                    onClick={_ => {
-                        unarchiveChat(chatUUID)
-                        setChats(previous => previous.map(c => c.uuid === chatUUID ? { ...c, is_archived: false } : c))
-                    }}
-                >
-                    {t("prompt.unarchive.button")}
-                </button>
+            <div ref={ref} className="sticky bottom-0">
+                <div className="flex flex-col gap-3 mb-10 items-center">
+                    <p className="px-3 text-center font-semibold">{t("prompt.unarchive.label")}</p>
+                    <button
+                        className="
+                            px-3 py-1 rounded-3xl cursor-pointer text-black light:text-white
+                            bg-gray-100 light:bg-gray-900 hover:bg-gray-200 light:hover:bg-gray-800
+                        "
+                        onClick={_ => {
+                            unarchiveChat(chatUUID)
+                            setChats(previous => previous.map(c => c.uuid === chatUUID ? { ...c, is_archived: false } : c))
+                        }}
+                    >
+                        {t("prompt.unarchive.button")}
+                    </button>
+                </div>
             </div>
         ) : (
             <motion.div
