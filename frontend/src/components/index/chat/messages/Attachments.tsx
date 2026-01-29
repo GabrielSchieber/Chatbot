@@ -1,6 +1,7 @@
 import { Cross1Icon, CrossCircledIcon, EyeOpenIcon, FileIcon } from "@radix-ui/react-icons"
 import { Dialog } from "radix-ui"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { MAX_FILE_SIZE, MAX_FILES } from "../../Chat"
 import { getFileSize, getFileType } from "../../../../utils/misc"
@@ -10,6 +11,8 @@ export default function Attachments(
     { files, onRemove, onRemoveAll, tabIndex }:
         { files: MessageFile[], onRemove?: (file: MessageFile) => void, onRemoveAll?: () => void, tabIndex?: number }
 ) {
+    const { t } = useTranslation()
+
     return (
         <div className="flex flex-1 gap-1 justify-between">
             <div className="flex flex-col gap-1 items-start">
@@ -19,10 +22,10 @@ export default function Attachments(
                 {files.length > 0 &&
                     <div className="flex gap-1 text-sm">
                         <p className="px-2.5 py-1 rounded-lg bg-gray-800 light:bg-gray-200">
-                            Files: {files.length}/{MAX_FILES}
+                            {t("attachments.label.files")}: {files.length}/{MAX_FILES}
                         </p>
                         <p className="px-2.5 py-1 rounded-lg bg-gray-800 light:bg-gray-200">
-                            Size: {getFileSize(files.map(f => f.content_size).reduce((a, c) => a + c, 0))}/{getFileSize(MAX_FILE_SIZE)}
+                            {t("attachments.label.size")}: {getFileSize(files.map(f => f.content_size).reduce((a, c) => a + c, 0))}/{getFileSize(MAX_FILE_SIZE)}
                         </p>
                     </div>
                 }
@@ -46,6 +49,8 @@ export default function Attachments(
 }
 
 function Attachment({ file, onRemove, tabIndex }: { file: MessageFile, onRemove?: (file: MessageFile) => void, tabIndex?: number }) {
+    const { t } = useTranslation()
+
     return (
         <div className="flex px-2 py-1 gap-1 items-center rounded-md bg-gray-800 light:bg-gray-200">
             {getFileType(file.name) === "Image" ? (
@@ -54,9 +59,9 @@ function Attachment({ file, onRemove, tabIndex }: { file: MessageFile, onRemove?
                 <FileIcon className="size-14 p-1 rounded-md bg-gray-700 light:bg-gray-300" />
             )}
             <div className="flex flex-col px-2 py-1 text-xs rounded-md bg-gray-700 light:bg-gray-300">
-                Type: {getFileType(file.name)}<br />
-                Name: {file.name}<br />
-                Size: {getFileSize(file.content_size)}
+                {t("attachments.label.type")}: {getFileType(file.name)}<br />
+                {t("attachments.label.name")}: {file.name}<br />
+                {t("attachments.label.size")}: {getFileSize(file.content_size)}
             </div>
             <div className="flex flex-col">
                 {onRemove &&
@@ -77,6 +82,8 @@ function Attachment({ file, onRemove, tabIndex }: { file: MessageFile, onRemove?
 }
 
 function AttachmentViewer({ file }: { file: MessageFile }) {
+    const { t } = useTranslation()
+
     const [text, setText] = useState("")
     const [src, setSrc] = useState(() => file.content ? URL.createObjectURL(file.content) : "")
 
@@ -107,8 +114,8 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
             <Dialog.Portal>
                 <Dialog.Overlay className="z-10 fixed inset-0 bg-black/50" />
 
-                <Dialog.Title hidden>View</Dialog.Title>
-                <Dialog.Description hidden>View</Dialog.Description>
+                <Dialog.Title hidden>{t("attachments.viwer.label")}</Dialog.Title>
+                <Dialog.Description hidden>{t("attachments.label.files")}</Dialog.Description>
 
                 <Dialog.Content
                     className="
@@ -118,9 +125,9 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
                     "
                 >
                     <div className="flex gap-1 px-3 py-1 items-center justify-between rounded-lg bg-gray-900 light:bg-gray-100">
-                        <p>Type: {getFileType(file.name)}</p>
-                        <p>Name: {file.name}</p>
-                        <p>Size: {getFileSize(file.content_size)}</p>
+                        <p>{t("attachments.label.type")}: {getFileType(file.name)}</p>
+                        <p>{t("attachments.label.name")}: {file.name}</p>
+                        <p>{t("attachments.label.size")}: {getFileSize(file.content_size)}</p>
                         <Dialog.Close className="p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
                             <Cross1Icon className="size-5" />
                         </Dialog.Close>
@@ -128,7 +135,7 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
                     {file.content && file.content.size > maxFileSizeLimit &&
                         <p className="flex gap-2 px-2 items-center rounded-lg bg-red-400/10 light:bg-red-600/10">
                             <CrossCircledIcon className="text-red-400 light:text-red-600" />
-                            File is too large. Only the beginning of the file is being displayed.
+                            {t("attachments.viewer.fileTooLargeNotice")}
                         </p>
                     }
                     {src ? (
