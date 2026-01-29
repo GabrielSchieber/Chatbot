@@ -132,20 +132,22 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
                             <Cross1Icon className="size-5" />
                         </Dialog.Close>
                     </div>
-                    {file.content && file.content.size > maxFileSizeLimit &&
-                        <p className="flex gap-2 px-2 items-center rounded-lg bg-red-400/10 light:bg-red-600/10">
-                            <CrossCircledIcon className="text-red-400 light:text-red-600" />
-                            {t("attachments.viewer.fileTooLargeNotice")}
-                        </p>
-                    }
                     {src ? (
                         <div className="relative size-full">
                             <img className="absolute size-full object-contain" src={src} />
                         </div>
                     ) : (
-                        <div className="p-2 wrap-anywhere whitespace-pre-wrap overflow-y-auto rounded-lg bg-gray-900 light:bg-gray-100">
-                            {text}
-                        </div>
+                        <>
+                            {file.content && file.content.size > maxFileSizeLimit &&
+                                <p className="flex gap-2 px-2 items-center rounded-lg bg-red-400/10 light:bg-red-600/10">
+                                    <CrossCircledIcon className="text-red-400 light:text-red-600" />
+                                    {t("attachments.viewer.fileTooLargeNotice")}
+                                </p>
+                            }
+                            <div className="p-2 wrap-anywhere whitespace-pre-wrap overflow-y-auto rounded-lg bg-gray-900 light:bg-gray-100">
+                                {text}
+                            </div>
+                        </>
                     )}
                 </Dialog.Content>
             </Dialog.Portal>
