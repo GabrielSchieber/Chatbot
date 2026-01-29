@@ -190,8 +190,8 @@ function Entry({ entry }: { entry: SearchEntry }) {
 
                 {entry.matches.length > 0 &&
                     <ul className="flex flex-col gap-1">
-                        {entry.matches.slice(0, 5).map((m, i) =>
-                            <li key={i} className="px-2 rounded bg-gray-600/30 light:bg-gray-300">{m.slice(0, 100)}...</li>
+                        {entry.matches.map((m, i) =>
+                            <li key={i} className="px-2 rounded bg-gray-600/30 light:bg-gray-300">{m}...</li>
                         )}
                     </ul>
                 }

@@ -1,11 +1,11 @@
-from django.db.models import Prefetch, Q
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from ..models import Chat, Message, User
+from ..models import Chat, User
 from ..serializers.chat import ChatSerializer, ChatUUIDSerializer, GetChatsSerializer, RenameChatSerializer, SearchChatsSerializer
 from ..tasks import stop_pending_chat, stop_user_pending_chats
 
@@ -63,23 +63,21 @@ class SearchChats(APIView):
         offset = qs.validated_data["offset"]
         limit = qs.validated_data["limit"]
 
-        matched_messages = Message.objects.filter(chat__user = user, text__icontains = search).order_by("created_at")
         chats = user.chats.filter(Q(title__icontains = search) | Q(messages__text__icontains = search)).distinct().order_by("-created_at")
-
-        total = chats.count()
-        chats = chats[offset:offset + limit]
-
-        chats = chats.prefetch_related(Prefetch("messages", queryset = matched_messages, to_attr = "matched_messages"))
 
         entries = [{
             "uuid": chat.uuid,
             "title": chat.title,
             "is_archived": chat.is_archived,
-            "matches": [m.text for m in getattr(chat, "matched_messages", [])],
+            "matches": [
+                m.text[:100] for m in chat.messages.filter(
+                    ~Q(text = "") & (Q(chat__title__icontains = search) | Q(text__icontains = search))
+                ).distinct().order_by("created_at")[:5]
+            ],
             "last_modified_at": chat.last_modified_at().isoformat()
-        } for chat in chats]
+        } for chat in chats[offset:offset + limit]]
 
-        return Response({"entries": entries, "has_more": offset + limit < total}, status.HTTP_200_OK)
+        return Response({"entries": entries, "has_more": offset + limit < chats.count()}, status.HTTP_200_OK)
 
 class RenameChat(APIView):
     permission_classes = [IsAuthenticated]
