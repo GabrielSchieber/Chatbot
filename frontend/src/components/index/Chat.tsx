@@ -14,7 +14,7 @@ export default function Chat() {
     const introductionRef = useRef<HTMLHeadingElement | null>(null)
 
     return (
-        <div ref={ref} className="relative flex flex-col size-full items-center overflow-y-auto">
+        <div ref={ref} className="relative flex flex-col size-full items-center overflow-x-hidden overflow-y-auto">
             <Header />
             <Messages chatRef={ref} hasSentMessage={hasSentMessage} introductionRef={introductionRef} />
             <Introduction ref={introductionRef} />

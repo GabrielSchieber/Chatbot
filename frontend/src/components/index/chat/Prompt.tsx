@@ -142,7 +142,7 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
                     padding: "0 5px"
                 } : {
                     width: "60vw",
-                    minWidth: "600px",
+                    minWidth: "500px",
                     height: !chatUUID ? "50%" : "auto",
                     marginTop: "0",
                     padding: "0 5px"
@@ -155,7 +155,7 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
                     padding: "0 5px"
                 } : {
                     width: "60vw",
-                    minWidth: "600px",
+                    minWidth: "500px",
                     height: !chatUUID ? "50%" : "auto",
                     marginTop: "0",
                     padding: "0 5px"
