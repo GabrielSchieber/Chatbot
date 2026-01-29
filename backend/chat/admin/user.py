@@ -162,7 +162,7 @@ class UserAdmin(DjangoUserAdmin):
         (("Preferences"), {"fields": ("language", "theme", "has_sidebar_open", "custom_instructions", "nickname", "occupation", "about")} ),
         (("MFA"), {"fields": ("mfa_display",)} ),
         (("Sessions"), {"fields": ("sessions_display",)} ),
-        ("Permissions", {"fields": ("is_active", "is_guest", "is_staff", "is_superuser", "groups", "user_permissions")} ),
+        ("Permissions", {"fields": ("has_verified_email", "is_active", "is_guest", "is_staff", "is_superuser", "groups", "user_permissions")} ),
         (("Important dates"), {"fields": ("last_login", "created_at_display")} )
     )
     add_fieldsets = (
