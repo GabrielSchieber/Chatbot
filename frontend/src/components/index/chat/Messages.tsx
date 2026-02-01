@@ -2,7 +2,7 @@ import { ArrowDownIcon, CheckIcon, CopyIcon } from "@radix-ui/react-icons"
 import { AnimatePresence, motion } from "motion/react"
 import React, { useEffect, useRef, useState, type ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import ReactMarkdown from "react-markdown"
+import Markdown from "react-markdown"
 import { useParams } from "react-router"
 import rehypeHighlight from "rehype-highlight"
 import remarkGfm from "remark-gfm"
@@ -167,7 +167,7 @@ export default function Messages({
             }}
             transition={{ type: "tween", duration: 0.5 }}
             ref={ref}
-            className="flex flex-col w-full items-center"
+            className="flex flex-col w-full gap-5 items-center"
         >
             {messages.map((m, i) =>
                 <div key={i} className={`flex flex-col transition-all duration-500 ${isMobile ? "w-full px-3" : "w-[60vw]"}`}>
@@ -241,24 +241,12 @@ export function BotMessage({ index, text, model }: { index: number, text: string
 
     return (
         <div className="flex flex-col gap-1">
-            <div className="wrap-anywhere whitespace-pre-wrap" data-testid={`message-${index}`}>
-                <ReactMarkdown
+            <div className="prose dark:prose-invert max-w-none">
+                <Markdown
                     children={text}
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeHighlight]}
                     components={{
-                        code({ node, className, children, ...props }) {
-                            const isInline = !className
-                            if (isInline) {
-                                return (
-                                    <code className="px-1 bg-gray-700 light:bg-gray-300 rounded" {...props}>
-                                        {children}
-                                    </code>
-                                )
-                            }
-                            return <code className={className} {...props}>{children}</code>
-                        },
-
                         pre({ node, children, ...props }) {
                             const [copied, setCopied] = useState(false)
 
@@ -278,12 +266,12 @@ export function BotMessage({ index, text, model }: { index: number, text: string
 
                             return (
                                 <div className="rounded-lg overflow-hidden my-2">
-                                    <div className="flex items-center justify-between bg-gray-700 light:bg-gray-300 px-4 py-1">
+                                    <div className="flex px-4 items-center justify-between bg-gray-800 light:bg-gray-200">
                                         <p className="text-sm m-0">{language}</p>
                                         <button
                                             className="
-                                                flex items-center gap-1 px-2 py-[2px] text-xs cursor-pointer
-                                                rounded hover:bg-gray-800 light:hover:bg-gray-200
+                                                flex items-center gap-1 px-2 py-1 text-xs cursor-pointer
+                                                rounded hover:bg-gray-900/50 light:hover:bg-gray-100
                                             "
                                             onClick={copyCodeBlock}
                                         >

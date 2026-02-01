@@ -1,4 +1,51 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+.prose * {
+    @apply text-white light:text-black;
+}
+
+.prose h1,
+.prose h2 {
+    @apply border-b border-gray-300 my-3 pb-1;
+}
+
+.prose hr {
+    @apply my-6;
+}
+
+.prose p {
+    @apply my-2 p-0;
+}
+
+.prose pre {
+    @apply m-0 p-0 border-none rounded-none bg-transparent;
+}
+
+.prose code {
+    @apply px-1.5 py-1 rounded-lg text-gray-200 light:text-gray-800 bg-gray-800 light:bg-gray-200;
+}
+
+.prose code.hljs {
+    @apply rounded-none;
+}
+
+.prose code::before,
+code::after {
+    @apply hidden;
+}
+
+.prose li {
+    @apply my-0.5;
+}
+
+.prose li::marker {
+    @apply text-white;
+}
+
+.Light .prose li::marker {
+    @apply text-black;
+}
 
 :root {
     --scrollbar-color: theme(colors.gray.500);
