@@ -120,6 +120,7 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
     )
 
     const maxFileSizeLimit = 100_000
+    const isMarkdown = !src && file.name.endsWith(".md")
 
     useEffect(() => {
         if (!file.content) {
@@ -162,72 +163,69 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
                         </Dialog.Close>
                     </div>
 
-                    <div className="flex px-4 py-2 gap-4 items-center text-sm border-b border-gray-800 light:border-gray-200 bg-gray-900/50 light:bg-gray-50">
-                        <div className="flex gap-2 items-center">
-                            <span className="text-gray-400 light:text-gray-500">{t("attachments.label.type")}:</span>
-                            <span className="font-medium">{t(getFileTypeTranslationKey(file.name))}</span>
-                        </div>
-                        <div className="w-px h-4 bg-gray-700 light:bg-gray-300" />
-                        <div className="flex gap-2 items-center">
-                            <span className="text-gray-400 light:text-gray-500">{t("attachments.label.name")}:</span>
-                            <span className="font-medium truncate max-w-[200px]">{file.name}</span>
-                        </div>
-                        <div className="w-px h-4 bg-gray-700 light:bg-gray-300" />
-                        <div className="flex gap-2 items-center">
-                            <span className="text-gray-400 light:text-gray-500">{t("attachments.label.size")}:</span>
-                            <span className="font-medium">{getFileSize(file.content_size)}</span>
-                        </div>
-                    </div>
-
-                    <div className="flex-1 overflow-hidden relative bg-black/20 light:bg-gray-50">
-                        {src ? (
-                            <div className="size-full flex items-center justify-center p-4">
-                                <img className="max-w-full max-h-full object-contain drop-shadow-md" src={src} />
+                    <Tabs.Root className="flex flex-col flex-1 min-h-0" defaultValue="view">
+                        <div className="flex px-4 py-2 justify-between items-center text-sm border-b border-gray-800 light:border-gray-200 bg-gray-900/50 light:bg-gray-50">
+                            <div className="flex gap-4 items-center">
+                                <div className="flex gap-2 items-center">
+                                    <span className="text-gray-400 light:text-gray-500">{t("attachments.label.type")}:</span>
+                                    <span className="font-medium">{t(getFileTypeTranslationKey(file.name))}</span>
+                                </div>
+                                <div className="w-px h-4 bg-gray-700 light:bg-gray-300" />
+                                <div className="flex gap-2 items-center">
+                                    <span className="text-gray-400 light:text-gray-500">{t("attachments.label.name")}:</span>
+                                    <span className="font-medium truncate max-w-[200px]">{file.name}</span>
+                                </div>
+                                <div className="w-px h-4 bg-gray-700 light:bg-gray-300" />
+                                <div className="flex gap-2 items-center">
+                                    <span className="text-gray-400 light:text-gray-500">{t("attachments.label.size")}:</span>
+                                    <span className="font-medium">{getFileSize(file.content_size)}</span>
+                                </div>
                             </div>
-                        ) : (
-                            <div className="size-full flex flex-col overflow-y-auto">
-                                {file.content && file.content.size > maxFileSizeLimit &&
-                                    <div className="p-4 pb-0">
-                                        <p className="flex gap-2 p-3 items-center rounded-lg bg-red-500/10 text-red-500 border border-red-500/20 text-sm">
-                                            <CrossCircledIcon className="size-4" />
-                                            {t("attachments.viewer.fileTooLargeNotice")}
-                                        </p>
-                                    </div>
-                                }
 
-                                {file.name.endsWith(".md") ? (
-                                    <Tabs.Root
-                                        className="flex flex-col flex-1 min-h-0"
-                                        defaultValue="view"
+                            {isMarkdown && (
+                                <Tabs.List className="flex p-1 rounded-lg bg-gray-800 light:bg-gray-100">
+                                    <Tabs.Trigger
+                                        value="view"
+                                        className="
+                                            px-3 py-1.5 text-sm font-medium rounded-md cursor-pointer transition-all
+                                            data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:shadow-sm
+                                            light:data-[state=active]:bg-white light:data-[state=active]:text-black
+                                            text-gray-400 light:text-gray-500 hover:text-gray-200 light:hover:text-gray-700
+                                        "
                                     >
-                                        <div className="flex items-center justify-center p-4 border-b border-gray-800 light:border-gray-200 bg-gray-900 light:bg-white">
-                                            <Tabs.List className="flex p-1 rounded-lg bg-gray-800 light:bg-gray-100">
-                                                <Tabs.Trigger
-                                                    value="view"
-                                                    className="
-                                                        px-3 py-1.5 text-sm font-medium rounded-md cursor-pointer transition-all
-                                                        data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:shadow-sm
-                                                        light:data-[state=active]:bg-white light:data-[state=active]:text-black
-                                                        text-gray-400 light:text-gray-500 hover:text-gray-200 light:hover:text-gray-700
-                                                    "
-                                                >
-                                                    {t("attachments.viewer.view")}
-                                                </Tabs.Trigger>
+                                        {t("attachments.viewer.view")}
+                                    </Tabs.Trigger>
 
-                                                <Tabs.Trigger
-                                                    value="code"
-                                                    className="
-                                                        px-3 py-1.5 text-sm font-medium rounded-md cursor-pointer transition-all
-                                                        data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:shadow-sm
-                                                        light:data-[state=active]:bg-white light:data-[state=active]:text-black
-                                                        text-gray-400 light:text-gray-500 hover:text-gray-200 light:hover:text-gray-700
-                                                    "
-                                                >
-                                                    {t("attachments.viewer.code")}
-                                                </Tabs.Trigger>
-                                            </Tabs.List>
-                                        </div>
+                                    <Tabs.Trigger
+                                        value="code"
+                                        className="
+                                            px-3 py-1.5 text-sm font-medium rounded-md cursor-pointer transition-all
+                                            data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:shadow-sm
+                                            light:data-[state=active]:bg-white light:data-[state=active]:text-black
+                                            text-gray-400 light:text-gray-500 hover:text-gray-200 light:hover:text-gray-700
+                                        "
+                                    >
+                                        {t("attachments.viewer.code")}
+                                    </Tabs.Trigger>
+                                </Tabs.List>
+                            )}
+                        </div>
 
+                        {!src && file.content && file.content.size > maxFileSizeLimit &&
+                            <p className="flex gap-2 m-2 p-3 items-center rounded-lg bg-red-500/10 text-red-500 border border-red-500/20 text-sm">
+                                <CrossCircledIcon className="size-4" />
+                                {t("attachments.viewer.fileTooLargeNotice")}
+                            </p>
+                        }
+
+                        <div className="flex-1 overflow-hidden relative bg-black/20 light:bg-gray-50">
+                            {src ? (
+                                <div className="size-full flex items-center justify-center p-4">
+                                    <img className="max-w-full max-h-full object-contain drop-shadow-md" src={src} />
+                                </div>
+                            ) : (
+                                <div className="size-full flex flex-col overflow-y-auto">
+                                    {isMarkdown ? (
                                         <div className="flex-1 overflow-y-auto p-4">
                                             <Tabs.Content value="code" className="outline-none">
                                                 <pre className="font-mono text-sm whitespace-pre-wrap break-words text-gray-300 light:text-gray-700">
@@ -296,17 +294,17 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
                                                 />
                                             </Tabs.Content>
                                         </div>
-                                    </Tabs.Root>
-                                ) : (
-                                    <div className="p-4">
-                                        <pre className="font-mono text-sm whitespace-pre-wrap break-words text-gray-300 light:text-gray-700">
-                                            {text}
-                                        </pre>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                                    ) : (
+                                        <div className="p-4">
+                                            <pre className="font-mono text-sm whitespace-pre-wrap break-words text-gray-300 light:text-gray-700">
+                                                {text}
+                                            </pre>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </Tabs.Root>
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
