@@ -158,6 +158,8 @@
     "attachments.label.name": "Nome",
     "attachments.viewer.label": "Visualizador de Anexos",
     "attachments.viewer.fileTooLargeNotice": "O arquivo é muito grande. Apenas o início do arquivo está sendo exibido.",
+    "attachments.viewer.code": "Código",
+    "attachments.viewer.view": "Visualizar",
     "generation.throttled": "Você atingiu o limite de geração de mensagens. Por favor, tente novamente em alguns minutos.",
     "textarea.placeholder": "Me pergunte qualquer coisa...",
     "search.placeholder": "Pesquisar conversas...",

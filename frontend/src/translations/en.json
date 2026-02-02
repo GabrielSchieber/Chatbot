@@ -158,6 +158,8 @@
     "attachments.label.name": "Name",
     "attachments.viewer.label": "Attachments Viewer",
     "attachments.viewer.fileTooLargeNotice": "File is too large. Only the beginning of the file is being displayed.",
+    "attachments.viewer.code": "Code",
+    "attachments.viewer.view": "View",
     "generation.throttled": "You've reached the message generation limit. Please try again in a few minutes.",
     "textarea.placeholder": "Ask me anything...",
     "search.placeholder": "Search chats...",

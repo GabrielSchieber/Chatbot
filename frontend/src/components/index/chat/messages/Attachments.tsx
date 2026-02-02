@@ -198,12 +198,12 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
                                 {file.name.endsWith(".md") ? (
                                     <Tabs.Root
                                         className="flex flex-col flex-1 min-h-0"
-                                        defaultValue="rendered"
+                                        defaultValue="view"
                                     >
                                         <div className="flex items-center justify-center p-4 border-b border-gray-800 light:border-gray-200 bg-gray-900 light:bg-white">
                                             <Tabs.List className="flex p-1 rounded-lg bg-gray-800 light:bg-gray-100">
                                                 <Tabs.Trigger
-                                                    value="raw"
+                                                    value="view"
                                                     className="
                                                         px-3 py-1.5 text-sm font-medium rounded-md cursor-pointer transition-all
                                                         data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:shadow-sm
@@ -211,11 +211,11 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
                                                         text-gray-400 light:text-gray-500 hover:text-gray-200 light:hover:text-gray-700
                                                     "
                                                 >
-                                                    Raw
+                                                    {t("attachments.viewer.view")}
                                                 </Tabs.Trigger>
 
                                                 <Tabs.Trigger
-                                                    value="rendered"
+                                                    value="code"
                                                     className="
                                                         px-3 py-1.5 text-sm font-medium rounded-md cursor-pointer transition-all
                                                         data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:shadow-sm
@@ -223,19 +223,19 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
                                                         text-gray-400 light:text-gray-500 hover:text-gray-200 light:hover:text-gray-700
                                                     "
                                                 >
-                                                    Rendered
+                                                    {t("attachments.viewer.code")}
                                                 </Tabs.Trigger>
                                             </Tabs.List>
                                         </div>
 
                                         <div className="flex-1 overflow-y-auto p-4">
-                                            <Tabs.Content value="raw" className="outline-none">
+                                            <Tabs.Content value="code" className="outline-none">
                                                 <pre className="font-mono text-sm whitespace-pre-wrap break-words text-gray-300 light:text-gray-700">
                                                     {text}
                                                 </pre>
                                             </Tabs.Content>
 
-                                            <Tabs.Content value="rendered" className="prose dark:prose-invert max-w-none outline-none">
+                                            <Tabs.Content value="view" className="prose dark:prose-invert max-w-none outline-none">
                                                 <Markdown
                                                     children={text}
                                                     remarkPlugins={[remarkGfm]}
