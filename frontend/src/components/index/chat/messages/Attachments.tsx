@@ -1,7 +1,10 @@
-import { Cross1Icon, CrossCircledIcon, EyeOpenIcon, FileIcon } from "@radix-ui/react-icons"
-import { Dialog } from "radix-ui"
-import { useEffect, useState } from "react"
+import { CheckIcon, CopyIcon, Cross1Icon, CrossCircledIcon, EyeOpenIcon, FileIcon } from "@radix-ui/react-icons"
+import { Dialog, Tabs } from "radix-ui"
+import React, { useEffect, useState, type ReactElement } from "react"
 import { useTranslation } from "react-i18next"
+import Markdown from "react-markdown"
+import rehypeHighlight from "rehype-highlight"
+import remarkGfm from "remark-gfm"
 
 import { MAX_FILE_SIZE, MAX_FILES } from "../../Chat"
 import { getFileSize, getFileTypeTranslationKey } from "../../../../utils/misc"
@@ -141,43 +144,169 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
             </Dialog.Trigger>
 
             <Dialog.Portal>
-                <Dialog.Overlay className="z-10 fixed inset-0 bg-black/50" />
-
-                <Dialog.Title hidden>{t("attachments.viwer.label")}</Dialog.Title>
-                <Dialog.Description hidden>{t("attachments.label.files")}</Dialog.Description>
+                <Dialog.Overlay className="z-10 fixed inset-0 bg-black/60 backdrop-blur-sm" />
 
                 <Dialog.Content
                     className="
-                        z-10 fixed flex flex-col w-[75vw] not-md:w-[calc(100vw-20px)] h-[75vh]
-                        gap-2 p-2 rounded-lg top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2
-                        border border-gray-500 text-white light:text-black bg-gray-800 light:bg-gray-200
+                        z-10 fixed flex flex-col w-[80vw] not-md:w-[calc(100vw-32px)] h-[80vh]
+                        top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 rounded-xl
+                        bg-gray-900 light:bg-white text-white light:text-black
+                        border border-gray-800 light:border-gray-200 shadow-2xl outline-none
                     "
                 >
-                    <div className="flex gap-1 px-3 py-1 items-center justify-between rounded-lg bg-gray-900 light:bg-gray-100">
-                        <p>{t("attachments.label.type")}: {t(getFileTypeTranslationKey(file.name))}</p>
-                        <p>{t("attachments.label.name")}: {file.name}</p>
-                        <p>{t("attachments.label.size")}: {getFileSize(file.content_size)}</p>
-                        <Dialog.Close className="p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
-                            <Cross1Icon className="size-5" />
+                    <div className="flex px-4 py-3 items-center justify-between border-b border-gray-800 light:border-gray-200">
+                        <Dialog.Title className="font-semibold text-lg">{t("attachments.viewer.label")}</Dialog.Title>
+                        <Dialog.Description hidden>{t("attachments.label.files")}</Dialog.Description>
+                        <Dialog.Close className="p-1.5 rounded-full cursor-pointer hover:bg-gray-800 light:hover:bg-gray-100 transition-colors">
+                            <Cross1Icon className="size-4" />
                         </Dialog.Close>
                     </div>
-                    {src ? (
-                        <div className="relative size-full">
-                            <img className="absolute size-full object-contain" src={src} />
+
+                    <div className="flex px-4 py-2 gap-4 items-center text-sm border-b border-gray-800 light:border-gray-200 bg-gray-900/50 light:bg-gray-50">
+                        <div className="flex gap-2 items-center">
+                            <span className="text-gray-400 light:text-gray-500">{t("attachments.label.type")}:</span>
+                            <span className="font-medium">{t(getFileTypeTranslationKey(file.name))}</span>
                         </div>
-                    ) : (
-                        <>
-                            {file.content && file.content.size > maxFileSizeLimit &&
-                                <p className="flex gap-2 px-2 items-center rounded-lg bg-red-400/10 light:bg-red-600/10">
-                                    <CrossCircledIcon className="text-red-400 light:text-red-600" />
-                                    {t("attachments.viewer.fileTooLargeNotice")}
-                                </p>
-                            }
-                            <div className="p-2 wrap-anywhere whitespace-pre-wrap overflow-y-auto rounded-lg bg-gray-900 light:bg-gray-100">
-                                {text}
+                        <div className="w-px h-4 bg-gray-700 light:bg-gray-300" />
+                        <div className="flex gap-2 items-center">
+                            <span className="text-gray-400 light:text-gray-500">{t("attachments.label.name")}:</span>
+                            <span className="font-medium truncate max-w-[200px]">{file.name}</span>
+                        </div>
+                        <div className="w-px h-4 bg-gray-700 light:bg-gray-300" />
+                        <div className="flex gap-2 items-center">
+                            <span className="text-gray-400 light:text-gray-500">{t("attachments.label.size")}:</span>
+                            <span className="font-medium">{getFileSize(file.content_size)}</span>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-hidden relative bg-black/20 light:bg-gray-50">
+                        {src ? (
+                            <div className="size-full flex items-center justify-center p-4">
+                                <img className="max-w-full max-h-full object-contain drop-shadow-md" src={src} />
                             </div>
-                        </>
-                    )}
+                        ) : (
+                            <div className="size-full flex flex-col overflow-y-auto">
+                                {file.content && file.content.size > maxFileSizeLimit &&
+                                    <div className="p-4 pb-0">
+                                        <p className="flex gap-2 p-3 items-center rounded-lg bg-red-500/10 text-red-500 border border-red-500/20 text-sm">
+                                            <CrossCircledIcon className="size-4" />
+                                            {t("attachments.viewer.fileTooLargeNotice")}
+                                        </p>
+                                    </div>
+                                }
+
+                                {file.name.endsWith(".md") ? (
+                                    <Tabs.Root
+                                        className="flex flex-col flex-1 min-h-0"
+                                        defaultValue="rendered"
+                                    >
+                                        <div className="flex items-center justify-center p-4 border-b border-gray-800 light:border-gray-200 bg-gray-900 light:bg-white">
+                                            <Tabs.List className="flex p-1 rounded-lg bg-gray-800 light:bg-gray-100">
+                                                <Tabs.Trigger
+                                                    value="raw"
+                                                    className="
+                                                        px-3 py-1.5 text-sm font-medium rounded-md cursor-pointer transition-all
+                                                        data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:shadow-sm
+                                                        light:data-[state=active]:bg-white light:data-[state=active]:text-black
+                                                        text-gray-400 light:text-gray-500 hover:text-gray-200 light:hover:text-gray-700
+                                                    "
+                                                >
+                                                    Raw
+                                                </Tabs.Trigger>
+
+                                                <Tabs.Trigger
+                                                    value="rendered"
+                                                    className="
+                                                        px-3 py-1.5 text-sm font-medium rounded-md cursor-pointer transition-all
+                                                        data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:shadow-sm
+                                                        light:data-[state=active]:bg-white light:data-[state=active]:text-black
+                                                        text-gray-400 light:text-gray-500 hover:text-gray-200 light:hover:text-gray-700
+                                                    "
+                                                >
+                                                    Rendered
+                                                </Tabs.Trigger>
+                                            </Tabs.List>
+                                        </div>
+
+                                        <div className="flex-1 overflow-y-auto p-4">
+                                            <Tabs.Content value="raw" className="outline-none">
+                                                <pre className="font-mono text-sm whitespace-pre-wrap break-words text-gray-300 light:text-gray-700">
+                                                    {text}
+                                                </pre>
+                                            </Tabs.Content>
+
+                                            <Tabs.Content value="rendered" className="prose dark:prose-invert max-w-none outline-none">
+                                                <Markdown
+                                                    children={text}
+                                                    remarkPlugins={[remarkGfm]}
+                                                    rehypePlugins={[rehypeHighlight]}
+                                                    components={{
+                                                        pre({ node, children, ...props }) {
+                                                            function getCode(children: any) {
+                                                                const isInline = !className
+                                                                if (isInline) {
+                                                                    return (
+                                                                        <code className="hljs language-txt" {...children.props}>
+                                                                            {children.props.children}
+                                                                        </code>
+                                                                    )
+                                                                }
+                                                                return children
+                                                            }
+
+                                                            const [copied, setCopied] = useState(false)
+
+                                                            function copyCodeBlock(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+                                                                const codeBlock = e.currentTarget?.parentElement?.parentElement?.querySelector("pre")
+                                                                navigator.clipboard.writeText(codeBlock?.textContent || "")
+                                                                setCopied(true)
+                                                                setTimeout(() => setCopied(false), 2000)
+                                                            }
+
+                                                            const childArray = React.Children.toArray(children)
+                                                            const codeNode = childArray[0] as ReactElement<{ className?: string, children?: React.ReactNode }>
+
+                                                            const className = codeNode?.props.className || ""
+                                                            const languageMatch = /language-(\w+)/.exec(className)
+                                                            const language = languageMatch ? languageMatch[1] : "code"
+
+                                                            return (
+                                                                <div className="rounded-lg overflow-hidden my-4 border border-gray-700 light:border-gray-300">
+                                                                    <div className="flex px-3 py-2 items-center justify-between bg-gray-800 light:bg-gray-200 border-b border-gray-700 light:border-gray-300">
+                                                                        <p className="text-xs font-mono text-gray-400 light:text-gray-600 m-0">{language}</p>
+                                                                        <button
+                                                                            className="
+                                                                                flex items-center gap-1.5 px-2 py-1 text-xs font-medium cursor-pointer
+                                                                                rounded hover:bg-gray-700 light:hover:bg-gray-300 transition-colors
+                                                                                text-gray-300 light:text-gray-700
+                                                                            "
+                                                                            onClick={copyCodeBlock}
+                                                                        >
+                                                                            {copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+                                                                            {copied ? t("copyButton.tooltip.clicked") : t("copyButton.tooltip")}
+                                                                        </button>
+                                                                    </div>
+                                                                    <pre className="overflow-x-auto p-3 m-0 bg-gray-900 light:bg-gray-50 text-sm" {...props}>
+                                                                        {getCode(children)}
+                                                                    </pre>
+                                                                </div>
+                                                            )
+                                                        }
+                                                    }}
+                                                />
+                                            </Tabs.Content>
+                                        </div>
+                                    </Tabs.Root>
+                                ) : (
+                                    <div className="p-4">
+                                        <pre className="font-mono text-sm whitespace-pre-wrap break-words text-gray-300 light:text-gray-700">
+                                            {text}
+                                        </pre>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
