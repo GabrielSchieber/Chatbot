@@ -10,7 +10,7 @@ export default function Introduction({ ref }: { ref: React.RefObject<HTMLHeading
         <h1
             ref={ref}
             className={`
-                fixed mb-5 text-3xl font-semibold text-center transition-opacity duration-500 text-zinc-400 light:text-zinc-600
+                fixed mb-5 text-3xl font-semibold text-center transition-opacity duration-500 text-zinc-100 light:text-zinc-900
                 ${chatUUID ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"}
             `}
         >
