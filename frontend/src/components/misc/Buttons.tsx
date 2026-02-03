@@ -585,4 +585,4 @@ const destructiveChatDropdownItemClassName = `
     focus:bg-red-400/20
 `
 
-const sidebarButtonClasses = "flex gap-1 p-2 items-center rounded cursor-pointer hover:bg-zinc-800/50 light:hover:bg-zinc-200"
+const sidebarButtonClasses = "flex gap-1 p-2 items-center rounded cursor-pointer hover:bg-zinc-800 light:hover:bg-zinc-200"
