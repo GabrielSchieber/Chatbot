@@ -2,6 +2,7 @@ import { Cross1Icon } from "@radix-ui/react-icons"
 import { Dialog } from "radix-ui"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useParams } from "react-router"
 
 import { TooltipButton } from "../../../misc/Buttons"
 import ConfirmDialog from "../../../misc/ConfirmDialog"
@@ -12,6 +13,7 @@ import { archiveChats, deleteChat, getChats, unarchiveChat, unarchiveChats } fro
 import type { Chat } from "../../../../utils/types"
 
 export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: string }) {
+    const { chatUUID } = useParams()
     const { t } = useTranslation()
 
     const { chats, setChats, isMobile } = useChat()
@@ -29,7 +31,7 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
         isLoadingRef.current = true
         setIsLoading(true)
 
-        const offset = chats.filter(c => c.is_archived).length
+        const offset = chats.filter(c => c.is_archived && c.uuid !== chatUUID).length
         const limit = Math.round((window.innerHeight / 2) / 30)
 
         const response = await getChats(offset, limit, false, true)
