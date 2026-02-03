@@ -6,8 +6,8 @@ export type Step = "login" | "mfa" | "mfa-recovery"
 
 export function Form({ children, handleSubmit }: { children: ReactNode, handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void }) {
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-900 light:bg-gray-100">
-            <form className="w-full max-w-md p-8 space-y-6 rounded-lg shadow-xl bg-gray-800 light:bg-white" onSubmit={handleSubmit}>
+        <div className="flex min-h-screen items-center justify-center bg-zinc-950 light:bg-zinc-50">
+            <form className="w-full max-w-md p-8 space-y-6 rounded-2xl border border-zinc-800 light:border-zinc-200 shadow-2xl bg-zinc-900 light:bg-white" onSubmit={handleSubmit}>
                 {children}
             </form>
         </div>
@@ -15,7 +15,7 @@ export function Form({ children, handleSubmit }: { children: ReactNode, handleSu
 }
 
 export function Header({ text }: { text: string }) {
-    return <h1 className="text-2xl font-bold text-center text-gray-100 light:text-gray-800">{text}</h1>
+    return <h1 className="text-2xl font-bold text-center text-zinc-100 light:text-zinc-900">{text}</h1>
 }
 
 export function Email({ email, setEmail }: { email: string, setEmail: Dispatch<SetStateAction<string>> }) {
@@ -30,10 +30,7 @@ export function Email({ email, setEmail }: { email: string, setEmail: Dispatch<S
                 placeholder={t("auth.email.placeholder")}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="
-                    w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2
-                    focus:ring-indigo-500 bg-gray-700 text-gray-100 light:bg-white light:text-gray-900
-                "
+                className={inputClassName}
                 autoFocus
                 required
             />
@@ -63,15 +60,12 @@ export function Password({ password, setPassword, label, id, minLength, maxLengt
                 placeholder="••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="
-                    w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2
-                    focus:ring-indigo-500 bg-gray-700 text-gray-100 light:bg-white light:text-gray-900
-                "
+                className={inputClassName}
                 required
             />
             {includeForgotPassword &&
                 <a
-                    className="text-gray-400 light:text-gray-700 hover:underline"
+                    className="text-zinc-400 light:text-zinc-500 hover:underline"
                     href="/forgot-password"
                 >
                     {t("auth.password.forgot")}
@@ -128,8 +122,8 @@ export function MFAStepSwitch({ text, switchStep, setStep, setCode, setError, is
     return (
         <button
             className="
-                w-full text-center text-gray-400 light:text-gray-600 cursor-pointer
-                disabled:cursor-not-allowed enabled:hover:underline disabled:text-gray-600 light:disabled:text-gray-400
+                w-full text-center text-zinc-400 light:text-zinc-500 cursor-pointer
+                disabled:cursor-not-allowed enabled:hover:underline disabled:text-zinc-600 light:disabled:text-zinc-400
             "
             onClick={handleClick}
             disabled={isDisabled}
@@ -176,8 +170,11 @@ export function Button({ text, isDisabled, onClick }: { text: string, isDisabled
     return (
         <button
             className="
-                w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md cursor-pointer disabled:bg-indigo-600/30
-                disabled:cursor-not-allowed disabled:text-gray-200 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500
+                w-full px-4 py-2 font-medium rounded-xl cursor-pointer
+                text-zinc-900 bg-zinc-100 hover:bg-zinc-200
+                light:text-zinc-100 light:bg-zinc-900 light:hover:bg-zinc-800
+                disabled:opacity-50 disabled:cursor-not-allowed
+                focus:outline-none focus:ring-2 focus:ring-zinc-500
             "
             type={onClick === undefined ? "submit" : "button"}
             onClick={onClick}
@@ -190,9 +187,9 @@ export function Button({ text, isDisabled, onClick }: { text: string, isDisabled
 
 export function Recommendation({ text, url, urlText }: { text: string, url: string, urlText: string }) {
     return (
-        <p className="text-center text-gray-300 light:text-gray-600">
+        <p className="text-center text-zinc-400 light:text-zinc-500">
             {text}{" "}
-            <a href={url} className="text-indigo-400 light:text-indigo-600 hover:underline">
+            <a href={url} className="text-zinc-200 light:text-zinc-800 hover:underline">
                 {urlText}
             </a>
         </p>
@@ -201,13 +198,20 @@ export function Recommendation({ text, url, urlText }: { text: string, url: stri
 
 function Label({ htmlFor, text }: { htmlFor?: string, text: string }) {
     return (
-        <RadixLabel.Root htmlFor={htmlFor} className="text-sm font-medium text-gray-200 light:text-gray-700">
+        <RadixLabel.Root htmlFor={htmlFor} className="text-sm font-medium text-zinc-200 light:text-zinc-700">
             {text}
         </RadixLabel.Root>
     )
 }
 
+const inputClassName = `
+    w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2
+    focus:ring-zinc-500 bg-zinc-950 text-zinc-100 border-zinc-800
+    light:bg-zinc-50 light:text-zinc-900 light:border-zinc-300
+`
+
 const mfaInputClassName = `
-    tracking-widest text-center w-full px-3 py-2 border rounded-md bg-gray-700 text-gray-100
-    light:bg-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500
+    tracking-widest text-center w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2
+    focus:ring-zinc-500 bg-zinc-950 text-zinc-100 border-zinc-800
+    light:bg-zinc-50 light:text-zinc-900 light:border-zinc-300
 `

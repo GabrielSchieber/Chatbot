@@ -82,13 +82,13 @@ export default function Customizations() {
 
             {[customInstructions, nickname, occupation, about].some(f => f !== undefined) && (
                 <div className="flex gap-1 my-4 items-center justify-end">
-                    <button className="px-2 py-1 rounded-lg cursor-pointer border border-gray-500 hover:bg-gray-500/50" onClick={resetCustomization}>
+                    <button className="px-2 py-1 rounded-lg cursor-pointer border border-zinc-500 hover:bg-zinc-500/50" onClick={resetCustomization}>
                         Cancel
                     </button>
                     <button
                         className="
-                            px-2 py-1 rounded-lg cursor-pointer text-black light:text-white border border-gray-500
-                            bg-gray-100 hover:bg-gray-200 light:bg-gray-900 light:hover:bg-gray-800
+                            px-2 py-1 rounded-lg cursor-pointer text-black light:text-white border border-zinc-500
+                            bg-zinc-100 hover:bg-zinc-200 light:bg-zinc-900 light:hover:bg-zinc-800
                         "
                         onClick={saveCustomization}
                     >
@@ -127,7 +127,7 @@ function TextArea({ id, placeholder, value, onChange }: { id: string, placeholde
     }, [value])
 
     return (
-        <div className="flex flex-1 max-h-40 overflow-y-auto rounded-lg border border-gray-500/50 bg-gray-700/50 light:bg-gray-300/50">
+        <div className="flex flex-1 max-h-40 overflow-y-auto rounded-lg border border-zinc-700/50 light:border-zinc-300/50 bg-zinc-800/50 light:bg-zinc-200/50">
             <textarea
                 id={id}
                 ref={ref}
@@ -146,7 +146,7 @@ function Input({ id, placeholder, value, onChange }: { id: string, placeholder: 
     return (
         <input
             id={id}
-            className="w-full px-2 py-1 rounded-lg outline-none border border-gray-500/50 bg-gray-700/50 light:bg-gray-300/50"
+            className="w-full px-2 py-1 rounded-lg outline-none border border-zinc-700/50 light:border-zinc-300/50 bg-zinc-800/50 light:bg-zinc-200/50"
             type="text"
             placeholder={placeholder}
             value={value}

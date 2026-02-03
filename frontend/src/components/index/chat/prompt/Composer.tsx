@@ -89,10 +89,10 @@ export default function Composer({
             layout={!window.matchMedia("(prefers-reduced-motion)").matches}
             transition={{ type: "tween", duration: 0.15 }}
             className={`
-                flex flex-col w-full max-h-[50vh] overflow-hidden rounded-4xl bg-gray-800 light:bg-gray-200
+                flex flex-col w-full max-h-[50vh] overflow-hidden rounded-3xl bg-zinc-800 light:bg-zinc-100
                 ${files.length > 0 ? "gap-2 px-4" : "px-3"}
                 ${files.length > 0 || isExtended ? "pt-3 pb-2" : "py-1"}
-                ${withBorderAndShadow ? "mb-5 border-t-4 border-gray-600 light:border-gray-400 shadow-xl/50" : "mt-10 mb-5"}
+                ${withBorderAndShadow ? "mb-5 border border-zinc-700 light:border-zinc-300 shadow-lg" : "mt-10 mb-5"}
             `}
             onClick={e => {
                 if (e.target instanceof HTMLElement && (e.target.tagName === "BUTTON" || e.target.closest("button"))) {
@@ -182,7 +182,7 @@ export function Files({
                 <div
                     className={`
                         flex flex-wrap gap-2 p-2 rounded-xl border
-                        bg-gray-700 light:bg-gray-300 border-gray-200 light:border-gray-800
+                        bg-zinc-700 light:bg-zinc-200 border-zinc-600 light:border-zinc-300
                         ${overflowYAuto && "overflow-x-hidden overflow-y-auto"}
                     `}
                 >

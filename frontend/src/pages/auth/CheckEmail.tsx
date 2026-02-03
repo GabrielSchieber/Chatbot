@@ -8,12 +8,12 @@ export default function CheckEmail() {
     const email = new URLSearchParams(location.search).get("email")
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-900 light:bg-gray-100">
-            <div className="w-full max-w-md p-8 space-y-4 rounded-lg shadow-xl bg-gray-800 light:bg-white">
+        <div className="flex min-h-screen items-center justify-center bg-zinc-950 light:bg-zinc-50">
+            <div className="w-full max-w-md p-8 space-y-4 rounded-2xl border border-zinc-800 light:border-zinc-200 shadow-2xl bg-zinc-900 light:bg-white">
                 <Header text={t("auth.verifyEmailSent.header")} />
                 <div>
-                    <p className="text-white light:text-black">{t("auth.verifyEmailSent.firstParagraph", { email })}</p>
-                    <p className="text-white light:text-black">{t("auth.verifyEmailSent.secondParagraph")}</p>
+                    <p className="text-zinc-100 light:text-zinc-900">{t("auth.verifyEmailSent.firstParagraph", { email })}</p>
+                    <p className="text-zinc-100 light:text-zinc-900">{t("auth.verifyEmailSent.secondParagraph")}</p>
                 </div>
                 <Button
                     text={t("auth.goBackToLogin")}

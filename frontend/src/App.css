@@ -2,12 +2,12 @@
 @plugin "@tailwindcss/typography";
 
 .prose * {
-    @apply text-white light:text-black;
+    @apply text-zinc-100 light:text-zinc-900;
 }
 
 .prose h1,
 .prose h2 {
-    @apply border-b border-gray-300 my-3 pb-1;
+    @apply border-b border-zinc-300 my-3 pb-1;
 }
 
 .prose hr {
@@ -23,7 +23,7 @@
 }
 
 .prose code {
-    @apply px-1.5 py-1 rounded-lg text-gray-200 light:text-gray-800 bg-gray-800 light:bg-gray-200;
+    @apply px-1.5 py-1 rounded-lg text-zinc-200 light:text-zinc-800 bg-zinc-800 light:bg-zinc-200;
 }
 
 .prose code.hljs {
@@ -40,15 +40,15 @@ code::after {
 }
 
 .prose li::marker {
-    @apply text-white;
+    @apply text-zinc-400;
 }
 
 .Light .prose li::marker {
-    @apply text-black;
+    @apply text-zinc-600;
 }
 
 :root {
-    --scrollbar-color: theme(colors.gray.500);
+    --scrollbar-color: theme(colors.zinc.700);
 }
 
 * {

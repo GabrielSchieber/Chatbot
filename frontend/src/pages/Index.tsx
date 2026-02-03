@@ -4,7 +4,7 @@ import { ChatProvider } from "../providers/ChatProvider"
 
 export default function Index() {
     return (
-        <div className="flex w-screen h-screen overflow-hidden text-white bg-gray-900 light:text-black light:bg-gray-100">
+        <div className="flex w-screen h-screen overflow-hidden text-zinc-100 bg-zinc-900 light:text-zinc-900 light:bg-white">
             <ChatProvider>
                 <Sidebar />
                 <Chat />

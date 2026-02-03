@@ -120,11 +120,11 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
 
                 <Dialog.Content
                     className={`
-                        z-10 fixed flex flex-col left-1/2 -translate-x-1/2 text-white light:text-black bg-gray-800 light:bg-gray-200
+                        z-10 fixed flex flex-col left-1/2 -translate-x-1/2 text-white light:text-black bg-zinc-900 light:bg-zinc-100
                         ${isMobile ? "inset-0 size-full" : "w-[75%] max-w-200 max-h-[80vh] top-[10vh] rounded-xl"}
                     `}
                 >
-                    <div className="flex gap-3 p-3 items-center border-b">
+                    <div className="flex gap-3 p-3 items-center border-b border-zinc-700 light:border-zinc-300">
                         <div className="flex flex-wrap w-full gap-3 items-center justify-center">
                             <Dialog.Title className="text-lg font-semibold">{t("archivedChats.title")}</Dialog.Title>
                             <Dialog.Description hidden>{t("archivedChats.description")}</Dialog.Description>
@@ -133,7 +133,7 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
                                 <ArchiveOrUnarchiveDialog action="unarchive" onConfirm={handleUnarchiveAll} />
                             </div>
                         </div>
-                        <Dialog.Close className="ml-auto p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-200" data-testid="close-settings">
+                        <Dialog.Close className="ml-auto p-2 rounded-3xl cursor-pointer hover:bg-zinc-800 light:hover:bg-zinc-200" data-testid="close-settings">
                             <Cross1Icon className="size-5" />
                         </Dialog.Close>
                     </div>
@@ -144,9 +144,9 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
                         ))}
 
                         {isLoading && isLoadingRef.current ? (
-                            <p className="text-gray-400 light:text-gray-600">{t("archivedChats.loading")}</p>
+                            <p className="text-zinc-500 light:text-zinc-500">{t("archivedChats.loading")}</p>
                         ) : chats.filter(c => c.is_archived).length === 0 ? (
-                            <p className="text-gray-400 light:text-gray-600">{t("archivedChats.empty")}</p>
+                            <p className="text-zinc-500 light:text-zinc-500">{t("archivedChats.empty")}</p>
                         ) : hasMore && (
                             <div ref={sentinelRef} className="h-1"></div>
                         )}
@@ -163,7 +163,7 @@ function ArchiveOrUnarchiveDialog({ action, onConfirm }: { action: "archive" | "
     return (
         <ConfirmDialog
             trigger={
-                <button className="px-3 py-1 rounded-3xl cursor-pointer bg-gray-700/50 hover:bg-gray-700 light:bg-gray-300/50 light:hover:bg-gray-300">
+                <button className="px-3 py-1 rounded-3xl cursor-pointer bg-zinc-800/50 hover:bg-zinc-800 light:bg-zinc-200/50 light:hover:bg-zinc-200">
                     {action === "archive" ? t("archivedChats.archiveAll.confirm") : t("archivedChats.unarchiveAll.confirm")}
                 </button>
             }
@@ -181,7 +181,7 @@ function Entry({ chat, handleUnarchive, handleDelete }: { chat: Chat, handleUnar
 
     return (
         <a
-            className="flex w-full px-2 py-1 items-center justify-between rounded-lg hover:bg-gray-700 light:hover:bg-gray-300"
+            className="flex w-full px-2 py-1 items-center justify-between rounded-lg hover:bg-zinc-800 light:hover:bg-zinc-200"
             href={`/chat/${chat.uuid}`}
             data-testid="archived-chat-entry"
         >
@@ -190,7 +190,7 @@ function Entry({ chat, handleUnarchive, handleDelete }: { chat: Chat, handleUnar
                 <TooltipButton
                     trigger={<UnarchiveIcon className="size-4" />}
                     tooltip={t("archivedChats.tooltip.unarchive")}
-                    className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-500/40"
+                    className="p-1.5 rounded-3xl cursor-pointer hover:bg-zinc-500/40"
                     onClick={e => {
                         e.preventDefault()
                         handleUnarchive(chat)

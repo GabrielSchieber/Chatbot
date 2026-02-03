@@ -104,7 +104,7 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
                 renameUUID === c.uuid ? (
                     <input
                         key={`input-${c.uuid}`}
-                        className="w-full px-2 py-1 outline-none rounded-lg bg-gray-700 light:bg-gray-300"
+                        className="w-full px-2 py-1 outline-none rounded-lg bg-zinc-800 light:bg-zinc-200"
                         type="text"
                         value={renameTitle}
                         onChange={e => setRenameTitle(e.target.value)}
@@ -123,9 +123,9 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
                         key={`a-${c.uuid}`}
                         className={`
                             flex w-full gap-2 px-2 py-1 items-center justify-between rounded-lg outline-none
-                            hover:bg-gray-600 light:hover:bg-gray-400/40
-                            focus:bg-gray-600 light:focus:bg-gray-400/40
-                            ${c.uuid === chatUUID ? "bg-gray-700 light:bg-gray-300" : c.uuid === isOpenUUID && "bg-gray-600 light:bg-gray-400/40"}
+                            hover:bg-zinc-800 light:hover:bg-zinc-200
+                            focus:bg-zinc-800 light:focus:bg-zinc-200
+                            ${c.uuid === chatUUID ? "bg-zinc-800 light:bg-zinc-200" : c.uuid === isOpenUUID && "bg-zinc-800 light:bg-zinc-200"}
                         `}
                         href={`/chat/${c.uuid}`}
                         title={c.title}
@@ -155,8 +155,8 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
                                     ${isHoveringUUID !== c.uuid && isFocusingUUID !== c.uuid && isOpenUUID !== c.uuid ?
                                         "hidden hover-none:block pointer-coarse:block touch:block" : "block"}
                                     py-1 rounded cursor-pointer outline-none
-                                    hover:bg-gray-500/50 light:hover:bg-gray-400/60
-                                    focus:bg-gray-500/50 light:focus:bg-gray-400/60
+                                    hover:bg-zinc-700/50 light:hover:bg-zinc-300/60
+                                    focus:bg-zinc-700/50 light:focus:bg-zinc-300/60
                                 `}
                                 onClick={e => e.preventDefault()}
                                 aria-label="Toggle chat options"
@@ -166,7 +166,7 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
 
                             <DropdownMenu.Portal>
                                 <DropdownMenu.Content
-                                    className="z-10 flex flex-col p-2 rounded-xl shadow-xl/50 border border-gray-500 bg-gray-800 light:bg-gray-200"
+                                    className="z-10 flex flex-col p-2 rounded-xl shadow-xl/50 border border-zinc-700 bg-zinc-800 light:bg-zinc-100"
                                     sideOffset={4}
                                     align="start"
                                     alignOffset={-10}
@@ -182,9 +182,9 @@ export default function History({ isSidebarOpen, sidebarRef }: { isSidebarOpen: 
             ))}
 
             {isLoading && isLoadingRef.current ? (
-                <p className="text-center text-gray-400 light:text-gray-600">{t("history.loading")}</p>
+                <p className="text-center text-zinc-500 light:text-zinc-500">{t("history.loading")}</p>
             ) : chats.filter(c => !c.is_archived && !c.is_temporary).length === 0 ? (
-                <p className="text-center text-gray-400 light:text-gray-600">{t("history.empty")}</p>
+                <p className="text-center text-zinc-500 light:text-zinc-500">{t("history.empty")}</p>
             ) : hasMore && (
                 <div ref={sentinelRef} className="h-1"></div>
             )}

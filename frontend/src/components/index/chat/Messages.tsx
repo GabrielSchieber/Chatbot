@@ -198,9 +198,9 @@ export default function Messages({
                         }}
 
                         className="
-                            fixed place-self-center p-1 rounded-full cursor-pointer border border-gray-500
-                            bg-gray-900 hover:bg-gray-800
-                            light:bg-gray-100 light:hover:bg-gray-200
+                            fixed place-self-center p-1 rounded-full cursor-pointer border border-zinc-700
+                            bg-zinc-900 hover:bg-zinc-800
+                            light:bg-zinc-100 light:hover:bg-zinc-200
                         "
                         onClick={scrollToBottom}
                         aria-label="Scroll to bottom"
@@ -216,9 +216,9 @@ export default function Messages({
 export function UserMessage({ index, text, files, onEditClick }: { index: number, text: string, files?: MessageFile[], onEditClick?: VoidFunction }) {
     return (
         <div className="flex flex-col gap-1 self-end">
-            <div className="flex flex-col gap-3 px-4 py-3 wrap-anywhere whitespace-pre-wrap rounded-2xl bg-gray-800 light:bg-gray-200">
+            <div className="flex flex-col gap-3 px-4 py-3 wrap-anywhere whitespace-pre-wrap rounded-3xl bg-zinc-800 light:bg-zinc-100">
                 {files && files.length > 0 &&
-                    <div className="flex flex-wrap gap-2 p-2 rounded-xl border bg-gray-700 light:bg-gray-300 border-gray-200 light:border-gray-800">
+                    <div className="flex flex-wrap gap-2 p-2 rounded-xl border bg-zinc-700 light:bg-zinc-200 border-zinc-600 light:border-zinc-300">
                         <Attachments files={files} />
                     </div>
                 }
@@ -266,12 +266,12 @@ export function BotMessage({ index, text, model }: { index: number, text: string
 
                             return (
                                 <div className="rounded-lg overflow-hidden my-2">
-                                    <div className="flex px-4 items-center justify-between bg-gray-800 light:bg-gray-200">
+                                    <div className="flex px-4 items-center justify-between bg-zinc-900 light:bg-zinc-200">
                                         <p className="text-sm m-0">{language}</p>
                                         <button
                                             className="
                                                 flex items-center gap-1 px-2 py-1 text-xs cursor-pointer
-                                                rounded hover:bg-gray-900/50 light:hover:bg-gray-100
+                                                rounded hover:bg-zinc-800 light:hover:bg-zinc-300
                                             "
                                             onClick={copyCodeBlock}
                                         >

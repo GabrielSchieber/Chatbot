@@ -42,7 +42,7 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
                 <Dialog.Content
                     className={`
                         z-10 fixed flex flex-col gap-5 p-6 top-1/2 -translate-y-1/2
-                        rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
+                        rounded-xl text-white light:text-black bg-zinc-800 light:bg-zinc-100
                         ${isMobile ? "inset-0 mx-2 h-fit" : "right-1/2 translate-x-1/2"}
                     `}
                     onEscapeKeyDown={e => isLocked && e.preventDefault()}
@@ -54,7 +54,7 @@ export default function MFADialog({ triggerClassName }: { triggerClassName: stri
                                 {t("mfa.title")}
                             </Dialog.Title>
                             {!isLocked &&
-                                <Dialog.Close className="p-1.5 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
+                                <Dialog.Close className="p-1.5 rounded-3xl cursor-pointer hover:bg-zinc-700 light:hover:bg-zinc-300">
                                     <Cross1Icon />
                                 </Dialog.Close>
                             }
@@ -146,7 +146,7 @@ function SetupDialog({ setAuthURL, setSecret, setStep, setIsLocked }: {
         <form className="flex flex-col gap-3 items-center" onSubmit={handleSetup}>
             <p className={paragraphClassName}>{t("mfa.messages.setup")}</p>
             <div className="flex flex-col w-full gap-1">
-                <Label.Root htmlFor="password" className="font-medium text-gray-200 light:text-gray-700">
+                <Label.Root htmlFor="password" className="font-medium text-zinc-200 light:text-zinc-700">
                     {t("auth.password.label")}
                 </Label.Root>
                 <input
@@ -219,11 +219,11 @@ function EnableDialog({ authURL, secret, setBackupCodes, setStep, setIsLocked }:
             <div className="my-2">
                 <QRCodeCanvas value={authURL} size={200} />
             </div>
-            <div className={`flex gap-1 px-2 py-1 rounded-xl bg-gray-700 light:bg-gray-300 ${isMobile ? "flex-col" : "items-center"}`}>
+            <div className={`flex gap-1 px-2 py-1 rounded-xl bg-zinc-700 light:bg-zinc-300 ${isMobile ? "flex-col" : "items-center"}`}>
                 <p className="px-2 font-semibold">{t("mfa.labels.secret")}</p>
-                <p className={`px-3 py-1 wrap-anywhere ${isMobile && "text-sm"} rounded-lg bg-gray-800/30`} data-testid="mfa-secret">{secret}</p>
+                <p className={`px-3 py-1 wrap-anywhere ${isMobile && "text-sm"} rounded-lg bg-zinc-800/30`} data-testid="mfa-secret">{secret}</p>
                 <button
-                    className="flex gap-2 md:ml-2 px-2 py-0.5 items-center rounded cursor-pointer hover:bg-gray-600/50 light:hover:bg-gray-400/50"
+                    className="flex gap-2 md:ml-2 px-2 py-0.5 items-center rounded cursor-pointer hover:bg-zinc-600/50 light:hover:bg-zinc-400/50"
                     onClick={_ => {
                         navigator.clipboard.writeText(secret)
                         setIsCopyButtonChecked(true)
@@ -277,8 +277,8 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
         <div className="flex flex-col gap-3 items-center">
             <p className={paragraphClassName}>{t("mfa.messages.backupInfo")}</p>
 
-            <div className="flex flex-col gap-2 px-3 py-2 items-center rounded-lg bg-gray-700/50 light:bg-gray-300/50">
-                <ul className="px-3 py-1 rounded-lg bg-gray-700/80 light:bg-gray-300/80">
+            <div className="flex flex-col gap-2 px-3 py-2 items-center rounded-lg bg-zinc-700/50 light:bg-zinc-300/50">
+                <ul className="px-3 py-1 rounded-lg bg-zinc-700/80 light:bg-zinc-300/80">
                     {backupCodes.map(c =>
                         <li key={c} className="font-mono">{c}</li>
                     )}
@@ -287,8 +287,8 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
                 <div className="flex flex-col size-full gap-3">
                     <button
                         className={`
-                            flex gap-2 px-2 py-1 items-center cursor-pointer rounded-lg bg-gray-700/80 light:bg-gray-300/80
-                            ${!isMobile && "rounded-lg hover:bg-gray-600/50 light:hover:bg-gray-400/50"}
+                            flex gap-2 px-2 py-1 items-center cursor-pointer rounded-lg bg-zinc-700/80 light:bg-zinc-300/80
+                            ${!isMobile && "rounded-lg hover:bg-zinc-600/50 light:hover:bg-zinc-400/50"}
                         `}
                         onClick={_ => {
                             navigator.clipboard.writeText(backupCodes.join("\n"))
@@ -302,8 +302,8 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
 
                     <button
                         className={`
-                            flex gap-2 px-2 py-1 items-center cursor-pointer rounded-lg bg-gray-700/80 light:bg-gray-300/80
-                            ${!isMobile && "rounded-lg hover:bg-gray-600/50 light:hover:bg-gray-400/50"}
+                            flex gap-2 px-2 py-1 items-center cursor-pointer rounded-lg bg-zinc-700/80 light:bg-zinc-300/80
+                            ${!isMobile && "rounded-lg hover:bg-zinc-600/50 light:hover:bg-zinc-400/50"}
                         `}
                         onClick={handleDownload}
                     >
@@ -314,10 +314,10 @@ function EnabledDialog({ backupCodes, setIsLocked }: { backupCodes: string[], se
             </div>
 
             <button
-                className="flex gap-2 min-h-10 px-4 py-1 items-center rounded-xl cursor-pointer bg-gray-700/40 light:bg-gray-300"
+                className="flex gap-2 min-h-10 px-4 py-1 items-center rounded-xl cursor-pointer bg-zinc-700/40 light:bg-zinc-300"
                 onClick={_ => setHasConfirmedBackup(!hasConfirmedBackup)}
             >
-                <div className="flex min-w-6.5 max-w-6.5 min-h-6.5 max-h-6.5 items-center rounded-lg bg-gray-700 light:bg-gray-100">
+                <div className="flex min-w-6.5 max-w-6.5 min-h-6.5 max-h-6.5 items-center rounded-lg bg-zinc-700 light:bg-zinc-100">
                     {hasConfirmedBackup && <CheckIcon className="size-6" />}
                 </div>
                 <p>{t("mfa.messages.backupConfirm")}</p>
@@ -340,8 +340,8 @@ function DisableDialog({ setStep, setIsLocked }: { setStep: Dispatch<SetStateAct
     const [isDisabling, setIsDisabling] = useState(false)
 
     const methodSwitchClassName = `
-        w-full text-center text-gray-400 light:text-gray-600 cursor-pointer
-        disabled:cursor-not-allowed enabled:hover:underline disabled:text-gray-600 light:disabled:text-gray-400
+        w-full text-center text-zinc-400 light:text-zinc-600 cursor-pointer
+        disabled:cursor-not-allowed enabled:hover:underline disabled:text-zinc-600 light:disabled:text-zinc-400
     `
 
     async function handleDisable(e: React.FormEvent) {
@@ -419,12 +419,12 @@ function DisabledDialog() {
 }
 
 const paragraphBaseClassName = "w-fit px-2 py-1 text-center rounded-lg"
-const paragraphClassName = paragraphBaseClassName + " bg-gray-700 light:bg-gray-300"
+const paragraphClassName = paragraphBaseClassName + " bg-zinc-700 light:bg-zinc-300"
 const errorParagraphClassName = paragraphBaseClassName + " text-white bg-red-500/60 light:bg-red-500"
-const inputClassNames = "px-3 py-2 rounded-xl outline-none bg-gray-700 light:bg-gray-300"
+const inputClassNames = "px-3 py-2 rounded-xl outline-none bg-zinc-700 light:bg-zinc-300"
 const buttonClassNames = `
     px-6 py-1 rounded-xl cursor-pointer
-    bg-gray-700 light:bg-gray-300
-    hover:bg-gray-600 light:hover:bg-gray-400
+    bg-zinc-700 light:bg-zinc-300
+    hover:bg-zinc-600 light:hover:bg-zinc-400
     disabled:opacity-50 disabled:cursor-not-allowed
 `

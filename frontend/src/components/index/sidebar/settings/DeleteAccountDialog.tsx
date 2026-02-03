@@ -54,7 +54,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                 <Dialog.Content
                     className="
                         z-10 fixed flex flex-col gap-1 max-w-110 p-3 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                        rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
+                        rounded-xl text-white light:text-black bg-zinc-800 light:bg-zinc-100
                     "
                 >
                     <div className="flex gap-1 mt-3 px-3 items-start justify-between">
@@ -72,7 +72,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                                 }
                             </Dialog.Description>
                         </div>
-                        <Dialog.Close className="p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
+                        <Dialog.Close className="p-1.5 rounded-full cursor-pointer hover:bg-zinc-700 light:hover:bg-zinc-300">
                             <Cross1Icon />
                         </Dialog.Close>
                     </div>
@@ -80,7 +80,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                     <form className="flex flex-col gap-3 px-3 py-1" onSubmit={handleConfirmDelete}>
                         {!user.is_guest && (
                             <div className="flex flex-col gap-1">
-                                <Label.Root htmlFor="password" className="font-medium text-gray-200 light:text-gray-700">
+                                <Label.Root htmlFor="password" className="font-medium text-zinc-200 light:text-zinc-700">
                                     {t("auth.password.label")}
                                 </Label.Root>
                                 <input
@@ -92,7 +92,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                                         setError("")
                                     }}
                                     placeholder="••••••••"
-                                    className="px-2 py-1 rounded border bg-gray-900 light:bg-white light:text-black"
+                                    className="px-2 py-1 rounded border bg-zinc-900 light:bg-white light:text-black border-zinc-700 light:border-zinc-300"
                                     disabled={isDeleting}
                                     required
                                 />
@@ -113,7 +113,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                                     <Tabs.Trigger
                                         className={`
                                             w-[90%] px-3 py-1 cursor-pointer font-medium
-                                            ${mfaMethod === "authenticator" ? "border-b" : "hover:border-b hover:border-gray-500"}
+                                            ${mfaMethod === "authenticator" ? "border-b border-zinc-500" : "hover:border-b hover:border-zinc-500"}
                                         `}
                                         value="authenticator"
                                     >
@@ -122,7 +122,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                                     <Tabs.Trigger
                                         className={`
                                             w-[90%] px-3 py-1 cursor-pointer font-medium
-                                            ${mfaMethod === "recovery" ? "border-b" : "hover:border-b hover:border-gray-500"}
+                                            ${mfaMethod === "recovery" ? "border-b border-zinc-500" : "hover:border-b hover:border-zinc-500"}
                                         `}
                                         value="recovery"
                                     >
@@ -140,7 +140,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                                         }}
                                         placeholder={t("auth.mfa.placeholder")}
                                         maxLength={6}
-                                        className="w-[80%] mt-2 px-2 py-1 rounded border text-sm bg-gray-900 light:bg-white light:text-black"
+                                        className="w-[80%] mt-2 px-2 py-1 rounded border text-sm bg-zinc-900 light:bg-white light:text-black border-zinc-700 light:border-zinc-300"
                                         disabled={isDeleting}
                                         required
                                     />
@@ -156,7 +156,7 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                                         }}
                                         placeholder={t("auth.mfaRecovery.placeholder")}
                                         maxLength={12}
-                                        className="w-[80%] mt-2 px-2 py-1 rounded border text-sm bg-gray-900 light:bg-white light:text-black"
+                                        className="w-[80%] mt-2 px-2 py-1 rounded border text-sm bg-zinc-900 light:bg-white light:text-black border-zinc-700 light:border-zinc-300"
                                         disabled={isDeleting}
                                         required
                                     />

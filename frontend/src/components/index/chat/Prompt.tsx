@@ -122,7 +122,7 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
                     <button
                         className="
                             px-3 py-1 rounded-3xl cursor-pointer text-black light:text-white
-                            bg-gray-100 light:bg-gray-900 hover:bg-gray-200 light:hover:bg-gray-800
+                            bg-zinc-100 light:bg-zinc-900 hover:bg-zinc-200 light:hover:bg-zinc-800
                         "
                         onClick={_ => {
                             unarchiveChat(chatUUID)
@@ -174,7 +174,7 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -6 }}
                             transition={{ duration: 0.25 }}
-                            className="flex items-center justify-between gap-3 px-4 py-2 m-2 rounded-xl bg-gray-700 light:bg-gray-300"
+                            className="flex items-center justify-between gap-3 px-4 py-2 m-2 rounded-xl bg-zinc-800 light:bg-zinc-200"
                         >
                             <div>
                                 {t("prompt.pendingNotificationPrefix")}{" "}
@@ -182,7 +182,7 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
                                 {t("prompt.pendingNotificationSuffix")}
                             </div>
                             <button
-                                className="p-1 rounded-3xl cursor-pointer hover:bg-gray-600 light:hover:bg-gray-400"
+                                className="p-1 rounded-3xl cursor-pointer hover:bg-zinc-600 light:hover:bg-zinc-400"
                                 onClick={() => setShouldShowPendingNotification?.(false)}
                             >
                                 <Cross2Icon />

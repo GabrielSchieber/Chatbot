@@ -39,8 +39,8 @@ export function SelectModelButton(
                     <Select.Trigger
                         className="
                             flex p-2 items-center justify-between rounded-lg text-xs cursor-pointer outline-none
-                            hover:bg-gray-700 light:hover:bg-gray-300
-                            focus:bg-gray-700 light:focus:bg-gray-300
+                            hover:bg-zinc-700 light:hover:bg-zinc-300
+                            focus:bg-zinc-700 light:focus:bg-zinc-300
                         "
                         tabIndex={tabIndex}
                     >
@@ -247,12 +247,12 @@ export function RegenerateButton({ index, model }: { index: number, model: Model
 
                     <Tooltip.Portal>
                         <Tooltip.Content
-                            className="flex flex-col px-2 py-1 items-center text-sm text-white rounded-xl bg-black"
+                            className="flex flex-col px-2 py-1 items-center text-sm text-white rounded-xl bg-zinc-950"
                             side="bottom"
                             sideOffset={3}
                         >
                             <p>{t("regenerateButton.tooltip")}</p>
-                            {model && <p className="text-xs text-gray-400">{t("regenerateButton.tooltipUsedModel", { model })}</p>}
+                            {model && <p className="text-xs text-zinc-400">{t("regenerateButton.tooltipUsedModel", { model })}</p>}
                         </Tooltip.Content>
                     </Tooltip.Portal>
                 </Tooltip.Root>
@@ -390,7 +390,7 @@ export function TooltipButton({ trigger, tooltip, onClick, type, className, isDi
                 </Tooltip.Trigger>
                 <Tooltip.Portal>
                     <Tooltip.Content
-                        className={`mx-1 px-2 py-1 text-${tooltipSize} text-white rounded-lg bg-black`}
+                        className={`mx-1 px-2 py-1 text-${tooltipSize} text-white rounded-lg bg-zinc-950`}
                         side="bottom"
                         sideOffset={3}
                         onMouseEnter={_ => setIsOpen(false)}
@@ -436,7 +436,7 @@ export function TemporaryChat({ withLabel }: { withLabel: boolean }) {
         <button
             className={`
                 flex gap-1 p-2 items-center rounded text-sm cursor-pointer disabled:cursor-not-allowed
-                ${isTemporaryChat ? "bg-blue-500/30 hover:bg-blue-500/25" : "bg-gray-800 hover:bg-gray-700/50 light:bg-gray-200 light:hover:bg-gray-300/50"}
+                ${isTemporaryChat ? "bg-blue-500/30 hover:bg-blue-500/25" : "bg-zinc-800 hover:bg-zinc-700/50 light:bg-zinc-200 light:hover:bg-zinc-300/50"}
                 ${chatUUID && isTemporaryChat ? "font-semibold border border-blue-500" : ""} 
             `}
             onClick={() => {
@@ -493,7 +493,7 @@ export function RenameDialog() {
                 <Dialog.Content
                     className="
                         z-10 fixed flex flex-col top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                        w-[90vw] max-w-md gap-3 p-6 rounded-xl text-white light:text-black bg-gray-800 light:bg-gray-200
+                        w-[90vw] max-w-md gap-3 p-6 rounded-xl text-white light:text-black bg-zinc-800 light:bg-zinc-100
                     "
                     onCloseAutoFocus={e => e.preventDefault()}
                 >
@@ -501,7 +501,7 @@ export function RenameDialog() {
                     <Dialog.Description hidden>{t("dialogs.renameChat.title")}</Dialog.Description>
 
                     <input
-                        className="px-2 py-1 rounded-lg outline-none bg-gray-700 light:bg-gray-300"
+                        className="px-2 py-1 rounded-lg outline-none bg-zinc-700 light:bg-zinc-200"
                         placeholder={t("dialogs.renameChat.placeholder")}
                         value={title}
                         onChange={e => setTitle(e.target.value)}
@@ -512,21 +512,21 @@ export function RenameDialog() {
                             className="
                                 px-4 py-2 rounded-xl cursor-pointer
                                 text-white light:text-black
-                                border border-gray-500
-                                bg-gray-700 light:bg-gray-300
-                                hover:bg-gray-700/50 light:hover:bg-gray-300/50
+                                border border-zinc-500
+                                bg-zinc-700 light:bg-zinc-200
+                                hover:bg-zinc-700/50 light:hover:bg-zinc-200/50
                             "
                         >
                             {t("dialogs.renameChat.cancel")}
                         </Dialog.Close>
                         <Dialog.Close
-                            className={`
+                            className="
                                 px-4 py-2 rounded-xl cursor-pointer
-                                border border-gray-500
+                                border border-zinc-500
                                 text-white light:text-black
-                                bg-gray-900 light:bg-gray-100
-                                hover:bg-gray-900/50 light:hover:bg-gray-100/50
-                            `}
+                                bg-zinc-900 light:bg-zinc-100
+                                hover:bg-zinc-900/50 light:hover:bg-zinc-100/50
+                            "
                             onClick={() => {
                                 renameChat(currentChat.uuid, title)
                                 setChats(previous => previous.map(c => c.uuid === currentChat.uuid ? { ...c, title } : c))
@@ -543,30 +543,30 @@ export function RenameDialog() {
 
 const messageButtonClassNames = `
     p-2 rounded-lg cursor-pointer outline-none
-    hover:bg-gray-700 light:hover:bg-gray-300
-    focus:bg-gray-700 light:focus:bg-gray-300
-    disabled:text-gray-500 disabled:cursor-not-allowed
+    hover:bg-zinc-700 light:hover:bg-zinc-300
+    focus:bg-zinc-700 light:focus:bg-zinc-300
+    disabled:text-zinc-500 disabled:cursor-not-allowed
 `
 
 const promptBarButtonClassNames = `
     p-1.5 rounded-full cursor-pointer outline-none
-    hover:bg-gray-700 light:hover:bg-gray-300
-    focus:bg-gray-700 light:focus:bg-gray-300
-    disabled:cursor-not-allowed disabled:text-gray-500
+    hover:bg-zinc-700 light:hover:bg-zinc-300
+    focus:bg-zinc-700 light:focus:bg-zinc-300
+    disabled:cursor-not-allowed disabled:text-zinc-500
 `
 
 const dropdownContentClassName = `
     flex flex-col gap-2 mx-2 p-1 rounded-xl border
     text-white light:text-black
-    border-gray-600 light:border-gray-400
-    bg-gray-800 light:bg-gray-200
+    border-zinc-700 light:border-zinc-300
+    bg-zinc-800 light:bg-zinc-100
 `
 
 const dropdownItemClassName = `
     flex w-37 px-3 py-2 items-center justify-between rounded-xl cursor-pointer outline-none
-    hover:bg-gray-700 light:hover:bg-gray-300
-    not-hover-none:focus:bg-gray-700 not-hover-none:light:focus:bg-gray-300
-    data-[disabled]:text-gray-500 data-[disabled]:cursor-not-allowed
+    hover:bg-zinc-700 light:hover:bg-zinc-300
+    not-hover-none:focus:bg-zinc-700 not-hover-none:light:focus:bg-zinc-300
+    data-[disabled]:text-zinc-500 data-[disabled]:cursor-not-allowed
 `
 
 const chatDropdownItemClassName = "flex gap-2 px-3 py-2 items-center text-center rounded-xl cursor-pointer outline-none"
@@ -574,8 +574,8 @@ const chatDropdownItemClassName = "flex gap-2 px-3 py-2 items-center text-center
 const nonDestructiveChatDropdownItemClassName = `
     ${chatDropdownItemClassName}
     text-white light:text-black
-    hover:bg-gray-700/50 light:hover:bg-gray-400/25
-    focus:bg-gray-700/50 light:focus:bg-gray-400/25
+    hover:bg-zinc-700/50 light:hover:bg-zinc-400/25
+    focus:bg-zinc-700/50 light:focus:bg-zinc-400/25
 `
 
 const destructiveChatDropdownItemClassName = `
@@ -585,4 +585,4 @@ const destructiveChatDropdownItemClassName = `
     focus:bg-red-400/20
 `
 
-const sidebarButtonClasses = "flex gap-1 p-2 items-center rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"
+const sidebarButtonClasses = "flex gap-1 p-2 items-center rounded cursor-pointer hover:bg-zinc-800/50 light:hover:bg-zinc-200"

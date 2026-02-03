@@ -109,16 +109,16 @@ export default function Search({ openButtonWithLabel }: { openButtonWithLabel: b
                 <Dialog.Content
                     className={`
                         z-10 fixed flex flex-col items-center left-1/2 -translate-x-1/2
-                        text-white light:text-black bg-gray-800 light:bg-gray-200
+                        text-white light:text-black bg-zinc-900 light:bg-zinc-100
                         ${isMobile ? "inset-0 size-full" : "w-[75%] max-w-200 top-[10vh] max-h-[80vh] rounded-xl"}
                     `}
                 >
                     <Dialog.Title hidden>{t("sidebar.searchChats")}</Dialog.Title>
                     <Dialog.Description hidden>{t("sidebar.searchChats")}</Dialog.Description>
 
-                    <div className="flex w-full gap-5 p-5 border-b border-gray-600 light:border-gray-400">
+                    <div className="flex w-full gap-5 p-5 border-b border-zinc-700 light:border-zinc-300">
                         <input
-                            className="flex-1 outline-none placeholder-gray-400 light:placeholder-gray-600"
+                            className="flex-1 bg-transparent outline-none placeholder-zinc-500 light:placeholder-zinc-500"
                             type="text"
                             placeholder={t("search.placeholder")}
                             value={search}
@@ -133,7 +133,7 @@ export default function Search({ openButtonWithLabel }: { openButtonWithLabel: b
                             }}
                             autoFocus
                         />
-                        <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300">
+                        <Dialog.Close className="p-2 rounded-3xl cursor-pointer hover:bg-zinc-800 light:hover:bg-zinc-200">
                             <Cross1Icon className="size-4" />
                         </Dialog.Close>
                     </div>
@@ -142,11 +142,11 @@ export default function Search({ openButtonWithLabel }: { openButtonWithLabel: b
                         {entries.map(e => <Entry key={e.uuid} entry={e} />)}
 
                         {isLoading ? (
-                            <p className="text-gray-400 light:text-gray-600">{t("search.loading")}</p>
+                            <p className="text-zinc-500 light:text-zinc-500">{t("search.loading")}</p>
                         ) : !hasChats ? (
-                            <p className="text-gray-400 light:text-gray-600">{t("search.empty")}</p>
+                            <p className="text-zinc-500 light:text-zinc-500">{t("search.empty")}</p>
                         ) : entries.length === 0 ? (
-                            <p className="text-gray-400 light:text-gray-600">{t("search.noResults")}</p>
+                            <p className="text-zinc-500 light:text-zinc-500">{t("search.noResults")}</p>
                         ) : hasMore && (
                             <div ref={sentinelRef} className="h-1"></div>
                         )}
@@ -163,8 +163,8 @@ function Entry({ entry }: { entry: SearchEntry }) {
     return (
         <a
             className={`
-                group flex w-full gap-3 px-3 py-2 items-center justify-between rounded-lg border
-                border-gray-600 light:border-gray-400 hover:bg-gray-600/10 light:hover:bg-gray-400/10
+                group flex w-full gap-3 px-3 py-2 items-center justify-between rounded-xl border
+                border-zinc-800 light:border-zinc-200 hover:bg-zinc-800/50 light:hover:bg-zinc-200/50
                 ${entry.is_archived && "text-white/60 light:text-black/60"}
             `}
             href={`/chat/${entry.uuid}`}
@@ -186,12 +186,12 @@ function Entry({ entry }: { entry: SearchEntry }) {
             </div>
 
             <div className="flex flex-1 flex-col gap-2 justify-between wrap-anywhere whitespace-pre-wrap">
-                <p className="px-2 rounded text-lg font-semibold bg-gray-600/50 light:bg-gray-400/40">{entry.title}</p>
+                <p className="px-2 rounded text-lg font-semibold bg-zinc-800 light:bg-zinc-200">{entry.title}</p>
 
                 {entry.matches.length > 0 &&
                     <ul className="flex flex-col gap-1">
                         {entry.matches.map((m, i) =>
-                            <li key={i} className="px-2 rounded bg-gray-600/30 light:bg-gray-300">{m}...</li>
+                            <li key={i} className="px-2 rounded bg-zinc-800 light:bg-zinc-200">{m}...</li>
                         )}
                     </ul>
                 }

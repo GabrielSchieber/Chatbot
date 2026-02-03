@@ -31,12 +31,12 @@ export default function Sidebar() {
             <div
                 ref={ref}
                 className={`
-                    z-10 flex flex-col justify-between overflow-x-hidden overflow-y-auto duration-300 ease-in-out bg-gray-800 light:bg-gray-200
+                    z-10 flex flex-col justify-between overflow-x-hidden overflow-y-auto duration-300 ease-in-out bg-zinc-950 light:bg-zinc-50 border-r border-zinc-800 light:border-zinc-200
                     ${isOpen ? "min-w-[250px] max-w-[250px]" : isMobile ? "min-w-0 max-w-0" : "min-w-[50px] max-w-[50px]"}
                     ${isMobile && "fixed inset-0"}
                 `}
             >
-                <div className={`sticky flex flex-col top-0 gap-1 p-2 bg-gray-800 light:bg-gray-200 ${isOpen && "border-b"}`}>
+                <div className="sticky flex flex-col top-0 gap-1 p-2 bg-zinc-950 light:bg-zinc-50">
                     <ToggleSidebar withLabel={isOpen} onClick={() => setIsOpen(!isOpen)} />
                     <NewChat withLabel={isOpen} />
                     <Search openButtonWithLabel={isOpen} />
@@ -44,7 +44,7 @@ export default function Sidebar() {
 
                 <History isSidebarOpen={isOpen} sidebarRef={ref} />
 
-                <div className={`sticky flex flex-col bottom-0 p-2 bg-gray-800 light:bg-gray-200 ${isOpen && "border-t"}`}>
+                <div className="sticky flex flex-col bottom-0 p-4 bg-zinc-950 light:bg-zinc-50">
                     <Settings isSidebarOpen={isOpen} />
                 </div>
             </div>

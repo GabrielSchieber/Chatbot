@@ -38,8 +38,8 @@ export default function VerifyEmail() {
     useEffect(() => { verify() }, [])
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-900 light:bg-gray-100">
-            <div className="flex flex-col w-full max-w-md p-8 space-y-4 items-center rounded-lg shadow-xl bg-gray-800 light:bg-white">
+        <div className="flex min-h-screen items-center justify-center bg-zinc-950 light:bg-zinc-50">
+            <div className="flex flex-col w-full max-w-md p-8 space-y-4 items-center rounded-2xl border border-zinc-800 light:border-zinc-200 shadow-2xl bg-zinc-900 light:bg-white">
                 <Header text={t("auth.verifyEmail.header")} />
                 {error ? (
                     <>
@@ -53,7 +53,7 @@ export default function VerifyEmail() {
                         />
                     </>
                 ) : (
-                    <p className="text-center text-gray-300 light:text-gray-600">{t("auth.verifyEmail.paragraph")}</p>
+                    <p className="text-center text-zinc-400 light:text-zinc-500">{t("auth.verifyEmail.paragraph")}</p>
                 )}
             </div>
         </div>

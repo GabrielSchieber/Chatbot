@@ -55,12 +55,12 @@ export default function Settings({ isSidebarOpen }: { isSidebarOpen: boolean }) 
                     >
                         <Tabs.List
                             className={`
-                                flex gap-1 p-4 items-start bg-gray-900 light:bg-gray-100
+                                flex gap-1 p-4 items-start bg-zinc-900 light:bg-zinc-100
                                 ${isMobile ? "flex-row flex-wrap" : "flex-col overflow-y-auto"}
                                 ${!isMobile && !isScreenHeightSmall && "rounded-l-xl"}
                             `}
                         >
-                            <Dialog.Close className={"ml-1 p-1.5 rounded-full cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"} data-testid="close-settings">
+                            <Dialog.Close className="ml-1 p-1.5 rounded-full cursor-pointer hover:bg-zinc-800 light:hover:bg-zinc-200" data-testid="close-settings">
                                 <Cross1Icon className="size-5" />
                             </Dialog.Close>
 
@@ -120,9 +120,9 @@ function Trigger({ icon, title, titleKey }: { icon: ReactNode, title: string, ti
             value={titleKey}
             className={`
                 flex gap-1 px-2 py-1 items-center cursor-pointer outline-none rounded-lg
-                hover:bg-gray-700 light:hover:bg-gray-300
-                focus:bg-gray-700 light:focus:bg-gray-300
-                data-[state=active]:bg-gray-700 light:data-[state=active]:bg-gray-300
+                hover:bg-zinc-800 light:hover:bg-zinc-200
+                focus:bg-zinc-800 light:focus:bg-zinc-200
+                data-[state=active]:bg-zinc-800 light:data-[state=active]:bg-zinc-200
                 ${!isMobile && "w-full"}
             `}
         >
@@ -137,12 +137,12 @@ function Content({ title, titleKey, isScreenHeightSmall, children }: { title: st
     return (
         <Tabs.Content
             value={titleKey}
-            className={`flex grow overflow-y-auto bg-gray-800 light:bg-gray-200 ${!isMobile && !isScreenHeightSmall && "rounded-r-xl"}`}
+            className={`flex grow overflow-y-auto bg-zinc-800 light:bg-zinc-50 ${!isMobile && !isScreenHeightSmall && "rounded-r-xl"}`}
             tabIndex={-1}
         >
             <section className="flex flex-col w-full">
                 <h2 className="p-4 mb-1 text-xl font-semibold border-b">{title}</h2>
-                <div className="flex flex-col px-4 divide-y divide-gray-500">
+                <div className="flex flex-col px-4 divide-y divide-zinc-700 light:divide-zinc-300">
                     {children}
                 </div>
             </section>
@@ -173,14 +173,14 @@ function ThemeEntryItem() {
     return (
         <Select.Root value={theme} onValueChange={handleChangeTheme}>
             <Select.Trigger className={entryClasses + " gap-4"} aria-label="Theme">
-                <Select.Value placeholder={"settings.selectTheme"} />
+                <Select.Value placeholder="settings.selectTheme" />
                 <Select.Icon>
                     <ChevronDownIcon />
                 </Select.Icon>
             </Select.Trigger>
 
             <Select.Portal>
-                <Select.Content className="z-10 rounded-lg text-white light:text-black bg-gray-900 light:bg-gray-100">
+                <Select.Content className="z-10 rounded-lg text-white light:text-black bg-zinc-900 light:bg-zinc-100">
                     <Select.Viewport className="p-1">
                         {["System", "Light", "Dark"].map(s => (
                             <Select.Item key={s} value={s} className={itemClasses}>
@@ -229,7 +229,7 @@ function LanguageEntryItem({ setCurrentTab }: { setCurrentTab: Dispatch<SetState
             </Select.Trigger>
 
             <Select.Portal>
-                <Select.Content className="z-10 rounded-lg text-white light:text-black bg-gray-900 light:bg-gray-100">
+                <Select.Content className="z-10 rounded-lg text-white light:text-black bg-zinc-900 light:bg-zinc-100">
                     <Select.Viewport className="p-1">
                         {languages.map((l, i) => (
                             <Select.Item key={`${l}-${i}`} value={getValue(l)} className={itemClasses}>
@@ -309,8 +309,8 @@ function SessionsEntryItem() {
     if (!user) return
 
     return (
-        <div className="flex flex-col gap-1 my-2 rounded-lg py-1 border border-gray-500">
-            <h3 className="px-2 pb-1 text-lg font-semibold border-b border-gray-500">
+        <div className="flex flex-col gap-1 my-2 rounded-lg py-1 border border-zinc-700 light:border-zinc-300">
+            <h3 className="px-2 pb-1 text-lg font-semibold border-b border-zinc-700 light:border-zinc-300">
                 {t("settings.sessions.title")}
             </h3>
             <div className="flex flex-col max-h-100 gap-1 px-2 py-1 overflow-y-auto">
@@ -322,7 +322,7 @@ function SessionsEntryItem() {
                             {t("settings.sessions.logoutAll")}
                         </button>
                         {user.sessions.map((s, i) => (
-                            <div key={i} className="flex flex-col p-2 border border-gray-500 rounded-lg">
+                            <div key={i} className="flex flex-col p-2 border border-zinc-700 light:border-zinc-300 rounded-lg">
                                 {s.logout_at === null && <p className="text-sm text-green-500">{t("settings.sessions.activeSession")}</p>}
                                 <p><strong>{t("settings.sessions.login")}:</strong> {new Date(s.login_at).toLocaleString()}</p>
                                 {s.logout_at !== null &&
@@ -358,9 +358,9 @@ type SettingsTab =
 
 const entryClasses = `
     flex px-2 py-1 items-center justify-center rounded-lg cursor-pointer
-    border border-gray-500
-    hover:bg-gray-700 light:hover:bg-gray-300
-    focus:bg-gray-700 light:focus:bg-gray-300
+    border border-zinc-700 light:border-zinc-300
+    hover:bg-zinc-700 light:hover:bg-zinc-300
+    focus:bg-zinc-700 light:focus:bg-zinc-300
 `
 const destructiveEntryClasses = entryClasses + " text-red-500"
-const itemClasses = "flex items-center gap-4 px-2 py-1 rounded cursor-pointer hover:bg-gray-700 light:hover:bg-gray-300"
+const itemClasses = "flex items-center gap-4 px-2 py-1 rounded cursor-pointer hover:bg-zinc-700 light:hover:bg-zinc-300"

@@ -37,7 +37,7 @@ export default function Header() {
     return (
         <header className="sticky top-0 flex w-full gap-1 p-2 items-center justify-between">
             {isMobile &&
-                <div className={`flex gap-1 px-1.5 py-0.5 rounded-lg bg-gray-800 light:bg-gray-200 ${isSidebarOpen && "invisible"}`}>
+                <div className={`flex gap-1 px-1.5 py-0.5 rounded-lg bg-zinc-800 light:bg-zinc-200 ${isSidebarOpen && "invisible"}`}>
                     <ToggleSidebar withLabel={false} onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
                     <NewChat withLabel={false} />
                     <Search openButtonWithLabel={false} />
@@ -50,7 +50,7 @@ export default function Header() {
                     <DropdownMenu.Trigger
                         className={`
                             flex max-w-full gap-1 px-2 py-2 items-center cursor-pointer rounded-lg outline-none overflow-hidden
-                            bg-gray-800 hover:bg-gray-700 light:bg-gray-100 light:hover:bg-gray-200
+                            bg-zinc-800 hover:bg-zinc-700 light:bg-zinc-100 light:hover:bg-zinc-200
                             ${!isMobile && "mx-auto"}
                         `}
                     >
@@ -66,7 +66,7 @@ export default function Header() {
 
                     <DropdownMenu.Portal>
                         <DropdownMenu.Content
-                            className="flex flex-col p-2 rounded-xl shadow-xl/50 border border-gray-500 bg-gray-800 light:bg-gray-200"
+                            className="flex flex-col p-2 rounded-xl shadow-xl/50 border border-zinc-700 bg-zinc-800 light:bg-zinc-100"
                             sideOffset={10}
                         >
                             <RenameDialog />
@@ -98,8 +98,8 @@ export default function Header() {
                                 className="
                                     px-3 py-2 rounded-full cursor-pointer
                                     text-black light:text-white
-                                    bg-gray-100 light:bg-gray-800
-                                    hover:bg-gray-200 light:hover:bg-gray-700
+                                    bg-zinc-100 light:bg-zinc-800
+                                    hover:bg-zinc-200 light:hover:bg-zinc-700
                                 "
                                 href="/login"
                             >
@@ -110,8 +110,8 @@ export default function Header() {
                                 <a
                                     className="
                                         px-3 py-1.5 rounded-full cursor-pointer
-                                        hover:bg-gray-700 light:hover:bg-gray-300
-                                        border border-gray-500
+                                        hover:bg-zinc-700 light:hover:bg-zinc-300
+                                        border border-zinc-500
                                     "
                                     href="/signup"
                                 >
