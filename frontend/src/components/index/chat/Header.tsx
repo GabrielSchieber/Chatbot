@@ -1,6 +1,7 @@
 import { ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons"
 import { DropdownMenu } from "radix-ui"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useParams } from "react-router"
 
 import { ArchiveButton, DeleteButton, NewChat, RenameDialog, TemporaryChat, ToggleSidebar, UnarchiveButton } from "../../misc/Buttons"
@@ -11,6 +12,7 @@ import { me } from "../../../utils/api"
 
 export default function Header() {
     const { chatUUID } = useParams()
+    const { t } = useTranslation()
 
     const { user, setUser } = useAuth()
     const { chats, isMobile, isTemporaryChat } = useChat()
@@ -103,7 +105,7 @@ export default function Header() {
                                 "
                                 href="/login"
                             >
-                                Log in
+                                {t("login.logIn")}
                             </a>
 
                             {screenWidth > 375 &&
@@ -115,7 +117,7 @@ export default function Header() {
                                     "
                                     href="/signup"
                                 >
-                                    Sign up
+                                    {t("signup.signUp")}
                                 </a>
                             }
                         </div>
