@@ -41,7 +41,7 @@ export default function Header() {
                     <ToggleSidebar withLabel={false} onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
                     <NewChat withLabel={false} />
                     <Search openButtonWithLabel={false} />
-                    <TemporaryChat withLabel={false} />
+                    {(isTemporaryChat || !currentChat) && <TemporaryChat withLabel={false} />}
                 </div>
             }
 
