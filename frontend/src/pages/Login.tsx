@@ -80,7 +80,7 @@ export default function Login() {
         ) : step === "mfa" ? (
             <Form handleSubmit={handleMFASubmit}>
                 <Header text={t("login.mfa.header")} />
-                <p className="text-center text-gray-400 light:text-gray-600">{t("login.mfa.description")}</p>
+                <p className="text-center text-zinc-400 light:text-zinc-600">{t("login.mfa.description")}</p>
                 <MFA code={code} setCode={setCode} setError={setError} />
                 {error && <Error text={error} />}
                 <Button text={isVerifying ? t("login.mfa.verifying") : t("login.mfa.verify")} isDisabled={isVerifying} />
@@ -96,7 +96,7 @@ export default function Login() {
         ) : (
             <Form handleSubmit={handleMFASubmit}>
                 <Header text={t("login.mfaRecovery.header")} />
-                <p className="text-center text-gray-400 light:text-gray-600">{t("login.mfaRecovery.description")}</p>
+                <p className="text-center text-zinc-400 light:text-zinc-600">{t("login.mfaRecovery.description")}</p>
                 <MFARecovery code={code} setCode={setCode} setError={setError} />
                 {error && <Error text={error} />}
                 <Button text={isVerifying ? t("login.mfa.verifying") : t("login.mfa.verify")} isDisabled={isVerifying} />

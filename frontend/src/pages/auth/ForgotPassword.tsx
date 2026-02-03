@@ -21,7 +21,7 @@ export default function ForgotPassword() {
             <Header text={t("auth.forgotPassword.header")} />
             {hasSent ? (
                 <>
-                    <p className="text-center text-gray-300 light:text-gray-600">{t("auth.forgotPassword.nextParagraph")}</p>
+                    <p className="text-center text-zinc-300 light:text-zinc-600">{t("auth.forgotPassword.nextParagraph")}</p>
                     <Button
                         text={t("auth.goBackToLogin")}
                         isDisabled={false}
@@ -32,7 +32,7 @@ export default function ForgotPassword() {
                 </>
             ) : (
                 <>
-                    <p className="text-center text-gray-300 light:text-gray-600">{t("auth.forgotPassword.paragraph")}</p>
+                    <p className="text-center text-zinc-300 light:text-zinc-600">{t("auth.forgotPassword.paragraph")}</p>
                     <Email email={email} setEmail={setEmail} />
                     <Button text={t("auth.forgotPassword.next")} isDisabled={email === ""} />
                 </>
