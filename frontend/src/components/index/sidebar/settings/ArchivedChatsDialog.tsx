@@ -141,7 +141,7 @@ export function ArchivedChatsDialog({ triggerClassName }: { triggerClassName: st
                     </div>
 
                     <div ref={entriesRef} className="flex flex-col gap-1 px-2 py-4 items-center overflow-y-auto" data-testid="archived-chats">
-                        {chats.filter(c => c.is_archived).map(c => (
+                        {chats.filter(c => c.is_archived).sort((a, b) => a.index - b.index).map(c => (
                             <Entry key={c.uuid} chat={c} handleUnarchive={handleUnarchive} handleDelete={handleDelete} />
                         ))}
 
