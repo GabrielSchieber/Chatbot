@@ -140,31 +140,27 @@ export default function Prompt({ hasSentMessage }: { hasSentMessage: React.RefOb
                     width: "100%",
                     minWidth: "0",
                     height: "auto",
-                    marginTop: "auto",
                     padding: "0 5px"
                 } : {
                     width: "60vw",
                     minWidth: "500px",
                     height: !chatUUID ? "50%" : "auto",
-                    marginTop: "0",
                     padding: "0 5px"
                 }}
                 animate={isMobile ? {
                     width: "100%",
                     minWidth: "0",
                     height: "auto",
-                    marginTop: "auto",
                     padding: "0 5px"
                 } : {
                     width: "60vw",
                     minWidth: "500px",
                     height: !chatUUID ? "50%" : "auto",
-                    marginTop: "0",
                     padding: "0 5px"
                 }}
                 transition={{ type: "tween", duration: 0.15 }}
                 ref={ref}
-                className="sticky bottom-0 flex flex-col items-center"
+                className={`sticky bottom-0 flex flex-col items-center ${isMobile ? "mt-auto" : "mt-0"}`}
             >
                 <AnimatePresence>
                     {shouldShowPendingNotification && pendingChat && (
