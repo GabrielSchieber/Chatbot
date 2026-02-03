@@ -44,7 +44,7 @@ export default function Sidebar() {
 
                 <History isSidebarOpen={isOpen} sidebarRef={ref} />
 
-                <div className="sticky flex flex-col bottom-0 p-4 bg-zinc-950 light:bg-zinc-50">
+                <div className="sticky flex flex-col bottom-0 p-2 bg-zinc-950 light:bg-zinc-50">
                     <Settings isSidebarOpen={isOpen} />
                 </div>
             </div>
