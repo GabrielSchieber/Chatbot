@@ -435,9 +435,12 @@ export function TemporaryChat({ withLabel }: { withLabel: boolean }) {
     return (
         <button
             className={`
-                flex gap-1 p-2 items-center rounded text-sm cursor-pointer disabled:cursor-not-allowed
-                ${isTemporaryChat ? "bg-blue-500/30 hover:bg-blue-500/25" : "bg-zinc-800 hover:bg-zinc-700/50 light:bg-zinc-200 light:hover:bg-zinc-300/50"}
-                ${chatUUID && isTemporaryChat ? "font-semibold border border-blue-500" : ""} 
+                flex gap-1 p-2 items-center rounded cursor-pointer
+                ${chatUUID && "mx-auto"}
+                ${isTemporaryChat ?
+                    "bg-blue-800 light:bg-blue-200 hover:bg-blue-700 light:hover:bg-blue-300" : "hover:bg-zinc-700 light:hover:bg-zinc-300"
+                }
+                ${chatUUID && isTemporaryChat && "border-2 border-blue-500 disabled:cursor-not-allowed"}
             `}
             onClick={() => {
                 if (chatUUID && isTemporaryChat) return

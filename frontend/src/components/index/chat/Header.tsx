@@ -15,7 +15,7 @@ export default function Header() {
     const { chatUUID } = useParams()
 
     const { user } = useAuth()
-    const { chats, isMobile } = useChat()
+    const { chats, isMobile, isTemporaryChat } = useChat()
 
     const [screenWidth, setScreenWidth] = useState(window.innerWidth)
 
@@ -36,10 +36,14 @@ export default function Header() {
                     isMobile ? (
                         <>
                             <MobileActionButtons />
-                            <ChatDropdown chat={currentChat} />
+                            {!isTemporaryChat && <ChatDropdown chat={currentChat} />}
                         </>
                     ) : (
-                        <ChatDropdown chat={currentChat} />
+                        isTemporaryChat ? (
+                            <TemporaryChat withLabel={true} />
+                        ) : (
+                            <ChatDropdown chat={currentChat} />
+                        )
                     )
                 ) : (
                     isMobile ? (
@@ -67,10 +71,14 @@ export default function Header() {
                     isMobile ? (
                         <>
                             <MobileActionButtons />
-                            <ChatDropdown chat={currentChat} />
+                            {!isTemporaryChat && <ChatDropdown chat={currentChat} />}
                         </>
                     ) : (
-                        <ChatDropdown chat={currentChat} />
+                        isTemporaryChat ? (
+                            <TemporaryChat withLabel={true} />
+                        ) : (
+                            <ChatDropdown chat={currentChat} />
+                        )
                     )
                 ) : (
                     isMobile ? (
