@@ -17,19 +17,38 @@ export default function Attachments(
     const { t } = useTranslation()
 
     return (
-        <div className="flex flex-1 gap-1 justify-between">
+        <div
+            className="
+                flex flex-1 gap-1 p-2 justify-between rounded-lg border
+                border-zinc-700 light:border-zinc-300 bg-zinc-900 light:bg-zinc-100
+            "
+        >
             <div className="flex flex-col gap-1 items-start">
                 {files.map(f => (
                     <Attachment key={f.id} file={f} onRemove={onRemove} tabIndex={tabIndex ? tabIndex + 1 : undefined} />
                 ))}
                 {files.length > 0 &&
-                    <div className="flex gap-1 text-sm">
-                        <p className="px-2.5 py-1 rounded-lg bg-zinc-800 light:bg-zinc-200">
-                            {t("attachments.label.files")}: {files.length}/{MAX_FILES}
-                        </p>
-                        <p className="px-2.5 py-1 rounded-lg bg-zinc-800 light:bg-zinc-200">
-                            {t("attachments.label.size")}: {getFileSize(files.map(f => f.content_size).reduce((a, c) => a + c, 0))}/{getFileSize(MAX_FILE_SIZE)}
-                        </p>
+                    <div className="flex flex-wrap gap-1 p-2 rounded-xl bg-zinc-800 light:bg-zinc-200 border border-zinc-700 light:border-zinc-300">
+                        <div
+                            className="
+                                flex gap-1 px-2 py-0.5 rounded-xl items-center truncate border
+                                border-zinc-700 light:border-zinc-300 bg-zinc-900 light:bg-zinc-100
+                            "
+                        >
+                            <span className="text-zinc-300 light:text-zinc-700">{t("attachments.label.files")}:</span>
+                            <span className="font-medium">{files.length}/{MAX_FILES}</span>
+                        </div>
+                        <div
+                            className="
+                                flex flex-wrap gap-1 px-2 py-0.5 rounded-xl items-center truncate border
+                                border-zinc-700 light:border-zinc-300 bg-zinc-900 light:bg-zinc-100
+                            "
+                        >
+                            <span className="text-zinc-300 light:text-zinc-700">{t("attachments.label.size")}:</span>
+                            <span className="font-medium">
+                                {getFileSize(files.map(f => f.content_size).reduce((a, c) => a + c, 0))} / {getFileSize(MAX_FILE_SIZE)}
+                            </span>
+                        </div>
                     </div>
                 }
             </div>
@@ -38,7 +57,7 @@ export default function Attachments(
                 <div>
                     <button
                         type="button"
-                        className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/20"
+                        className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/20 light:hover:bg-red-500/40"
                         onClick={onRemoveAll}
                         tabIndex={tabIndex}
                         data-testid="remove-all-attachments-button"
@@ -74,30 +93,48 @@ function Attachment({ file, onRemove, tabIndex }: { file: MessageFile, onRemove?
     useEffect(() => { tryGetText() }, [file.content])
 
     return (
-        <div className="flex px-2 py-1 gap-1 items-center rounded-xl bg-zinc-800 light:bg-zinc-200">
+        <div className="flex px-2 py-1 gap-1 items-center rounded-xl border border-zinc-700 light:border-zinc-300 bg-zinc-800 light:bg-zinc-200">
             {file.content_type.includes("image") ? (
                 <ImageIcon file={file} />
             ) : (
                 text ? (
-                    <textarea
-                        className="size-14 p-1 rounded-lg text-[5px] overflow-hidden outline-none resize-none bg-zinc-700 light:bg-zinc-300"
-                        value={text}
-                        readOnly
-                    />
+                    <div
+                        className="
+                            size-14 p-1 rounded-lg text-[5px] overflow-hidden outline-none resize-none select-none
+                            border border-zinc-700 light:border-zinc-300 bg-zinc-950 light:bg-zinc-50
+                        "
+                    >
+                        {text}
+                    </div>
                 ) : (
-                    <FileIcon className="size-14 p-1 rounded-lg bg-zinc-700 light:bg-zinc-300" />
+                    <FileIcon className="size-14 p-1 rounded-lg" />
                 )
             )}
-            <div className="flex flex-col px-2 py-1 text-xs rounded-lg bg-zinc-700 light:bg-zinc-300">
-                {t("attachments.label.type")}: {t(getFileTypeTranslationKey(file.name))}<br />
-                {t("attachments.label.name")}: {file.name}<br />
-                {t("attachments.label.size")}: {getFileSize(file.content_size)}
+            <div
+                className="
+                    flex flex-col h-full px-1.5 items-center justify-center text-[11px] rounded-lg
+                    border border-zinc-700 light:border-zinc-300 bg-zinc-900 light:bg-zinc-100
+                "
+            >
+                {[
+                    [t("attachments.label.type"), t(getFileTypeTranslationKey(file.name))],
+                    [t("attachments.label.name"), file.name],
+                    [t("attachments.label.size"), getFileSize(file.content_size)]
+                ].map(([label, value], i) => (
+                    <React.Fragment key={i}>
+                        <div className="flex max-w-[120px] md:max-w-[240px] gap-1 items-center">
+                            <span className="text-nowrap text-zinc-300 light:text-zinc-700">{label}:</span>
+                            <span className="font-medium">{value}</span>
+                        </div>
+                        {i < 2 && <div className="w-full h-px bg-zinc-700 light:bg-zinc-300" />}
+                    </React.Fragment>
+                ))}
             </div>
-            <div className="flex flex-col">
+            <div className={`flex flex-col ${onRemove ? "h-full justify-between" : ""}`}>
                 {onRemove &&
                     <button
                         type="button"
-                        className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/20"
+                        className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/20 light:hover:bg-red-500/40"
                         onClick={() => onRemove(file)}
                         tabIndex={tabIndex}
                         data-testid={`remove-attachment-button-${file.name}`}
@@ -140,7 +177,7 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
 
     return (
         <Dialog.Root>
-            <Dialog.Trigger type="button" className="p-1 rounded-3xl cursor-pointer hover:bg-zinc-500/40">
+            <Dialog.Trigger type="button" className="p-1 rounded-3xl cursor-pointer hover:bg-zinc-700 light:hover:bg-zinc-300">
                 <EyeOpenIcon className="size-3.5" />
             </Dialog.Trigger>
 
@@ -151,7 +188,7 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
                     className="
                         z-10 fixed flex flex-col w-[80vw] not-md:w-[calc(100vw-32px)] h-[80vh]
                         top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 rounded-xl
-                        bg-zinc-900 light:bg-white text-white light:text-black
+                        bg-zinc-900 light:bg-zinc-100 text-white light:text-black
                         border border-zinc-800 light:border-zinc-200 shadow-2xl outline-none
                     "
                 >
@@ -326,7 +363,7 @@ function ImageIcon({ file }: { file: MessageFile }) {
 
     return (
         src ? (
-            <img className="size-14 object-cover rounded-lg" src={src} />
+            <img className="size-14 object-cover rounded-lg border border-zinc-700 light:border-zinc-300" src={src} />
         ) : (
             <svg className="size-14 object-cover rounded-lg animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

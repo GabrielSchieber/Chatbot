@@ -92,7 +92,12 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                                         setError("")
                                     }}
                                     placeholder="••••••••"
-                                    className="px-2 py-1 rounded border bg-zinc-900 light:bg-white light:text-black border-zinc-700 light:border-zinc-300"
+                                    className="
+                                        px-2 py-1 rounded
+                                        border border-zinc-700 light:border-zinc-300
+                                        bg-zinc-900 light:bg-zinc-100 
+                                        light:text-black
+                                    "
                                     disabled={isDeleting}
                                     required
                                 />
@@ -140,7 +145,12 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                                         }}
                                         placeholder={t("auth.mfa.placeholder")}
                                         maxLength={6}
-                                        className="w-[80%] mt-2 px-2 py-1 rounded border text-sm bg-zinc-900 light:bg-white light:text-black border-zinc-700 light:border-zinc-300"
+                                        className="
+                                            w-[80%] mt-2 px-2 py-1 rounded text-sm
+                                            border border-zinc-700 light:border-zinc-300
+                                            bg-zinc-900 light:bg-zinc-100
+                                            light:text-black
+                                        "
                                         disabled={isDeleting}
                                         required
                                     />
@@ -156,7 +166,12 @@ export default function DeleteAccountDialog({ entryClasses, destructiveEntryClas
                                         }}
                                         placeholder={t("auth.mfaRecovery.placeholder")}
                                         maxLength={12}
-                                        className="w-[80%] mt-2 px-2 py-1 rounded border text-sm bg-zinc-900 light:bg-white light:text-black border-zinc-700 light:border-zinc-300"
+                                        className="
+                                            w-[80%] mt-2 px-2 py-1 rounded text-sm
+                                            border border-zinc-700 light:border-zinc-300
+                                            bg-zinc-900 light:bg-zinc-100
+                                            light:text-black
+                                        "
                                         disabled={isDeleting}
                                         required
                                     />

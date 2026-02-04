@@ -7,7 +7,13 @@ export type Step = "login" | "mfa" | "mfa-recovery"
 export function Form({ children, handleSubmit }: { children: ReactNode, handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void }) {
     return (
         <div className="flex min-h-screen items-center justify-center bg-zinc-950 light:bg-zinc-50">
-            <form className="w-full max-w-md p-8 space-y-6 rounded-2xl border border-zinc-800 light:border-zinc-200 shadow-2xl bg-zinc-900 light:bg-white" onSubmit={handleSubmit}>
+            <form
+                className="
+                    w-full max-w-md p-8 m-2 space-y-6 rounded-2xl shadow-2xl/60 border
+                    border-zinc-800 light:border-zinc-200 bg-zinc-900 light:bg-zinc-100
+                "
+                onSubmit={handleSubmit}
+            >
                 {children}
             </form>
         </div>

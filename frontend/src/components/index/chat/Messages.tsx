@@ -216,12 +216,8 @@ export default function Messages({
 export function UserMessage({ index, text, files, onEditClick }: { index: number, text: string, files?: MessageFile[], onEditClick?: VoidFunction }) {
     return (
         <div className="flex flex-col gap-1 self-end">
-            <div className="flex flex-col gap-3 px-4 py-3 wrap-anywhere whitespace-pre-wrap rounded-3xl bg-zinc-800 light:bg-zinc-100">
-                {files && files.length > 0 &&
-                    <div className="flex flex-wrap gap-2 p-2 rounded-xl border bg-zinc-700 light:bg-zinc-200 border-zinc-600 light:border-zinc-300">
-                        <Attachments files={files} />
-                    </div>
-                }
+            <div className="flex flex-col gap-3 px-4 py-3 wrap-anywhere whitespace-pre-wrap rounded-3xl bg-zinc-800 light:bg-zinc-50">
+                {files && files.length > 0 && <Attachments files={files} />}
 
                 <div className="wrap-anywhere whitespace-pre-wrap" data-testid={`message-${index}`}>
                     {text}

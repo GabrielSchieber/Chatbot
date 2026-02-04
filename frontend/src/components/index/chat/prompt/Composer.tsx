@@ -89,7 +89,7 @@ export default function Composer({
             layout={!window.matchMedia("(prefers-reduced-motion)").matches}
             transition={{ type: "tween", duration: 0.15 }}
             className={`
-                flex flex-col w-full max-h-[50vh] overflow-hidden rounded-3xl bg-zinc-800 light:bg-zinc-100
+                flex flex-col w-full max-h-[50vh] overflow-hidden rounded-3xl bg-zinc-800 light:bg-zinc-50
                 ${files.length > 0 ? "gap-2 px-4" : "px-3"}
                 ${files.length > 0 || isExtended ? "pt-3 pb-2" : "py-1"}
                 ${withBorderAndShadow ? "mb-5 border border-zinc-700 light:border-zinc-300 shadow-lg" : "mt-10 mb-5"}
@@ -107,7 +107,7 @@ export default function Composer({
             {isExtended ? (
                 <>
                     <div className="flex flex-col gap-1 overflow-x-hidden overflow-y-auto">
-                        <Files files={files} onRemoveFile={onRemoveFile} onRemoveAllFiles={onRemoveAllFiles} overflowYAuto={false} tabIndex={tabIndex + 5} />
+                        {files.length > 0 && <Attachments files={files} onRemove={onRemoveFile} onRemoveAll={onRemoveAllFiles} tabIndex={tabIndex} />}
                         <TextArea
                             ref={textAreaRef}
                             text={text}
@@ -135,7 +135,7 @@ export default function Composer({
                 </>
             ) : (
                 <>
-                    <Files files={files} onRemoveFile={onRemoveFile} onRemoveAllFiles={onRemoveAllFiles} overflowYAuto={true} tabIndex={tabIndex + 5} />
+                    {files.length > 0 && <Attachments files={files} onRemove={onRemoveFile} onRemoveAll={onRemoveAllFiles} tabIndex={tabIndex} />}
                     <div className="flex min-h-fit gap-1 items-center overflow-x-hidden overflow-y-auto">
                         <AddFilesButton fileInputRef={fileInputRef} tabIndex={tabIndex + 1} />
 
@@ -160,35 +160,5 @@ export default function Composer({
                 </>
             )}
         </motion.div>
-    )
-}
-
-export function Files({
-    files,
-    onRemoveFile,
-    onRemoveAllFiles,
-    overflowYAuto,
-    tabIndex
-}: {
-    files: MessageFile[]
-    onRemoveFile: (file: MessageFile) => void
-    onRemoveAllFiles: () => void
-    overflowYAuto: boolean,
-    tabIndex: number
-}) {
-    return (
-        <>
-            {files.length > 0 && (
-                <div
-                    className={`
-                        flex flex-wrap gap-2 p-2 rounded-xl border
-                        bg-zinc-700 light:bg-zinc-200 border-zinc-600 light:border-zinc-300
-                        ${overflowYAuto && "overflow-x-hidden overflow-y-auto"}
-                    `}
-                >
-                    <Attachments files={files} onRemove={onRemoveFile} onRemoveAll={onRemoveAllFiles} tabIndex={tabIndex} />
-                </div>
-            )}
-        </>
     )
 }

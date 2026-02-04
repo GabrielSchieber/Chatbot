@@ -39,7 +39,12 @@ export default function VerifyEmail() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-zinc-950 light:bg-zinc-50">
-            <div className="flex flex-col w-full max-w-md p-8 space-y-4 items-center rounded-2xl border border-zinc-800 light:border-zinc-200 shadow-2xl bg-zinc-900 light:bg-white">
+            <div
+                className="
+                    flex flex-col w-full max-w-md p-8 space-y-4 items-center rounded-2xl
+                    border border-zinc-800 light:border-zinc-200 shadow-2xl bg-zinc-900 light:bg-zinc-100
+                "
+            >
                 <Header text={t("auth.verifyEmail.header")} />
                 {error ? (
                     <>

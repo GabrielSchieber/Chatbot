@@ -31,7 +31,9 @@ export default function Sidebar() {
             <div
                 ref={ref}
                 className={`
-                    z-10 flex flex-col justify-between overflow-x-hidden overflow-y-auto duration-300 ease-in-out bg-zinc-950 light:bg-zinc-50 border-r border-zinc-800 light:border-zinc-200
+                    z-10 flex flex-col justify-between overflow-x-hidden overflow-y-auto 
+                    bg-zinc-950 light:bg-zinc-50 border-r border-zinc-800 light:border-zinc-200
+                    duration-300 ease-in-out
                     ${isOpen ? "min-w-[250px] max-w-[250px]" : isMobile ? "min-w-0 max-w-0" : "min-w-[50px] max-w-[50px]"}
                     ${isMobile && "fixed inset-0"}
                 `}

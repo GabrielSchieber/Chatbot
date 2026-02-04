@@ -9,7 +9,7 @@ export default function CheckEmail() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-zinc-950 light:bg-zinc-50">
-            <div className="w-full max-w-md p-8 space-y-4 rounded-2xl border border-zinc-800 light:border-zinc-200 shadow-2xl bg-zinc-900 light:bg-white">
+            <div className="w-full max-w-md p-8 space-y-4 rounded-2xl border border-zinc-800 light:border-zinc-200 shadow-2xl bg-zinc-900 light:bg-zinc-100">
                 <Header text={t("auth.verifyEmailSent.header")} />
                 <div>
                     <p className="text-zinc-100 light:text-zinc-900">{t("auth.verifyEmailSent.firstParagraph", { email })}</p>
