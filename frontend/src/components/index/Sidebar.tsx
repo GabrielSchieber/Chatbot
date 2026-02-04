@@ -36,7 +36,7 @@ export default function Sidebar() {
                     ${isMobile && "fixed inset-0"}
                 `}
             >
-                <div className="sticky flex flex-col top-0 gap-1 p-2 bg-zinc-950 light:bg-zinc-50">
+                <div className={`sticky flex flex-col top-0 gap-1 p-2 bg-zinc-950 light:bg-zinc-50 ${!isOpen && "items-center"}`}>
                     <ToggleSidebar withLabel={isOpen} onClick={() => setIsOpen(!isOpen)} />
                     <NewChat withLabel={isOpen} />
                     <Search openButtonWithLabel={isOpen} />
@@ -44,7 +44,7 @@ export default function Sidebar() {
 
                 <History isSidebarOpen={isOpen} sidebarRef={ref} />
 
-                <div className="sticky flex flex-col bottom-0 p-2 bg-zinc-950 light:bg-zinc-50">
+                <div className={`sticky flex flex-col bottom-0 p-2 bg-zinc-950 light:bg-zinc-50 ${!isOpen && "items-center"}`}>
                     <Settings isSidebarOpen={isOpen} />
                 </div>
             </div>

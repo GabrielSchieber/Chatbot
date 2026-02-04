@@ -409,9 +409,9 @@ export function ToggleSidebar({ withLabel, onClick }: { withLabel: boolean, onCl
     return (
         <button className={sidebarButtonClasses} onClick={onClick}>
             {withLabel ? (
-                <><ChevronLeftIcon className="size-5" />{t("sidebar.closeSidebar")}</>
+                <><ChevronLeftIcon className="min-w-5 max-w-5 min-h-5 max-h-5" />{t("sidebar.closeSidebar")}</>
             ) : (
-                <ChevronRightIcon className="size-5" />
+                <ChevronRightIcon className="min-w-5 max-w-5 min-h-5 max-h-5" />
             )}
         </button>
     )
@@ -422,7 +422,7 @@ export function NewChat({ withLabel }: { withLabel: boolean }) {
 
     return (
         <a className={sidebarButtonClasses} href="/">
-            <PlusIcon className="size-5" /> {withLabel && t("sidebar.newChat")}
+            <PlusIcon className="min-w-5 max-w-5 min-h-5 max-h-5" /> {withLabel && t("sidebar.newChat")}
         </a>
     )
 }
@@ -449,7 +449,7 @@ export function TemporaryChat({ withLabel }: { withLabel: boolean }) {
             }}
             disabled={chatUUID !== undefined && isTemporaryChat}
         >
-            <ClockIcon className="size-5" /> {withLabel && t("sidebar.temporaryChat")}
+            <ClockIcon className="min-w-5 max-w-5 min-h-5 max-h-5" /> {withLabel && t("sidebar.temporaryChat")}
         </button>
     )
 }
@@ -459,7 +459,7 @@ export function SearchChats({ withLabel }: { withLabel: boolean }) {
 
     return (
         <Dialog.Trigger className={sidebarButtonClasses}>
-            <MagnifyingGlassIcon className="size-5" /> {withLabel && t("sidebar.searchChats")}
+            <MagnifyingGlassIcon className="min-w-5 max-w-5 min-h-5 max-h-5" /> {withLabel && t("sidebar.searchChats")}
         </Dialog.Trigger>
     )
 }
@@ -469,7 +469,7 @@ export function OpenSettings({ withLabel }: { withLabel: boolean }) {
 
     return (
         <Dialog.Trigger className={sidebarButtonClasses}>
-            <GearIcon className="size-5" /> {withLabel && t("sidebar.settings")}
+            <GearIcon className="min-w-5 max-w-5 min-h-5 max-h-5" /> {withLabel && t("sidebar.settings")}
         </Dialog.Trigger>
     )
 }
