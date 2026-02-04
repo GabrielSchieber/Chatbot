@@ -192,15 +192,13 @@ export default function Editor({ index, setIndex }: { index: number, setIndex: R
     }
 
     useEffect(() => {
-        for (const file of addedFiles) {
-            if (file.type.includes("image")) {
-                setHasImages(true)
-                setModel("Qwen3-VL:4B")
-                return
-            }
+        if (getCurrentFiles().some(f => f.content_type.includes("image"))) {
+            setHasImages(true)
+            setModel("Qwen3-VL:4B")
+        } else {
+            setHasImages(false)
         }
-        setHasImages(false)
-    }, [addedFiles])
+    }, [message.files, addedFiles, removedFiles])
 
     return (
         <Composer
