@@ -108,7 +108,7 @@ function LoginAnchor() {
     return (
         <a
             className="
-                px-3 py-1.5 rounded-full cursor-pointer
+                px-3 py-2 content-center rounded-full cursor-pointer
                 text-black light:text-white
                 bg-zinc-100 light:bg-zinc-800
                 hover:bg-zinc-200 light:hover:bg-zinc-700
@@ -126,7 +126,7 @@ function SignupAnchor() {
     return (
         <a
             className="
-                px-3 py-1.5 rounded-full cursor-pointer
+                px-3 py-2 content-center rounded-full cursor-pointer
                 hover:bg-zinc-700 light:hover:bg-zinc-300
                 border border-zinc-500
             "

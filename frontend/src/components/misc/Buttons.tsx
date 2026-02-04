@@ -435,7 +435,8 @@ export function TemporaryChat({ withLabel }: { withLabel: boolean }) {
     return (
         <button
             className={`
-                flex gap-1 p-2 items-center rounded cursor-pointer
+                flex gap-1 items-center content-center rounded cursor-pointer
+                ${withLabel ? "px-3 py-2" : "p-2"}
                 ${chatUUID && "mx-auto"}
                 ${isTemporaryChat ?
                     "bg-blue-800 light:bg-blue-200 hover:bg-blue-700 light:hover:bg-blue-300" : "hover:bg-zinc-700 light:hover:bg-zinc-300"
