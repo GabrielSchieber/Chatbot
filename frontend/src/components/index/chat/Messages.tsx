@@ -24,7 +24,7 @@ export default function Messages({
 }) {
     const { chatUUID } = useParams()
 
-    const { setChats, messages, setMessages, isMobile, promptHeight } = useChat()
+    const { chats, setChats, messages, setMessages, isMobile, promptHeight } = useChat()
 
     const webSocket = useRef<WebSocket | null>(null)
     const ref = useRef<HTMLDivElement | null>(null)
@@ -35,6 +35,8 @@ export default function Messages({
 
     const [isBottomVisible, setIsBottomVisible] = useState(true)
     const [editingMessageIndex, setEditingMessageIndex] = useState(-1)
+
+    const currentChat = chats.find(c => c.uuid === chatUUID)
 
     function scrollToBottom() {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -143,6 +145,12 @@ export default function Messages({
             resizeObserverRef.current?.disconnect()
         }
     }, [hasSentMessage.current])
+
+    useEffect(() => {
+        if (currentChat?.is_archived) {
+            setEditingMessageIndex(-1)
+        }
+    }, [currentChat?.is_archived])
 
     return (
         <motion.div
