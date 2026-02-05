@@ -477,16 +477,24 @@ export function OpenSettings({ withLabel }: { withLabel: boolean }) {
 export function RenameDialog() {
     const { chatUUID } = useParams()
     const { t } = useTranslation()
+
     const { chats, setChats } = useChat()
 
     const currentChat = chats.find(c => c.uuid === chatUUID)
 
+    const [open, setOpen] = useState(false)
     const [title, setTitle] = useState(currentChat ? currentChat.title : "")
+
+    useEffect(() => {
+        if (open && currentChat) {
+            setTitle(currentChat.title)
+        }
+    }, [open, currentChat])
 
     if (!currentChat) return <></>
 
     return (
-        <Dialog.Root>
+        <Dialog.Root open={open} onOpenChange={setOpen}>
             <Dialog.Trigger className={nonDestructiveChatDropdownItemClassName}>
                 <Pencil1Icon className="size-4.5" /> {t("renameButton.label")}
             </Dialog.Trigger>
@@ -496,49 +504,59 @@ export function RenameDialog() {
 
                 <Dialog.Content
                     className="
-                        z-10 fixed flex flex-col top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                        w-[90vw] max-w-md gap-3 p-6 rounded-xl text-white light:text-black bg-zinc-800 light:bg-zinc-100
+                        z-10 fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                        w-[90vw] max-w-md p-6 rounded-xl text-white light:text-black bg-zinc-800 light:bg-zinc-100
                     "
                     onCloseAutoFocus={e => e.preventDefault()}
                 >
-                    <Dialog.Title className="text-xl font-bold">{t("dialogs.renameChat.title")}</Dialog.Title>
-                    <Dialog.Description hidden>{t("dialogs.renameChat.title")}</Dialog.Description>
+                    <form
+                        className="flex flex-col gap-3"
+                        onSubmit={e => {
+                            e.preventDefault()
+                            if (!title) return
+                            renameChat(currentChat.uuid, title)
+                            setChats(previous => previous.map(c => c.uuid === currentChat.uuid ? { ...c, title } : c))
+                            setOpen(false)
+                        }}
+                    >
+                        <Dialog.Title className="text-xl font-bold">{t("dialogs.renameChat.title")}</Dialog.Title>
+                        <Dialog.Description hidden>{t("dialogs.renameChat.title")}</Dialog.Description>
 
-                    <input
-                        className="px-2 py-1 rounded-lg outline-none bg-zinc-700 light:bg-zinc-200"
-                        placeholder={t("dialogs.renameChat.placeholder")}
-                        value={title}
-                        onChange={e => setTitle(e.target.value)}
-                    />
+                        <input
+                            className="px-2 py-1 rounded-lg outline-none bg-zinc-700 light:bg-zinc-200"
+                            placeholder={t("dialogs.renameChat.placeholder")}
+                            value={title}
+                            onChange={e => setTitle(e.target.value)}
+                            required
+                        />
 
-                    <div className="flex gap-3 justify-end text-lg font-semibold">
-                        <Dialog.Close
-                            className="
-                                px-4 py-2 rounded-xl cursor-pointer
-                                text-white light:text-black
-                                border border-zinc-500
-                                bg-zinc-700 light:bg-zinc-200
-                                hover:bg-zinc-700/50 light:hover:bg-zinc-200/50
-                            "
-                        >
-                            {t("dialogs.renameChat.cancel")}
-                        </Dialog.Close>
-                        <Dialog.Close
-                            className="
-                                px-4 py-2 rounded-xl cursor-pointer
-                                border border-zinc-500
-                                text-white light:text-black
-                                bg-zinc-900 light:bg-zinc-100
-                                hover:bg-zinc-900/50 light:hover:bg-zinc-100/50
-                            "
-                            onClick={() => {
-                                renameChat(currentChat.uuid, title)
-                                setChats(previous => previous.map(c => c.uuid === currentChat.uuid ? { ...c, title } : c))
-                            }}
-                        >
-                            {t("dialogs.renameChat.rename")}
-                        </Dialog.Close>
-                    </div>
+                        <div className="flex gap-3 justify-end text-lg font-semibold">
+                            <Dialog.Close
+                                type="button"
+                                className="
+                                    px-4 py-2 rounded-xl cursor-pointer
+                                    text-white light:text-black
+                                    border border-zinc-500
+                                    bg-zinc-700 light:bg-zinc-200
+                                    hover:bg-zinc-700/50 light:hover:bg-zinc-200/50
+                                "
+                            >
+                                {t("dialogs.renameChat.cancel")}
+                            </Dialog.Close>
+                            <button
+                                type="submit"
+                                className="
+                                    px-4 py-2 rounded-xl cursor-pointer
+                                    border border-zinc-500
+                                    text-white light:text-black
+                                    bg-zinc-900 light:bg-zinc-100
+                                    hover:bg-zinc-900/50 light:hover:bg-zinc-100/50
+                                "
+                            >
+                                {t("dialogs.renameChat.rename")}
+                            </button>
+                        </div>
+                    </form>
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
