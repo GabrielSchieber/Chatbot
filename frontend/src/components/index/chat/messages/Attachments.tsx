@@ -201,18 +201,18 @@ function AttachmentViewer({ file }: { file: MessageFile }) {
                     </div>
 
                     <Tabs.Root className="flex flex-col flex-1 min-h-0" defaultValue="view">
-                        <div className="flex px-4 py-2 justify-between items-center text-sm border-b border-zinc-800 light:border-zinc-200 bg-zinc-900/50 light:bg-zinc-50">
-                            <div className="flex gap-4 items-center">
+                        <div className="flex flex-wrap gap-2 px-4 py-2 justify-between items-center text-sm border-b border-zinc-800 light:border-zinc-200 bg-zinc-900/50 light:bg-zinc-50">
+                            <div className="flex flex-col sm:flex-row gap-1 sm:gap-4 items-start sm:items-center">
                                 <div className="flex gap-2 items-center">
                                     <span className="text-zinc-400 light:text-zinc-500">{t("attachments.label.type")}:</span>
                                     <span className="font-medium">{t(getFileTypeTranslationKey(file.name))}</span>
                                 </div>
-                                <div className="w-px h-4 bg-zinc-700 light:bg-zinc-300" />
+                                <div className="hidden sm:block w-px h-4 bg-zinc-700 light:bg-zinc-300" />
                                 <div className="flex gap-2 items-center">
                                     <span className="text-zinc-400 light:text-zinc-500">{t("attachments.label.name")}:</span>
                                     <span className="font-medium truncate max-w-[200px]">{file.name}</span>
                                 </div>
-                                <div className="w-px h-4 bg-zinc-700 light:bg-zinc-300" />
+                                <div className="hidden sm:block w-px h-4 bg-zinc-700 light:bg-zinc-300" />
                                 <div className="flex gap-2 items-center">
                                     <span className="text-zinc-400 light:text-zinc-500">{t("attachments.label.size")}:</span>
                                     <span className="font-medium">{getFileSize(file.content_size)}</span>
