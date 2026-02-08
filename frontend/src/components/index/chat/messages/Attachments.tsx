@@ -16,55 +16,67 @@ export default function Attachments(
 ) {
     const { t } = useTranslation()
 
+    const [screenWidth, setScreenWidth] = useState(window.innerWidth)
+
+    useEffect(() => {
+        const onResize = () => setScreenWidth(window.innerWidth)
+        window.addEventListener("resize", onResize)
+        return () => window.removeEventListener("resize", onResize)
+    }, [])
+
+    if (files.length === 0) return
+
     return (
-        <div
-            className="
-                flex flex-1 gap-1 p-2 justify-between rounded-lg border
-                border-zinc-700 light:border-zinc-300 bg-zinc-900 light:bg-zinc-100
-            "
-        >
-            <div className="flex flex-col gap-1 items-start">
+        <div className="flex gap-1 p-2 items-start justify-between rounded-lg border border-zinc-700 light:border-zinc-300 bg-zinc-900 light:bg-zinc-100">
+            <div className="flex flex-col gap-1">
                 {files.map(f => (
                     <Attachment key={f.id} file={f} onRemove={onRemove} tabIndex={tabIndex ? tabIndex + 1 : undefined} />
                 ))}
-                {files.length > 0 &&
-                    <div className="flex flex-wrap gap-1 p-2 rounded-xl bg-zinc-800 light:bg-zinc-200 border border-zinc-700 light:border-zinc-300">
-                        <div
-                            className="
-                                flex gap-1 px-2 py-0.5 rounded-xl items-center truncate border
-                                border-zinc-700 light:border-zinc-300 bg-zinc-900 light:bg-zinc-100
-                            "
-                        >
-                            <span className="text-zinc-300 light:text-zinc-700">{t("attachments.label.files")}:</span>
-                            <span className="font-medium">{files.length}/{MAX_FILES}</span>
-                        </div>
-                        <div
-                            className="
-                                flex flex-wrap gap-1 px-2 py-0.5 rounded-xl items-center truncate border
-                                border-zinc-700 light:border-zinc-300 bg-zinc-900 light:bg-zinc-100
-                            "
-                        >
-                            <span className="text-zinc-300 light:text-zinc-700">{t("attachments.label.size")}:</span>
-                            <span className="font-medium">
-                                {getFileSize(files.map(f => f.content_size).reduce((a, c) => a + c, 0))} / {getFileSize(MAX_FILE_SIZE)}
-                            </span>
-                        </div>
+
+                <div
+                    className="
+                        flex flex-wrap gap-1 p-1 justify-center rounded-xl text-sm
+                        bg-zinc-800 light:bg-zinc-200 border border-zinc-700 light:border-zinc-300
+                    "
+                >
+                    <div
+                        className="
+                            flex gap-1 px-2 py-0.5 rounded-xl items-center truncate border
+                            border-zinc-700 light:border-zinc-300 bg-zinc-900 light:bg-zinc-100
+                        "
+                    >
+                        <span className="text-zinc-300 light:text-zinc-700">{t("attachments.label.files")}:</span>
+                        <span className="font-medium">{files.length}/{MAX_FILES}</span>
                     </div>
-                }
+                    <div
+                        className="
+                            flex flex-wrap gap-1 px-2 py-0.5 rounded-xl items-center truncate border
+                            border-zinc-700 light:border-zinc-300 bg-zinc-900 light:bg-zinc-100
+                        "
+                    >
+                        <span className="text-zinc-300 light:text-zinc-700">{t("attachments.label.size")}:</span>
+                        <span className="font-medium">
+                            {getFileSize(files.map(f => f.content_size).reduce((a, c) => a + c, 0))} / {getFileSize(MAX_FILE_SIZE)}
+                        </span>
+                    </div>
+                </div>
             </div>
 
-            {onRemoveAll && files.length > 0 &&
-                <div>
-                    <button
-                        type="button"
-                        className="p-1 rounded-3xl cursor-pointer hover:bg-red-500/20 light:hover:bg-red-500/40"
-                        onClick={onRemoveAll}
-                        tabIndex={tabIndex}
-                        data-testid="remove-all-attachments-button"
-                    >
-                        <Cross1Icon className="size-3.5" />
-                    </button>
-                </div>
+            {onRemoveAll &&
+                <button
+                    type="button"
+                    className="
+                        flex p-1 items-center rounded-3xl cursor-pointer
+                        border border-zinc-700 light:border-zinc-300 bg-zinc-800
+                        light:bg-zinc-200 hover:bg-red-500/20 light:hover:bg-red-500/40
+                    "
+                    onClick={onRemoveAll}
+                    tabIndex={tabIndex}
+                    data-testid="remove-all-attachments-button"
+                    hidden={screenWidth < 320}
+                >
+                    <Cross1Icon className="size-3.5" />
+                </button>
             }
         </div>
     )
@@ -100,19 +112,20 @@ function Attachment({ file, onRemove, tabIndex }: { file: MessageFile, onRemove?
                 text ? (
                     <div
                         className="
-                            size-14 p-1 rounded-lg text-[5px] overflow-hidden outline-none resize-none select-none
+                            min-w-14 max-w-14 min-h-14 max-h-14 p-1 rounded-lg text-[5px] overflow-hidden outline-none resize-none select-none
                             border border-zinc-700 light:border-zinc-300 bg-zinc-950 light:bg-zinc-50
                         "
                     >
                         {text}
                     </div>
                 ) : (
-                    <FileIcon className="size-14 p-1 rounded-lg" />
+                    <FileIcon className="min-w-14 max-w-14 min-h-14 max-h-14 p-1 rounded-lg" />
                 )
             )}
             <div
                 className="
-                    flex flex-col h-full px-1.5 items-center justify-center text-[11px] rounded-lg
+                    flex flex-col w-full min-14 max-h-14 px-1.5 py-0.5 
+                    items-center justify-center overflow-y-auto text-[11px] rounded-lg
                     border border-zinc-700 light:border-zinc-300 bg-zinc-900 light:bg-zinc-100
                 "
             >
@@ -122,7 +135,7 @@ function Attachment({ file, onRemove, tabIndex }: { file: MessageFile, onRemove?
                     [t("attachments.label.size"), getFileSize(file.content_size)]
                 ].map(([label, value], i) => (
                     <React.Fragment key={i}>
-                        <div className="flex max-w-[120px] md:max-w-[240px] gap-1 items-center">
+                        <div className="flex max-w-[120px] md:max-w-[240px] min-h-full gap-1 items-center">
                             <span className="text-nowrap text-zinc-300 light:text-zinc-700">{label}:</span>
                             <span className="font-medium">{value}</span>
                         </div>
@@ -363,9 +376,9 @@ function ImageIcon({ file }: { file: MessageFile }) {
 
     return (
         src ? (
-            <img className="size-14 object-cover rounded-lg border border-zinc-700 light:border-zinc-300" src={src} />
+            <img className="min-w-14 max-w-14 min-h-14 max-h-14 object-cover rounded-lg border border-zinc-700 light:border-zinc-300" src={src} />
         ) : (
-            <svg className="size-14 object-cover rounded-lg animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="min-w-14 max-w-14 min-h-14 max-h-14 object-cover rounded-lg animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path
                     className="opacity-75"
