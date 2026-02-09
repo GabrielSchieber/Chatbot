@@ -1,6 +1,6 @@
 from django.db.models import Q
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiExample
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -15,14 +15,23 @@ class GetChat(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="Get Chat",
-        description="Retrieve details of a specific chat session.",
+        summary="Retrieve Chat Details",
+        description="Retrieve details of a specific chat session by its UUID. "
+                    "The response includes the chat title, archive status, and pending message ID.",
         tags=["Chats"],
         parameters=[ChatUUIDSerializer],
         responses={
             200: ChatSerializer,
             404: OpenApiTypes.OBJECT
-        }
+        },
+        examples=[
+            OpenApiExample(
+                "Chat Not Found",
+                value={"detail": "Chat was not found."},
+                response_only=True,
+                status_codes=[404]
+            )
+        ]
     )
     def get(self, request: Request):
         user: User = request.user
@@ -44,17 +53,39 @@ class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="List Chats",
-        description="Retrieve a paginated list of chats for the current user.",
+        summary="List User Chats",
+        description="Retrieve a paginated list of chats for the current user. "
+                    "Supports filtering by 'pending' (chats with generating messages) and 'archived' status. "
+                    "Returns a list of chat objects and a boolean indicating if more results are available.",
         tags=["Chats"],
         parameters=[GetChatsSerializer],
         responses=inline_serializer(
             name="GetChatsResponse",
             fields={
                 "chats": ChatSerializer(many=True),
-                "has_more": serializers.BooleanField()
+                "has_more": serializers.BooleanField(help_text="Whether there are more chats available to fetch.")
             }
-        )
+        ),
+        examples=[
+            OpenApiExample(
+                "Example Response",
+                value={
+                    "chats": [
+                        {
+                            "uuid": "123e4567-e89b-12d3-a456-426614174000",
+                            "title": "Project Discussion",
+                            "pending_message_id": None,
+                            "is_archived": False,
+                            "is_temporary": False,
+                            "index": 0
+                        }
+                    ],
+                    "has_more": True
+                },
+                response_only=True,
+                status_codes=[200]
+            )
+        ]
     )
     def get(self, request: Request):
         user: User = request.user
@@ -79,8 +110,9 @@ class SearchChats(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="Search Chats",
-        description="Search through chat titles and messages.",
+        summary="Search Conversations",
+        description="Search through chat titles and message content. "
+                    "Returns a list of matches with snippets of the matching text.",
         tags=["Chats"],
         parameters=[SearchChatsSerializer],
         responses=inline_serializer(
@@ -93,13 +125,32 @@ class SearchChats(APIView):
                         "uuid": serializers.UUIDField(),
                         "title": serializers.CharField(),
                         "is_archived": serializers.BooleanField(),
-                        "matches": serializers.ListField(child=serializers.CharField()),
+                        "matches": serializers.ListField(child=serializers.CharField(), help_text="List of message snippets matching the search query."),
                         "last_modified_at": serializers.DateTimeField()
                     }
                 ),
-                "has_more": serializers.BooleanField()
+                "has_more": serializers.BooleanField(help_text="Whether there are more search results.")
             }
-        )
+        ),
+        examples=[
+            OpenApiExample(
+                "Example Response",
+                value={
+                    "entries": [
+                        {
+                            "uuid": "123e4567-e89b-12d3-a456-426614174000",
+                            "title": "Python Help",
+                            "is_archived": False,
+                            "matches": ["How do I use Django?", "Django is a web framework..."],
+                            "last_modified_at": "2023-10-27T10:00:00Z"
+                        }
+                    ],
+                    "has_more": False
+                },
+                response_only=True,
+                status_codes=[200]
+            )
+        ]
     )
     def get(self, request: Request):
         user: User = request.user
@@ -131,13 +182,30 @@ class RenameChat(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="Rename Chat",
+        summary="Rename Chat Title",
+        description="Update the title of a specific chat session.",
         tags=["Chats"],
         request=RenameChatSerializer,
         responses={
             200: OpenApiTypes.OBJECT,
             404: OpenApiTypes.OBJECT
-        }
+        },
+        examples=[
+            OpenApiExample(
+                "Rename Request",
+                value={
+                    "chat_uuid": "123e4567-e89b-12d3-a456-426614174000",
+                    "new_title": "New Conversation Title"
+                },
+                request_only=True
+            ),
+            OpenApiExample(
+                "Chat Not Found",
+                value={"detail": "Chat was not found."},
+                response_only=True,
+                status_codes=[404]
+            )
+        ]
     )
     def patch(self, request: Request):
         user: User = request.user
@@ -161,13 +229,27 @@ class ArchiveChat(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="Archive Chat",
+        summary="Archive Chat Session",
+        description="Archive a chat session. Archived chats are hidden from the main list but can be viewed in the archive.",
         tags=["Chats"],
         request=ChatUUIDSerializer,
         responses={
             200: OpenApiTypes.OBJECT,
             404: OpenApiTypes.OBJECT
-        }
+        },
+        examples=[
+            OpenApiExample(
+                "Request Body",
+                value={"chat_uuid": "123e4567-e89b-12d3-a456-426614174000"},
+                request_only=True
+            ),
+            OpenApiExample(
+                "Chat Not Found",
+                value={"detail": "Chat was not found."},
+                response_only=True,
+                status_codes=[404]
+            )
+        ]
     )
     def patch(self, request: Request):
         user: User = request.user
@@ -191,13 +273,27 @@ class UnarchiveChat(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="Unarchive Chat",
+        summary="Unarchive Chat Session",
+        description="Restore a chat session from the archive.",
         tags=["Chats"],
         request=ChatUUIDSerializer,
         responses={
             200: OpenApiTypes.OBJECT,
             404: OpenApiTypes.OBJECT
-        }
+        },
+        examples=[
+            OpenApiExample(
+                "Request Body",
+                value={"chat_uuid": "123e4567-e89b-12d3-a456-426614174000"},
+                request_only=True
+            ),
+            OpenApiExample(
+                "Chat Not Found",
+                value={"detail": "Chat was not found."},
+                response_only=True,
+                status_codes=[404]
+            )
+        ]
     )
     def patch(self, request: Request):
         user: User = request.user
@@ -221,13 +317,27 @@ class DeleteChat(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="Delete Chat",
+        summary="Delete Chat Session",
+        description="Permanently delete a chat session and all its messages.",
         tags=["Chats"],
         request=ChatUUIDSerializer,
         responses={
             204: OpenApiTypes.OBJECT,
             404: OpenApiTypes.OBJECT
-        }
+        },
+        examples=[
+            OpenApiExample(
+                "Request Body",
+                value={"chat_uuid": "123e4567-e89b-12d3-a456-426614174000"},
+                request_only=True
+            ),
+            OpenApiExample(
+                "Chat Not Found",
+                value={"detail": "Chat was not found."},
+                response_only=True,
+                status_codes=[404]
+            )
+        ]
     )
     def delete(self, request: Request):
         user: User = request.user
@@ -249,7 +359,13 @@ class DeleteChat(APIView):
 class ArchiveChats(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(summary="Archive All Chats", tags=["Chats"], request=None, responses=None)
+    @extend_schema(
+        summary="Archive All Chats",
+        description="Archive all active (non-archived) chats for the current user.",
+        tags=["Chats"],
+        request=None,
+        responses={200: OpenApiTypes.OBJECT}
+    )
     def patch(self, request: Request):
         stop_user_pending_chats(request.user)
         Chat.objects.filter(user = request.user).update(is_archived = True)
@@ -258,7 +374,13 @@ class ArchiveChats(APIView):
 class UnarchiveChats(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(summary="Unarchive All Chats", tags=["Chats"], request=None, responses=None)
+    @extend_schema(
+        summary="Unarchive All Chats",
+        description="Restore all archived chats for the current user to the active list.",
+        tags=["Chats"],
+        request=None,
+        responses={200: OpenApiTypes.OBJECT}
+    )
     def patch(self, request: Request):
         stop_user_pending_chats(request.user)
         Chat.objects.filter(user = request.user).update(is_archived = False)
@@ -267,7 +389,13 @@ class UnarchiveChats(APIView):
 class DeleteChats(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(summary="Delete All Chats", tags=["Chats"], request=None, responses=None)
+    @extend_schema(
+        summary="Delete All Chats",
+        description="Permanently delete all chats (both active and archived) for the current user. This action cannot be undone.",
+        tags=["Chats"],
+        request=None,
+        responses={204: OpenApiTypes.OBJECT}
+    )
     def delete(self, request: Request):
         stop_user_pending_chats(request.user)
         Chat.objects.filter(user = request.user).delete()
@@ -276,7 +404,13 @@ class DeleteChats(APIView):
 class StopPendingChats(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(summary="Stop Pending Chats", tags=["Chats"], request=None, responses=None)
+    @extend_schema(
+        summary="Stop Pending Generations",
+        description="Stop any ongoing AI message generations for the current user across all chats.",
+        tags=["Chats"],
+        request=None,
+        responses={200: OpenApiTypes.OBJECT}
+    )
     def patch(self, request: Request):
         stop_user_pending_chats(request.user)
         return Response(status = status.HTTP_200_OK)
