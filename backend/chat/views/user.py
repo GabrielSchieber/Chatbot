@@ -9,6 +9,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.translation import gettext_lazy as _
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
@@ -34,7 +35,12 @@ class Signup(APIView):
     authentication_classes = []
     throttle_classes = [SignupRateThrottle]
 
-    @extend_schema(request=SignupSerializer, responses=None)
+    @extend_schema(
+        summary="Sign Up",
+        tags=["Auth"],
+        request=SignupSerializer,
+        responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT}
+    )
     def post(self, request: Request):
         if User.objects.filter(
             has_verified_email = True,
@@ -85,7 +91,12 @@ class VerifyEmail(APIView):
     authentication_classes = []
     throttle_classes = [IPEmailRateThrottle]
 
-    @extend_schema(request=VerifyEmailSerializer, responses=None)
+    @extend_schema(
+        summary="Verify Email",
+        tags=["Auth"],
+        request=VerifyEmailSerializer,
+        responses={204: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT}
+    )
     def post(self, request: Request):
         qs = VerifyEmailSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
@@ -133,7 +144,12 @@ class Login(APIView):
     authentication_classes = []
     throttle_classes = [IPEmailRateThrottle]
 
-    @extend_schema(request=LoginSerializer, responses=None)
+    @extend_schema(
+        summary="Login",
+        tags=["Auth"],
+        request=LoginSerializer,
+        responses={200: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT}
+    )
     def post(self, request: Request):
         qs = LoginSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
@@ -191,7 +207,7 @@ class Login(APIView):
 class Logout(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=None, responses=None)
+    @extend_schema(summary="Logout", tags=["Auth"], request=None, responses={200: OpenApiTypes.OBJECT})
     def post(self, request: Request):
         user: User = request.user
 
@@ -211,7 +227,7 @@ class Logout(APIView):
 class LogoutAllSessions(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=None, responses=None)
+    @extend_schema(summary="Logout All Sessions", tags=["Auth"], request=None, responses={200: OpenApiTypes.OBJECT})
     def post(self, request: Request):
         user: User = request.user
 
@@ -229,7 +245,12 @@ class Refresh(TokenRefreshView):
     authentication_classes = []
     throttle_classes = [RefreshRateThrottle, RefreshTokenRateThrottle]
 
-    @extend_schema(request=None, responses=None)
+    @extend_schema(
+        summary="Refresh Token",
+        tags=["Auth"],
+        request=None,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT}
+    )
     def post(self, request: Request):
         refresh_token = request.COOKIES.get("refresh_token")
         if refresh_token is None:
@@ -253,8 +274,14 @@ class SetupMFA(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
+        summary="Setup MFA",
+        tags=["MFA"],
         request=SetupMFASerializer,
-        responses=inline_serializer("SetupMFAResponse", fields={"auth_url": serializers.CharField(), "secret": serializers.CharField()})
+        responses={
+            200: inline_serializer("SetupMFAResponse", fields={"auth_url": serializers.CharField(), "secret": serializers.CharField()}),
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT
+        }
     )
     def post(self, request: Request):
         user: User = request.user
@@ -280,8 +307,14 @@ class EnableMFA(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
+        summary="Enable MFA",
+        tags=["MFA"],
         request=inline_serializer("EnableMFA", fields={"code": serializers.CharField()}),
-        responses=inline_serializer("EnableMFAResponse", fields={"backup_codes": serializers.ListField(child=serializers.CharField())})
+        responses={
+            200: inline_serializer("EnableMFAResponse", fields={"backup_codes": serializers.ListField(child=serializers.CharField())}),
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT
+        }
     )
     def post(self, request: Request):
         user: User = request.user
@@ -303,7 +336,16 @@ class EnableMFA(APIView):
 class DisableMFA(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=inline_serializer("DisableMFA", fields={"code": serializers.CharField()}), responses=None)
+    @extend_schema(
+        summary="Disable MFA",
+        tags=["MFA"],
+        request=inline_serializer("DisableMFA", fields={"code": serializers.CharField()}),
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT
+        }
+    )
     def post(self, request: Request):
         user: User = request.user
 
@@ -325,7 +367,12 @@ class VerifyMFA(APIView):
     authentication_classes = []
     throttle_classes = [IPEmailRateThrottle, MFATokenRateThrottle]
 
-    @extend_schema(request=VerifyMFASerializer, responses=None)
+    @extend_schema(
+        summary="Verify MFA",
+        tags=["MFA"],
+        request=VerifyMFASerializer,
+        responses={200: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT}
+    )
     def post(self, request: Request):
         qs = VerifyMFASerializer(data = request.data)
         qs.is_valid(raise_exception = True)
@@ -387,11 +434,11 @@ class VerifyMFA(APIView):
 class Me(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(responses=UserSerializer)
+    @extend_schema(summary="Get Current User", tags=["User"], responses={200: UserSerializer})
     def get(self, request: Request):
         return Response(UserSerializer(request.user, many = False).data, status.HTTP_200_OK)
 
-    @extend_schema(request=MeSerializer, responses=None)
+    @extend_schema(summary="Update User Preferences", tags=["User"], request=MeSerializer, responses={200: OpenApiTypes.OBJECT})
     def patch(self, request: Request):
         user: User = request.user
 
@@ -409,7 +456,16 @@ class Me(APIView):
 class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=DeleteAccountSerializer, responses=None)
+    @extend_schema(
+        summary="Delete Account",
+        tags=["User"],
+        request=DeleteAccountSerializer,
+        responses={
+            204: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT
+        }
+    )
     def delete(self, request: Request):
         user: User = request.user
 
@@ -440,7 +496,12 @@ class RequestPasswordReset(APIView):
     authentication_classes = []
     throttle_classes = [IPEmailRateThrottle]
 
-    @extend_schema(request=RequestPasswordResetSerializer, responses=None)
+    @extend_schema(
+        summary="Request Password Reset",
+        tags=["Auth"],
+        request=RequestPasswordResetSerializer,
+        responses={200: OpenApiTypes.OBJECT}
+    )
     def post(self, request: Request):
         qs = RequestPasswordResetSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
@@ -479,7 +540,12 @@ class RequestPasswordReset(APIView):
 class ConfirmPasswordReset(APIView):
     authentication_classes = []
 
-    @extend_schema(request=ConfirmPasswordResetSerializer, responses=None)
+    @extend_schema(
+        summary="Confirm Password Reset",
+        tags=["Auth"],
+        request=ConfirmPasswordResetSerializer,
+        responses={204: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT}
+    )
     def post(self, request):
         qs = ConfirmPasswordResetSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
@@ -507,7 +573,15 @@ class AuthenticateAsGuest(APIView):
     authentication_classes = []
     throttle_classes = [IPEmailRateThrottle]
 
-    @extend_schema(request=None, responses=None)
+    @extend_schema(
+        summary="Authenticate as Guest",
+        tags=["Auth"],
+        request=None,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            201: OpenApiTypes.OBJECT
+        }
+    )
     def post(self, request: Request):
         qs = AuthenticateAsGuestSerializer(data = request.COOKIES)
         try:
