@@ -82,6 +82,7 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 INSTALLED_APPS = [
     "chat",
     "daphne",
+    "drf_spectacular",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -167,6 +168,7 @@ CHANNEL_LAYERS = {
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_THROTTLE_CLASSES": [] if DEBUG else [
         "chat.throttles.PerUserRateThrottle",
         "chat.throttles.PerUserIPRateThrottle",
@@ -183,6 +185,12 @@ REST_FRAMEWORK = {
         "message": "20/hours",
         "ip_email": "5/minute" 
     }
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Chatbot API",
+    "DESCRIPTION": "API documentation for the Chatbot application.",
+    "VERSION": "1.0.0",
 }
 
 SIMPLE_JWT = {
