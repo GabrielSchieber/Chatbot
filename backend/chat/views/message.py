@@ -1,6 +1,6 @@
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, OpenApiExample
+from rest_framework import serializers, status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import BaseRenderer, JSONRenderer
@@ -33,9 +33,19 @@ class GetMessageFileContent(APIView):
 
     @extend_schema(
         summary="Get Message File Content",
+        description="Retrieve the binary content of a specific file attached to a message. "
+                    "The response is the raw file content with the appropriate Content-Type header.",
         tags=["Messages"],
         parameters=[GetMessageFileContentSerializer],
-        responses={200: bytes, 404: OpenApiTypes.OBJECT}
+        responses={200: OpenApiTypes.BINARY, 404: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "File Not Found",
+                value={"detail": "Message file was not found."},
+                response_only=True,
+                status_codes=[404]
+            )
+        ]
     )
     def get(self, request: Request):
         user: User = request.user
@@ -63,9 +73,24 @@ class GetMessageFileIDs(APIView):
 
     @extend_schema(
         summary="Get Message File IDs",
+        description="Retrieve a list of file IDs for all messages in a specific chat. "
+                    "The response is a list of lists, where each inner list contains the IDs of the files "
+                    "attached to the message at that index (ordered by creation time).",
         tags=["Messages"],
         parameters=[ChatUUIDSerializer],
-        responses={200: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT}
+        responses={
+            200: serializers.ListField(child=serializers.ListField(child=serializers.IntegerField())),
+            404: OpenApiTypes.OBJECT
+        },
+        examples=[
+            OpenApiExample(
+                "Example Response",
+                value=[[1, 2], [], [5, 6]],
+                response_only=True,
+                status_codes=[200],
+                description="The first message has files with IDs 1 and 2, the second has no files, and the third has files 5 and 6."
+            )
+        ]
     )
     def get(self, request: Request):
         user: User = request.user
@@ -90,9 +115,19 @@ class GetMessages(APIView):
 
     @extend_schema(
         summary="List Messages",
+        description="Retrieve all messages belonging to a specific chat session. "
+                    "Messages are returned in chronological order.",
         tags=["Messages"],
         parameters=[ChatUUIDSerializer],
-        responses={200: MessageSerializer(many=True), 404: OpenApiTypes.OBJECT}
+        responses={200: MessageSerializer(many=True), 404: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Chat Not Found",
+                value={"detail": "Chat was not found."},
+                response_only=True,
+                status_codes=[404]
+            )
+        ]
     )
     def get(self, request: Request):
         user: User = request.user
@@ -118,9 +153,26 @@ class NewMessage(APIView):
 
     @extend_schema(
         summary="Send New Message",
+        description="Send a new message to a chat. If `chat_uuid` is not provided, a new chat session is created. "
+                    "This endpoint triggers the AI to generate a response (streaming via WebSocket). "
+                    "Supports file uploads via `multipart/form-data`.",
         tags=["Messages"],
         request=NewMessageSerializer,
-        responses={200: ChatSerializer, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT}
+        responses={200: ChatSerializer, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Pending Chat Error",
+                value={"detail": "A chat is already pending."},
+                response_only=True,
+                status_codes=[400]
+            ),
+            OpenApiExample(
+                "File Size Error",
+                value={"files": ["Total file size exceeds limit of 5 MB."]},
+                response_only=True,
+                status_codes=[400]
+            )
+        ]
     )
     def post(self, request: Request):
         user: User = request.user
@@ -169,9 +221,20 @@ class EditMessage(APIView):
 
     @extend_schema(
         summary="Edit Message",
+        description="Edit the text or files of an existing user message. "
+                    "This action will clear and regenerate the subsequent AI response. "
+                    "The `index` parameter refers to the 0-based index of the message in the chat history.",
         tags=["Messages"],
         request=EditMessageSerializer,
-        responses={200: ChatSerializer, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT}
+        responses={200: ChatSerializer, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Index Out of Range",
+                value={"detail": "Index out of range."},
+                response_only=True,
+                status_codes=[404]
+            )
+        ]
     )
     def patch(self, request: Request):
         user: User = request.user
@@ -248,9 +311,20 @@ class RegenerateMessage(APIView):
 
     @extend_schema(
         summary="Regenerate Message",
+        description="Trigger a regeneration of an AI response message. "
+                    "The existing content of the AI message at the specified `index` will be cleared, "
+                    "and a new response will be streamed.",
         tags=["Messages"],
         request=RegenerateMessageSerializer,
-        responses={200: ChatSerializer, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT}
+        responses={200: ChatSerializer, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Pending Chat Error",
+                value={"detail": "A chat is already pending."},
+                response_only=True,
+                status_codes=[400]
+            )
+        ]
     )
     def patch(self, request: Request):
         user: User = request.user
