@@ -1,5 +1,6 @@
 import unicodedata
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from ..models import User, UserMFA, UserPreferences, UserSession
@@ -21,6 +22,7 @@ class UserSessionSerializer(serializers.ModelSerializer):
         model = UserSession
         fields = ["login_at", "logout_at", "ip_address", "browser", "os"]
 
+    @extend_schema_field(serializers.CharField())
     def get_login_at(self, session: UserSession):
         return str(session.login_at)
 
@@ -33,6 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ["email", "is_guest", "preferences", "mfa", "sessions"]
 
+    @extend_schema_field(UserSessionSerializer(many=True))
     def get_sessions(self, user: User):
         active_sessions = user.sessions.filter(logout_at__isnull = True).count()
         sessions = user.sessions.order_by("-login_at")[:active_sessions + 5]

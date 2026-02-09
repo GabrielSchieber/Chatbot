@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from ..models import Message, MessageFile
@@ -10,9 +11,11 @@ class MessageFileSerializer(serializers.ModelSerializer):
         model = MessageFile
         fields = ["id", "name", "content", "content_size", "content_type"]
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_content(self, message_file: MessageFile):
         return None
 
+    @extend_schema_field(serializers.IntegerField())
     def get_content_size(self, message_file: MessageFile):
         return len(message_file.content)
 

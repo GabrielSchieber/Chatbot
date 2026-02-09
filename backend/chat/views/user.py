@@ -9,7 +9,8 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.translation import gettext_lazy as _
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -33,6 +34,7 @@ class Signup(APIView):
     authentication_classes = []
     throttle_classes = [SignupRateThrottle]
 
+    @extend_schema(request=SignupSerializer, responses=None)
     def post(self, request: Request):
         if User.objects.filter(
             has_verified_email = True,
@@ -83,6 +85,7 @@ class VerifyEmail(APIView):
     authentication_classes = []
     throttle_classes = [IPEmailRateThrottle]
 
+    @extend_schema(request=VerifyEmailSerializer, responses=None)
     def post(self, request: Request):
         qs = VerifyEmailSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
@@ -130,6 +133,7 @@ class Login(APIView):
     authentication_classes = []
     throttle_classes = [IPEmailRateThrottle]
 
+    @extend_schema(request=LoginSerializer, responses=None)
     def post(self, request: Request):
         qs = LoginSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
@@ -187,6 +191,7 @@ class Login(APIView):
 class Logout(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=None, responses=None)
     def post(self, request: Request):
         user: User = request.user
 
@@ -206,6 +211,7 @@ class Logout(APIView):
 class LogoutAllSessions(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=None, responses=None)
     def post(self, request: Request):
         user: User = request.user
 
@@ -223,6 +229,7 @@ class Refresh(TokenRefreshView):
     authentication_classes = []
     throttle_classes = [RefreshRateThrottle, RefreshTokenRateThrottle]
 
+    @extend_schema(request=None, responses=None)
     def post(self, request: Request):
         refresh_token = request.COOKIES.get("refresh_token")
         if refresh_token is None:
@@ -245,6 +252,10 @@ class Refresh(TokenRefreshView):
 class SetupMFA(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request=SetupMFASerializer,
+        responses=inline_serializer("SetupMFAResponse", fields={"auth_url": serializers.CharField(), "secret": serializers.CharField()})
+    )
     def post(self, request: Request):
         user: User = request.user
 
@@ -268,6 +279,10 @@ class SetupMFA(APIView):
 class EnableMFA(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request=inline_serializer("EnableMFA", fields={"code": serializers.CharField()}),
+        responses=inline_serializer("EnableMFAResponse", fields={"backup_codes": serializers.ListField(child=serializers.CharField())})
+    )
     def post(self, request: Request):
         user: User = request.user
 
@@ -288,6 +303,7 @@ class EnableMFA(APIView):
 class DisableMFA(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=inline_serializer("DisableMFA", fields={"code": serializers.CharField()}), responses=None)
     def post(self, request: Request):
         user: User = request.user
 
@@ -309,6 +325,7 @@ class VerifyMFA(APIView):
     authentication_classes = []
     throttle_classes = [IPEmailRateThrottle, MFATokenRateThrottle]
 
+    @extend_schema(request=VerifyMFASerializer, responses=None)
     def post(self, request: Request):
         qs = VerifyMFASerializer(data = request.data)
         qs.is_valid(raise_exception = True)
@@ -370,9 +387,11 @@ class VerifyMFA(APIView):
 class Me(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=UserSerializer)
     def get(self, request: Request):
         return Response(UserSerializer(request.user, many = False).data, status.HTTP_200_OK)
 
+    @extend_schema(request=MeSerializer, responses=None)
     def patch(self, request: Request):
         user: User = request.user
 
@@ -390,6 +409,7 @@ class Me(APIView):
 class DeleteAccount(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=DeleteAccountSerializer, responses=None)
     def delete(self, request: Request):
         user: User = request.user
 
@@ -420,6 +440,7 @@ class RequestPasswordReset(APIView):
     authentication_classes = []
     throttle_classes = [IPEmailRateThrottle]
 
+    @extend_schema(request=RequestPasswordResetSerializer, responses=None)
     def post(self, request: Request):
         qs = RequestPasswordResetSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
@@ -458,6 +479,7 @@ class RequestPasswordReset(APIView):
 class ConfirmPasswordReset(APIView):
     authentication_classes = []
 
+    @extend_schema(request=ConfirmPasswordResetSerializer, responses=None)
     def post(self, request):
         qs = ConfirmPasswordResetSerializer(data = request.data)
         qs.is_valid(raise_exception = True)
@@ -485,6 +507,7 @@ class AuthenticateAsGuest(APIView):
     authentication_classes = []
     throttle_classes = [IPEmailRateThrottle]
 
+    @extend_schema(request=None, responses=None)
     def post(self, request: Request):
         qs = AuthenticateAsGuestSerializer(data = request.COOKIES)
         try:

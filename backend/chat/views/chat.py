@@ -1,5 +1,6 @@
 from django.db.models import Q
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.request import Request
@@ -12,6 +13,7 @@ from ..tasks import stop_pending_chat, stop_user_pending_chats
 class GetChat(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(parameters=[ChatUUIDSerializer], responses=ChatSerializer)
     def get(self, request: Request):
         user: User = request.user
 
@@ -31,6 +33,16 @@ class GetChat(APIView):
 class GetChats(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        parameters=[GetChatsSerializer],
+        responses=inline_serializer(
+            name="GetChatsResponse",
+            fields={
+                "chats": ChatSerializer(many=True),
+                "has_more": serializers.BooleanField()
+            }
+        )
+    )
     def get(self, request: Request):
         user: User = request.user
 
@@ -53,6 +65,26 @@ class GetChats(APIView):
 class SearchChats(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        parameters=[SearchChatsSerializer],
+        responses=inline_serializer(
+            name="SearchChatsResponse",
+            fields={
+                "entries": inline_serializer(
+                    name="SearchChatEntry",
+                    many=True,
+                    fields={
+                        "uuid": serializers.UUIDField(),
+                        "title": serializers.CharField(),
+                        "is_archived": serializers.BooleanField(),
+                        "matches": serializers.ListField(child=serializers.CharField()),
+                        "last_modified_at": serializers.DateTimeField()
+                    }
+                ),
+                "has_more": serializers.BooleanField()
+            }
+        )
+    )
     def get(self, request: Request):
         user: User = request.user
 
@@ -82,6 +114,7 @@ class SearchChats(APIView):
 class RenameChat(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=RenameChatSerializer, responses=None)
     def patch(self, request: Request):
         user: User = request.user
 
@@ -103,6 +136,7 @@ class RenameChat(APIView):
 class ArchiveChat(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=ChatUUIDSerializer, responses=None)
     def patch(self, request: Request):
         user: User = request.user
 
@@ -124,6 +158,7 @@ class ArchiveChat(APIView):
 class UnarchiveChat(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=ChatUUIDSerializer, responses=None)
     def patch(self, request: Request):
         user: User = request.user
 
@@ -145,6 +180,7 @@ class UnarchiveChat(APIView):
 class DeleteChat(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=ChatUUIDSerializer, responses=None)
     def delete(self, request: Request):
         user: User = request.user
 
@@ -165,6 +201,7 @@ class DeleteChat(APIView):
 class ArchiveChats(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=None, responses=None)
     def patch(self, request: Request):
         stop_user_pending_chats(request.user)
         Chat.objects.filter(user = request.user).update(is_archived = True)
@@ -173,6 +210,7 @@ class ArchiveChats(APIView):
 class UnarchiveChats(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=None, responses=None)
     def patch(self, request: Request):
         stop_user_pending_chats(request.user)
         Chat.objects.filter(user = request.user).update(is_archived = False)
@@ -181,6 +219,7 @@ class UnarchiveChats(APIView):
 class DeleteChats(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=None, responses=None)
     def delete(self, request: Request):
         stop_user_pending_chats(request.user)
         Chat.objects.filter(user = request.user).delete()
@@ -189,6 +228,7 @@ class DeleteChats(APIView):
 class StopPendingChats(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=None, responses=None)
     def patch(self, request: Request):
         stop_user_pending_chats(request.user)
         return Response(status = status.HTTP_200_OK)
