@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiExample
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -37,9 +37,18 @@ class Signup(APIView):
 
     @extend_schema(
         summary="Sign Up",
+        description="Register a new user account. Sends a verification email to the provided address.",
         tags=["Auth"],
         request=SignupSerializer,
-        responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT}
+        responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Email Already Exists",
+                value={"detail": "signup.emailError"},
+                response_only=True,
+                status_codes=[400]
+            )
+        ]
     )
     def post(self, request: Request):
         if User.objects.filter(
@@ -93,6 +102,8 @@ class VerifyEmail(APIView):
 
     @extend_schema(
         summary="Verify Email",
+        description="Verify a user's email address using the token sent via email. "
+                    "Logs the user in upon success (sets cookies).",
         tags=["Auth"],
         request=VerifyEmailSerializer,
         responses={204: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT}
@@ -146,9 +157,26 @@ class Login(APIView):
 
     @extend_schema(
         summary="Login",
+        description="Authenticate a user. If MFA is enabled, returns a temporary token for MFA verification. "
+                    "Otherwise, sets authentication cookies.",
         tags=["Auth"],
         request=LoginSerializer,
-        responses={200: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT}
+        responses={200: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Login Error",
+                value={"detail": "login.error"},
+                response_only=True,
+                status_codes=[401]
+            ),
+            OpenApiExample(
+                "MFA Required",
+                value={"token": "temporary_mfa_token_string"},
+                response_only=True,
+                status_codes=[200],
+                description="Returned when MFA is enabled for the user."
+            )
+        ]
     )
     def post(self, request: Request):
         qs = LoginSerializer(data = request.data)
@@ -207,7 +235,13 @@ class Login(APIView):
 class Logout(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(summary="Logout", tags=["Auth"], request=None, responses={200: OpenApiTypes.OBJECT})
+    @extend_schema(
+        summary="Logout",
+        description="Log out the current session. Clears authentication cookies.",
+        tags=["Auth"],
+        request=None,
+        responses={200: OpenApiTypes.OBJECT}
+    )
     def post(self, request: Request):
         user: User = request.user
 
@@ -227,7 +261,13 @@ class Logout(APIView):
 class LogoutAllSessions(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(summary="Logout All Sessions", tags=["Auth"], request=None, responses={200: OpenApiTypes.OBJECT})
+    @extend_schema(
+        summary="Logout All Sessions",
+        description="Log out all active sessions for the current user. Invalidates all refresh tokens.",
+        tags=["Auth"],
+        request=None,
+        responses={200: OpenApiTypes.OBJECT}
+    )
     def post(self, request: Request):
         user: User = request.user
 
@@ -247,9 +287,24 @@ class Refresh(TokenRefreshView):
 
     @extend_schema(
         summary="Refresh Token",
+        description="Refresh the access token using the refresh token cookie.",
         tags=["Auth"],
         request=None,
-        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT}
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Missing Cookie",
+                value={"detail": "Refresh token is required to be present in cookies."},
+                response_only=True,
+                status_codes=[400]
+            ),
+            OpenApiExample(
+                "Invalid Token",
+                value={"detail": "Invalid refresh token."},
+                response_only=True,
+                status_codes=[401]
+            )
+        ]
     )
     def post(self, request: Request):
         refresh_token = request.COOKIES.get("refresh_token")
@@ -275,13 +330,29 @@ class SetupMFA(APIView):
 
     @extend_schema(
         summary="Setup MFA",
+        description="Initiate MFA setup. Returns a secret and an `otpauth` URL for QR code generation. "
+                    "Requires current password.",
         tags=["MFA"],
         request=SetupMFASerializer,
         responses={
             200: inline_serializer("SetupMFAResponse", fields={"auth_url": serializers.CharField(), "secret": serializers.CharField()}),
             400: OpenApiTypes.OBJECT,
             403: OpenApiTypes.OBJECT
-        }
+        },
+        examples=[
+            OpenApiExample(
+                "Guest Error",
+                value={"detail": "Guest users cannot set up MFA."},
+                response_only=True,
+                status_codes=[400]
+            ),
+            OpenApiExample(
+                "Invalid Password",
+                value={"detail": "mfa.messages.errorInvalidPassword"},
+                response_only=True,
+                status_codes=[403]
+            )
+        ]
     )
     def post(self, request: Request):
         user: User = request.user
@@ -308,13 +379,22 @@ class EnableMFA(APIView):
 
     @extend_schema(
         summary="Enable MFA",
+        description="Finalize MFA setup by verifying a code. Returns a list of backup codes.",
         tags=["MFA"],
         request=inline_serializer("EnableMFA", fields={"code": serializers.CharField()}),
         responses={
             200: inline_serializer("EnableMFAResponse", fields={"backup_codes": serializers.ListField(child=serializers.CharField())}),
             400: OpenApiTypes.OBJECT,
             403: OpenApiTypes.OBJECT
-        }
+        },
+        examples=[
+            OpenApiExample(
+                "Invalid Code",
+                value={"detail": "mfa.messages.errorInvalidCode"},
+                response_only=True,
+                status_codes=[403]
+            )
+        ]
     )
     def post(self, request: Request):
         user: User = request.user
@@ -338,13 +418,22 @@ class DisableMFA(APIView):
 
     @extend_schema(
         summary="Disable MFA",
+        description="Disable MFA for the user. Requires a valid MFA code.",
         tags=["MFA"],
         request=inline_serializer("DisableMFA", fields={"code": serializers.CharField()}),
         responses={
             200: OpenApiTypes.OBJECT,
             400: OpenApiTypes.OBJECT,
             403: OpenApiTypes.OBJECT
-        }
+        },
+        examples=[
+            OpenApiExample(
+                "Invalid Code",
+                value={"detail": "mfa.messages.errorInvalidCode"},
+                response_only=True,
+                status_codes=[403]
+            )
+        ]
     )
     def post(self, request: Request):
         user: User = request.user
@@ -369,9 +458,18 @@ class VerifyMFA(APIView):
 
     @extend_schema(
         summary="Verify MFA",
+        description="Complete login by verifying an MFA code using the temporary token received during login.",
         tags=["MFA"],
         request=VerifyMFASerializer,
-        responses={200: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT}
+        responses={200: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Invalid Code",
+                value={"detail": "mfa.messages.errorInvalidCode"},
+                response_only=True,
+                status_codes=[401]
+            )
+        ]
     )
     def post(self, request: Request):
         qs = VerifyMFASerializer(data = request.data)
@@ -434,11 +532,22 @@ class VerifyMFA(APIView):
 class Me(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(summary="Get Current User", tags=["User"], responses={200: UserSerializer})
+    @extend_schema(
+        summary="Get Current User",
+        description="Retrieve the profile and preferences of the currently authenticated user.",
+        tags=["User"],
+        responses={200: UserSerializer}
+    )
     def get(self, request: Request):
         return Response(UserSerializer(request.user, many = False).data, status.HTTP_200_OK)
 
-    @extend_schema(summary="Update User Preferences", tags=["User"], request=MeSerializer, responses={200: OpenApiTypes.OBJECT})
+    @extend_schema(
+        summary="Update User Preferences",
+        description="Update user preferences such as language, theme, and custom instructions.",
+        tags=["User"],
+        request=MeSerializer,
+        responses={200: OpenApiTypes.OBJECT}
+    )
     def patch(self, request: Request):
         user: User = request.user
 
@@ -458,13 +567,28 @@ class DeleteAccount(APIView):
 
     @extend_schema(
         summary="Delete Account",
+        description="Permanently delete the user account. Requires password and MFA code (if enabled).",
         tags=["User"],
         request=DeleteAccountSerializer,
         responses={
             204: OpenApiTypes.OBJECT,
             400: OpenApiTypes.OBJECT,
             403: OpenApiTypes.OBJECT
-        }
+        },
+        examples=[
+            OpenApiExample(
+                "MFA Required",
+                value={"detail": "MFA code is required."},
+                response_only=True,
+                status_codes=[400]
+            ),
+            OpenApiExample(
+                "Invalid Password",
+                value={"detail": "mfa.messages.errorInvalidPassword"},
+                response_only=True,
+                status_codes=[403]
+            )
+        ]
     )
     def delete(self, request: Request):
         user: User = request.user
@@ -498,6 +622,7 @@ class RequestPasswordReset(APIView):
 
     @extend_schema(
         summary="Request Password Reset",
+        description="Request a password reset email. Always returns 200 OK to prevent email enumeration.",
         tags=["Auth"],
         request=RequestPasswordResetSerializer,
         responses={200: OpenApiTypes.OBJECT}
@@ -542,9 +667,18 @@ class ConfirmPasswordReset(APIView):
 
     @extend_schema(
         summary="Confirm Password Reset",
+        description="Set a new password using a valid reset token.",
         tags=["Auth"],
         request=ConfirmPasswordResetSerializer,
-        responses={204: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT}
+        responses={204: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Invalid Token",
+                value={"detail": "auth.resetPassword.invalid"},
+                response_only=True,
+                status_codes=[400]
+            )
+        ]
     )
     def post(self, request):
         qs = ConfirmPasswordResetSerializer(data = request.data)
@@ -575,6 +709,7 @@ class AuthenticateAsGuest(APIView):
 
     @extend_schema(
         summary="Authenticate as Guest",
+        description="Create or restore a guest session. Guest accounts have limited features and expire after 30 days.",
         tags=["Auth"],
         request=None,
         responses={
