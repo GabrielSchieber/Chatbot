@@ -1,6 +1,6 @@
 import unicodedata
 
-from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.utils import extend_schema_field, extend_schema_serializer, OpenApiExample
 from rest_framework import serializers
 
 from ..models import User, UserMFA, UserPreferences, UserSession
@@ -63,6 +63,11 @@ class UserSerializer(serializers.ModelSerializer):
         sessions = user.sessions.order_by("-login_at")[:active_sessions + 5]
         return UserSessionSerializer(sessions, many = True).data
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample("Signup Example", value={"email": "user@example.com", "password": "StrongPassword123!"})
+    ]
+)
 class SignupSerializer(serializers.Serializer):
     email = serializers.EmailField(help_text="Email address for registration.")
     password = serializers.CharField(min_length = 12, max_length = 1000, trim_whitespace = False, help_text="Password (min 12 chars).")
@@ -77,6 +82,11 @@ class VerifyEmailSerializer(serializers.Serializer):
     email = serializers.EmailField(help_text="Email address to verify.")
     token = serializers.CharField(help_text="Verification token sent via email.")
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample("Login Example", value={"email": "user@example.com", "password": "StrongPassword123!"})
+    ]
+)
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(help_text="User's email address.")
     password = serializers.CharField(help_text="User's password.")
@@ -97,9 +107,19 @@ class MeSerializer(serializers.Serializer):
     occupation = serializers.CharField(allow_blank = True, max_length = 50, required = False, help_text="User occupation.")
     about = serializers.CharField(allow_blank = True, max_length = 1000, required = False, help_text="About text.")
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample("Request Password Reset Example", value={"email": "user@example.com"})
+    ]
+)
 class RequestPasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField(help_text="Email address to request password reset for.")
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample("Confirm Password Reset Example", value={"token": "reset_token_123", "password": "NewStrongPassword123!"})
+    ]
+)
 class ConfirmPasswordResetSerializer(serializers.Serializer):
     token = serializers.CharField(help_text="Password reset token.")
     password = serializers.CharField(min_length = 12, max_length = 1000, help_text="New password.")
