@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.utils import extend_schema_field, extend_schema_serializer, OpenApiExample
 from rest_framework import serializers
 
 from ..models import Chat
@@ -28,6 +28,11 @@ class ChatSerializer(serializers.ModelSerializer):
                 return i
         return 0
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample("Chat UUID Example", value={"chat_uuid": "123e4567-e89b-12d3-a456-426614174000"})
+    ]
+)
 class ChatUUIDSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField(help_text="The UUID of the chat.")
 
@@ -42,6 +47,14 @@ class SearchChatsSerializer(serializers.Serializer):
     offset = serializers.IntegerField(min_value = 0, default = 0, help_text="Pagination offset.")
     limit = serializers.IntegerField(min_value = 1, default = 20, help_text="Number of results to return.")
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "Rename Chat Example",
+            value={"chat_uuid": "123e4567-e89b-12d3-a456-426614174000", "new_title": "Project Alpha Discussion"}
+        )
+    ]
+)
 class RenameChatSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField(help_text="The UUID of the chat to rename.")
     new_title = serializers.CharField(help_text="The new title for the chat.")
