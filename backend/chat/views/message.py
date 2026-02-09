@@ -31,7 +31,12 @@ class GetMessageFileContent(APIView):
     permission_classes = [IsAuthenticated]
     renderer_classes = [BinaryFileRenderer, JSONRenderer]
 
-    @extend_schema(parameters=[GetMessageFileContentSerializer], responses={200: bytes})
+    @extend_schema(
+        summary="Get Message File Content",
+        tags=["Messages"],
+        parameters=[GetMessageFileContentSerializer],
+        responses={200: bytes, 404: OpenApiTypes.OBJECT}
+    )
     def get(self, request: Request):
         user: User = request.user
 
@@ -57,8 +62,10 @@ class GetMessageFileIDs(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
+        summary="Get Message File IDs",
+        tags=["Messages"],
         parameters=[ChatUUIDSerializer],
-        responses={200: OpenApiTypes.OBJECT}
+        responses={200: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT}
     )
     def get(self, request: Request):
         user: User = request.user
@@ -81,7 +88,12 @@ class GetMessageFileIDs(APIView):
 class GetMessages(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(parameters=[ChatUUIDSerializer], responses=MessageSerializer(many=True))
+    @extend_schema(
+        summary="List Messages",
+        tags=["Messages"],
+        parameters=[ChatUUIDSerializer],
+        responses={200: MessageSerializer(many=True), 404: OpenApiTypes.OBJECT}
+    )
     def get(self, request: Request):
         user: User = request.user
 
@@ -104,7 +116,12 @@ class NewMessage(APIView):
     parser_classes = [MultiPartParser]
     throttle_classes = [MessageRateThrottle]
 
-    @extend_schema(request=NewMessageSerializer, responses=ChatSerializer)
+    @extend_schema(
+        summary="Send New Message",
+        tags=["Messages"],
+        request=NewMessageSerializer,
+        responses={200: ChatSerializer, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT}
+    )
     def post(self, request: Request):
         user: User = request.user
 
@@ -150,7 +167,12 @@ class EditMessage(APIView):
     parser_classes = [MultiPartParser]
     throttle_classes = [MessageRateThrottle]
 
-    @extend_schema(request=EditMessageSerializer, responses=ChatSerializer)
+    @extend_schema(
+        summary="Edit Message",
+        tags=["Messages"],
+        request=EditMessageSerializer,
+        responses={200: ChatSerializer, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT}
+    )
     def patch(self, request: Request):
         user: User = request.user
 
@@ -224,7 +246,12 @@ class RegenerateMessage(APIView):
     parser_classes = [MultiPartParser]
     throttle_classes = [MessageRateThrottle]
 
-    @extend_schema(request=RegenerateMessageSerializer, responses=ChatSerializer)
+    @extend_schema(
+        summary="Regenerate Message",
+        tags=["Messages"],
+        request=RegenerateMessageSerializer,
+        responses={200: ChatSerializer, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT}
+    )
     def patch(self, request: Request):
         user: User = request.user
 
