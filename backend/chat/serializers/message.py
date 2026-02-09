@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.utils import extend_schema_field, extend_schema_serializer, OpenApiExample
 from rest_framework import serializers
 
 from ..models import Message, MessageFile
@@ -41,6 +41,18 @@ class GetMessageFileContentSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField(help_text="UUID of the chat.")
     message_file_id = serializers.IntegerField(min_value = 1, help_text="ID of the file to retrieve.")
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "New Message Example",
+            value={
+                "chat_uuid": "123e4567-e89b-12d3-a456-426614174000",
+                "text": "Hello, can you help me with Python?",
+                "model": "Qwen3-VL:4B"
+            }
+        )
+    ]
+)
 class NewMessageSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField(required = False, help_text="UUID of the chat (optional for new chats).")
     text = serializers.CharField(default = "", help_text="Message text content.")
@@ -60,6 +72,19 @@ class NewMessageSerializer(serializers.Serializer):
                     raise serializers.ValidationError("Image file inputs are only supported with the Qwen3-VL:4B model.")
         return attrs
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "Edit Message Example",
+            value={
+                "chat_uuid": "123e4567-e89b-12d3-a456-426614174000",
+                "index": 0,
+                "text": "Hello, can you help me with Django?",
+                "model": "Qwen3-VL:4B"
+            }
+        )
+    ]
+)
 class EditMessageSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField(help_text="UUID of the chat.")
     index = serializers.IntegerField(min_value = 0, help_text="Index of the message to edit.")
@@ -75,6 +100,18 @@ class EditMessageSerializer(serializers.Serializer):
                     raise serializers.ValidationError("Image file inputs are only supported with the Qwen3-VL:4B model.")
         return attrs
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "Regenerate Message Example",
+            value={
+                "chat_uuid": "123e4567-e89b-12d3-a456-426614174000",
+                "index": 1,
+                "model": "Qwen3-VL:4B"
+            }
+        )
+    ]
+)
 class RegenerateMessageSerializer(serializers.Serializer):
     chat_uuid = serializers.UUIDField(help_text="UUID of the chat.")
     index = serializers.IntegerField(min_value = 0, help_text="Index of the message to regenerate.")
